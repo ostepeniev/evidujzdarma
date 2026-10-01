@@ -7,6 +7,10 @@ import { FACTS } from "@/content/facts";
 
 const kc = (n: number) => `${Math.round(n).toLocaleString("cs-CZ")} Kč`;
 
+const period = (months: number) => (months === 12 ? "ročně" : `za ${months} ${months === 1 ? "měsíc" : months <= 4 ? "měsíce" : "měsíců"}`);
+
+const MONTHS = ["leden", "únor", "březen", "duben", "květen", "červen", "červenec", "srpen", "září", "říjen", "listopad", "prosinec"];
+
 function NumberField({
   id,
   label,
@@ -82,6 +86,20 @@ export function EetOffCalculator() {
           </div>
         </fieldset>
         <NumberField id="eo-income" label="Roční příjmy ze samostatné činnosti" value={input.income} onChange={(v) => set("income", v)} suffix="Kč" step={10000} />
+        <div>
+          <label htmlFor="eo-start" className="label">
+            Od kdy v roce 2027 podnikáte
+          </label>
+          <select id="eo-start" className="input" value={input.startMonth ?? 1} onChange={(e) => set("startMonth", Number(e.target.value))}>
+            <option value={1}>Celý rok (podnikám už teď)</option>
+            {MONTHS.slice(1).map((m, idx) => (
+              <option key={m} value={idx + 2}>
+                Začínám v průběhu roku: {m}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-sm text-muted">{FACTS.eetOff.midYear}</p>
+        </div>
         <div className="grid gap-5 sm:grid-cols-2">
           <NumberField
             id="eo-min"
@@ -137,9 +155,9 @@ export function EetOffCalculator() {
               </p>
               <p className="mt-2 text-ink-soft">
                 {r.verdict === "eet-off"
-                  ? `Evidence by vás stála o ${kc(r.difference)} ročně víc než přirážka.`
+                  ? `Evidence by vás stála o ${kc(r.difference)} ${period(r.months)} víc než přirážka.`
                   : r.verdict === "evidence"
-                    ? `Přirážka by vás stála o ${kc(-r.difference)} ročně víc než evidence.`
+                    ? `Přirážka by vás stála o ${kc(-r.difference)} ${period(r.months)} víc než evidence.`
                     : "Rozhodněte se podle toho, co je pro vás pohodlnější."}
               </p>
             </div>
@@ -148,13 +166,13 @@ export function EetOffCalculator() {
                 <tbody className="divide-y divide-line">
                   <tr>
                     <th scope="row" className="py-2 font-medium">
-                      Přirážka EET OFF ročně
+                      Přirážka EET OFF {period(r.months)}
                     </th>
                     <td className="py-2 text-right font-semibold">{kc(r.surchargeYearly)}</td>
                   </tr>
                   <tr>
                     <th scope="row" className="py-2 font-medium">
-                      Náklady evidence ročně
+                      Náklady evidence {r.months === 12 ? "ročně" : "za stejné období"}
                     </th>
                     <td className="py-2 text-right font-semibold">{kc(r.evidenceYearly)}</td>
                   </tr>
@@ -180,9 +198,20 @@ export function EetOffCalculator() {
               </table>
               <p className="mt-3 text-xs text-muted">Výše paušální zálohy pro rok 2027 je zatím předběžná (oznámená, oficiální leták FS ještě nevyšel).</p>
             </div>
-            <p className="rounded-xl bg-surface p-4 text-[15px] text-ink-soft">
-              Přihlásit se k EET OFF je třeba do <strong className="text-ink">{FACTS.eetOff.deadline}</strong>. Pozdní oznámení je neúčinné a zpětně se přihlásit nelze.
-            </p>
+            <div className="rounded-xl bg-surface p-4 text-[15px] text-ink-soft">
+              {(input.startMonth ?? 1) === 1 ? (
+                <p>
+                  Přihlásit se k EET OFF je třeba do <strong className="text-ink">{FACTS.eetOff.deadline}</strong>. Pozdní oznámení je neúčinné a zpětně se přihlásit nelze.
+                </p>
+              ) : (
+                <p>Při zahájení činnosti v průběhu roku platíte přirážku od měsíce zahájení. Lhůtu pro oznámení si ověřte na eet.gov.cz nebo u svého finančního úřadu.</p>
+              )}
+              <ul className="mt-3 list-disc space-y-1 pl-5">
+                <li>{FACTS.eetOff.binding}</li>
+                <li>{FACTS.eetOff.overLimit}</li>
+                <li>{FACTS.eetOff.exit}</li>
+              </ul>
+            </div>
           </>
         )}
       </div>

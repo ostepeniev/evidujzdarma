@@ -9,7 +9,7 @@ import { JsonLd, faqLd } from "@/lib/jsonld";
 export const metadata: Metadata = {
   title: "Kalkulačka EET OFF 2027 – vyplatí se přirážka?",
   description:
-    "Spočítejte, zda se vám vyplatí EET OFF: přirážka 1 400 Kč měsíčně k paušální dani místo evidence tržeb. Pro OSVČ v 1. pásmu s příjmy do 1 mil. Kč. Přihláška do 11. 1. 2027.",
+    "Spočítejte, zda se vám vyplatí EET OFF: přirážka 1 400 Kč měsíčně (16 800 Kč ročně) k paušální dani místo evidence tržeb. Pro OSVČ v 1. pásmu s příjmy do 1 mil. Kč, i když začínáte v průběhu roku. Přihláška do 11. 1. 2027.",
   alternates: { canonical: "/kalkulacka-eet-off" },
 };
 
@@ -25,8 +25,18 @@ const FAQ = [
     a: "Sečte čas, který evidenci věnujete (minuty denně × pracovní dny × cena vaší hodiny), měsíční cenu pokladny a pořízení zařízení rozpočítané na 3 roky. Výsledek porovná s ročním součtem přirážky. Pokladna EvidujZdarma je zdarma, takže u nás rozhoduje hlavně čas.",
   },
   {
+    q: "Vyplatí se mi EET OFF, když začínám podnikat v průběhu roku?",
+    a: `${FACTS.eetOff.midYear} Kalkulačka proto počítá přirážku i náklady evidence jen za měsíce, kdy podnikáte – vyberte měsíc zahájení.`,
+  },
+  {
     q: "Co když v průběhu roku překročím 1 milion Kč?",
-    a: "Přesný postup při překročení limitu během roku zatím Finanční správa podrobně nepopsala. Doporučujeme sledovat eet.gov.cz nebo se poradit s daňovým poradcem.",
+    a: FACTS.eetOff.overLimit,
+  },
+  { q: "Můžu EET OFF změnit v polovině roku?", a: `Ne. ${FACTS.eetOff.binding}` },
+  { q: "Jak se z EET OFF odhlásit a do kdy?", a: FACTS.eetOff.exit },
+  {
+    q: "Musím v EET OFF vydat účtenku, když si ji zákazník vyžádá?",
+    a: `Ano. EET OFF vás zbavuje jen evidence tržeb. ${FACTS.receipt.summary}`,
   },
 ];
 
@@ -44,7 +54,7 @@ export default function EetOffPage() {
           <>
             EET OFF znamená přirážku <strong>{formatKc(FACTS.eetOff.surchargeMonthly)} měsíčně</strong> k paušální dani místo evidence tržeb. Smí ho zvolit jen
             fyzická osoba v 1. pásmu paušálního režimu s příjmy do 1 mil. Kč. Přihlásit se je nutné do <strong>{FACTS.eetOff.deadline}</strong>. Spočítejte si, co
-            vás vyjde levněji.
+            vás vyjde levněji – i když začínáte podnikat v průběhu roku.
           </>
         }
       />

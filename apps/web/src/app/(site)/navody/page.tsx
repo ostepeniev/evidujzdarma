@@ -23,6 +23,18 @@ export default function GuidesIndex() {
         lead="Vše, co potřebujete vědět o evidenci tržeb od roku 2027 – stručně, s odkazy na zákon a Finanční správu a s datem poslední aktualizace."
       />
       <div className="container-page py-10">
+        <Link
+          href="/co-se-o-eet-pise-spatne"
+          className="mb-12 flex flex-col gap-2 rounded-2xl border-2 border-sun-300 bg-sun-100 p-6 transition-colors hover:border-sun-500 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <span>
+            <span className="block text-lg font-bold text-ink">Co se o EET 2.0 píše špatně</span>
+            <span className="mt-1 block text-[15px] text-ink-soft">
+              Výjimka do 50 000 Kč, leden bez pokut, sleva 5 000 Kč pro každého – tvrzení, která neodpovídají schválenému zákonu.
+            </span>
+          </span>
+          <span className="shrink-0 font-semibold text-brand-700">Přečíst →</span>
+        </Link>
         {ORDER.map((cat) => {
           const items = GUIDES.filter((g) => g.category === cat);
           if (!items.length) return null;

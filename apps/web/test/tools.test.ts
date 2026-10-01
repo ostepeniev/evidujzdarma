@@ -20,6 +20,20 @@ describe("EET OFF calculator", () => {
   });
 });
 
+describe("EET OFF calculator – mid-year start", () => {
+  it("charges the surcharge only from the start month", () => {
+    const r = calculateEetOff({ ...DEFAULT_INPUT, startMonth: 7 });
+    expect(r.eligible && r.months).toBe(6);
+    expect(r.eligible && r.surchargeYearly).toBe(1400 * 6);
+  });
+  it("clamps invalid months to a full year / December", () => {
+    const full = calculateEetOff({ ...DEFAULT_INPUT, startMonth: 0 });
+    expect(full.eligible && full.months).toBe(12);
+    const dec = calculateEetOff({ ...DEFAULT_INPUT, startMonth: 40 });
+    expect(dec.eligible && dec.months).toBe(1);
+  });
+});
+
 describe("IČO assessment", () => {
   const f = (ico: string) => {
     const x = ARES_FIXTURES[ico]!;

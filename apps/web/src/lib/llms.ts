@@ -1,6 +1,7 @@
 import { plainText } from "@/components/rich-text";
 import { FACTS, FACTS_UPDATED, TIMELINE } from "@/content/facts";
 import { GUIDES } from "@/content/guides";
+import { MYTHS, MYTHS_UPDATED } from "@/content/myths";
 import type { Block, Guide } from "@/content/guides/types";
 import { OPERATOR, SITE, absoluteUrl } from "./site";
 import { STATIC_PAGES } from "./static-pages";
@@ -11,13 +12,17 @@ function factsSection(): string {
     "",
     `- ${FACTS.law.name} – ${FACTS.law.printNo}, podepsán ${FACTS.law.signedOn}, účinnost od ${FACTS.law.effectiveFrom}.`,
     ...TIMELINE.map((t) => `- ${t.dateLabel}: ${t.title}. ${t.action}`),
+    `- ${FACTS.pilot.summary}`,
     `- ${FACTS.evidenced.summary} ${FACTS.evidenced.notEvidenced}`,
     `- ${FACTS.whoMust.summary} ${FACTS.whoMust.exemptions}`,
-    `- ${FACTS.offline.summary}`,
+    `- ${FACTS.whoMust.occasional}`,
+    `- ${FACTS.offline.summary} ${FACTS.offline.responseTimeout}`,
     `- ${FACTS.receipt.summary}`,
-    `- ${FACTS.units.summary} ${FACTS.units.change}`,
+    `- ${FACTS.confirmation.summary} ${FACTS.confirmation.onReceipt}`,
+    `- ${FACTS.units.summary} ${FACTS.units.allUnits} ${FACTS.units.change}`,
     `- ${FACTS.certificate.summary}`,
-    `- ${FACTS.eetOff.summary} ${FACTS.eetOff.howTo}`,
+    `- ${FACTS.eetOff.summary} ${FACTS.eetOff.howTo} ${FACTS.eetOff.naturalOnly} ${FACTS.eetOff.binding} ${FACTS.eetOff.midYear} ${FACTS.eetOff.overLimit} ${FACTS.eetOff.exit}`,
+    `- ${FACTS.taxCredit.summary}`,
     `- ${FACTS.penalties.summary}`,
     `- ${FACTS.mojeEet.summary}`,
     "",
@@ -45,6 +50,8 @@ export function llmsTxt(): string {
     "",
     "## Služba",
     "",
+    `- [Co se o EET 2.0 píše špatně](${absoluteUrl("/co-se-o-eet-pise-spatne")}): tvrzení, která neodpovídají schválenému zákonu (výjimka 50 000 Kč, leden bez pokut, sleva 5 000 Kč pro každého), se zdroji a datem stavu.`,
+    `- [Je EET dole? Stav systému evidence tržeb](${absoluteUrl("/stav-eet")}): nezávislé měření dostupnosti rozhraní EET každých 5 minut, historie výpadků; strojově na ${absoluteUrl("/api/stav-eet")}.`,
     `- [Srovnání s MOJE eet](${absoluteUrl("/srovnani/moje-eet")})`,
     `- [Ceník](${absoluteUrl("/cenik")}): evidence tržeb zdarma navždy; Premium 149 Kč/měsíc.`,
     `- [Pro účetní](${absoluteUrl("/ucetni")})`,
@@ -79,6 +86,24 @@ function guideText(g: Guide): string {
   ].join("\n");
 }
 
+function mythsText(): string {
+  return [
+    "# Co se o EET 2.0 píše špatně",
+    "",
+    `URL: ${absoluteUrl("/co-se-o-eet-pise-spatne")} · Aktualizováno: ${MYTHS_UPDATED}`,
+    "",
+    ...MYTHS.flatMap((m) => [
+      `## ${m.question}`,
+      "",
+      `Píše se: ${m.claim}`,
+      `Co platí (stav k ${m.asOf}): ${m.truth}`,
+      ...(m.comment ? [`Náš názor: ${m.comment}`] : []),
+      `Zdroje: ${m.sources.map((x) => x.url).join(", ")}`,
+      "",
+    ]),
+  ].join("\n");
+}
+
 export function llmsFullTxt(): string {
-  return [llmsTxt(), "---", "", ...GUIDES.map(guideText).flatMap((t) => [t, "", "---", ""])].join("\n");
+  return [llmsTxt(), "---", "", mythsText(), "", "---", "", ...GUIDES.map(guideText).flatMap((t) => [t, "", "---", ""])].join("\n");
 }

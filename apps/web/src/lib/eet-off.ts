@@ -19,6 +19,8 @@ export interface EetOffInput {
   toolsMonthly: number;
   /** jednorázové pořízení (tiskárna, tablet) v Kč, rozpočítá se na 3 roky */
   hardwareOneOff: number;
+  /** měsíc zahájení činnosti v roce (1 = podniká celý rok); přirážka se platí od tohoto měsíce */
+  startMonth?: number;
 }
 
 export const DEFAULT_INPUT: EetOffInput = {
@@ -29,6 +31,7 @@ export const DEFAULT_INPUT: EetOffInput = {
   hourlyRate: 300,
   toolsMonthly: 0,
   hardwareOneOff: 0,
+  startMonth: 1,
 };
 
 export type EetOffResult =
@@ -42,6 +45,8 @@ export type EetOffResult =
       verdict: "eet-off" | "evidence" | "tie";
       pausalMonthly: number;
       pausalWithSurchargeMonthly: number;
+      /** počet měsíců v roce, za které se platí přirážka / eviduje */
+      months: number;
     };
 
 export function calculateEetOff(i: EetOffInput): EetOffResult {
@@ -51,9 +56,14 @@ export function calculateEetOff(i: EetOffInput): EetOffResult {
   if (i.income > incomeLimit)
     return { eligible: false, reason: `EET OFF lze zvolit jen s příjmy ze samostatné činnosti do ${incomeLimit.toLocaleString("cs-CZ")} Kč ročně.` };
 
-  const surchargeYearly = surchargeMonthly * 12;
-  const timeHoursYearly = (Math.max(0, i.minutesPerDay) * Math.max(0, i.workDaysPerMonth) * 12) / 60;
-  const evidenceYearly = Math.round(timeHoursYearly * Math.max(0, i.hourlyRate) + Math.max(0, i.toolsMonthly) * 12 + Math.max(0, i.hardwareOneOff) / 3);
+  // Kdo začne podnikat v průběhu roku, platí přirážku od měsíce zahájení (a jen tehdy by i evidoval).
+  const start = Math.min(12, Math.max(1, Math.trunc(i.startMonth ?? 1) || 1));
+  const months = 13 - start;
+  const surchargeYearly = surchargeMonthly * months;
+  const timeHoursYearly = (Math.max(0, i.minutesPerDay) * Math.max(0, i.workDaysPerMonth) * months) / 60;
+  const evidenceYearly = Math.round(
+    timeHoursYearly * Math.max(0, i.hourlyRate) + Math.max(0, i.toolsMonthly) * months + (Math.max(0, i.hardwareOneOff) / 3) * (months / 12),
+  );
   const difference = evidenceYearly - surchargeYearly;
   const verdict = Math.abs(difference) < 1200 ? "tie" : difference > 0 ? "eet-off" : "evidence";
   const pausalMonthly = FACTS.pausal[2027].band1;
@@ -66,5 +76,6 @@ export function calculateEetOff(i: EetOffInput): EetOffResult {
     verdict,
     pausalMonthly,
     pausalWithSurchargeMonthly: pausalMonthly + surchargeMonthly,
+    months,
   };
 }
