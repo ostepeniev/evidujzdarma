@@ -28,6 +28,7 @@ const COLUMNS = [
     links: [
       { href: "/pokladna", label: "Pokladna (aplikace)" },
       { href: "/ucetni", label: "Pro účetní" },
+      { href: "/ucetni/hromadna-kontrola", label: "Hromadná kontrola IČO" },
       { href: "/cenik", label: "Ceník" },
       { href: "/srovnani/moje-eet", label: "Srovnání s MOJE eet" },
       { href: "/firmy", label: "Katalog firem" },

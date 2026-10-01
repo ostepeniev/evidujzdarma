@@ -99,6 +99,15 @@ export async function POST(req: Request) {
     const existing = await db.query.preregistrations.findFirst({
       where: sql`lower(${schema.preregistrations.email}) = ${body.email}`,
     });
+    // Zájem o další akci (např. webinář) od už registrovaného e-mailu: doplníme UTM, nic nepřepisujeme.
+    if (existing && body.utm) {
+      const merged: Record<string, string> = { ...(existing.utm ?? {}) };
+      for (const [k, v] of Object.entries(body.utm)) {
+        const prev = merged[k];
+        merged[k] = prev && prev !== v && !prev.split(",").includes(v) ? `${prev},${v}`.slice(0, 300) : v;
+      }
+      await db.update(schema.preregistrations).set({ utm: merged }).where(sql`${schema.preregistrations.id} = ${existing.id}`);
+    }
     if (existing && !existing.confirmedAt) {
       await enqueueEmail({
         to: existing.email,

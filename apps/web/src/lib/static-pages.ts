@@ -11,6 +11,7 @@ export const STATIC_PAGES: readonly { path: string; title: string; priority: num
   { path: "/srovnani/moje-eet", title: "Srovnání EvidujZdarma a MOJE eet", priority: 0.8, changeFrequency: "weekly" },
   { path: "/ucetni", title: "EvidujZdarma pro účetní", priority: 0.7, changeFrequency: "monthly" },
   { path: "/ucetni/hromadna-kontrola", title: "Hromadná kontrola IČO pro účetní", priority: 0.7, changeFrequency: "monthly" },
+  { path: "/ucetni/sablony", title: "Šablony dopisů klientům k EET 2.0", priority: 0.5, changeFrequency: "monthly" },
   { path: "/cenik", title: "Ceník", priority: 0.6, changeFrequency: "monthly" },
   { path: "/o-nas", title: "O nás a kontakt", priority: 0.4, changeFrequency: "monthly" },
   { path: "/podminky", title: "Obchodní podmínky", priority: 0.2, changeFrequency: "monthly" },

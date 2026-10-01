@@ -5,6 +5,36 @@ import { getDb, hasDatabase, schema } from "@ez/db";
 import { ARES_FIXTURES } from "./ares-fixtures";
 
 const client = new AresClient({ timeoutMs: 6000 });
+
+/**
+ * Společný limit živých dotazů do ARES pro celý proces (ARES blokuje nad ~500 dotazů/min).
+ * Cache tento limit nespotřebovává. Při vyčerpání se čeká max. 5 s, pak AresBusyError.
+ */
+const ARES_PER_MINUTE = Number(process.env.ARES_RATE_PER_MINUTE ?? 240);
+let tokens = ARES_PER_MINUTE;
+let refilledAt = Date.now();
+
+export class AresBusyError extends Error {
+  constructor() {
+    super("ARES je právě vytížený, zkuste to za chvíli.");
+  }
+}
+
+async function takeAresToken(): Promise<void> {
+  const deadline = Date.now() + 5_000;
+  for (;;) {
+    const now = Date.now();
+    tokens = Math.min(ARES_PER_MINUTE, tokens + ((now - refilledAt) * ARES_PER_MINUTE) / 60_000);
+    refilledAt = now;
+    if (tokens >= 1) {
+      tokens -= 1;
+      return;
+    }
+    if (now > deadline) throw new AresBusyError();
+    await new Promise((r) => setTimeout(r, 250));
+  }
+}
+
 const TTL_MS = 24 * 3_600_000;
 const memory = new Map<string, { at: number; value: unknown }>();
 
@@ -56,14 +86,14 @@ export async function lookupCompany(icoInput: string): Promise<CompanyLookup | n
     return { subject: mapSubject(f.subject), rzp: f.rzp ? mapRzp(f.rzp) : null, fetchedAt: new Date().toISOString(), source: "fixture" };
   }
 
-  const subj = await cached(`subject:${ico}`, () => client.rawSubject(ico));
+  const subj = await cached(`subject:${ico}`, async () => (await takeAresToken(), client.rawSubject(ico)));
   if (!subj.value) return null;
   const subject = mapSubject(subj.value);
 
   let rzp: RzpRecord | null = null;
   if (subject.registrations.rzp && subject.registrations.rzp !== "NEEXISTUJICI") {
     try {
-      const r = await cached(`rzp:${ico}`, () => client.rawRzp(ico));
+      const r = await cached(`rzp:${ico}`, async () => (await takeAresToken(), client.rawRzp(ico)));
       rzp = r.value ? mapRzp(r.value) : null;
     } catch {
       rzp = null; // RŽP je doplněk — bez něj umíme odpovědět také

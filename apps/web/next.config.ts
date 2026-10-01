@@ -1,7 +1,23 @@
 import path from "node:path";
 import type { NextConfig } from "next";
 
+const csp = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob:",
+  "font-src 'self' data:",
+  "connect-src 'self'",
+  "worker-src 'self'",
+  "manifest-src 'self'",
+  "frame-ancestors 'self'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "object-src 'none'",
+].join("; ");
+
 const securityHeaders = [
+  ...(process.env.NODE_ENV === "production" ? [{ key: "Content-Security-Policy", value: csp }] : []),
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "X-Frame-Options", value: "SAMEORIGIN" },
@@ -16,6 +32,10 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   transpilePackages: ["@ez/cz", "@ez/db", "@ez/fiscal-core"],
   serverExternalPackages: ["postgres", "node-forge", "nodemailer"],
+  async rewrites() {
+    // IndexNow: ověřovací soubor /{klíč}.txt
+    return [{ source: "/:key([a-zA-Z0-9-]{8,128}).txt", destination: "/api/indexnow/key/:key" }];
+  },
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },
