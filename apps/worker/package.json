@@ -5,8 +5,10 @@
   "type": "module",
   "scripts": {
     "start": "tsx src/index.ts",
-    "ares:sync": "tsx src/ares-sync.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "catalog:import": "tsx src/catalog/import-res.ts",
+    "catalog:enrich": "tsx src/catalog/enrich-ares.ts",
+    "catalog:seed": "tsx src/catalog/seed-dev.ts"
   },
   "dependencies": {
     "@ez/cz": "workspace:*",
