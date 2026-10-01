@@ -8,6 +8,20 @@
       "when": 1790890582729,
       "tag": "0000_init",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790891649172,
+      "tag": "0001_pos",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790891711703,
+      "tag": "0002_sales_backoff",
+      "breakpoints": true
     }
   ]
 }

@@ -124,7 +124,8 @@ export const accounts = pgTable(
     vatPayer: boolean("vat_payer").notNull().default(false),
     /** IBAN pro QR platby */
     iban: varchar("iban", { length: 34 }),
-    eetMode: varchar("eet_mode", { length: 16 }).notNull().default("test"), // test | production
+    /** mock = ukázkový režim bez FS | playground = testovací prostředí FS | production = ostrý provoz */
+    eetMode: varchar("eet_mode", { length: 16 }).notNull().default("mock"),
     referredByAccountantId: uuid("referred_by_accountant_id"),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
@@ -143,11 +144,30 @@ export const memberships = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     role: role("role").notNull(),
     displayName: text("display_name"),
-    /** scrypt hash PINu pokladní(ho) */
-    pinHash: text("pin_hash"),
     createdAt: createdAt(),
   },
   (t) => [primaryKey({ columns: [t.accountId, t.userId] })],
+);
+
+/**
+ * Obsluha pokladny (vlastník a pokladní). Přihlašuje se PINem na registrovaném zařízení,
+ * i bez internetu — proto je hash PBKDF2-SHA256 ověřitelný v prohlížeči (WebCrypto).
+ * Formát pinHash: "pbkdf2-sha256$<iterace>$<salt b64>$<hash b64>".
+ */
+export const staff = pgTable(
+  "staff",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    role: varchar("role", { length: 16 }).notNull().default("cashier"), // owner | cashier
+    pinHash: text("pin_hash"),
+    active: boolean("active").notNull().default(true),
+    createdAt: createdAt(),
+  },
+  (t) => [index("staff_account_idx").on(t.accountId)],
 );
 
 export const sessions = pgTable(
@@ -222,8 +242,10 @@ export const devices = pgTable(
       .references(() => accounts.id, { onDelete: "cascade" }),
     unitId: uuid("unit_id").references(() => evidenceUnits.id, { onDelete: "set null" }),
     name: text("name").notNull(),
-    /** ID pokladního zařízení uváděné ve zprávě */
+    /** ID pokladního zařízení uváděné ve zprávě (id_pokl) */
     registerId: varchar("register_id", { length: 20 }).notNull(),
+    /** prefix pořadových čísel tohoto zařízení, např. "P1-" */
+    sequencePrefix: varchar("sequence_prefix", { length: 12 }).notNull().default(""),
     tokenHash: varchar("token_hash", { length: 64 }).notNull(),
     lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
     revokedAt: timestamp("revoked_at", { withTimezone: true }),
@@ -244,6 +266,9 @@ export const certificates = pgTable(
       .notNull()
       .references(() => accounts.id, { onDelete: "cascade" }),
     subject: text("subject").notNull(),
+    /** EIČ ze subjektu certifikátu */
+    eic: varchar("eic", { length: 12 }),
+    environment: varchar("environment", { length: 16 }).notNull().default("production"), // playground | production
     serialNumber: text("serial_number").notNull(),
     validFrom: timestamp("valid_from", { withTimezone: true }).notNull(),
     validTo: timestamp("valid_to", { withTimezone: true }).notNull(),
@@ -290,7 +315,7 @@ export const sales = pgTable(
       .notNull()
       .references(() => devices.id),
     unitId: uuid("unit_id").references(() => evidenceUnits.id),
-    cashierUserId: uuid("cashier_user_id").references(() => users.id),
+    staffId: uuid("staff_id").references(() => staff.id, { onDelete: "set null" }),
     /** id_pokl a porad_cis tak, jak byly odeslány */
     registerId: varchar("register_id", { length: 20 }).notNull(),
     fsUnitId: integer("fs_unit_id").notNull(),
@@ -320,13 +345,15 @@ export const sales = pgTable(
     attempts: smallint("attempts").notNull().default(0),
     lastError: text("last_error"),
     sentAt: timestamp("sent_at", { withTimezone: true }),
+    /** kdy nejdřív zkusit další odeslání (backoff) */
+    nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }).notNull().defaultNow(),
     deadlineAt: timestamp("deadline_at", { withTimezone: true }).notNull(),
     createdAt: createdAt(),
   },
   (t) => [
     uniqueIndex("sales_device_seq_uq").on(t.deviceId, t.sequence),
     index("sales_account_sold_idx").on(t.accountId, t.soldAt),
-    index("sales_pending_idx").on(t.status, t.deadlineAt),
+    index("sales_pending_idx").on(t.status, t.nextAttemptAt),
   ],
 );
 

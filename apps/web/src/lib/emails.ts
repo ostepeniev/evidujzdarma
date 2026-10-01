@@ -1,7 +1,7 @@
 import { SITE, SITE_URL } from "./site";
 import { TIMELINE } from "@/content/facts";
 
-export type EmailTemplate = "prereg-confirm" | "dis-launch" | "app-ready" | "login-link" | "receipt";
+export type EmailTemplate = "prereg-confirm" | "dis-launch" | "app-ready" | "login-link" | "receipt" | "notice";
 
 export interface RenderedEmail {
   subject: string;
@@ -124,6 +124,14 @@ ${button(confirmUrl, "Potvrdit e-mail")}
           "Přihlášení",
           `<p>Pro přihlášení klikněte na tlačítko. Odkaz platí 15 minut a lze ho použít jen jednou.</p>${button(url, "Přihlásit se")}<p style="font-size:14px;color:#66756e">Pokud jste o přihlášení nežádali, e-mail ignorujte.</p>`,
         ),
+      };
+    }
+    case "notice": {
+      const url = p.url ? String(p.url) : null;
+      return {
+        subject: String(p.subject),
+        text: `${p.text}${url ? `\n\n${url}` : ""}\n\nTým EvidujZdarma`,
+        html: layout(String(p.subject), `<p>${esc(p.text).replace(/\n/g, "<br>")}</p>${url ? button(url, String(p.buttonLabel ?? "Otevřít")) : ""}`),
       };
     }
     case "receipt": {

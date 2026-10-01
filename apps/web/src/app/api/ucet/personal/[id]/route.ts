@@ -1,0 +1,29 @@
+import { and, eq, ne } from "drizzle-orm";
+import { getDb, schema } from "@ez/db";
+import { HttpError } from "@/lib/server/auth";
+import { hashPin } from "@/lib/pos/pin";
+import { ownerRoute, parseJson } from "@/lib/server/route-helpers";
+import { StaffPatch } from "@/lib/server/schemas";
+
+export const PATCH = ownerRoute<{ id: string }>(async ({ req, accountId, params }) => {
+  const input = await parseJson(req, StaffPatch);
+  const db = getDb();
+  const current = await db.query.staff.findFirst({ where: and(eq(schema.staff.id, params.id), eq(schema.staff.accountId, accountId)) });
+  if (!current) throw new HttpError(404, "Uživatel nenalezen");
+  if (input.active === false && current.role === "owner") {
+    const others = await db.query.staff.findFirst({
+      where: and(eq(schema.staff.accountId, accountId), eq(schema.staff.role, "owner"), eq(schema.staff.active, true), ne(schema.staff.id, params.id)),
+    });
+    if (!others) throw new HttpError(400, "Vlastníka nelze deaktivovat.");
+  }
+  const [row] = await db
+    .update(schema.staff)
+    .set({
+      ...(input.name ? { name: input.name } : {}),
+      ...(input.active !== undefined ? { active: input.active } : {}),
+      ...(input.pin !== undefined ? { pinHash: input.pin ? await hashPin(input.pin) : null } : {}),
+    })
+    .where(eq(schema.staff.id, params.id))
+    .returning({ id: schema.staff.id, name: schema.staff.name, role: schema.staff.role, active: schema.staff.active, pinHash: schema.staff.pinHash });
+  return Response.json({ staff: { id: row!.id, name: row!.name, role: row!.role, active: row!.active, hasPin: !!row!.pinHash } });
+});
