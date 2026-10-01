@@ -2,8 +2,8 @@ CREATE TYPE "public"."eet_relevance" AS ENUM('likely', 'possible', 'unlikely');-
 CREATE TYPE "public"."email_status" AS ENUM('queued', 'sending', 'sent', 'failed', 'cancelled');--> statement-breakpoint
 CREATE TYPE "public"."plan" AS ENUM('free', 'premium', 'partner');--> statement-breakpoint
 CREATE TYPE "public"."member_role" AS ENUM('owner', 'cashier', 'accountant');--> statement-breakpoint
-CREATE TYPE "public"."sale_status" AS ENUM('queued', 'sending', 'confirmed', 'failed', 'rejected', 'test');--> statement-breakpoint
-CREATE TYPE "public"."unit_type" AS ENUM('provozovna', 'web', 'vozidlo', 'mimo_provozovnu', 'jine');--> statement-breakpoint
+CREATE TYPE "public"."sale_status" AS ENUM('queued', 'sending', 'confirmed', 'failed', 'rejected', 'not_required');--> statement-breakpoint
+CREATE TYPE "public"."unit_type" AS ENUM('stala_provozovna', 'mobilni_provozovna', 'automat', 'internetova_stranka', 'dopravni_prostredek', 'osoba');--> statement-breakpoint
 CREATE TABLE "accountant_clients" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"accountant_account_id" uuid NOT NULL,
@@ -22,6 +22,7 @@ CREATE TABLE "accounts" (
 	"name" text NOT NULL,
 	"ico" varchar(8),
 	"dic" varchar(14),
+	"eic" varchar(12),
 	"plan" "plan" DEFAULT 'free' NOT NULL,
 	"plan_valid_until" timestamp with time zone,
 	"receipt_header" text,
@@ -98,8 +99,8 @@ CREATE TABLE "evidence_units" (
 	"account_id" uuid NOT NULL,
 	"type" "unit_type" NOT NULL,
 	"label" text NOT NULL,
-	"external_id" varchar(32),
-	"icp" varchar(10),
+	"fs_unit_id" integer,
+	"icp" varchar(12),
 	"address" text,
 	"active" boolean DEFAULT true NOT NULL,
 	"changed_at" timestamp with time zone,
@@ -209,6 +210,8 @@ CREATE TABLE "sales" (
 	"device_id" uuid NOT NULL,
 	"unit_id" uuid,
 	"cashier_user_id" uuid,
+	"register_id" varchar(20) NOT NULL,
+	"fs_unit_id" integer NOT NULL,
 	"sequence" varchar(25) NOT NULL,
 	"sold_at" timestamp with time zone NOT NULL,
 	"received_at" timestamp with time zone DEFAULT now() NOT NULL,
@@ -219,11 +222,15 @@ CREATE TABLE "sales" (
 	"items" jsonb,
 	"vat_breakdown" jsonb,
 	"refund_of" uuid,
+	"evidenced_total" bigint NOT NULL,
+	"prepayment_amount" bigint DEFAULT 0 NOT NULL,
+	"redeemed_amount" bigint DEFAULT 0 NOT NULL,
 	"status" "sale_status" DEFAULT 'queued' NOT NULL,
 	"mode" varchar(16) DEFAULT 'test' NOT NULL,
-	"confirmation_code" varchar(64),
-	"security_code" varchar(64),
-	"signature" text,
+	"confirmation_code" varchar(39),
+	"last_message_uuid" uuid,
+	"first_sent_at" timestamp with time zone,
+	"warnings" jsonb,
 	"attempts" smallint DEFAULT 0 NOT NULL,
 	"last_error" text,
 	"sent_at" timestamp with time zone,

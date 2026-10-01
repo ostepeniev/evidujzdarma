@@ -1,5 +1,5 @@
 {
-  "id": "c07f2867-f2ea-4f3e-a5d9-15b127f32823",
+  "id": "47829d83-b442-44ca-9527-2c9a95374ec7",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -155,6 +155,12 @@
         "dic": {
           "name": "dic",
           "type": "varchar(14)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "eic": {
+          "name": "eic",
+          "type": "varchar(12)",
           "primaryKey": false,
           "notNull": false
         },
@@ -787,15 +793,15 @@
           "primaryKey": false,
           "notNull": true
         },
-        "external_id": {
-          "name": "external_id",
-          "type": "varchar(32)",
+        "fs_unit_id": {
+          "name": "fs_unit_id",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false
         },
         "icp": {
           "name": "icp",
-          "type": "varchar(10)",
+          "type": "varchar(12)",
           "primaryKey": false,
           "notNull": false
         },
@@ -1700,6 +1706,18 @@
           "primaryKey": false,
           "notNull": false
         },
+        "register_id": {
+          "name": "register_id",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fs_unit_id": {
+          "name": "fs_unit_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
         "sequence": {
           "name": "sequence",
           "type": "varchar(25)",
@@ -1763,6 +1781,26 @@
           "primaryKey": false,
           "notNull": false
         },
+        "evidenced_total": {
+          "name": "evidenced_total",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "prepayment_amount": {
+          "name": "prepayment_amount",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "redeemed_amount": {
+          "name": "redeemed_amount",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
         "status": {
           "name": "status",
           "type": "sale_status",
@@ -1780,19 +1818,25 @@
         },
         "confirmation_code": {
           "name": "confirmation_code",
-          "type": "varchar(64)",
+          "type": "varchar(39)",
           "primaryKey": false,
           "notNull": false
         },
-        "security_code": {
-          "name": "security_code",
-          "type": "varchar(64)",
+        "last_message_uuid": {
+          "name": "last_message_uuid",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
-        "signature": {
-          "name": "signature",
-          "type": "text",
+        "first_sent_at": {
+          "name": "first_sent_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "warnings": {
+          "name": "warnings",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": false
         },
@@ -2145,18 +2189,19 @@
         "confirmed",
         "failed",
         "rejected",
-        "test"
+        "not_required"
       ]
     },
     "public.unit_type": {
       "name": "unit_type",
       "schema": "public",
       "values": [
-        "provozovna",
-        "web",
-        "vozidlo",
-        "mimo_provozovnu",
-        "jine"
+        "stala_provozovna",
+        "mobilni_provozovna",
+        "automat",
+        "internetova_stranka",
+        "dopravni_prostredek",
+        "osoba"
       ]
     }
   },

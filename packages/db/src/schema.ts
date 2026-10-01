@@ -114,6 +114,8 @@ export const accounts = pgTable(
     name: text("name").notNull(),
     ico: varchar("ico", { length: 8 }),
     dic: varchar("dic", { length: 14 }),
+    /** EIČ pro EET (CZ + 8–10 číslic; zpravidla DIČ) */
+    eic: varchar("eic", { length: 12 }),
     plan: plan("plan").notNull().default("free"),
     planValidUntil: timestamp("plan_valid_until", { withTimezone: true }),
     /** obsah dokladu: hlavička, patička */
@@ -178,7 +180,15 @@ export const loginTokens = pgTable(
 
 /* ────────────────────────────── EET: jednotky, pokladny, certifikáty ────────────────────────────── */
 
-export const unitType = pgEnum("unit_type", ["provozovna", "web", "vozidlo", "mimo_provozovnu", "jine"]);
+/** Typy evidenčních jednotek tak, jak je nabízí DIS+ (eet.gov.cz – Jak začít evidovat). */
+export const unitType = pgEnum("unit_type", [
+  "stala_provozovna",
+  "mobilni_provozovna",
+  "automat",
+  "internetova_stranka",
+  "dopravni_prostredek",
+  "osoba",
+]);
 
 /** Evidenční jednotka oznámená v DIS+. */
 export const evidenceUnits = pgTable(
@@ -190,9 +200,10 @@ export const evidenceUnits = pgTable(
       .references(() => accounts.id, { onDelete: "cascade" }),
     type: unitType("type").notNull(),
     label: text("label").notNull(),
-    /** identifikátor přidělený Finanční správou */
-    externalId: varchar("external_id", { length: 32 }),
-    icp: varchar("icp", { length: 10 }),
+    /** id_jednotky přidělené Finanční správou v DIS+ (1–999 999 999) */
+    fsUnitId: integer("fs_unit_id"),
+    /** IČP z živnostenského rejstříku — jen informativně, NENÍ to id_jednotky */
+    icp: varchar("icp", { length: 12 }),
     address: text("address"),
     active: boolean("active").notNull().default(true),
     /** datum poslední změny – připomínka oznámení změny */
@@ -265,7 +276,7 @@ export const catalogItems = pgTable(
   (t) => [index("catalog_account_idx").on(t.accountId)],
 );
 
-export const saleStatus = pgEnum("sale_status", ["queued", "sending", "confirmed", "failed", "rejected", "test"]);
+export const saleStatus = pgEnum("sale_status", ["queued", "sending", "confirmed", "failed", "rejected", "not_required"]);
 
 /** Evidovaná tržba. `id` generuje klient (UUID zprávy) – zaručuje idempotenci. */
 export const sales = pgTable(
@@ -280,6 +291,9 @@ export const sales = pgTable(
       .references(() => devices.id),
     unitId: uuid("unit_id").references(() => evidenceUnits.id),
     cashierUserId: uuid("cashier_user_id").references(() => users.id),
+    /** id_pokl a porad_cis tak, jak byly odeslány */
+    registerId: varchar("register_id", { length: 20 }).notNull(),
+    fsUnitId: integer("fs_unit_id").notNull(),
     sequence: varchar("sequence", { length: 25 }).notNull(),
     soldAt: timestamp("sold_at", { withTimezone: true }).notNull(),
     receivedAt: timestamp("received_at", { withTimezone: true }).notNull().defaultNow(),
@@ -291,13 +305,18 @@ export const sales = pgTable(
     items: jsonb("items").$type<{ name: string; qty: number; unitPrice: number; vatRate: number }[]>(),
     vatBreakdown: jsonb("vat_breakdown").$type<Record<string, { base: number; vat: number }>>(),
     refundOf: uuid("refund_of"),
+    /** částky datové zprávy (haléře): celk_trzba, urceno_cerp_zuct, cerp_zuct */
+    evidencedTotal: bigint("evidenced_total", { mode: "number" }).notNull(),
+    prepaymentAmount: bigint("prepayment_amount", { mode: "number" }).notNull().default(0),
+    redeemedAmount: bigint("redeemed_amount", { mode: "number" }).notNull().default(0),
     status: saleStatus("status").notNull().default("queued"),
     mode: varchar("mode", { length: 16 }).notNull().default("test"),
     /** potvrzovací kód Finanční správy (POK) */
-    confirmationCode: varchar("confirmation_code", { length: 64 }),
-    /** podpisový / bezpečnostní kód vypočtený z dat tržby */
-    securityCode: varchar("security_code", { length: 64 }),
-    signature: text("signature"),
+    confirmationCode: varchar("confirmation_code", { length: 39 }),
+    /** uuid_zpravy posledního pokusu (každý pokus má nové) */
+    lastMessageUuid: uuid("last_message_uuid"),
+    firstSentAt: timestamp("first_sent_at", { withTimezone: true }),
+    warnings: jsonb("warnings").$type<{ code: number; text: string }[]>(),
     attempts: smallint("attempts").notNull().default(0),
     lastError: text("last_error"),
     sentAt: timestamp("sent_at", { withTimezone: true }),

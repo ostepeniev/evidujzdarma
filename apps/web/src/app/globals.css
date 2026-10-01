@@ -1,26 +1,145 @@
 @import "tailwindcss";
+@import "@fontsource-variable/inter/wght.css";
+
+/*
+ * EvidujZdarma — vlastní "občanský" styl: klidný, hodně bílé, velká typografie.
+ * Záměrně se neopírá o vizuál gov.cz (žádná státní modrá, lev ani státní písma).
+ */
+@theme {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --color-ink: #14211c;
+  --color-ink-soft: #3d4b45;
+  --color-muted: #66756e;
+  --color-line: #dde4df;
+  --color-paper: #ffffff;
+  --color-surface: #f4f7f4;
+  --color-surface-2: #e9efe9;
+
+  --color-brand-50: #eaf7f1;
+  --color-brand-100: #cdeedf;
+  --color-brand-200: #9edcc2;
+  --color-brand-500: #12936a;
+  --color-brand-600: #0b7a57;
+  --color-brand-700: #075f44;
+  --color-brand-900: #053a2a;
+
+  --color-sun-100: #fff4cc;
+  --color-sun-300: #ffdf73;
+  --color-sun-500: #f2b705;
+
+  --color-danger-50: #fdeeee;
+  --color-danger-600: #c0392b;
+  --color-warn-50: #fff7e6;
+  --color-warn-700: #9a6200;
+
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+}
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "cv11", "ss01";
+}
+
+::selection {
+  background: var(--color-sun-300);
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-brand-500);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-6xl px-4 sm:px-6;
+  }
+  .container-prose {
+    @apply mx-auto w-full max-w-3xl px-4 sm:px-6;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-base font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-base font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60 bg-brand-600 text-white hover:bg-brand-700;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-base font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60 border border-line bg-white text-ink hover:bg-surface;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-base font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60 text-brand-700 hover:bg-brand-50;
+  }
+
+  .input {
+    @apply block w-full rounded-xl border border-line bg-white px-4 py-3 text-base text-ink placeholder:text-muted focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100;
+  }
+  .label {
+    @apply mb-1.5 block text-sm font-medium text-ink-soft;
+  }
+  .card {
+    @apply rounded-2xl border border-line bg-white p-6;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold;
+  }
+
+  /* Typografie článků (bez pluginu typography) */
+  .prose-ez {
+    @apply text-lg leading-relaxed text-ink-soft;
+  }
+  .prose-ez h2 {
+    @apply mt-12 mb-4 text-2xl font-bold tracking-tight text-ink sm:text-3xl;
+  }
+  .prose-ez h3 {
+    @apply mt-8 mb-3 text-xl font-semibold text-ink;
+  }
+  .prose-ez p {
+    @apply my-4;
+  }
+  .prose-ez ul {
+    @apply my-4 list-disc space-y-2 pl-6;
+  }
+  .prose-ez ol {
+    @apply my-4 list-decimal space-y-2 pl-6;
+  }
+  .prose-ez a {
+    @apply font-medium text-brand-700 underline decoration-brand-200 underline-offset-4 hover:decoration-brand-600;
+  }
+  .prose-ez strong {
+    @apply font-semibold text-ink;
+  }
+  .prose-ez table {
+    @apply my-6 w-full border-collapse text-left text-base;
+  }
+  .prose-ez th {
+    @apply border-b-2 border-line bg-surface px-3 py-2 font-semibold text-ink;
+  }
+  .prose-ez td {
+    @apply border-b border-line px-3 py-2 align-top;
+  }
+  .prose-ez blockquote {
+    @apply my-6 border-l-4 border-brand-200 bg-brand-50 px-5 py-3 text-ink;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
 }
