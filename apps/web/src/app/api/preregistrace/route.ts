@@ -9,6 +9,7 @@ import { enqueueEmail, processOutbox } from "@/lib/server/mail";
 import { clientIp, rateLimit } from "@/lib/server/rate-limit";
 import { randomToken, sha256, shortCode } from "@/lib/server/tokens";
 import { lookupCompany } from "@/lib/server/ares";
+import { assess } from "@/lib/eet-assessment";
 
 const NEEDS = ["terminal", "printer", "dis_help"] as const;
 
@@ -59,9 +60,18 @@ export async function POST(req: Request) {
 
   // Název firmy doplníme z ARES (nepovinné, nesmí zablokovat registraci).
   let companyName: string | null = null;
+  let plan: { date: string; text: string }[] | null = null;
   if (body.ico) {
     try {
-      companyName = (await lookupCompany(body.ico))?.subject.name ?? null;
+      const found = await lookupCompany(body.ico);
+      companyName = found?.subject.name ?? null;
+      // Osobní EET plán podle IČO (provozovny z RŽP, EET OFF jen pro OSVČ…)
+      if (found) {
+        const a = assess(found.subject, found.rzp);
+        const disOpens = TIMELINE[0]!;
+        const fallback = new Date() < new Date(`${disOpens.date}T00:00:00+01:00`) ? `od ${disOpens.dateLabel}` : "co nejdříve";
+        if (a.checklist.length) plan = a.checklist.map((c) => ({ date: c.date ?? fallback, text: `${c.title} – ${c.text}` }));
+      }
     } catch {
       companyName = null;
     }
@@ -128,7 +138,7 @@ export async function POST(req: Request) {
   await enqueueEmail({
     to: body.email,
     template: "prereg-confirm",
-    payload: emailPayload({ companyName, confirmToken, referralCode, unsubscribeToken }),
+    payload: emailPayload({ companyName, confirmToken, referralCode, unsubscribeToken }, plan),
     dedupeKey: `prereg-confirm:${row.id}`,
   });
   // Plánované informační e-maily k termínům (jen se souhlasem s marketingem).
@@ -149,13 +159,16 @@ export async function POST(req: Request) {
   return Response.json({ ok: true, position: before + 1, referralCode });
 }
 
-function emailPayload(r: { companyName: string | null; confirmToken: string; referralCode: string; unsubscribeToken: string }) {
+function emailPayload(
+  r: { companyName: string | null; confirmToken: string; referralCode: string; unsubscribeToken: string },
+  plan: { date: string; text: string }[] | null = null,
+) {
   return {
     companyName: r.companyName,
     confirmToken: r.confirmToken,
     referralCode: r.referralCode,
     unsubscribeToken: r.unsubscribeToken,
-    plan: TIMELINE.map((t) => ({ date: t.dateLabel, text: t.action })),
+    plan: plan ?? TIMELINE.map((t) => ({ date: t.dateLabel, text: t.action })),
   };
 }
 
