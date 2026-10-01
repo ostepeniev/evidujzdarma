@@ -1,6 +1,7 @@
 import { and, asc, eq, gte, inArray, lt } from "drizzle-orm";
 import { getDb, schema } from "@ez/db";
 import { decimalString } from "@ez/fiscal-core";
+import { DAY_RE, pragueDayRange, pragueToday } from "@/lib/prague-time";
 import { errorResponse, getCurrentUser } from "@/lib/server/auth";
 import { linkedClientAccounts, requireAccountant } from "@/lib/server/cabinet";
 
@@ -15,8 +16,10 @@ export async function GET(req: Request) {
   try {
     const accountId = await requireAccountant(await getCurrentUser());
     const url = new URL(req.url);
-    const from = url.searchParams.get("od") ?? new Date(Date.now() - 31 * 86_400_000).toISOString().slice(0, 10);
-    const to = url.searchParams.get("do") ?? new Date().toISOString().slice(0, 10);
+    const from = url.searchParams.get("od") ?? pragueToday(new Date(Date.now() - 31 * 86_400_000));
+    const to = url.searchParams.get("do") ?? pragueToday();
+    if (!DAY_RE.test(from) || !DAY_RE.test(to)) return Response.json({ error: "Datum ve tvaru RRRR-MM-DD" }, { status: 400 });
+    const range = pragueDayRange(from, to);
     const clients = await linkedClientAccounts(accountId);
     const byAccount = new Map(clients.map((c) => [c.accountId, c]));
     const rows = clients.length
@@ -30,8 +33,8 @@ export async function GET(req: Request) {
                 clients.map((c) => c.accountId),
               ),
               eq(schema.sales.mode, "production"),
-              gte(schema.sales.soldAt, new Date(`${from}T00:00:00+01:00`)),
-              lt(schema.sales.soldAt, new Date(new Date(`${to}T00:00:00+01:00`).getTime() + 86_400_000)),
+              gte(schema.sales.soldAt, range.start),
+              lt(schema.sales.soldAt, range.end),
             ),
           )
           .orderBy(asc(schema.sales.accountId), asc(schema.sales.soldAt))

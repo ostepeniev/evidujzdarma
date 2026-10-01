@@ -4,6 +4,7 @@ import { decimalString } from "@ez/fiscal-core";
 
 /** Český Excel očekává desetinnou čárku. */
 const num = (h: number) => decimalString(h).replace(".", ",");
+import { DAY_RE, pragueDayRange, pragueToday } from "@/lib/prague-time";
 import { ownerRoute } from "@/lib/server/route-helpers";
 
 function csvCell(v: unknown): string {
@@ -16,10 +17,10 @@ const METHODS = ["cash", "card", "qr", "voucher", "transfer"] as const;
 /** Export tržeb pro účetní (CSV pro český Excel: středník, UTF-8 s BOM). */
 export const GET = ownerRoute(async ({ req, accountId }) => {
   const url = new URL(req.url);
-  const from = url.searchParams.get("od") ?? new Date(Date.now() - 31 * 86_400_000).toISOString().slice(0, 10);
-  const to = url.searchParams.get("do") ?? new Date().toISOString().slice(0, 10);
-  const fromD = new Date(`${from}T00:00:00+01:00`);
-  const toD = new Date(new Date(`${to}T00:00:00+01:00`).getTime() + 86_400_000);
+  const from = url.searchParams.get("od") ?? pragueToday(new Date(Date.now() - 31 * 86_400_000));
+  const to = url.searchParams.get("do") ?? pragueToday();
+  if (!DAY_RE.test(from) || !DAY_RE.test(to)) return Response.json({ error: "Datum ve tvaru RRRR-MM-DD" }, { status: 400 });
+  const { start: fromD, end: toD } = pragueDayRange(from, to);
   const db = getDb();
   const rows = await db
     .select({ sale: schema.sales, unit: schema.evidenceUnits.label, staff: schema.staff.name })
