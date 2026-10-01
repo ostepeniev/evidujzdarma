@@ -3,11 +3,13 @@ import Link from "next/link";
 import { ComparisonTable } from "@/components/comparison-table";
 import { Faq } from "@/components/faq";
 import { IcoQuickCheck } from "@/components/ico-quick-check";
+import { PollWidget } from "@/components/poll-widget";
 import { PreregForm } from "@/components/prereg-form";
 import { PosPreview } from "@/components/pos-preview";
 import { Countdown, Timeline } from "@/components/timeline";
 import { LANDING_FAQ, WHO_MUST } from "@/content/landing";
 import { FACTS_UPDATED } from "@/content/facts";
+import { POLLS } from "@/content/polls";
 import { JsonLd, faqLd, softwareApplicationLd } from "@/lib/jsonld";
 
 export const metadata: Metadata = {
@@ -187,6 +189,27 @@ export default function HomePage() {
           Časté otázky k EET 2.0
         </h2>
         <Faq items={LANDING_FAQ} />
+      </section>
+
+      {/* Anketa + rozpory */}
+      <section className="border-t border-line bg-surface py-16" aria-label="Anketa a omyly o EET 2.0">
+        <div className="container-page grid gap-8 lg:grid-cols-2">
+          <PollWidget poll={POLLS["eet2-souhlas"]} />
+          <div className="space-y-4">
+            <Link href="/co-se-o-eet-pise-spatne" className="card block transition-colors hover:border-brand-200">
+              <p className="text-sm font-semibold uppercase tracking-wide text-muted">Pozor na omyly</p>
+              <p className="mt-1 text-xl font-bold text-ink">Co se o EET 2.0 píše špatně</p>
+              <p className="mt-2 text-[15px] text-ink-soft">
+                Výjimka do 50 000 Kč, leden bez pokut nebo sleva 5 000 Kč pro každého – porovnali jsme to se schváleným zákonem.
+              </p>
+            </Link>
+            <Link href="/stav-eet" className="card block transition-colors hover:border-brand-200">
+              <p className="text-sm font-semibold uppercase tracking-wide text-muted">Monitor</p>
+              <p className="mt-1 text-xl font-bold text-ink">Je EET dole?</p>
+              <p className="mt-2 text-[15px] text-ink-soft">Aktuální dostupnost rozhraní Finanční správy a historie výpadků, měřeno každých 5 minut.</p>
+            </Link>
+          </div>
+        </div>
       </section>
     </>
   );

@@ -481,3 +481,36 @@ export const accountantClients = pgTable(
   },
   (t) => [uniqueIndex("acc_clients_uq").on(t.accountantAccountId, t.ico)],
 );
+
+/* ────────────────────────────── Monitor dostupnosti FS ────────────────────────────── */
+
+/** Výsledky pravidelného měření dostupnosti rozhraní EET (veřejná stránka /stav-eet a upozornění). */
+export const fsProbes = pgTable(
+  "fs_probes",
+  {
+    id: bigint("id", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
+    environment: varchar("environment", { length: 16 }).notNull(),
+    checkedAt: timestamp("checked_at", { withTimezone: true }).notNull().defaultNow(),
+    /** up | slow | down */
+    status: varchar("status", { length: 8 }).notNull(),
+    latencyMs: integer("latency_ms"),
+    httpStatus: smallint("http_status"),
+    error: text("error"),
+  },
+  (t) => [index("fs_probes_env_time").on(t.environment, t.checkedAt)],
+);
+
+/* ────────────────────────────── Anketa ────────────────────────────── */
+
+export const pollVotes = pgTable(
+  "poll_votes",
+  {
+    id: bigint("id", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
+    poll: varchar("poll", { length: 32 }).notNull(),
+    choice: varchar("choice", { length: 16 }).notNull(),
+    /** HMAC anonymního ID z cookie – jeden hlas na prohlížeč, bez osobních údajů */
+    voterHash: varchar("voter_hash", { length: 64 }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("poll_votes_uq").on(t.poll, t.voterHash), index("poll_votes_poll_choice").on(t.poll, t.choice)],
+);

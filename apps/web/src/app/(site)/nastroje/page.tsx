@@ -46,6 +46,12 @@ const TOOLS = [
     time: "30 vteřin",
   },
   {
+    href: "/stav-eet",
+    title: "Je EET dole?",
+    text: "Funguje rozhraní Finanční správy právě teď? Měříme dostupnost a odezvu každých 5 minut a ukazujeme historii výpadků.",
+    time: "5 vteřin",
+  },
+  {
     href: "/ucetni/hromadna-kontrola",
     title: "Hromadná kontrola IČO pro účetní",
     text: "Vložte seznam IČO nebo nahrajte CSV a během chvíle uvidíte, kterých klientů se EET 2.0 pravděpodobně týká. Výsledek stáhnete jako CSV.",

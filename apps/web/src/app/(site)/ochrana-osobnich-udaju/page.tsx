@@ -212,7 +212,9 @@ const SECTIONS: readonly { id: string; title: string; body: ReactNode }[] = [
     body: (
       <p>
         Používáme jen nezbytné cookies pro přihlášení do účtu. Pokud přijdete přes odkaz s doporučením, uložíme si kód
-        doporučení do úložiště vašeho prohlížeče, abychom ho mohli přiřadit k předregistraci. Analytické ani reklamní cookies
+        doporučení do úložiště vašeho prohlížeče, abychom ho mohli přiřadit k předregistraci. Když hlasujete v anketě, uložíme
+        náhodný identifikátor do cookie <code>ez_voter</code> (platnost 1 rok), aby z jednoho prohlížeče šel jen jeden hlas;
+        u hlasu ukládáme jen jeho otisk, ne IP adresu ani jméno. Analytické ani reklamní cookies
         nepoužíváme; kdybychom to změnili, nejdřív vás požádáme o souhlas.
       </p>
     ),

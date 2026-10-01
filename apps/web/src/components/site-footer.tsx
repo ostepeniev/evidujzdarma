@@ -11,6 +11,7 @@ const COLUMNS = [
       { href: "/kalkulacka-eet-off", label: "Kalkulačka EET OFF" },
       { href: "/evidencni-jednotky", label: "Průvodce evidenčními jednotkami" },
       { href: "/qr-platba", label: "Generátor QR platby" },
+      { href: "/stav-eet", label: "Je EET dole? Stav EET" },
     ],
   },
   {
@@ -20,6 +21,7 @@ const COLUMNS = [
       { href: "/navody/koho-se-eet-tyka", label: "Koho se EET týká" },
       { href: "/navody/evidencni-jednotka", label: "Evidenční jednotka" },
       { href: "/navody/eet-bez-internetu", label: "EET bez internetu" },
+      { href: "/co-se-o-eet-pise-spatne", label: "Co se o EET píše špatně" },
       { href: "/navody", label: "Všechny návody" },
     ],
   },
