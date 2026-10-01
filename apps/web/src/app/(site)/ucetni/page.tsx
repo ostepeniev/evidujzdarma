@@ -35,17 +35,17 @@ const CABINET: readonly { title: string; text: string; status: "now" | "launch";
   {
     title: "Stav připravenosti klientů",
     text: "Přehledně u každého klienta: přihlášení v DIS+, oznámené evidenční jednotky, pokladní certifikát, první tržba. I u klientů s jinou pokladnou nebo s MOJE eet.",
-    status: "launch",
+    status: "now", href: "/kabinet", linkLabel: "Otevřít kabinet",
   },
   {
     title: "Pozvání klienta osobním odkazem",
     text: "Klient se přes váš odkaz zaregistruje k pokladně a vy hned vidíte jeho stav i tržby.",
-    status: "launch",
+    status: "now", href: "/kabinet", linkLabel: "Otevřít kabinet",
   },
   {
     title: "Export tržeb klientů",
     text: "CSV zdarma. Export pro Pohodu, Money S3 a ABRA v partnerském tarifu.",
-    status: "launch",
+    status: "now", href: "/kabinet", linkLabel: "Otevřít kabinet",
   },
   {
     title: "Kalendář termínů",
@@ -72,8 +72,8 @@ const FAQ: FaqItem[] = [
     a: `Když klient, kterého jste přivedli, platí za Premium nebo jiný placený doplněk, dostanete ${PARTNER_PLAN.share} % z jeho plateb po celou dobu, kdy platí. Pokud chcete, můžete se podílu vzdát a místo toho dát slevu klientům. Přesné podmínky upraví partnerská smlouva před spuštěním placených tarifů.`,
   },
   {
-    q: "Kdy Účetní kabinet spustíte?",
-    a: "Kabinet spouštíme s pokladnou. Hromadná kontrola IČO a šablony dopisů fungují už teď. Přihlaste se k webináři nebo k odběru zpráv o spuštění a dáme vám vědět jako prvním.",
+    q: "Funguje Účetní kabinet už teď?",
+    a: "Kabinet funguje už teď: přidejte klienty podle IČO, sledujte jejich připravenost a pošlete jim pozvánku do pokladny. Kalendář termínů doplníme do konce roku.",
   },
   {
     q: "Na co mají klienti myslet nejdřív?",
@@ -152,9 +152,12 @@ export default function AccountantsPage() {
                 Účetní kabinet zdarma
               </h2>
               <p className="mt-2 max-w-3xl text-lg text-ink-soft">
-                Jedno místo pro všechny klienty. Část funguje už dnes, zbytek <strong className="text-ink">spouštíme s pokladnou</strong>.
+                Jedno místo pro všechny klienty: připravenost na EET, pozvánky do pokladny a export tržeb. <strong className="text-ink">Zdarma, funguje už teď.</strong>
               </p>
             </div>
+            <Link href="/kabinet" className="btn-primary">
+              Založit kabinet zdarma
+            </Link>
           </div>
           <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {CABINET.map((c) => (
