@@ -1,6 +1,6 @@
 # EvidujZdarma.cz
 
-Безкоштовна каса для чеської електронної евіденції тржб **EET 2.0** (з 1. 1. 2027, ostrý provoz з 1. 2. 2027). До неї входять SEO/GEO-сайт з інструментами і каталог фірм.
+Безкоштовна каса для чеської електронної евіденції тржб **EET 2.0** (обов'язкова з 1. 1. 2027; закон не передбачає «пілотного» січня). До неї входять SEO/GEO-сайт з інструментами і каталог фірм.
 Незалежний сервіс. Finanční správa його не провозує.
 
 ## Що є в репозиторії
@@ -17,12 +17,16 @@
 | **Фіскальне ядро EET 2.0** (SOAP v4.1, WS-Security, перевірка підпису відповіді, черга 48 год) | `packages/fiscal-core` | готово, перевірено на офіційному зразку FS |
 | Каталог фірм і провозовен (ARES / ČSÚ RES, поступова індексація, GDPR-námitky) | `/firma`, `/provozovna`, `/firmy`, `/namitka` | готово (імпорт: `pnpm --filter @ez/worker catalog:import`) |
 | Бухгалтери: hromadná kontrola IČO, šablony dopisů, кабінет (готовність клієнтів, запрошення, експорт) | `/ucetni`, `/kabinet` | готово |
+| «Co se o EET 2.0 píše špatně» (твердження vs. закон, історія закону) | `/co-se-o-eet-pise-spatne` | готово |
+| «Je EET dole?» — монітор доступності FS, алерти оператору (збій FS, тржби без POK > 1 год) | `/stav-eet`, `/api/stav-eet` | готово |
+| Анонімне опитування на лендингу | `/api/anketa` | готово |
 | Інфраструктура: Docker, Caddy (HTTPS), бекапи, worker | `infra/`, `Dockerfile` | готово |
 
 ## Документація
 
 - [Архітектура і хостинг (чому без Supabase, Hetzner vs. чеські провайдери)](docs/architektura-i-hosting.md)
-- [Деплой на Hetzner](docs/deploy.md)
+- [Деплой на Hetzner і DNS evidujzdarma.cz у Webglobe](docs/deploy.md)
+- [Дорожня карта (з аналізу конкурентів і оновленої специфікації)](docs/roadmap.md)
 - [Перевірені факти про EET 2.0 і джерела](docs/research/eet2-fakta-2026-10.md)
 - [Що має перевірити daňový poradce](docs/revize-danovy-poradce.md)
 - [Офіційні артефакти FS (XSD, WSDL, кореневі сертифікати)](packages/fiscal-core/official/README.md)

@@ -18,19 +18,47 @@ apt-get install -y git
 adduser --disabled-password deploy && usermod -aG docker deploy
 ```
 
-## 2. Домен і DNS
+## 2. Домен evidujzdarma.cz (Webglobe) і DNS
 
-У реєстратора (наприклад, через CZ.NIC-реєстратора) створіть записи:
+Домен зареєстровано через Webglobe. DNS залишаємо в Webglobe: окремий DNS-провайдер на старті не потрібен. У застосунку домен уже прописаний: `DOMAIN=evidujzdarma.cz` у `infra/.env.production.example` і `SITE.domain` у `apps/web/src/lib/site.ts`.
 
-| Тип | Ім'я | Значення |
-| --- | --- | --- |
-| A | `@` | IPv4 сервера |
-| AAAA | `@` | IPv6 сервера |
-| CNAME | `www` | `evidujzdarma.cz.` |
-| A / CNAME | `uctenkazdarma.cz`, `www.uctenkazdarma.cz` | той самий сервер (перенаправлення) |
-| TXT (SPF), CNAME (DKIM), TXT `_dmarc` | — | за інструкцією SMTP-провайдера |
+**Перед перемиканням (за добу):** в адмініструванні Webglobe відкрийте Domény → evidujzdarma.cz → DNS záznamy і знизьте TTL наявних записів до 300 с. Тоді зміни застосуються за хвилини, а не за години.
 
-HTTPS-сертифікати Caddy отримає автоматично (Let's Encrypt), щойно DNS почне вказувати на сервер.
+**Записи в DNS Webglobe:**
+
+| Тип | Ім'я (host) | Значення | Примітка |
+| --- | --- | --- | --- |
+| A | `@` (evidujzdarma.cz) | IPv4 сервера Hetzner | старий A-запис паркування Webglobe видаліть |
+| AAAA | `@` | IPv6 сервера Hetzner | якщо є запис паркування — видаліть |
+| CNAME | `www` | `evidujzdarma.cz.` | якщо Webglobe не дозволить CNAME, додайте A/AAAA `www` на ті самі IP |
+| CAA | `@` | `0 issue "letsencrypt.org"` і `0 issue "sectigo.com"` | необов'язково; Caddy бере сертифікат у Let's Encrypt, резерв — ZeroSSL (Sectigo) |
+| MX | `@` | за поштовим провайдером (див. нижче) | для отримання листів на ahoj@ / admin@ |
+| TXT | `@` | один SPF: `v=spf1 include:<поштовий хостинг> include:<SMTP-провайдер> ~all` | **лише один** SPF-запис, усі include в ньому |
+| CNAME / TXT | за інструкцією SMTP-провайдера | DKIM-ключі | без DKIM листи з кодом входу потраплятимуть у спам |
+| TXT | `_dmarc` | `v=DMARC1; p=none; rua=mailto:admin@evidujzdarma.cz` | через 2–4 тижні без проблем змініть на `p=quarantine` |
+| TXT | `@` | коди підтвердження Google Search Console, Bing, Seznam | додайте під час реєстрації в цих сервісах (розділ 7) |
+
+**Пошта.** Застосунок пише з `ahoj@evidujzdarma.cz` (`MAIL_FROM`, `SITE.email`), а Let's Encrypt надсилає листи на `admin@evidujzdarma.cz` (`ACME_EMAIL`). Потрібні дві речі:
+
+1. **Скринька для вхідних** (відповіді клієнтів, GDPR-námitky, алерти монітора EET). Найпростіше взяти пошту у Webglobe до домену: тоді MX і SPF вони налаштують самі. Альтернатива — Seznam Email Profi.
+2. **SMTP для транзакційних листів** (вхід, чеки, план EET). Беріть провайдера з серверами в ЄС, наприклад Brevo, Postmark (EU), Ecomail або AWS SES eu-central-1. Після верифікації домену у провайдера додайте його DKIM-записи і include у SPF, а `SMTP_URL` впишіть у `infra/.env`.
+
+**DNSSEC.** Увімкніть у Webglobe для домену (для .cz — стандарт CZ.NIC). На роботу Caddy це не впливає.
+
+**Додаткові домени.** `ALT_DOMAINS` у `.env` за замовчуванням порожній. Якщо купите, наприклад, `uctenkazdarma.cz`, вкажіть його A/AAAA на той самий сервер і допишіть у `ALT_DOMAINS=uctenkazdarma.cz www.uctenkazdarma.cz`. Caddy перенаправлятиме його на головний домен. Не вписуйте домени, які вам не належать: Caddy безуспішно запитуватиме для них сертифікати і впреться в ліміти Let's Encrypt.
+
+**Перевірка:**
+
+```bash
+dig +short evidujzdarma.cz A
+dig +short evidujzdarma.cz AAAA
+dig +short www.evidujzdarma.cz
+dig +short evidujzdarma.cz TXT
+```
+
+Коли A/AAAA вказують на сервер і порти 80/443 відкриті, Caddy сам отримає HTTPS-сертифікати під час першого запиту (`docker compose logs caddy`).
+
+Також перевірте в Webglobe, що **власник домену — провайдер сервісу** (юридична особа, не приватна особа) і що ввімкнено **автоматичне продовження**.
 
 ## 3. Застосунок
 
