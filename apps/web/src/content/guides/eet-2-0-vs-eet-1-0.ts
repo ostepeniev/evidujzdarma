@@ -9,7 +9,7 @@ export const eet20VsEet10: Guide = {
   description:
     "Žádná povinná účtenka, žádné FIK a BKP, nový kód POK, platby kartou a QR, EET OFF a žádné zavírání provozoven. Srovnání EET 2.0 (2027) se starou EET.",
   lead:
-    "EET 2.0 (od **1. 1. 2027**, naostro od 1. 2. 2027) je jednodušší než stará EET z let 2016–2020: nemusíte vydávat účtenku, kódy FIK, BKP a PKP nahradil jediný **POK**, odesílá se méně údajů a provozovnu už nelze zavřít. Nově se ale evidují i platby kartou a QR kódem na místě a všichni začínají najednou.",
+    "EET 2.0 (naostro od **1. 1. 2027**) je jednodušší než stará EET z let 2016–2020: nemusíte vydávat účtenku, kódy FIK, BKP a PKP nahradil jediný **POK**, odesílá se méně údajů a provozovnu už nelze zavřít. Nově se ale evidují i platby kartou a QR kódem na místě a všichni začínají najednou.",
   summary: [
     "Účtenka už není povinná – jen na žádost zákazníka podle zákona o ochraně spotřebitele.",
     "Kódy FIK, BKP a PKP zmizely, Finanční správa vrací jediný potvrzovací kód POK.",
@@ -38,10 +38,10 @@ export const eet20VsEet10: Guide = {
           table: {
             head: ["", "Stará EET (2016–2020)", "EET 2.0 (od 2027)"],
             rows: [
-              ["Náběh", "Ve vlnách podle oborů (realizovány 2 vlny)", "Všichni najednou: 1. 1. 2027, ostře 1. 2. 2027"],
+              ["Náběh", "Ve vlnách podle oborů (realizovány 2 vlny)", "Všichni najednou od 1. 1. 2027 (bez zákonného pilotního období)"],
               ["Co se eviduje", "Hotovost a obdobné prostředky; platby kartou jen do roku 2018", "Kontaktní platby: hotovost, karta, QR kód, poukázka, šek, virtuální aktiva"],
               ["Účtenka", "Povinná u každé tržby", "Nepovinná; na žádost doklad podle zákona o ochraně spotřebitele"],
-              ["Kódy", "FIK, BKP, PKP", "Jediný potvrzovací kód POK"],
+              ["Kódy", "FIK, BKP, PKP", "Jediný potvrzovací kód POK; uvést ho na dokladu je dobrovolné"],
               ["Údaje ve zprávě", "Mohly obsahovat i rozpis podle sazeb DPH a další členění", "Méně údajů: bez DPH, bez způsobu platby, bez položek"],
               ["Místo prodeje", "Provozovna (id_provoz)", "Evidenční jednotka (id_jednotky) – i web, vozidlo nebo poplatník sám"],
               ["Identifikace poplatníka", "DIČ (dic_popl)", "EIČ (eic_popl)"],
@@ -65,6 +65,7 @@ export const eet20VsEet10: Guide = {
           p: "Ve staré EET pokladna u každé tržby vytiskla účtenku s **FIK** (fiskální identifikační kód od Finanční správy) a **BKP** (bezpečnostní kód poplatníka); bez spojení s **PKP** (podpisový kód poplatníka) místo FIK. V EET 2.0 nic z toho není. Pokladna odešle datovou zprávu a Finanční správa vrátí **POK – potvrzovací kód**.",
         },
         { p: FACTS.receipt.summary },
+        { p: FACTS.confirmation.onReceipt },
         {
           p: "Více v návodu [Musím vydávat účtenku?](/navody/musim-vydavat-uctenku)",
         },
@@ -148,7 +149,11 @@ export const eet20VsEet10: Guide = {
     },
     {
       q: "Co je POK?",
-      a: "Potvrzovací kód, který Finanční správa vrátí na každou přijatou datovou zprávu. Nahrazuje FIK ze staré EET. Podle technické dokumentace jde o jedinečný řetězec, který potvrzuje, že tržba byla zaevidována.",
+      a: `Potvrzovací kód, který Finanční správa vrátí na každou přijatou datovou zprávu. Nahrazuje FIK ze staré EET. Podle technické dokumentace jde o jedinečný řetězec, který potvrzuje, že tržba byla zaevidována. ${FACTS.confirmation.onReceipt}`,
+    },
+    {
+      q: "Má EET 2.0 zkušební nebo pilotní období?",
+      a: FACTS.pilot.summary,
     },
     {
       q: "Je EET 2.0 přísnější, nebo mírnější?",
@@ -164,9 +169,18 @@ export const eet20VsEet10: Guide = {
     SOURCES.usoudEet,
     SOURCES.fsZruseni2023,
     SOURCES.businessinfoEet1,
+    SOURCES.harmonogram,
+    SOURCES.prakticke,
+    SOURCES.psp,
   ],
   related: ["eet-2-0-kompletni-pruvodce", "kontaktni-platba", "musim-vydavat-uctenku"],
   published: "2026-10-01",
   updated: "2026-10-01",
+  changelog: [
+    {
+      date: "2026-10-01",
+      text: "Opraveno podle schváleného znění zákona: EET 2.0 se eviduje naostro od 1. 1. 2027, zákonné pilotní období není. Doplněno, že POK na dokladu je dobrovolný.",
+    },
+  ],
   reviewedBy: null,
 };

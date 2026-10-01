@@ -9,7 +9,7 @@ export const eetBezInternetu: Guide = {
   description:
     "Výpadek signálu neznamená konec prodeje. Jak v EET 2.0 funguje dodatečné odeslání tržby do 48 hodin, co je POK a na co si dát pozor při práci offline.",
   lead:
-    "Když vypadne internet, můžete v EET 2.0 dál prodávat. Tržbu je třeba odeslat bez zbytečného odkladu, **nejpozději do 48 hodin** od přijetí platby. Pokladna zprávu opakuje, dokud Finanční správa nevrátí potvrzovací kód (POK). Pravidlo platí od ostrého provozu **1. 2. 2027**.",
+    "Když vypadne internet, můžete v EET 2.0 dál prodávat. Tržbu je třeba odeslat bez zbytečného odkladu, **nejpozději do 48 hodin** od přijetí platby. Pokladna zprávu opakuje, dokud Finanční správa nevrátí potvrzovací kód (POK). Pravidlo platí od začátku evidence **1. 1. 2027**.",
   summary: [
     "Datová zpráva se běžně odesílá nejpozději v okamžiku přijetí platby.",
     "Při výpadku spojení lze prodávat dál a tržbu odeslat dodatečně, nejpozději do 48 hodin.",
@@ -25,6 +25,8 @@ export const eetBezInternetu: Guide = {
           p: "Každou evidovanou tržbu – platbu přijatou osobně hotově, kartou nebo QR kódem – pokladna odešle Finanční správě jako datovou zprávu. Finanční správa ji přijme a vrátí **potvrzovací kód (POK)**. Tím je tržba zaevidovaná.",
         },
         { p: FACTS.offline.summary },
+        { h3: "Jak dlouho pokladna čeká na odpověď" },
+        { p: FACTS.offline.responseTimeout },
       ],
     },
     {
@@ -52,7 +54,7 @@ export const eetBezInternetu: Guide = {
           ul: [
             "**Zařízení nevypínejte a nemažte data prohlížeče**, dokud fronta neodeslaných tržeb není prázdná – tržby čekají v paměti zařízení.",
             "**Dlouhý výpadek** (například na horách nebo na trhu bez signálu): po návratu na místo se signálem otevřete pokladnu, aby frontu odeslala.",
-            "**Opakované odeslání nevytváří novou tržbu** – pokladna posílá stejnou tržbu (stejné pořadové číslo, datum a částku), dokud nedostane POK.",
+            "**Opakované odeslání nevytváří novou tržbu** – pokladna posílá stejnou tržbu (stejné pořadové číslo, datum a částku), dokud nedostane POK. Tržby, ke kterým POK už přišel, se znovu neposílají.",
           ],
         },
         { cta: "registrace" },
@@ -69,6 +71,10 @@ export const eetBezInternetu: Guide = {
       a: `Neodeslání datové zprávy je porušení povinnosti, za které hrozí pokuta. ${FACTS.penalties.summary} Proto pokladna upozorňuje s předstihem.`,
     },
     {
+      q: "Jak dlouho má pokladna čekat na odpověď Finanční správy?",
+      a: FACTS.offline.responseTimeout,
+    },
+    {
       q: "Funguje státní aplikace MOJE eet bez signálu?",
       a: "Podle zveřejněných informací potřebuje MOJE eet pro provoz připojení k internetu. Pokladna EvidujZdarma tržby bez signálu ukládá a odesílá je automaticky později.",
     },
@@ -77,5 +83,11 @@ export const eetBezInternetu: Guide = {
   related: ["eet-2-0-kompletni-pruvodce", "evidencni-jednotka", "pokuty-eet"],
   published: "2026-10-01",
   updated: "2026-10-01",
+  changelog: [
+    {
+      date: "2026-10-01",
+      text: "Opraveno podle schváleného znění zákona: pravidlo 48 hodin platí od 1. 1. 2027, ne až od 1. 2. 2027. Doplněno, jak dlouho pokladna čeká na odpověď a které tržby se posílají znovu.",
+    },
+  ],
   reviewedBy: null,
 };

@@ -13,9 +13,9 @@ export const evidencniJednotka: Guide = {
   summary: [
     "Typy jednotek v DIS+: stálá provozovna, mobilní provozovna, automat, internetová stránka, dopravní prostředek.",
     "Podnikatel bez provozovny (např. řemeslník, mobilní kadeřnice) uvede jako jednotku sám sebe.",
-    "Jednotky zakládáte v DIS+ na portálu MOJE daně; funkce se otevírají 1. 11. 2026.",
-    "DIS+ přidělí každé jednotce neměnné ID – není to IČP z živnostenského rejstříku.",
+    "Jednotky zakládáte v DIS+ (od 1. 11. 2026); každá dostane neměnné ID – není to IČP z živnostenského rejstříku.",
     "Změnu údajů oznamte před první tržbou po změně, nejpozději do 15 dnů.",
+    "Oznamují se všechny jednotky – i ty bez evidovaných tržeb, pokud máte aspoň jednu jednotku, kde je přijímáte.",
   ],
   sections: [
     {
@@ -50,7 +50,11 @@ export const evidencniJednotka: Guide = {
       heading: "Kolik jednotek potřebujete",
       blocks: [
         {
-          p: "Pravidlo zní: jedna jednotka za každé místo nebo kanál, kde přijímáte evidované tržby. Několik pokladen v jedné provozovně je pořád jedna jednotka – pokladny se v datové zprávě rozlišují vlastním označením pokladního zařízení.",
+          p: "Pravidlo zní: jedna jednotka za každé místo nebo kanál, kde přijímáte evidované tržby – a k tomu všechny ostatní jednotky (viz upozornění níže). Několik pokladen v jedné provozovně je pořád jedna jednotka – pokladny se v datové zprávě rozlišují vlastním označením pokladního zařízení.",
+        },
+        {
+          note: `${FACTS.units.allUnits} Například provozovnu, kde zákazníci platí jen převodem na fakturu, tedy oznámíte také – jen u ní uvedete, že se v ní evidované tržby neuskutečňují.`,
+          tone: "warn",
         },
         {
           table: {
@@ -91,7 +95,7 @@ export const evidencniJednotka: Guide = {
           p: "Podrobný postup včetně pokladního certifikátu najdete v návodu [Jak aktivovat DIS+ a stáhnout certifikát EET](/navody/jak-aktivovat-dis-a-certifikat).",
         },
         {
-          p: "Podle některých rozborů zákona se oznamovací povinnost může týkat i jednotek, kde evidované tržby nepřijímáte, pokud máte jinou jednotku, kde je přijímáte – proto se v DIS+ uvádí i to, zda se v jednotce evidované tržby uskutečňují. Finanční správa tento bod k 1. 10. 2026 podrobně nevysvětlila; v nejasných případech se obraťte na daňového poradce.",
+          p: "Oznamujete i jednotky, kde evidované tržby nepřijímáte (viz výše). Proto se v DIS+ u každé jednotky uvádí i to, zda se v ní evidované tržby uskutečňují.",
         },
         {
           note: "**IČP ≠ ID jednotky.** Identifikační číslo provozovny (IČP) ze živnostenského rejstříku je jiný údaj. Do pokladny patří ID, které přidělí DIS+. Zadáte-li do pokladny místo ID jednotky IČP, datová zpráva nebude odpovídat oznámené jednotce.",
@@ -142,7 +146,11 @@ export const evidencniJednotka: Guide = {
     },
     {
       q: "Do kdy musím jednotky oznámit?",
-      a: "Před první evidovanou tržbou. Ostrý provoz začíná 1. 2. 2027, DIS+ umožní jednotky zakládat od 1. 11. 2026. Doporučujeme to stihnout v listopadu nebo prosinci, abyste mohli v lednu evidovat nanečisto v pilotním provozu.",
+      a: "Před první evidovanou tržbou. Evidovat se musí od 1. 1. 2027, DIS+ umožní jednotky zakládat od 1. 11. 2026. Doporučujeme to stihnout v listopadu, abyste si mohli v prosinci pokladnu vyzkoušet nanečisto – „pilotní“ leden není zákonná výjimka.",
+    },
+    {
+      q: "Musím oznámit i provozovnu, kde evidované tržby nepřijímám?",
+      a: FACTS.units.allUnits,
     },
     {
       q: "Je ID jednotky totéž co IČP?",
@@ -161,5 +169,11 @@ export const evidencniJednotka: Guide = {
   related: ["jak-aktivovat-dis-a-certifikat", "koho-se-eet-tyka", "eet-2-0-kompletni-pruvodce"],
   published: "2026-10-01",
   updated: "2026-10-01",
+  changelog: [
+    {
+      date: "2026-10-01",
+      text: "Opraveno podle schváleného znění zákona: evidovat se musí od 1. 1. 2027, leden není pilotní provoz nanečisto. Doplněno, že se oznamují všechny jednotky včetně těch bez evidovaných tržeb.",
+    },
+  ],
   reviewedBy: null,
 };

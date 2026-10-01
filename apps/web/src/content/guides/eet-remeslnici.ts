@@ -7,9 +7,9 @@ export const eetRemeslnici: Guide = {
   title: "EET 2.0 pro řemeslníky a služby mimo provozovnu",
   h1: "EET pro řemeslníky a služby mimo provozovnu",
   description:
-    "Instalatér, elektrikář, malíř, masér nebo lektor u klienta: kdy od 1. 2. 2027 evidovat tržbu v EET 2.0, kdy stačí faktura a co se zálohou na materiál.",
+    "Instalatér, elektrikář, malíř, masér nebo lektor u klienta: kdy od 1. 1. 2027 evidovat tržbu v EET 2.0, kdy stačí faktura a co se zálohou na materiál.",
   lead:
-    "Řemeslník eviduje od **1. 2. 2027** jen to, co mu zákazník zaplatí na místě – hotově, kartou do mobilního terminálu nebo QR kódem z jeho telefonu. Faktura uhrazená převodem se neeviduje. Kdo nemá provozovnu, uvede v DIS+ jako evidenční jednotku sám sebe. Bez signálu má na odeslání **48 hodin**.",
+    "Řemeslník eviduje od **1. 1. 2027** jen to, co mu zákazník zaplatí na místě – hotově, kartou do mobilního terminálu nebo QR kódem z jeho telefonu. Faktura uhrazená převodem se neeviduje. Kdo nemá provozovnu, uvede v DIS+ jako evidenční jednotku sám sebe. Bez signálu má na odeslání **48 hodin**.",
   summary: [
     "Platba u zákazníka hotově, kartou nebo QR kódem se eviduje; faktura uhrazená převodem ne.",
     "Bez provozovny je evidenční jednotkou podnikatel sám – jedna jednotka pro všechny zakázky.",
@@ -109,7 +109,7 @@ export const eetRemeslnici: Guide = {
             "Projděte, jak vám zákazníci platí. Pokud jen převodem na fakturu, evidovat nemusíte nic.",
             "Pokud jste OSVČ v 1. pásmu paušálního režimu s příjmy do 1 mil. Kč a hotovost berete jen výjimečně, zvažte [EET OFF](/navody/eet-off) – rozhodnutí do **11. 1. 2027**.",
             "Od **1. 11. 2026** se přihlaste v DIS+, oznamte jednotku (sebe) a vygenerujte certifikát – [postup](/navody/jak-aktivovat-dis-a-certifikat).",
-            "Nainstalujte si pokladnu do mobilu a v lednu 2027 ji vyzkoušejte v pilotním provozu.",
+            "Nainstalujte si pokladnu do mobilu a v prosinci 2026 ji vyzkoušejte v testovacím režimu. Od 1. 1. 2027 už evidujete naostro – „pilotní“ leden není zákonná výjimka.",
             "Rozmyslete si, jaké platby budete přijímat: hotovost, karta i QR kód na místě se evidují stejně, faktura s pozdější úhradou převodem ne.",
           ],
         },
@@ -145,5 +145,11 @@ export const eetRemeslnici: Guide = {
   related: ["kontaktni-platba", "eet-bez-internetu", "evidencni-jednotka"],
   published: "2026-10-01",
   updated: "2026-10-01",
+  changelog: [
+    {
+      date: "2026-10-01",
+      text: "Opraveno podle schváleného znění zákona: evidovat se musí od 1. 1. 2027, ne od 1. 2. 2027; test pokladny doporučujeme v prosinci 2026 místo lednového pilotního provozu.",
+    },
+  ],
   reviewedBy: null,
 };

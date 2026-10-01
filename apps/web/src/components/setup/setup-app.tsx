@@ -391,7 +391,7 @@ function ModeSection({ state, reload, hasProdCert, hasPgCert }: { state: State; 
     { v: "production", l: "Ostrý provoz", d: "Tržby se evidují u Finanční správy. Potřebuje certifikát z DIS+ a čísla jednotek." },
   ] as const;
   return (
-    <Section id="rezim" step={5} title="Režim evidence a testovací tržba" done={mode === "production"} lead="V lednu 2027 běží pilotní provoz – ideální čas na test. Ověřovací tržba Finanční správa zkontroluje, ale neeviduje.">
+    <Section id="rezim" step={5} title="Režim evidence a testovací tržba" done={mode === "production"} lead="Vyzkoušejte si pokladnu ještě před 1. 1. 2027 – v ukázkovém režimu nebo na Playgroundu Finanční správy. Od 1. 1. 2027 se eviduje naostro. Ověřovací tržbu Finanční správa zkontroluje, ale neeviduje.">
       <div className="grid gap-2 sm:grid-cols-3">
         {MODES.map((m) => {
           const disabled = (m.v === "production" && !hasProdCert) || (m.v === "playground" && !hasPgCert);

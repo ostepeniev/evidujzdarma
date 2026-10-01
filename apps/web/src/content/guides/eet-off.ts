@@ -12,9 +12,9 @@ export const eetOff: Guide = {
   h1: "EET OFF: vyplatí se přirážka místo evidence?",
   description:
     "EET OFF: paušalista v 1. pásmu s příjmy do 1 mil. Kč zaplatí 1 400 Kč měsíčně navíc a tržby neeviduje. Kdo může, lhůta 11. 1. 2027 a kdy se to vyplatí.",
-  lead: `EET OFF je dobrovolná výjimka: OSVČ v **1. pásmu paušálního režimu** s příjmy do **1 mil. Kč** ročně zaplatí k paušální záloze přirážku **${formatKc(surcharge)} měsíčně** (${formatKc(surcharge * 12)} ročně) a tržby neeviduje. Pro rok 2027 se musíte přihlásit **do ${FACTS.eetOff.deadline}**. Pozdní oznámení je neúčinné.`,
+  lead: `EET OFF je dobrovolná výjimka: OSVČ v **1. pásmu paušálního režimu** s příjmy do **1 mil. Kč** ročně zaplatí k paušální záloze přirážku **${formatKc(surcharge)} měsíčně** (${formatKc(FACTS.eetOff.surchargeYearly)} ročně) a tržby neeviduje. Pro rok 2027 se musíte přihlásit **do ${FACTS.eetOff.deadline}**. Pozdní oznámení je neúčinné.`,
   summary: [
-    `Přirážka ${formatKc(surcharge)} měsíčně, tedy ${formatKc(surcharge * 12)} za rok.`,
+    `Přirážka ${formatKc(surcharge)} měsíčně, tedy ${formatKc(FACTS.eetOff.surchargeYearly)} za rok.`,
     "Jen fyzické osoby v 1. pásmu paušálního režimu s příjmy ze samostatné činnosti za předchozí rok do 1 mil. Kč.",
     `Lhůta pro rok 2027: ${FACTS.eetOff.deadline} (10. 1. připadá na neděli). Pozdě podané oznámení neplatí.`,
     `S předběžnou paušální zálohou ${formatKc(band1)} by měsíční platba v 1. pásmu činila ${formatKc(band1With)}.`,
@@ -52,7 +52,7 @@ export const eetOff: Guide = {
           p: "Pozor na rozdíl mezi limity: do 1. pásma paušálního režimu se za určitých podmínek vejdete i s vyššími příjmy (až 1,5 nebo 2 mil. Kč podle druhu činnosti). Pro EET OFF ale platí pevný strop **1 mil. Kč** pro všechny.",
         },
         {
-          p: "Přihlásit se může i ten, kdo činnost během roku teprve zahajuje a současně vstupuje do 1. pásma – v takovém případě se lze přihlásit i v průběhu roku. Podrobnosti k paušálnímu režimu najdete v návodu [EET a paušální daň](/navody/eet-a-pausalni-dan).",
+          p: `Přihlásit se může i ten, kdo činnost během roku teprve zahajuje a současně vstupuje do 1. pásma – v takovém případě se lze přihlásit i v průběhu roku. ${FACTS.eetOff.midYear} Podrobnosti k paušálnímu režimu najdete v návodu [EET a paušální daň](/navody/eet-a-pausalni-dan).`,
         },
       ],
     },
@@ -66,7 +66,7 @@ export const eetOff: Guide = {
             rows: [
               ["Měsíční paušální záloha v 1. pásmu (2027, předběžně)", formatKc(band1), formatKc(band1With)],
               ["Ročně", formatKc(band1 * 12), formatKc(band1With * 12)],
-              ["Evidence tržeb", "Ano, od 1. 2. 2027", "Ne"],
+              ["Evidence tržeb", "Ano, od 1. 1. 2027", "Ne"],
               ["Pokladna, certifikát, evidenční jednotky", "Potřebujete", "Nepotřebujete"],
             ],
             caption: `Výše paušální zálohy pro rok 2027 je předběžná (pro 2026 činí v 1. pásmu ${formatKc(FACTS.pausal[2026].band1)}). Přirážka ${formatKc(surcharge)} je pevná.`,
@@ -83,7 +83,7 @@ export const eetOff: Guide = {
       heading: "Kdy se EET OFF vyplatí a kdy ne",
       blocks: [
         {
-          p: `Otázka nezní „kolik mám tržeb“, ale „kolik mě stojí evidence“. Pokladní aplikace dnes existují zdarma – státní MOJE eet i komerční řešení včetně naší pokladny. Rozhodujete tedy hlavně mezi ${formatKc(surcharge * 12)} ročně a vlastním časem a pohodlím.`,
+          p: `Otázka nezní „kolik mám tržeb“, ale „kolik mě stojí evidence“. Pokladní aplikace dnes existují zdarma – státní MOJE eet i komerční řešení včetně naší pokladny. Rozhodujete tedy hlavně mezi ${formatKc(FACTS.eetOff.surchargeYearly)} ročně a vlastním časem a pohodlím.`,
         },
         { h3: "EET OFF dává smysl, když…" },
         {
@@ -100,7 +100,7 @@ export const eetOff: Guide = {
             "už používáte platební terminál nebo pokladnu a evidence vás stojí pár vteřin na tržbu,",
             "většina vašich tržeb přichází převodem na fakturu – ty se neevidují vůbec, takže evidovat byste měli málo,",
             "očekáváte, že příjmy v roce 2027 výrazně porostou (s vyššími příjmy můžete z 1. pásma vypadnout),",
-            `${formatKc(surcharge * 12)} ročně je pro vás citelná částka.`,
+            `${formatKc(FACTS.eetOff.surchargeYearly)} ročně je pro vás citelná částka.`,
           ],
         },
         {
@@ -131,10 +131,19 @@ export const eetOff: Guide = {
       heading: "Co když se situace během roku změní",
       blocks: [
         {
-          p: "Režim EET OFF se v průběhu roku nemění. Odhlásit se můžete oznámením podaným do 10. dne následujícího roku – evidovat pak budete od tohoto nového roku. Pokud vystoupíte z paušálního režimu nebo z 1. pásma, EET OFF tím také končí.",
+          p: `${FACTS.eetOff.binding} Pokud vystoupíte z paušálního režimu nebo z 1. pásma, EET OFF tím také končí.`,
         },
         {
-          p: "Podle dostupných informací platí, že kdo během roku překročí limit příjmů, doplácí přirážku do konce roku a evidovat začne až od následujícího roku. Přesný postup při překročení limitu doporučujeme ověřit u daňového poradce nebo na [eet.gov.cz](https://eet.gov.cz/cs/eet-off/co-je-rezim-eet-off).",
+          table: {
+            head: ["Situace", "Co platí"],
+            rows: [
+              ["Chcete z EET OFF odejít", `${FACTS.eetOff.exit} Evidovat pak budete od tohoto nového roku.`],
+              ["Příjmy během roku přesáhnou 1 mil. Kč", FACTS.eetOff.overLimit],
+              ["Začínáte podnikat v průběhu roku", FACTS.eetOff.midYear],
+              ["Jste s. r. o. nebo jiná právnická osoba", `${FACTS.eetOff.naturalOnly} Firma ho zvolit nemůže.`],
+            ],
+            caption: `Přirážka ${formatKc(surcharge)} měsíčně, tedy ${formatKc(FACTS.eetOff.surchargeYearly)} za celý rok.`,
+          },
         },
         {
           note: "I v režimu EET OFF musíte zákazníkovi na požádání vydat doklad podle zákona o ochraně spotřebitele. Viz [Musím vydávat účtenku?](/navody/musim-vydavat-uctenku)",
@@ -145,7 +154,7 @@ export const eetOff: Guide = {
   faq: [
     {
       q: "Kolik stojí EET OFF?",
-      a: `Přirážka činí ${formatKc(surcharge)} měsíčně, tedy ${formatKc(surcharge * 12)} ročně, a platí se spolu s paušální zálohou.`,
+      a: `Přirážka činí ${formatKc(surcharge)} měsíčně, tedy ${formatKc(FACTS.eetOff.surchargeYearly)} ročně, a platí se spolu s paušální zálohou.`,
     },
     {
       q: "Do kdy se musím přihlásit k EET OFF?",
@@ -153,7 +162,7 @@ export const eetOff: Guide = {
     },
     {
       q: "Může EET OFF využít s. r. o. nebo OSVČ mimo paušální režim?",
-      a: "Ne. EET OFF je jen pro fyzické osoby v 1. pásmu paušálního režimu s příjmy ze samostatné činnosti do 1 mil. Kč. Ostatní mohou evidenci uniknout jen tehdy, když nepřijímají kontaktní platby nebo mají vyjmutou činnost – viz [Koho se EET týká](/navody/koho-se-eet-tyka).",
+      a: "Ne. Režim je jen pro fyzické osoby, a to v 1. pásmu paušálního režimu s příjmy ze samostatné činnosti do 1 mil. Kč. Ostatní mohou evidenci uniknout jen tehdy, když nepřijímají kontaktní platby nebo mají vyjmutou činnost – viz [Koho se EET týká](/navody/koho-se-eet-tyka).",
     },
     {
       q: "Mám příjmy 1,3 mil. Kč a jsem v 1. pásmu. Můžu EET OFF?",
@@ -161,12 +170,26 @@ export const eetOff: Guide = {
     },
     {
       q: "Můžu se z EET OFF během roku odhlásit?",
-      a: "Ne, režim platí celý kalendářní rok. Odhlásit se lze oznámením do 10. dne následujícího roku.",
+      a: `Ne. ${FACTS.eetOff.binding} ${FACTS.eetOff.exit}`,
+    },
+    {
+      q: "Co když mi příjmy během roku přesáhnou 1 mil. Kč?",
+      a: FACTS.eetOff.overLimit,
+    },
+    {
+      q: "Začínám podnikat v průběhu roku. Od kdy platím přirážku?",
+      a: `${FACTS.eetOff.midYear} Přihlásit se můžete, pokud současně vstupujete do 1. pásma paušálního režimu.`,
     },
   ],
   sources: [SOURCES.eetOff, SOURCES.eetOffJak, SOURCES.pausal2026, SOURCES.pausal2027, SOURCES.fsPausalFaq, SOURCES.mfPredstavuje],
   related: ["eet-a-pausalni-dan", "koho-se-eet-tyka", "eet-2-0-kompletni-pruvodce"],
   published: "2026-10-01",
   updated: "2026-10-01",
+  changelog: [
+    {
+      date: "2026-10-01",
+      text: "Opraveno podle schváleného znění zákona: evidence bez EET OFF platí od 1. 1. 2027, ne od 1. 2. 2027. Doplněna pravidla pro zahájení podnikání v průběhu roku, překročení 1 mil. Kč a odhlášení.",
+    },
+  ],
   reviewedBy: null,
 };

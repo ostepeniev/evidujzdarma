@@ -7,9 +7,9 @@ export const trzbaZaJineho: Guide = {
   title: "Tržba za jiného v EET 2.0: pověření v praxi",
   h1: "Tržba za jiného (pověření): masér v hotelu, prodej v cizím obchodě",
   description:
-    "Hotel vybírá za maséra, obchod prodává zboží výrobce, stánek sdílí dva podnikatelé. Jak v EET 2.0 od 1. 2. 2027 funguje evidence tržby za jiného (pověření).",
+    "Hotel vybírá za maséra, obchod prodává zboží výrobce, stánek sdílí dva podnikatelé. Jak v EET 2.0 od 1. 1. 2027 funguje evidence tržby za jiného (pověření).",
   lead:
-    "EET 2.0 umožňuje, aby tržbu evidoval jiný podnikatel než ten, komu patří – na základě **pověření**. Typicky hotel, který na recepci inkasuje za externího maséra. Pověřený pak eviduje a datová zpráva od **1. 2. 2027** nese identifikaci obou podnikatelů. Často je ale jednodušší jiné uspořádání: každý eviduje sám, nebo hotel službu přeprodá.",
+    "EET 2.0 umožňuje, aby tržbu evidoval jiný podnikatel než ten, komu patří – na základě **pověření**. Typicky hotel, který na recepci inkasuje za externího maséra. Pověřený pak eviduje a datová zpráva od **1. 1. 2027** nese identifikaci obou podnikatelů. Často je ale jednodušší jiné uspořádání: každý eviduje sám, nebo hotel službu přeprodá.",
   summary: [
     "Poplatník, jemuž tržba plyne, může evidencí pověřit jiného poplatníka.",
     "Pověřený eviduje tržbu za pověřujícího; datová zpráva obsahuje identifikaci obou.",
@@ -121,5 +121,6 @@ export const trzbaZaJineho: Guide = {
   related: ["koho-se-eet-tyka", "evidencni-jednotka", "eet-kadernictvi-kosmetika"],
   published: "2026-10-01",
   updated: "2026-10-01",
+  changelog: [{ date: "2026-10-01", text: "Opraveno podle schváleného znění zákona: evidovat se musí od 1. 1. 2027, ne od 1. 2. 2027." }],
   reviewedBy: null,
 };

@@ -118,7 +118,7 @@ const R: Record<string, Result> = {
     id: "r-yes",
     tone: "yes",
     title: "Ano, tržby budete evidovat",
-    text: `${FACTS.whoMust.summary} Od 1. 11. 2026 se přihlaste k evidenci v DIS+, oznamte provozovnu jako evidenční jednotku a vygenerujte pokladní certifikát. Ostrý provoz začíná 1. 2. 2027.`,
+    text: `${FACTS.whoMust.summary} Od 1. 11. 2026 se přihlaste k evidenci v DIS+, oznamte provozovnu jako evidenční jednotku a vygenerujte pokladní certifikát. Evidovat musíte od 1. 1. 2027 – pokladnu si vyzkoušejte ještě v prosinci.`,
     links: [
       { href: "/evidencni-jednotky", label: "Průvodce evidenčními jednotkami" },
       { href: "/navody/jak-aktivovat-dis-a-certifikat", label: "Jak aktivovat DIS+ a certifikát" },

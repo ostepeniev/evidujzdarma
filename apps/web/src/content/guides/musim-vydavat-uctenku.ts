@@ -15,7 +15,7 @@ export const musimVydavatUctenku: Guide = {
     "Na žádost spotřebitele musíte vydat doklad podle § 16 zákona o ochraně spotřebitele.",
     "Doklad obsahuje datum, zboží nebo službu, cenu a identifikaci prodávajícího včetně IČO.",
     "Povinnosti k daňovým dokladům podle zákona o DPH platí dál, EET 2.0 je nemění.",
-    "Tiskárnu účtenek kvůli EET 2.0 kupovat nemusíte.",
+    "Tiskárnu kvůli EET 2.0 kupovat nemusíte a POK na dokladu uvádět nemusíte – podle Finanční správy je to dobrovolné.",
   ],
   sections: [
     {
@@ -75,13 +75,13 @@ export const musimVydavatUctenku: Guide = {
       heading: "Musí být na dokladu POK? A co cedulka „Evidujeme tržby“?",
       blocks: [
         {
-          p: "Ve staré EET musela účtenka nést kódy FIK a BKP (při prodeji bez spojení BKP a PKP). V EET 2.0 se místo nich vrací **POK** – potvrzení, že Finanční správa tržbu přijala. Zda musí být POK uveden na dokladu, který vydáte na žádost zákazníka, Finanční správa k 1. 10. 2026 výslovně nezveřejnila. Zákon samotnou účtenku nepřikazuje, proto povinnost tisknout POK nepředpokládáme – sledujte ale [eet.gov.cz](https://eet.gov.cz).",
+          p: `Ve staré EET musela účtenka nést kódy FIK a BKP (při prodeji bez spojení BKP a PKP). V EET 2.0 se místo nich vrací **POK** – potvrzení, že Finanční správa tržbu přijala. **Na dokladu ho uvádět nemusíte:** podle Finanční správy je uvedení POK na dokladu dobrovolné (viz [Praktické informace na eet.gov.cz](${SOURCES.prakticke.url})). Platí to i pro doklad, který vydáte na žádost zákazníka podle § 16 zákona o ochraně spotřebitele. Pokud POK na doklad uvést chcete, nic tomu nebrání.`,
         },
         {
           p: "Stará EET také ukládala vyvěsit v provozovně **informační oznámení** o evidenci tržeb. Podle dostupných rozborů nového zákona tato povinnost v EET 2.0 odpadá; oficiální potvrzení Finanční správy jsme k 1. 10. 2026 nedohledali. Pokud si nejste jisti, cedulka vám neuškodí.",
         },
         {
-          note: "Stav k 1. 10. 2026: Finanční správa zatím nezveřejnila metodiku k náležitostem dobrovolně vydávaných dokladů v EET 2.0. Jakmile ji vydá, návod doplníme. V nejasných případech se obraťte na daňového poradce.",
+          note: "Stav k 1. 10. 2026: kromě dobrovolnosti POK Finanční správa zatím nezveřejnila podrobnou metodiku k náležitostem dobrovolně vydávaných dokladů v EET 2.0. Jakmile ji vydá, návod doplníme. V nejasných případech se obraťte na daňového poradce.",
           tone: "warn",
         },
       ],
@@ -124,6 +124,10 @@ export const musimVydavatUctenku: Guide = {
       a: FACTS.receipt.summary,
     },
     {
+      q: "Musí být na dokladu potvrzovací kód POK?",
+      a: `Ne. ${FACTS.confirmation.onReceipt} Pokladna POK od Finanční správy dostane i tak – evidence tím nijak netrpí.`,
+    },
+    {
       q: "Platí pravidla o dokladu i v režimu EET OFF?",
       a: "Ano. EET OFF vás osvobozuje jen od evidence tržeb. Povinnost vydat doklad na žádost spotřebitele podle zákona o ochraně spotřebitele zůstává. Více v návodu [EET OFF: vyplatí se?](/navody/eet-off).",
     },
@@ -136,5 +140,11 @@ export const musimVydavatUctenku: Guide = {
   related: ["kontaktni-platba", "eet-2-0-vs-eet-1-0", "pokuty-eet"],
   published: "2026-10-01",
   updated: "2026-10-01",
+  changelog: [
+    {
+      date: "2026-10-01",
+      text: "Upřesněno podle Finanční správy: uvedení POK na dokladu je dobrovolné.",
+    },
+  ],
   reviewedBy: null,
 };

@@ -10,6 +10,24 @@ Značky: **[P]** primární zdroj (oficiální stránka/soubor), **[S]** sekund�
 > ověřena přes výtahy vyhledávačů a oficiální soubory zrcadlené ve veřejných
 > repozitářích. Před publikací klíčových návodů otevřete zdroje v prohlížeči.
 
+## 0. Opravy k 1. 10. 2026 (rozbor eet20.cz „Rozpory“, eetoff.cz, rešerše Compass)
+
+Porovnání tiskových zpráv se schváleným zněním zákona (sněmovní tisk 189, stav 29. 9. 2026). Promítnuto do `facts.ts`,
+návodů, FAQ, kalkulačky EET OFF a stránky `/co-se-o-eet-pise-spatne`.
+
+| Téma | Dříve na webu | Podle schváleného znění |
+| --- | --- | --- |
+| „Příležitostné tržby do 50 000 Kč“ | výjimka z tiskové zprávy MF, „ověřit“ | v zákoně **není**; jen tržba „ojedinělá z hlediska obvykle přijímaných tržeb“ (§ 7) [S] |
+| Leden 2027 | pilotní (dobrovolný) provoz | zákon pilotní režim nezná; účinnost 1. 1. 2027 (§ 36), pokuta až 500 000 Kč (§ 24) [S] |
+| Sleva na dani 5 000 Kč | „opět 5 000 Kč“ | **až** 5 000 Kč, jen OSVČ, jen 1. období s evidencí, může být nižší/nulová (§ 35be ZDP) [S] |
+| EET OFF | přirážka 1 400 Kč, lhůta 11. 1. | + jen FO; volba na celý rok; při zahájení v průběhu roku přirážka od měsíce zahájení; při překročení 1 mil. přirážka do konce roku a evidence až od dalšího roku; odhlášení do 10. dne následujícího roku [S – eetoff.cz] |
+| POK na dokladu | „nezveřejněno“ | dobrovolné (eet.gov.cz) [P – nepřímo] |
+| Oznámení jednotek | — | i jednotky bez evidovaných tržeb, pokud má poplatník aspoň jednu s evidovanými tržbami [S] |
+| Doba čekání na odpověď | — | nastavuje poplatník, min. 2 s; prodej se neblokuje; znovu jen bez POK [S] |
+| Certifikáty | — | CA EET zveřejnila API automatické obnovy (caeetapi_jwt, 30. 9. 2026) [S] |
+
+Čísla § jsou převzata ze sekundárních rozborů schváleného znění – po vyhlášení ve Sbírce ověřit (viz `docs/revize-danovy-poradce.md`).
+
 ## 1. Zákon
 
 - *Zákon o evidenci tržeb a o změně některých dalších zákonů* — sněmovní tisk 189. Vláda 4. 5. 2026,
@@ -62,12 +80,13 @@ Značky: **[P]** primární zdroj (oficiální stránka/soubor), **[S]** sekund�
 | 5. 6. / 1. 7. / 25. 8. 2026 | Technická dokumentace / Playground / popis rozhraní v1.2 | [P] |
 | **1. 11. 2026** | EET v DIS+ (MOJE daně): přihlášení k evidenci, evidenční jednotky, pokladní certifikáty | [P] |
 | **1. 12. 2026** | Spuštění MOJE eet | [P] |
-| **1. 1. 2027** | Účinnost zákona; leden = **pilotní (dobrovolný) provoz** | [P] |
+| **1. 1. 2027** | Účinnost zákona (§ 36) – evidence povinná. FS leden označuje jako pilotní měsíc (metodická podpora), zákon pilotní ani dobrovolný režim **nezná** | [P] |
 | **11. 1. 2027** | Lhůta EET OFF | [P] |
-| **1. 2. 2027** | **Ostrý provoz** | [P] |
+| **1. 2. 2027** | Plný provoz podle harmonogramu FS | [P] |
 
-Zdroj: [Harmonogram EET 2.0](https://eet.gov.cz/cs/o-eet/jaky-je-harmonogram-eet-2-0). Zda je lednový pilot zakotven
-v zákoně, nebo jde o správní praxi: [?].
+Zdroj: [Harmonogram EET 2.0](https://eet.gov.cz/cs/o-eet/jaky-je-harmonogram-eet-2-0). Lednový pilot **není** zakotven
+v zákoně (schválené znění, sněmovní tisk 189, stav 29. 9. 2026: účinnost 1. 1. 2027, pokuta až 500 000 Kč dle § 24).
+Harmonogram FS: v lednu „půjde však již o standardní evidenci“. „Bez sankcí v lednu“ = jen sekundární zdroje.
 
 ## 3. Evidenční jednotka
 

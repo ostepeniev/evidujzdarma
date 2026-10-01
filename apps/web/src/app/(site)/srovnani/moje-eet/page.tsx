@@ -201,10 +201,12 @@ export default function CompareMojeEetPage() {
               jednotky. Návod najdete v článku{" "}
               <Link href="/navody/jak-aktivovat-dis-a-certifikat">jak aktivovat DIS+ a certifikát</Link>.
             </li>
-            <li>Na každou evidovanou tržbu odpoví Finanční správa potvrzovacím kódem (POK).</li>
             <li>
-              Leden 2027 je pilotní (dobrovolný) provoz, ostrý provoz začíná 1. 2. 2027. Vyzkoušejte si klidně obě aplikace
-              nanečisto a vyberte tu, která vám sedne.
+              {FACTS.confirmation.summary} {FACTS.confirmation.onReceipt}
+            </li>
+            <li>
+              {FACTS.pilot.short} Obě aplikace si proto vyzkoušejte nanečisto ještě v prosinci 2026 (MOJE eet je dostupná od
+              1. 12.) a vyberte tu, která vám sedne.
             </li>
           </ul>
 

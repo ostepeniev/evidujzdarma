@@ -7,12 +7,12 @@ export const kohoSeEetTyka: Guide = {
   title: "Koho se týká EET 2.0 a kdo má výjimku (2027)",
   h1: "Koho se EET 2.0 týká a kdo má výjimku",
   description:
-    "EET 2.0 se od 1. 2. 2027 týká OSVČ i firem, které berou hotovost, karty nebo QR platby osobně. Kdo evidovat nemusí, jaké činnosti jsou vyjmuté a co je EET OFF.",
+    "EET 2.0 se od 1. 1. 2027 týká OSVČ i firem, které berou hotovost, karty nebo QR platby osobně. Kdo evidovat nemusí, jaké činnosti jsou vyjmuté a co je EET OFF.",
   lead:
-    "Od ostrého provozu **1. 2. 2027** musí tržby evidovat každý poplatník daně z příjmů – OSVČ i firma –, který přijímá platby při osobním kontaktu: hotově, kartou nebo QR kódem. Obor ani plátcovství DPH nerozhodují. Výjimku mají vyjmuté činnosti a paušalisté v 1. pásmu s příjmy do 1 mil. Kč, kteří zvolí EET OFF.",
+    "Od **1. 1. 2027** musí tržby evidovat každý poplatník daně z příjmů – OSVČ i firma –, který přijímá platby při osobním kontaktu: hotově, kartou nebo QR kódem. Obor ani plátcovství DPH nerozhodují. Výjimku mají vyjmuté činnosti a paušalisté v 1. pásmu s příjmy do 1 mil. Kč, kteří zvolí EET OFF.",
   summary: [
     "Evidovat musí podnikatel (FO i PO), který přijímá platby osobně: hotovost, karta, QR kód, poukázka.",
-    "Nezáleží na oboru ani na tom, zda jste plátce DPH.",
+    "Nezáleží na oboru ani na tom, zda jste plátce DPH. Výjimka pro „příležitostné tržby do 50 000 Kč“ ve schváleném zákoně není.",
     "Netýká se příjmů ze zaměstnání, kapitálových příjmů, nájmu a příležitostných příjmů.",
     "Vyjmuté jsou jen konkrétní činnosti (např. část dopravy, poštovní služby, hazard, energie) – ne celé obory.",
     `Paušalisté v 1. pásmu s příjmy do 1 mil. Kč se mohou evidenci vyhnout přirážkou ${formatKc(FACTS.eetOff.surchargeMonthly)} měsíčně (EET OFF).`,
@@ -53,6 +53,11 @@ export const kohoSeEetTyka: Guide = {
             "**Ostatní (příležitostné) příjmy** – například jednorázový prodej věcí z domácnosti, který není podnikáním.",
           ],
         },
+        { h3: "Příležitostné tržby z podnikání: hranice 50 000 Kč neplatí" },
+        { p: FACTS.whoMust.occasional },
+        {
+          p: "Neplést s ostatními (příležitostnými) příjmy výše: ty nejsou z podnikání vůbec. Tržba z podnikání se eviduje, i když je malá. Zda je konkrétní tržba ojedinělá ve smyslu § 7, se posuzuje podle okolností – v nejasných případech se poraďte s daňovým poradcem.",
+        },
       ],
     },
     {
@@ -90,7 +95,7 @@ export const kohoSeEetTyka: Guide = {
       blocks: [
         { p: FACTS.eetOff.summary },
         {
-          p: `Na rozdíl od vyjmutých činností si EET OFF musíte zvolit sami a včas: ${FACTS.eetOff.howTo} Za rok to dělá ${formatKc(FACTS.eetOff.surchargeMonthly * 12)} navíc.`,
+          p: `Na rozdíl od vyjmutých činností si EET OFF musíte zvolit sami a včas: ${FACTS.eetOff.howTo} Za rok to dělá ${formatKc(FACTS.eetOff.surchargeYearly)} navíc. ${FACTS.eetOff.binding}`,
         },
         { cta: "eet-off" },
       ],
@@ -113,7 +118,7 @@ export const kohoSeEetTyka: Guide = {
             "Projděte si, jakými způsoby vám zákazníci platí. Pokud nic nepřijímáte osobně (hotově, kartou, QR kódem na místě), evidovat nemusíte.",
             "Zkontrolujte, zda vaše činnost nepatří mezi vyjmuté.",
             "Jste-li OSVČ v paušálním režimu, spočítejte si, zda se vám vyplatí EET OFF – lhůta je do **11. 1. 2027**.",
-            "Pokud evidovat budete, od **1. 11. 2026** se přihlaste v DIS+ a oznamte evidenční jednotky – postup v návodu [Jak aktivovat DIS+ a stáhnout certifikát](/navody/jak-aktivovat-dis-a-certifikat).",
+            "Pokud evidovat budete, od **1. 11. 2026** se přihlaste v DIS+ a oznamte evidenční jednotky – postup v návodu [Jak aktivovat DIS+ a stáhnout certifikát](/navody/jak-aktivovat-dis-a-certifikat). Evidovat musíte od **1. 1. 2027**.",
           ],
         },
         {
@@ -131,6 +136,10 @@ export const kohoSeEetTyka: Guide = {
     {
       q: "Mám malý obrat. Je nějaká hranice, pod kterou evidovat nemusím?",
       a: `Obecná hranice obratu neexistuje. Jedinou výjimkou navázanou na příjmy je EET OFF: fyzická osoba v 1. pásmu paušálního režimu s příjmy do ${formatKc(FACTS.eetOff.incomeLimit)} ročně může místo evidence platit přirážku ${formatKc(FACTS.eetOff.surchargeMonthly)} měsíčně.`,
+    },
+    {
+      q: "Platí výjimka pro příležitostné tržby do 50 000 Kč?",
+      a: FACTS.whoMust.occasional,
     },
     {
       q: "Přijímám jen platby převodem na účet. Musím evidovat?",
@@ -153,9 +162,17 @@ export const kohoSeEetTyka: Guide = {
     SOURCES.eetOffJak,
     SOURCES.podnikatelPrehled,
     SOURCES.leitnerNerezidenti,
+    SOURCES.podnikatelDetail,
+    SOURCES.psp,
   ],
   related: ["kontaktni-platba", "eet-off", "eet-2-0-kompletni-pruvodce"],
   published: "2026-10-01",
   updated: "2026-10-01",
+  changelog: [
+    {
+      date: "2026-10-01",
+      text: "Opraveno podle schváleného znění zákona: povinnost evidovat platí od 1. 1. 2027, ne od 1. 2. 2027. Doplněno, že výjimka pro příležitostné tržby do 50 000 Kč v zákoně není.",
+    },
+  ],
   reviewedBy: null,
 };

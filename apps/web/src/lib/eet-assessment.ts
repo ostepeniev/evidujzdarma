@@ -140,12 +140,16 @@ export function assess(subject: Subject, rzp: RzpRecord | null, answers: Answers
       });
     }
     checklist.push({
-      date: TIMELINE[2]!.dateLabel,
-      title: "Pokladna připravená",
-      text: "V lednu běží pilotní provoz – vyzkoušejte si evidenci nanečisto.",
+      date: "prosinec 2026",
+      title: "Pokladna vyzkoušená",
+      text: "Pokladnu si vyzkoušejte v testovacím režimu ještě v prosinci – od ledna už se eviduje naostro.",
       href: "/#registrace",
     });
-    checklist.push({ date: TIMELINE[4]!.dateLabel, title: "Ostrý provoz", text: "Od 1. 2. 2027 musí být každá evidovaná tržba odeslána." });
+    checklist.push({
+      date: TIMELINE[2]!.dateLabel,
+      title: "Evidence tržeb",
+      text: "Od 1. 1. 2027 musí být každá evidovaná tržba odeslána. „Pilotní“ leden není zákonná výjimka.",
+    });
   }
 
   return { verdict, headline, eetOff, eetOffText, reasons, activeEstablishments, checklist, naceRelevance: nace.relevance };

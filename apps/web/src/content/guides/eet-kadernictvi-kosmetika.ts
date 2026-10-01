@@ -7,9 +7,9 @@ export const eetKadernictviKosmetika: Guide = {
   title: "EET 2.0 pro kadeřnictví, kosmetiku a barbershopy",
   h1: "EET pro kadeřnictví, kosmetiku a barbershopy",
   description:
-    "Salon, pronájem křesla, mobilní kadeřnice, dárkové poukazy, spropitné: co od 1. 2. 2027 evidovat v EET 2.0 v kadeřnictví, kosmetice a barbershopu.",
+    "Salon, pronájem křesla, mobilní kadeřnice, dárkové poukazy, spropitné: co od 1. 1. 2027 evidovat v EET 2.0 v kadeřnictví, kosmetice a barbershopu.",
   lead:
-    "Kadeřnictví, kosmetika, nehtová studia a barbershopy evidují od **1. 2. 2027** každou platbu klienta na místě – hotovost, kartu i QR kód. Dárkový poukaz se eviduje při prodeji i při uplatnění. Kdo si v salonu pronajímá křeslo, eviduje své tržby sám. Malé paušalistky mohou zvolit EET OFF za **1 400 Kč** měsíčně.",
+    "Kadeřnictví, kosmetika, nehtová studia a barbershopy evidují od **1. 1. 2027** každou platbu klienta na místě – hotovost, kartu i QR kód. Dárkový poukaz se eviduje při prodeji i při uplatnění. Kdo si v salonu pronajímá křeslo, eviduje své tržby sám. Malé paušalistky mohou zvolit EET OFF za **1 400 Kč** měsíčně.",
   summary: [
     "Eviduje se každá platba klienta v salonu: hotovost, karta i QR kód, služby i prodej kosmetiky.",
     "Dárkové poukazy se evidují dvakrát: při prodeji (částka k čerpání) a při uplatnění (čerpání).",
@@ -141,5 +141,6 @@ export const eetKadernictviKosmetika: Guide = {
   related: ["trzba-za-jineho", "eet-off", "musim-vydavat-uctenku"],
   published: "2026-10-01",
   updated: "2026-10-01",
+  changelog: [{ date: "2026-10-01", text: "Opraveno podle schváleného znění zákona: evidovat se musí od 1. 1. 2027, ne od 1. 2. 2027." }],
   reviewedBy: null,
 };

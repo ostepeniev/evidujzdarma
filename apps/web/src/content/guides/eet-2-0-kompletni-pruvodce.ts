@@ -10,9 +10,9 @@ export const eet20KompletniPruvodce: Guide = {
   h1: "EET 2.0 v roce 2027: kompletní průvodce pro podnikatele",
   description:
     "Vše o EET 2.0 na jednom místě: od kdy platí, koho se týká, co se eviduje, EET OFF, DIS+ a certifikát, pokuty, účtenky a výběr pokladny. Stav k 1. 10. 2026.",
-  lead: `EET 2.0 je nová elektronická evidence tržeb. Zákon platí od **1. 1. 2027**, leden je pilotní a naostro se eviduje od **1. 2. 2027**. Týká se OSVČ i firem, které přijímají platby osobně – hotově, kartou nebo QR kódem. Účtenka povinná není, pokuta může dosáhnout ${formatKc(FACTS.penalties.max)}. Paušalisté v 1. pásmu se mohou vyvázat přes EET OFF.`,
+  lead: `EET 2.0 je nová elektronická evidence tržeb. Zákon platí od **1. 1. 2027** a evidovat se musí od prvního dne – „pilotní“ leden není zákonná výjimka. Týká se OSVČ i firem, které přijímají platby osobně – hotově, kartou nebo QR kódem. Účtenka povinná není, pokuta může dosáhnout ${formatKc(FACTS.penalties.max)}. Paušalisté v 1. pásmu se mohou vyvázat přes EET OFF.`,
   summary: [
-    "Účinnost 1. 1. 2027, pilotní provoz v lednu, ostrý provoz od 1. 2. 2027.",
+    "Účinnost i povinnost evidovat od 1. 1. 2027. Zákon pilotní ani dobrovolný režim nezná.",
     "Evidují se kontaktní platby: hotovost, karta, QR kód, poukázka – ne převody na fakturu ani platební brána e-shopu.",
     "Od 1. 11. 2026 se v DIS+ přihlásíte k evidenci, oznámíte evidenční jednotky a stáhnete certifikát.",
     `EET OFF: paušalisté v 1. pásmu s příjmy do 1 mil. Kč zaplatí ${formatKc(surcharge)} měsíčně a neevidují; lhůta ${FACTS.eetOff.deadline}.`,
@@ -53,10 +53,10 @@ export const eet20KompletniPruvodce: Guide = {
           },
         },
         {
-          p: "Pro podnikatele je nejdůležitější období **listopad 2026 až leden 2027**. V listopadu se otevírají funkce v DIS+, v prosinci státní aplikace MOJE eet, do 11. ledna se rozhoduje o EET OFF a lednový pilotní provoz je poslední příležitost vyzkoušet si vše nanečisto.",
+          p: "Pro podnikatele je nejdůležitější období **listopad a prosinec 2026**. V listopadu se otevírají funkce v DIS+, v prosinci státní aplikace MOJE eet. Prosinec je poslední příležitost vyzkoušet si pokladnu nanečisto – od 1. 1. 2027 se eviduje naostro. Do 11. ledna se pak rozhoduje o EET OFF.",
         },
         {
-          note: "Leden 2027 je podle harmonogramu Finanční správy pilotní provoz. Zda je pilot zakotven přímo v zákoně, nebo jde o praxi Finanční správy, jsme k 1. 10. 2026 neověřili. Neberte ho jako odklad – připravte se do konce roku 2026.",
+          note: FACTS.pilot.summary,
           tone: "warn",
         },
       ],
@@ -71,6 +71,7 @@ export const eet20KompletniPruvodce: Guide = {
         },
         { p: FACTS.whoMust.notCovered },
         { p: FACTS.whoMust.exemptions },
+        { p: FACTS.whoMust.occasional },
         {
           p: "Podrobný rozbor včetně výjimek pro spolky, automaty a zahraniční podnikatele najdete v návodu [Koho se EET týká a kdo má výjimku](/navody/koho-se-eet-tyka). Rychlou odpověď dá [kvíz Musím evidovat?](/musim-evidovat) nebo [kontrola podle IČO](/kontrola-ico).",
         },
@@ -117,14 +118,17 @@ export const eet20KompletniPruvodce: Guide = {
             head: ["", "Hodnota"],
             rows: [
               ["Kdo může", "Fyzická osoba v 1. pásmu paušálního režimu, příjmy ze samostatné činnosti za předchozí rok do 1 mil. Kč"],
-              ["Přirážka", `${formatKc(surcharge)} měsíčně (${formatKc(surcharge * 12)} ročně)`],
+              ["Přirážka", `${formatKc(surcharge)} měsíčně (${formatKc(FACTS.eetOff.surchargeYearly)} ročně)`],
               ["Lhůta pro rok 2027", FACTS.eetOff.deadline],
-              ["Platnost", "Celý kalendářní rok"],
+              ["Platnost", "Celý kalendářní rok, v průběhu roku ji změnit nelze"],
               ["Měsíční platba v 1. pásmu (2027, předběžně)", formatKc(FACTS.pausal[2027].band1 + surcharge)],
             ],
           },
         },
         { p: FACTS.eetOff.howTo },
+        {
+          ul: [FACTS.eetOff.naturalOnly, FACTS.eetOff.binding, FACTS.eetOff.midYear, FACTS.eetOff.overLimit, FACTS.eetOff.exit],
+        },
         {
           p: "Zda se vám EET OFF vyplatí, záleží hlavně na tom, kolik vás stojí evidence – čas, zařízení, starosti s výpadky signálu. Pokladní aplikace jsou dnes k dispozici zdarma, takže rozhodujete mezi přirážkou a vlastním pohodlím. Podrobný rozbor najdete v návodu [EET OFF: vyplatí se?](/navody/eet-off), souvislosti s paušálem v článku [EET a paušální daň](/navody/eet-a-pausalni-dan) a čísla pro vaši situaci v [kalkulačce EET OFF](/kalkulacka-eet-off).",
         },
@@ -147,8 +151,8 @@ export const eet20KompletniPruvodce: Guide = {
             "**Vygenerujte pokladní certifikát** v aplikaci Správa pokladních certifikátů EET a stáhněte soubor .p12.",
             "**Vyberte pokladnu** – státní MOJE eet (od 1. 12. 2026), komerční pokladnu, nebo [EvidujZdarma](/#registrace) – a nahrajte do ní certifikát a ID jednotek.",
             `**Do ${FACTS.eetOff.deadline}:** pokud splňujete podmínky, rozhodněte o EET OFF.`,
-            "**V lednu 2027:** v pilotním provozu vyzkoušejte, že pokladna tržby odesílá a dostává POK.",
-            "**Od 1. 2. 2027:** evidujte každou kontaktní platbu.",
+            "**V prosinci 2026:** v testovacím režimu pokladny (nebo na Playgroundu Finanční správy) vyzkoušejte, že pokladna tržby odesílá a dostává POK.",
+            "**Od 1. 1. 2027:** evidujte každou kontaktní platbu – leden už je standardní evidence.",
           ],
         },
         { cta: "jednotky" },
@@ -159,6 +163,7 @@ export const eet20KompletniPruvodce: Guide = {
       heading: "Evidenční jednotky",
       blocks: [
         { p: FACTS.units.summary },
+        { p: FACTS.units.allUnits },
         {
           p: "Jednotky zakládáte v DIS+ a systém každé přidělí neměnné **ID jednotky**, které pokladna posílá s každou tržbou. Pozor, nejde o IČP z živnostenského rejstříku. Několik pokladen v jedné provozovně je jedna jednotka; dvě provozovny ve dvou městech jsou dvě jednotky. Řemeslník nebo mobilní kadeřnice bez provozovny uvede jako jednotku sám sebe.",
         },
@@ -204,6 +209,7 @@ export const eet20KompletniPruvodce: Guide = {
         },
         { h3: "Co když vypadne internet" },
         { p: FACTS.offline.summary },
+        { p: FACTS.offline.responseTimeout },
         {
           p: "Pokladna tržbu uloží, opakuje odeslání s příznakem, že nejde o první zaslání, a hlídá lhůtu. Státní aplikace MOJE eet podle zveřejněných informací potřebuje pro provoz připojení k internetu; pokladna EvidujZdarma tržby bez signálu řadí do fronty a odešle je automaticky. Podrobně v návodu [EET bez internetu: pravidlo 48 hodin](/navody/eet-bez-internetu).",
         },
@@ -215,7 +221,7 @@ export const eet20KompletniPruvodce: Guide = {
       blocks: [
         { p: FACTS.receipt.summary },
         {
-          p: "Kvůli EET 2.0 tedy nemusíte kupovat tiskárnu ani tisknout účtenky. Pokud zákazník doklad chce, vydáte ho – papírový nebo elektronický. Plátci DPH se dál řídí pravidly zákona o DPH pro daňové doklady. Podle dostupných rozborů zákona odpadá i povinnost vyvěšovat informační oznámení o evidenci tržeb. Více v návodu [Musím vydávat účtenku?](/navody/musim-vydavat-uctenku)",
+          p: `Kvůli EET 2.0 tedy nemusíte kupovat tiskárnu ani tisknout účtenky. Pokud zákazník doklad chce, vydáte ho – papírový nebo elektronický. ${FACTS.confirmation.onReceipt} Plátci DPH se dál řídí pravidly zákona o DPH pro daňové doklady. Podle dostupných rozborů zákona odpadá i povinnost vyvěšovat informační oznámení o evidenci tržeb. Více v návodu [Musím vydávat účtenku?](/navody/musim-vydavat-uctenku)`,
         },
       ],
     },
@@ -341,7 +347,9 @@ export const eet20KompletniPruvodce: Guide = {
               ["„Za chybu mi zavřou provozovnu.“", "Uzavření provozovny jako sankce v EET 2.0 není. Pokuta až 500 000 Kč ale hrozí."],
               ["„Potřebuji drahou pokladnu.“", "Stačí telefon nebo tablet s pokladní aplikací; existují i bezplatné aplikace včetně státní MOJE eet."],
               ["„Bez signálu nemůžu prodávat.“", "Můžete. Tržbu stačí odeslat dodatečně, nejpozději do 48 hodin."],
-              ["„Leden 2027 je bez povinností.“", "Leden je pilotní provoz, ale zákon už je účinný. Připravte se do konce roku 2026."],
+              ["„Leden 2027 je jen zkušební, bez povinností.“", "Ne. Zákon je účinný od 1. 1. 2027 a pilotní ani dobrovolný režim nezná. Pokladnu si vyzkoušejte v prosinci 2026."],
+              ["„Příležitostné tržby do 50 000 Kč se evidovat nemusí.“", "Pevnou hranici pro příležitostné tržby schválený zákon nemá. Zná jen tržbu ojedinělou z hlediska obvykle přijímaných tržeb – a ta se posuzuje podle okolností, ne podle částky."],
+              ["„Každá OSVČ dostane slevu na dani 5 000 Kč.“", "Sleva je až 5 000 Kč, jen pro OSVČ a jen za první zdaňovací období, ve kterém začnou evidovat. Podle dílčího základu daně ze samostatné činnosti může být nižší, nebo nulová."],
             ],
           },
         },
@@ -356,13 +364,13 @@ export const eet20KompletniPruvodce: Guide = {
         },
         {
           ul: [
-            "číslo zákona ve Sbírce zákonů a přesné znění jednotlivých ustanovení (proto necitujeme paragrafy zákona o evidenci tržeb),",
-            "zda je lednový pilotní provoz zakotven v zákoně, nebo jde o správní praxi,",
+            `číslo zákona ve Sbírce zákonů (paragrafy uvádíme podle schváleného znění – ${FACTS.law.printNo}),`,
+            "zda bude Finanční správa v lednu 2027 pokutovat – oficiálně to stanoveno není, evidovat se ale musí od 1. 1. 2027,",
             "jak zacházet s místním poplatkem z pobytu, vratnými kaucemi a spropitným,",
             "jak evidovat čerpání zálohy, která byla zaplacena převodem,",
             "převody provedené „u pokladny“ bez QR kódu a další hraniční případy kontaktní platby,",
             "konkrétní limity výjimky pro drobnou vedlejší činnost spolků,",
-            "postup při překročení limitu příjmů v režimu EET OFF během roku,",
+            "kdy je tržba ojedinělá z hlediska obvykle přijímaných tržeb – pevnou částku zákon nestanoví,",
             "definitivní výše paušální zálohy pro rok 2027.",
           ],
         },
@@ -388,7 +396,11 @@ export const eet20KompletniPruvodce: Guide = {
   faq: [
     {
       q: "Od kdy platí EET 2.0?",
-      a: "Zákon je účinný od 1. 1. 2027. Leden je podle Finanční správy pilotní provoz, ostrý provoz začíná 1. 2. 2027. Přípravné kroky v DIS+ jsou možné od 1. 11. 2026.",
+      a: `${FACTS.pilot.summary} Přípravné kroky v DIS+ jsou možné od 1. 11. 2026.`,
+    },
+    {
+      q: "Je leden 2027 zkušební měsíc bez pokut?",
+      a: `Ne. Zákon je účinný od 1. 1. 2027 (${FACTS.law.sections.effect}) a pokuta až ${formatKc(FACTS.penalties.max)} (${FACTS.law.sections.penalty}) platí od stejného dne. Finanční správa leden označuje jako pilotní měsíc s důrazem na metodickou podporu, zda bude pokutovat, ale oficiálně stanoveno není. Test si udělejte v prosinci 2026.`,
     },
     {
       q: "Musím evidovat platby kartou?",
@@ -400,7 +412,7 @@ export const eet20KompletniPruvodce: Guide = {
     },
     {
       q: "Kolik stojí EET OFF a kdo ho může využít?",
-      a: `Přirážka ${formatKc(surcharge)} měsíčně k paušální záloze. Jen pro fyzické osoby v 1. pásmu paušálního režimu s příjmy ze samostatné činnosti do 1 mil. Kč; pro rok 2027 je lhůta ${FACTS.eetOff.deadline}.`,
+      a: `Přirážka ${formatKc(surcharge)} měsíčně k paušální záloze, tedy ${formatKc(FACTS.eetOff.surchargeYearly)} ročně. Jen pro fyzické osoby v 1. pásmu paušálního režimu s příjmy ze samostatné činnosti do 1 mil. Kč; pro rok 2027 je lhůta ${FACTS.eetOff.deadline}. ${FACTS.eetOff.binding}`,
     },
     {
       q: "Jaká je pokuta za neevidování?",
@@ -421,6 +433,14 @@ export const eet20KompletniPruvodce: Guide = {
     {
       q: "Jsem neplátce DPH. Musím evidovat?",
       a: "Ano, pokud přijímáte kontaktní platby. Povinnost evidovat nesouvisí s registrací k DPH ani s výší obratu; jedinou výjimkou navázanou na příjmy je EET OFF pro paušalisty v 1. pásmu.",
+    },
+    {
+      q: "Platí výjimka pro příležitostné tržby do 50 000 Kč?",
+      a: FACTS.whoMust.occasional,
+    },
+    {
+      q: "Komu patří sleva na dani 5 000 Kč a kolik opravdu ušetřím?",
+      a: FACTS.taxCredit.summary,
     },
     {
       q: "Musí evidovat spolky?",
@@ -450,9 +470,18 @@ export const eet20KompletniPruvodce: Guide = {
     SOURCES.danovkyKontaktni,
     SOURCES.srovnani,
     SOURCES.vyvojari,
+    SOURCES.fsPlayground,
+    SOURCES.podnikatelDetail,
+    SOURCES.zdp,
   ],
   related: ["koho-se-eet-tyka", "kontaktni-platba", "jak-aktivovat-dis-a-certifikat"],
   published: "2026-10-01",
   updated: "2026-10-01",
+  changelog: [
+    {
+      date: "2026-10-01",
+      text: "Opraveno podle schváleného znění zákona: evidovat se musí od 1. 1. 2027, leden není zákonný pilotní ani dobrovolný provoz; test pokladny přesunut na prosinec 2026. Doplněno: žádná hranice 50 000 Kč pro příležitostné tržby, pravidla EET OFF během roku, oznamování všech evidenčních jednotek a podmínky slevy na dani až 5 000 Kč.",
+    },
+  ],
   reviewedBy: null,
 };

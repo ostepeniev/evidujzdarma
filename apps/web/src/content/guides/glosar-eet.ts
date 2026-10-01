@@ -7,9 +7,9 @@ export const glosarEet: Guide = {
   title: "Glosář EET 2.0: POK, EIČ, DIS+, EET OFF a další pojmy",
   h1: "Glosář EET 2.0",
   description:
-    "Srozumitelný slovník pojmů EET 2.0: POK, evidenční jednotka, EIČ, DIS+, MOJE eet, pokladní certifikát, EET OFF, pilotní a ostrý provoz, Playground a další.",
+    "Srozumitelný slovník pojmů EET 2.0: POK, evidenční jednotka, EIČ, DIS+, MOJE eet, pokladní certifikát, EET OFF, „pilotní“ leden, Playground a další.",
   lead:
-    "Glosář vysvětluje přes 30 pojmů nové evidence tržeb – od **POK** a **evidenční jednotky** po **EET OFF** a **Playground**. Zákon o evidenci tržeb je účinný od **1. 1. 2027**, ostrý provoz začíná **1. 2. 2027**. Definice jsou zjednodušené pro podnikatele; u technických pojmů uvádíme i název pole v datové zprávě.",
+    "Glosář vysvětluje přes 30 pojmů nové evidence tržeb – od **POK** a **evidenční jednotky** po **EET OFF** a **Playground**. Zákon o evidenci tržeb je účinný od **1. 1. 2027** a evidovat se musí od prvního dne. Definice jsou zjednodušené pro podnikatele; u technických pojmů uvádíme i název pole v datové zprávě.",
   summary: [
     "POK (potvrzovací kód) nahrazuje kódy FIK, BKP a PKP ze staré EET.",
     "Evidenční jednotka je provozovna, stánek, automat, web, vozidlo – nebo podnikatel sám.",
@@ -25,16 +25,20 @@ export const glosarEet: Guide = {
         {
           p: `Neoficiální název nové evidence tržeb podle zákona o evidenci tržeb (${FACTS.law.printNo}), který prezident podepsal ${FACTS.law.signedOn}. Zákon je účinný od ${FACTS.law.effectiveFrom}. Přehled v [kompletním průvodci](/navody/eet-2-0-kompletni-pruvodce).`,
         },
-        { h3: "Pilotní provoz" },
+        { h3: "Účinnost zákona" },
         {
-          p: "Leden 2027 – první měsíc účinnosti zákona, kdy podle harmonogramu Finanční správy probíhá dobrovolný pilotní provoz. Je určen k vyzkoušení pokladen a nastavení; Finanční správa se v něm chce soustředit na metodickou podporu. Zda je pilot zakotven přímo v zákoně, jsme zatím neověřili.",
+          p: `Den, od kterého zákon platí a evidovat se musí: **${FACTS.law.effectiveFrom}** (${FACTS.law.sections.effect}). Od stejného dne hrozí za neodeslání tržby pokuta až ${formatKc(FACTS.penalties.max)} (${FACTS.law.sections.penalty}).`,
+        },
+        { h3: "„Pilotní“ leden" },
+        {
+          p: `${FACTS.pilot.summary} Pokladnu si proto vyzkoušejte v prosinci 2026 – v testovacím režimu pokladny nebo na Playgroundu.`,
         },
         { h3: "Ostrý provoz" },
         {
-          p: "Od **1. 2. 2027** musí poplatníci evidovat tržby naplno a s plnou odpovědností za případná porušení.",
+          p: "Hovorové označení pro skutečnou evidenci tržeb (na rozdíl od testování). Naostro se eviduje od **1. 1. 2027**. Od **1. 2. 2027** jde podle harmonogramu Finanční správy o plný provoz – na povinnosti evidovat to nic nemění.",
         },
         { h3: "EET OFF" },
-        { p: FACTS.eetOff.summary },
+        { p: `${FACTS.eetOff.summary} ${FACTS.eetOff.binding}` },
         { h3: "Přirážka (k paušální záloze)" },
         {
           p: `Částka ${formatKc(FACTS.eetOff.surchargeMonthly)} měsíčně, kterou poplatník v režimu EET OFF platí navíc k paušální záloze. K přirážce se hlásí oznámením do 10. dne zdaňovacího období – pro rok 2027 do ${FACTS.eetOff.deadline}. Viz [EET OFF: vyplatí se?](/navody/eet-off)`,
@@ -45,7 +49,7 @@ export const glosarEet: Guide = {
         },
         { h3: "Harmonogram" },
         {
-          p: "Časový plán spuštění EET 2.0 od Finanční správy: 1. 11. 2026 funkce v DIS+, 1. 12. 2026 aplikace MOJE eet, 1. 1. 2027 účinnost a pilotní provoz, 11. 1. 2027 lhůta pro EET OFF, 1. 2. 2027 ostrý provoz.",
+          p: "Časový plán spuštění EET 2.0 od Finanční správy: 1. 11. 2026 funkce v DIS+, 1. 12. 2026 aplikace MOJE eet, 1. 1. 2027 účinnost zákona a začátek evidence (leden Finanční správa označuje jako pilotní měsíc), 11. 1. 2027 lhůta pro EET OFF, 1. 2. 2027 plný provoz podle harmonogramu.",
         },
       ],
     },
@@ -69,6 +73,8 @@ export const glosarEet: Guide = {
         {
           p: "Činnost, jejíž tržby zákon z evidence vyjímá – například část dopravy, poštovní služby, hazardní hry nebo dodávky energií. Výjimka platí jen pro danou činnost, ne pro celého podnikatele.",
         },
+        { h3: "Ojedinělá tržba" },
+        { p: FACTS.whoMust.occasional },
         { h3: "Záloha určená k čerpání a čerpání" },
         {
           p: "U záloh, dárkových poukazů a dobíjení kreditu se eviduje přijetí platby určené k pozdějšímu čerpání i samotné čerpání, jako samostatné částky. V datové zprávě jim odpovídají pole **urceno_cerp_zuct** a **cerp_zuct**.",
@@ -133,7 +139,7 @@ export const glosarEet: Guide = {
         },
         { h3: "POK (potvrzovací kód)" },
         {
-          p: `${FACTS.confirmation.summary} Nahrazuje FIK ze staré EET. Technicky jde podle dokumentace o UUID doplněné o pomlčku a dva hexadecimální znaky.`,
+          p: `${FACTS.confirmation.summary} Nahrazuje FIK ze staré EET. ${FACTS.confirmation.onReceipt} Technicky jde podle dokumentace o UUID doplněné o pomlčku a dva hexadecimální znaky.`,
         },
         { h3: "Pořadové číslo" },
         {
@@ -200,7 +206,7 @@ export const glosarEet: Guide = {
     },
     {
       q: "Jaký je rozdíl mezi pilotním a ostrým provozem?",
-      a: "Pilotní provoz v lednu 2027 je podle Finanční správy dobrovolný a slouží k vyzkoušení pokladen. Ostrý provoz od 1. 2. 2027 znamená plnou povinnost evidovat.",
+      a: `Podle zákona žádný. ${FACTS.pilot.summary} Vyzkoušet si pokladnu stihněte v prosinci 2026.`,
     },
     {
       q: "Co je DIS+?",
@@ -217,9 +223,16 @@ export const glosarEet: Guide = {
     SOURCES.eetOff,
     SOURCES.mojeEet,
     SOURCES.prezident,
+    SOURCES.psp,
   ],
   related: ["eet-2-0-kompletni-pruvodce", "eet-2-0-vs-eet-1-0", "evidencni-jednotka"],
   published: "2026-10-01",
   updated: "2026-10-01",
+  changelog: [
+    {
+      date: "2026-10-01",
+      text: "Opraveno podle schváleného znění zákona: leden 2027 není zákonný pilotní ani dobrovolný provoz, evidovat se musí od 1. 1. 2027. Doplněny pojmy účinnost zákona a ojedinělá tržba a dobrovolnost POK na dokladu.",
+    },
+  ],
   reviewedBy: null,
 };

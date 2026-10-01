@@ -7,9 +7,9 @@ export const eetUbytovani: Guide = {
   title: "EET 2.0 u ubytování: zálohy, kauce, poplatek z pobytu",
   h1: "EET u ubytování: zálohy, kauce a městský poplatek",
   description:
-    "Penzion, apartmány, Airbnb: co se od 1. 2. 2027 eviduje v EET 2.0 – platba na recepci, záloha převodem, Booking, kauce a místní poplatek z pobytu.",
+    "Penzion, apartmány, Airbnb: co se od 1. 1. 2027 eviduje v EET 2.0 – platba na recepci, záloha převodem, Booking, kauce a místní poplatek z pobytu.",
   lead:
-    "Ubytovatel eviduje od **1. 2. 2027** všechny platby, které host zaplatí na místě – hotově, kartou nebo QR kódem na recepci. Neeviduje se záloha poslaná převodem ani platba přes Booking.com či Airbnb online. Jak naložit s vratnou kaucí a místním poplatkem z pobytu, Finanční správa k **1. 10. 2026** podrobně nevysvětlila.",
+    "Ubytovatel eviduje od **1. 1. 2027** všechny platby, které host zaplatí na místě – hotově, kartou nebo QR kódem na recepci. Neeviduje se záloha poslaná převodem ani platba přes Booking.com či Airbnb online. Jak naložit s vratnou kaucí a místním poplatkem z pobytu, Finanční správa k **1. 10. 2026** podrobně nevysvětlila.",
   summary: [
     "Platby hostů na místě (recepce, check-in, check-out) se evidují – hotovost, karta i QR kód.",
     "Záloha nebo celá platba převodem, platební bránou či přes platformu online se neeviduje.",
@@ -142,5 +142,6 @@ export const eetUbytovani: Guide = {
   related: ["kontaktni-platba", "eet-bez-internetu", "evidencni-jednotka"],
   published: "2026-10-01",
   updated: "2026-10-01",
+  changelog: [{ date: "2026-10-01", text: "Opraveno podle schváleného znění zákona: evidovat se musí od 1. 1. 2027, ne od 1. 2. 2027." }],
   reviewedBy: null,
 };

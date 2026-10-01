@@ -7,9 +7,9 @@ export const kontaktniPlatba: Guide = {
   title: "Kontaktní platba v EET 2.0: co se eviduje a co ne",
   h1: "Kontaktní platba: co se v EET 2.0 eviduje a co ne",
   description:
-    "Hotovost, karta, QR kód, převod, záloha, poukaz: které platby se od 1. 2. 2027 evidují v EET 2.0 a které ne. Přehledná tabulka a hraniční případy.",
+    "Hotovost, karta, QR kód, převod, záloha, poukaz: které platby se od 1. 1. 2027 evidují v EET 2.0 a které ne. Přehledná tabulka a hraniční případy.",
   lead:
-    "V EET 2.0 se od **1. 2. 2027** eviduje každá **kontaktní platba** – peníze přijaté při osobním kontaktu se zákazníkem nebo v provozovně: hotovost, karta, QR kód, poukázka, šek i kryptoměny. Neeviduje se platba přes bránu e-shopu ani převod na fakturu. U záloh a poukazů se eviduje přijetí i čerpání zvlášť.",
+    "V EET 2.0 se od **1. 1. 2027** eviduje každá **kontaktní platba** – peníze přijaté při osobním kontaktu se zákazníkem nebo v provozovně: hotovost, karta, QR kód, poukázka, šek i kryptoměny. Neeviduje se platba přes bránu e-shopu ani převod na fakturu. U záloh a poukazů se eviduje přijetí i čerpání zvlášť.",
   summary: [
     "Rozhoduje okolnost platby (osobní kontakt, provozovna), ne platební prostředek.",
     "Eviduje se hotovost, platební karta, QR kód, poukázka, šek i virtuální aktiva.",
@@ -110,6 +110,10 @@ export const kontaktniPlatba: Guide = {
           ],
         },
         {
+          note: `Malé tržby z podnikání z evidence automaticky nevypadávají. ${FACTS.whoMust.occasional}`,
+          tone: "warn",
+        },
+        {
           p: "Pokud si nejste jisti, zda váš konkrétní případ evidovat, projděte si [kvíz Musím evidovat?](/musim-evidovat).",
         },
       ],
@@ -137,9 +141,25 @@ export const kontaktniPlatba: Guide = {
       a: "Stravenka je poukázka, a platba poukázkou při osobním kontaktu se podle ministerstva financí eviduje. Jak přesně rozlišit papírové a elektronické stravenky, Finanční správa zatím podrobně nevysvětlila.",
     },
   ],
-  sources: [SOURCES.mfPredstavuje, SOURCES.kdoMusi, SOURCES.fsVladaSchvalila, SOURCES.danovkyKontaktni, SOURCES.vyvojari, SOURCES.srovnani, SOURCES.usoudEet],
+  sources: [
+    SOURCES.mfPredstavuje,
+    SOURCES.kdoMusi,
+    SOURCES.fsVladaSchvalila,
+    SOURCES.danovkyKontaktni,
+    SOURCES.vyvojari,
+    SOURCES.srovnani,
+    SOURCES.usoudEet,
+    SOURCES.podnikatelDetail,
+    SOURCES.psp,
+  ],
   related: ["koho-se-eet-tyka", "eet-ubytovani", "eet-remeslnici"],
   published: "2026-10-01",
   updated: "2026-10-01",
+  changelog: [
+    {
+      date: "2026-10-01",
+      text: "Opraveno podle schváleného znění zákona: kontaktní platby se evidují od 1. 1. 2027, ne od 1. 2. 2027. Doplněno, že hranice 50 000 Kč pro příležitostné tržby v zákoně není.",
+    },
+  ],
   reviewedBy: null,
 };

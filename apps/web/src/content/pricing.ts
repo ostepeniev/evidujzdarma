@@ -185,7 +185,7 @@ export const PRICING_FAQ = [
   },
   {
     q: "Kdy budou placené funkce dostupné?",
-    a: "Nejdřív spouštíme bezplatnou pokladnu, aby byla připravená na pilotní provoz v lednu 2027. Placené doplňky přidáme později. Kdo je předregistrovaný, dozví se o spuštění jako první.",
+    a: "Nejdřív spouštíme bezplatnou pokladnu, abyste si ji stihli vyzkoušet v prosinci 2026 – evidovat se musí od 1. 1. 2027. Placené doplňky přidáme později. Kdo je předregistrovaný, dozví se o spuštění jako první.",
   },
   {
     q: "Mohu Premium získat zdarma?",

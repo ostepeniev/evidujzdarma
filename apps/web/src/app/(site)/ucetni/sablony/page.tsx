@@ -7,7 +7,7 @@ import { FACTS_UPDATED } from "@/content/facts";
 export const metadata: Metadata = {
   title: "Šablony dopisů klientům k EET 2.0",
   description:
-    "Hotové dopisy pro účetní: úvod do EET 2.0, rozhodnutí o EET OFF, podklady k evidenčním jednotkám a kontrola před ostrým provozem. Doplňte kancelář a kopírujte.",
+    "Hotové dopisy pro účetní: úvod do EET 2.0, rozhodnutí o EET OFF, podklady k evidenčním jednotkám a kontrola před začátkem evidence. Doplňte kancelář a kopírujte.",
   alternates: { canonical: "/ucetni/sablony" },
 };
 

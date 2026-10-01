@@ -117,6 +117,16 @@ export const SOURCES = {
     label: "Daňovky.cz: Finanční správa vysvětluje nový pojem kontaktní platby",
     url: "https://danovky.cz/cs/eet-2-0-financni-sprava-vysvetluje-novy-pojem-kontaktni-platby",
   },
+  mfSnemovnaPrehlasovala: {
+    label: "MF ČR: Sněmovna přehlasovala Senát a stvrdila zavedení EET 2.0",
+    url: "https://mf.gov.cz/cs/ministerstvo/media/tiskove-zpravy/2026/snemovna-prehlasovala-senat-a-stvrdila-zavedeni-ee-65151",
+  },
+  finmagSchvalena: {
+    label: "Finmag.cz: EET 2.0 schválena – co neprošlo Senátem",
+    url: "https://www.finmag.cz/ekonomika/496173-eet-2-0-definitivne-schvalena-k-evidenci-pujdou-i-platby-kartou",
+  },
+  dokumenty: { label: "eet.gov.cz: Dokumenty k EET 2.0", url: "https://eet.gov.cz/cs/o-eet/dokumenty-k-eet-2-0" },
+  zdp: { label: "Zákon o daních z příjmů č. 586/1992 Sb.", url: "https://www.zakonyprolidi.cz/cs/1992-586" },
   leitnerNerezidenti: {
     label: "LeitnerLeitner: Evidence tržeb (EET 2.0) se vrací – poplatníci daně z příjmů i nerezidenti",
     url: "https://www.leitnerleitner.cz/novinky/evidence-trzeb-eet-2-0-se-vraci-povinnost-miri-na-poplatniky-dane-z-prijmu-a-za-urcitych-okolnosti-i-na-nerezidenty/",
@@ -149,9 +159,10 @@ export const TIMELINE: readonly TimelineItem[] = [
   {
     date: "2027-01-01",
     dateLabel: "1. 1. 2027",
-    title: "Účinnost zákona, pilotní provoz",
-    action: "Zákon nabývá účinnosti. Leden je pilotní (dobrovolný) provoz – ideální čas na zkoušku nanečisto.",
-    source: SOURCES.mfPredstavuje,
+    title: "Účinnost zákona – evidujte",
+    action:
+      "Zákon nabývá účinnosti a evidovat se musí od prvního dne. Zákon pilotní ani dobrovolný režim nezná; Finanční správa se v lednu zaměří na metodickou podporu.",
+    source: SOURCES.harmonogram,
   },
   {
     date: "2027-01-11",
@@ -163,13 +174,39 @@ export const TIMELINE: readonly TimelineItem[] = [
   {
     date: "2027-02-01",
     dateLabel: "1. 2. 2027",
-    title: "Ostrý provoz",
-    action: "Tržby přijaté hotově, kartou nebo QR kódem při osobním kontaktu se musí evidovat.",
+    title: "Plný provoz podle harmonogramu",
+    action: "Finanční správa končí s lednovým pilotním měsícem. Povinnost evidovat ale platí už od 1. 1. 2027.",
     source: SOURCES.harmonogram,
   },
 ];
 
-export const LIVE_DATE = "2027-02-01";
+/** Den, od kterého je evidence povinná (účinnost zákona). */
+export const EFFECTIVE_DATE = "2027-01-01";
+
+export interface LawStep {
+  date: string; // ISO (u nepřesného data jen rok-měsíc)
+  dateLabel: string;
+  text: string;
+  source: Source;
+}
+
+/** Jak zákon vznikal – pro blok „Historie zákona“. */
+export const LAW_HISTORY: readonly LawStep[] = [
+  { date: "2026-02-18", dateLabel: "18. 2. 2026", text: "Ministerstvo financí představilo koncept EET 2.0.", source: SOURCES.mfPredstavuje },
+  { date: "2026-05-04", dateLabel: "4. 5. 2026", text: "Vláda schválila návrh zákona.", source: SOURCES.fsVladaSchvalila },
+  { date: "2026-05-11", dateLabel: "11. 5. 2026", text: "Návrh dorazil do Sněmovny jako sněmovní tisk 189.", source: SOURCES.psp },
+  { date: "2026-06-05", dateLabel: "5. 6. 2026", text: "Finanční správa zveřejnila technickou dokumentaci pro vývojáře.", source: SOURCES.dokumenty },
+  { date: "2026-07-01", dateLabel: "1. 7. 2026", text: "Spuštěno testovací prostředí Playground.", source: SOURCES.fsPlayground },
+  { date: "2026-07-15", dateLabel: "15. 7. 2026", text: "Sněmovna schválila zákon ve 3. čtení.", source: SOURCES.psp },
+  {
+    date: "2026-08",
+    dateLabel: "Srpen 2026",
+    text: "Senát zákon vrátil s pozměňovacími návrhy – mimo jiné chtěl z evidence vyjmout bezhotovostní platby.",
+    source: SOURCES.finmagSchvalena,
+  },
+  { date: "2026-09-09", dateLabel: "9. 9. 2026", text: "Sněmovna Senát přehlasovala a schválila původní znění.", source: SOURCES.mfSnemovnaPrehlasovala },
+  { date: "2026-09-17", dateLabel: "17. 9. 2026", text: "Prezident zákon podepsal. Číslo ve Sbírce zákonů zatím nebylo zveřejněno.", source: SOURCES.prezident },
+];
 
 export const FACTS = {
   law: {
@@ -177,7 +214,16 @@ export const FACTS = {
     printNo: "sněmovní tisk 189",
     signedOn: "17. 9. 2026",
     effectiveFrom: "1. 1. 2027",
+    /** Paragrafy podle schváleného znění (sněmovní tisk 189). Ověřit po vyhlášení ve Sbírce. */
+    sections: { occasional: "§ 7", penalty: "§ 24", effect: "§ 36" },
     sources: [SOURCES.prezident, SOURCES.psp],
+  },
+  /** Leden 2027 */
+  pilot: {
+    summary:
+      "Zákon je účinný od 1. 1. 2027 a pilotní ani dobrovolný režim neobsahuje. Finanční správa leden ve svém harmonogramu označuje jako pilotní měsíc, kdy se zaměří na metodickou podporu – jde ale už o standardní evidenci. Zda bude v lednu pokutovat, oficiálně stanoveno není. Evidujte proto od 1. 1. 2027.",
+    short: "Evidovat se musí od 1. 1. 2027 – „pilotní“ leden není zákonná výjimka.",
+    sources: [SOURCES.harmonogram, SOURCES.psp],
   },
   /** Co se eviduje */
   evidenced: {
@@ -193,13 +239,17 @@ export const FACTS = {
     summary: "Evidovat musí každý poplatník daně z příjmů (fyzická i právnická osoba), který přijímá evidované tržby.",
     notCovered: "Netýká se příjmů ze zaměstnání, kapitálových příjmů, nájmu a příležitostných příjmů.",
     exemptions:
-      "Zákon vyjímá některé činnosti – podle dostupných rozborů například část osobní dopravy, poštovní služby, hazardní hry, dodávky energií a vody nebo některé finanční služby. Výjimka se týká jen dané činnosti; přesný výčet ověřte na eet.gov.cz.",
-    sources: [SOURCES.kdoMusi],
+      "Zákon vyjímá některé činnosti – podle dostupných rozborů například pravidelnou osobní dopravu (platba ve vozidle), poštovní služby, hazardní hry, dodávky energií a vody, finanční služby bank a pojišťoven nebo prodej kaprů před Vánoci. Výjimka se týká jen dané činnosti; přesný výčet ověřte na eet.gov.cz.",
+    occasional:
+      "Pevná hranice pro „příležitostné tržby“ (např. 50 000 Kč ročně) ve schváleném zákoně není. Tisková zpráva MF z února 2026 ji zmiňovala, do zákona se ale nedostala. Zákon pracuje jen s tržbou, která je ojedinělá z hlediska obvykle přijímaných tržeb (§ 7) – a to se posuzuje podle okolností, ne podle částky.",
+    sources: [SOURCES.kdoMusi, SOURCES.podnikatelDetail, SOURCES.psp],
   },
   offline: {
     hours: 48,
     summary:
       "Datová zpráva se odesílá nejpozději při přijetí platby. Při výpadku spojení lze prodávat dál a tržbu odeslat bez zbytečného odkladu, nejpozději do 48 hodin.",
+    responseTimeout:
+      "Jak dlouho pokladna čeká na odpověď, si nastaví poplatník sám – nejméně 2 sekundy. Když odpověď nepřijde, prodej se neblokuje a tržba se pošle znovu. Znovu se posílá jen tržba, ke které nepřišel POK.",
     sources: [SOURCES.prakticke, SOURCES.fsFaq],
   },
   receipt: {
@@ -209,6 +259,7 @@ export const FACTS = {
   },
   confirmation: {
     summary: "Finanční správa na každou evidovanou tržbu odpoví potvrzovacím kódem (POK).",
+    onReceipt: "POK na dokladu uvádět nemusíte – podle Finanční správy je to dobrovolné.",
     sources: [SOURCES.prakticke],
   },
   units: {
@@ -216,6 +267,8 @@ export const FACTS = {
       "Evidenční jednotka je provozovna (i mobilní stánek), automat, internetová stránka či aplikace nebo dopravní prostředek. Podnikatel bez provozovny uvede jako jednotku sám sebe.",
     types: ["stálá provozovna", "mobilní provozovna", "automat", "internetová stránka", "dopravní prostředek"],
     change: "Změny se oznamují v DIS+ před první tržbou po změně, nejpozději do 15 dnů.",
+    allUnits:
+      "Oznamují se všechny jednotky – i ty, kde se evidované tržby nepřijímají, pokud má podnikatel aspoň jednu jednotku s evidovanými tržbami.",
     sources: [SOURCES.jakZacit],
   },
   certificate: {
@@ -225,6 +278,7 @@ export const FACTS = {
   },
   eetOff: {
     surchargeMonthly: 1400,
+    surchargeYearly: 16_800,
     incomeLimit: 1_000_000,
     band: 1,
     deadline: "11. 1. 2027",
@@ -232,6 +286,12 @@ export const FACTS = {
       "Režim EET OFF je dobrovolný: fyzická osoba v 1. pásmu paušálního režimu s příjmy ze samostatné činnosti do 1 mil. Kč ročně zaplatí přirážku 1 400 Kč měsíčně a tržby neeviduje.",
     howTo:
       "Oznámení o přihlášení k přirážce se podává do 10. dne zdaňovacího období – pro rok 2027 do 11. 1. 2027 (10. 1. je neděle). Pozdní oznámení je neúčinné.",
+    naturalOnly: "Režim je jen pro fyzické osoby.",
+    binding: "Volba platí na celý kalendářní rok – v průběhu roku ji změnit nelze.",
+    midYear: "Kdo začne podnikat v průběhu roku, platí přirážku od měsíce, ve kterém činnost zahájil.",
+    overLimit:
+      "Když příjmy v průběhu roku přesáhnou 1 mil. Kč, přirážku platíte do konce roku a evidovat tržby musíte až od následujícího roku.",
+    exit: "Z režimu se odhlásíte oznámením do 10. dne následujícího roku.",
     sources: [SOURCES.eetOff, SOURCES.eetOffJak],
   },
   pausal: {
@@ -240,11 +300,17 @@ export const FACTS = {
     2027: { band1: 9662, band2: 16745, band3: 27139, provisional: true },
     sources: [SOURCES.pausal2026, SOURCES.pausal2027],
   },
+  taxCredit: {
+    max: 5000,
+    summary:
+      "Sleva na dani až 5 000 Kč (§ 35be zákona o daních z příjmů) náleží jen OSVČ, jen za první zdaňovací období, ve kterém začnou evidovat tržby, a je to strop: podle dílčího základu daně ze samostatné činnosti může být nižší, nebo nulová.",
+    sources: [SOURCES.podnikatelDetail, SOURCES.zdp],
+  },
   penalties: {
     max: 500_000,
     summary:
-      "Za neodeslání datové zprávy nebo závažné maření evidence hrozí pokuta až 500 000 Kč. Uzavření provozovny jako sankce v EET 2.0 není.",
-    sources: [SOURCES.pokuty],
+      "Za neodeslání datové zprávy nebo závažné maření evidence hrozí pokuta až 500 000 Kč (§ 24). Uzavření provozovny jako sankce v EET 2.0 není.",
+    sources: [SOURCES.pokuty, SOURCES.psp],
   },
   mojeEet: {
     summary:

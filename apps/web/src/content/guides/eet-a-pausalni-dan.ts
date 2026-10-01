@@ -11,8 +11,8 @@ export const eetAPausalniDan: Guide = {
   title: "EET 2.0 a paušální daň: co platí pro paušalisty",
   h1: "EET a paušální daň: musí paušalisté evidovat?",
   description:
-    "Paušalisté musí od 1. 2. 2027 evidovat tržby jako ostatní. Výjimkou je EET OFF v 1. pásmu za 1 400 Kč měsíčně. Přehled záloh 2027, lhůta 11. 1. a rozhodování.",
-  lead: `Ano. Paušální režim vás evidence tržeb nezbavuje – kdo přijímá platby osobně, eviduje od **1. 2. 2027** jako ostatní. Jedinou výjimkou je **EET OFF** pro 1. pásmo s příjmy do 1 mil. Kč: přirážka **${formatKc(s)} měsíčně**, takže záloha v 1. pásmu vyjde předběžně na ${formatKc(p27.band1 + s)}. Rozhodnout se musíte do **${FACTS.eetOff.deadline}**.`,
+    "Paušalisté musí od 1. 1. 2027 evidovat tržby jako ostatní. Výjimkou je EET OFF v 1. pásmu za 1 400 Kč měsíčně. Přehled záloh 2027, lhůta 11. 1. a rozhodování.",
+  lead: `Ano. Paušální režim vás evidence tržeb nezbavuje – kdo přijímá platby osobně, eviduje od **1. 1. 2027** jako ostatní. Jedinou výjimkou je **EET OFF** pro 1. pásmo s příjmy do 1 mil. Kč: přirážka **${formatKc(s)} měsíčně**, takže záloha v 1. pásmu vyjde předběžně na ${formatKc(p27.band1 + s)}. Rozhodnout se musíte do **${FACTS.eetOff.deadline}**.`,
   summary: [
     "Paušální daň a EET jsou dvě samostatné věci – paušalista eviduje kontaktní platby jako každý jiný podnikatel.",
     `EET OFF je jen pro 1. pásmo a příjmy do 1 mil. Kč: přirážka ${formatKc(s)} měsíčně k paušální záloze.`,
@@ -67,6 +67,16 @@ export const eetAPausalniDan: Guide = {
             "včas podáte oznámení (do 11. 1. 2027).",
           ],
         },
+        { h3: "Pravidla EET OFF během roku" },
+        {
+          ul: [
+            FACTS.eetOff.naturalOnly,
+            `${FACTS.eetOff.binding} Za celý rok zaplatíte přirážku ${formatKc(FACTS.eetOff.surchargeYearly)}.`,
+            FACTS.eetOff.midYear,
+            FACTS.eetOff.overLimit,
+            FACTS.eetOff.exit,
+          ],
+        },
         {
           p: "Pozor: do 1. pásma se lze za určitých podmínek dostat i s příjmy do 1,5 nebo 2 mil. Kč (podle podílu příjmů s 80% nebo 60% výdajovým paušálem). Na EET OFF ale takový paušalista nedosáhne – strop pro přirážku je pevně **1 mil. Kč**.",
         },
@@ -115,7 +125,8 @@ export const eetAPausalniDan: Guide = {
           ul: [
             "**Přehled z pokladny není celkový příjem.** EET zachytí jen kontaktní platby, ne převody na fakturu. Limit příjmů pro paušál hlídejte z celého příjmu.",
             "**Ani v EET OFF nezapomeňte na doklad.** Na žádost zákazníka ho vydáváte podle zákona o ochraně spotřebitele – viz [Musím vydávat účtenku?](/navody/musim-vydavat-uctenku)",
-            "**Rozhodnutí platí celý rok.** EET OFF se v průběhu roku nemění; zvažte, jak se vaše podnikání v roce 2027 vyvine.",
+            `**Rozhodnutí platí celý rok.** EET OFF se v průběhu roku nemění; zvažte, jak se vaše podnikání v roce 2027 vyvine. ${FACTS.eetOff.overLimit}`,
+            "**Kdo EET OFF nezvolí, eviduje od 1. 1. 2027.** „Pilotní“ leden není zákonná výjimka – pokladnu si vyzkoušejte v prosinci 2026.",
           ],
         },
         { cta: "registrace" },
@@ -139,10 +150,33 @@ export const eetAPausalniDan: Guide = {
       q: "Můžu do paušálu vstoupit a zároveň zvolit EET OFF?",
       a: "Ano, pokud splníte podmínky paušálního režimu i EET OFF. Přihlášení k přirážce uvedete přímo v oznámení o vstupu do paušálního režimu, pro rok 2027 do 11. 1. 2027.",
     },
+    {
+      q: "Co když mi příjmy během roku přesáhnou 1 mil. Kč?",
+      a: FACTS.eetOff.overLimit,
+    },
+    {
+      q: "Začínám podnikat v průběhu roku. Platím přirážku za celý rok?",
+      a: `Ne. ${FACTS.eetOff.midYear}`,
+    },
   ],
-  sources: [SOURCES.eetOff, SOURCES.eetOffJak, SOURCES.pausal2026, SOURCES.pausal2027, SOURCES.fsPausalFaq, SOURCES.fsPausalLhuta, SOURCES.kdoMusi],
+  sources: [
+    SOURCES.eetOff,
+    SOURCES.eetOffJak,
+    SOURCES.pausal2026,
+    SOURCES.pausal2027,
+    SOURCES.fsPausalFaq,
+    SOURCES.fsPausalLhuta,
+    SOURCES.kdoMusi,
+    SOURCES.harmonogram,
+  ],
   related: ["eet-off", "koho-se-eet-tyka", "eet-2-0-kompletni-pruvodce"],
   published: "2026-10-01",
   updated: "2026-10-01",
+  changelog: [
+    {
+      date: "2026-10-01",
+      text: "Opraveno podle schváleného znění zákona: paušalisté bez EET OFF evidují od 1. 1. 2027, ne od 1. 2. 2027. Doplněna pravidla EET OFF během roku (zahájení podnikání, překročení 1 mil. Kč, odhlášení).",
+    },
+  ],
   reviewedBy: null,
 };

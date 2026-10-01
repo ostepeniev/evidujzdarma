@@ -49,7 +49,7 @@ const CABINET: readonly { title: string; text: string; status: "now" | "launch";
   },
   {
     title: "Kalendář termínů",
-    text: "Upozornění na termíny pro všechny klienty najednou – lhůta EET OFF, ostrý provoz, konec platnosti certifikátů.",
+    text: "Upozornění na termíny pro všechny klienty najednou – lhůta EET OFF, začátek evidence 1. 1. 2027, konec platnosti certifikátů.",
     status: "launch",
   },
 ];
@@ -77,7 +77,7 @@ const FAQ: FaqItem[] = [
   },
   {
     q: "Na co mají klienti myslet nejdřív?",
-    a: `Od 1. 11. 2026 se v DIS+ přihlašuje k evidenci, oznamují evidenční jednotky a vydávají pokladní certifikáty. Paušalisté v 1. pásmu se musí do ${FACTS.eetOff.deadline} rozhodnout o EET OFF. Ostrý provoz začíná 1. 2. 2027.`,
+    a: `Od 1. 11. 2026 se v DIS+ přihlašuje k evidenci, oznamují evidenční jednotky a vydávají pokladní certifikáty. Evidovat se musí od ${FACTS.law.effectiveFrom} – „pilotní“ leden není zákonná výjimka, test pokladny proto naplánujte na prosinec. Paušalisté v 1. pásmu se musí do ${FACTS.eetOff.deadline} rozhodnout o EET OFF.`,
   },
 ];
 
@@ -98,7 +98,7 @@ function eventsLd() {
   }));
 }
 
-const DEADLINES = TIMELINE.filter((t) => ["2026-11-01", "2026-12-01", "2027-01-11", "2027-02-01"].includes(t.date));
+const DEADLINES = TIMELINE.filter((t) => ["2026-11-01", "2026-12-01", "2027-01-01", "2027-01-11"].includes(t.date));
 
 export default function AccountantsPage() {
   return (

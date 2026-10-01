@@ -8,12 +8,12 @@ export const pokutyEet: Guide = {
   h1: "Pokuty za EET 2.0: co hrozí a jak se jim vyhnout",
   description:
     "Za neodeslání tržby nebo maření evidence hrozí v EET 2.0 pokuta až 500 000 Kč. Uzavření provozovny už nehrozí. Co se pokutuje, kdo kontroluje a jak se chránit.",
-  lead: `Za neodeslání datové zprávy o tržbě nebo za závažné maření evidence hrozí v EET 2.0 pokuta až **${formatKc(FACTS.penalties.max)}**. Na rozdíl od staré EET už úřady nemohou zavřít provozovnu. Ostrý provoz začíná **1. 2. 2027**; leden je pilotní, kdy se Finanční správa chce soustředit na pomoc, ne na sankce.`,
+  lead: `Za neodeslání datové zprávy o tržbě nebo za závažné maření evidence hrozí v EET 2.0 pokuta až **${formatKc(FACTS.penalties.max)}**. Na rozdíl od staré EET už úřady nemohou zavřít provozovnu. Pokuta platí od účinnosti zákona **1. 1. 2027** – zákon pilotní ani dobrovolný režim nezná.`,
   summary: [
     `Maximální pokuta za neodeslání tržby nebo závažné maření evidence: ${formatKc(FACTS.penalties.max)}.`,
     "Uzavření provozovny ani pozastavení činnosti jako sankce v EET 2.0 není.",
     "Pokuta za „nevydání účtenky“ podle zákona o evidenci tržeb nehrozí – účtenka povinná není.",
-    "Leden 2027 je pilotní provoz; plná odpovědnost platí od 1. 2. 2027.",
+    "Povinnost evidovat i pokuta platí od 1. 1. 2027. Zda bude Finanční správa v lednu pokutovat, oficiálně stanoveno není.",
     "Výše pokuty je horní hranice – konkrétní částku určuje úřad podle závažnosti.",
   ],
   sections: [
@@ -31,7 +31,7 @@ export const pokutyEet: Guide = {
               ["Nesplnění oznamovacích povinností (evidenční jednotky)", "Obecná pokuta podle daňového řádu", "Podle rozborů zákona se neřeší zvláštní sankcí EET."],
               ["Nevydání účtenky", "Podle zákona o EET nic", "Účtenka není povinná; doklad na žádost ale ukládá zákon o ochraně spotřebitele."],
             ],
-            caption: "Stav k 1. 10. 2026 podle dostupných rozborů schváleného zákona. Přesné znění sankčních ustanovení ve Sbírce zákonů jsme zatím neověřili.",
+            caption: `Stav k 1. 10. 2026 podle schváleného znění zákona (${FACTS.law.printNo}, ${FACTS.law.sections.penalty}) a dostupných rozborů. Číslo zákona ve Sbírce zákonů zatím nebylo zveřejněno.`,
           },
         },
         {
@@ -77,13 +77,14 @@ export const pokutyEet: Guide = {
     },
     {
       id: "pilot",
-      heading: "Leden 2027: pilotní provoz",
+      heading: "Leden 2027: „pilotní“ měsíc není zákonná výjimka",
       blocks: [
+        { p: FACTS.pilot.summary },
         {
-          p: "Zákon je účinný od **1. 1. 2027**, ale leden je podle Finanční správy **pilotní provoz**. Úřady se v tomto období chtějí soustředit hlavně na metodickou podporu a pomoc s nastavením pokladen. Plná povinnost evidovat začíná ostrým provozem **1. 2. 2027**.",
+          p: `Zákon je účinný od **${FACTS.law.effectiveFrom}** (${FACTS.law.sections.effect}) a pokuta až ${formatKc(FACTS.penalties.max)} (${FACTS.law.sections.penalty}) se vztahuje na tržby od tohoto dne. Lednové označení „pilotní“ je pojem z harmonogramu Finanční správy, ne zákonná výjimka.`,
         },
         {
-          note: "Zda je lednový pilot zakotven přímo v zákoně, nebo jde o správní praxi Finanční správy, jsme k 1. 10. 2026 nedokázali ověřit. Leden berte jako příležitost vše vyzkoušet, ne jako jistotu, že se nic nemůže stát.",
+          note: "Pokladnu si vyzkoušejte v prosinci 2026 – certifikát získáte v DIS+ od 1. 11. 2026 a v testovacím režimu pokladny nebo na Playgroundu Finanční správy ověříte, že tržby odcházejí a vrací se POK. Od 1. 1. 2027 už evidujte naostro.",
           tone: "warn",
         },
       ],
@@ -136,12 +137,18 @@ export const pokutyEet: Guide = {
     },
     {
       q: "Dostanu pokutu v lednu 2027?",
-      a: "Leden 2027 je podle Finanční správy pilotní provoz zaměřený na pomoc podnikatelům; ostrý provoz začíná 1. 2. 2027. Doporučujeme v lednu evidovat nanečisto a odladit pokladnu.",
+      a: `Může. Zákon je účinný od 1. 1. 2027 a pilotní ani dobrovolný režim nezná, pokuta až ${formatKc(FACTS.penalties.max)} tedy platí od prvního dne. Finanční správa leden označuje jako pilotní měsíc a chce se v něm zaměřit na metodickou podporu; zda bude v lednu pokutovat, oficiálně stanoveno není. Evidujte od 1. 1. 2027 a pokladnu si odlaďte už v prosinci.`,
     },
   ],
-  sources: [SOURCES.pokuty, SOURCES.podnikatelPrehled, SOURCES.podnikatelPilot, SOURCES.harmonogram, SOURCES.prakticke, SOURCES.srovnani],
+  sources: [SOURCES.pokuty, SOURCES.psp, SOURCES.podnikatelPrehled, SOURCES.harmonogram, SOURCES.prakticke, SOURCES.fsPlayground, SOURCES.srovnani],
   related: ["eet-bez-internetu", "musim-vydavat-uctenku", "eet-2-0-vs-eet-1-0"],
   published: "2026-10-01",
   updated: "2026-10-01",
+  changelog: [
+    {
+      date: "2026-10-01",
+      text: "Opraveno podle schváleného znění zákona: leden 2027 není zákonný pilotní provoz bez sankcí. Povinnost evidovat i pokuta až 500 000 Kč platí od 1. 1. 2027; test pokladny doporučujeme v prosinci 2026.",
+    },
+  ],
   reviewedBy: null,
 };

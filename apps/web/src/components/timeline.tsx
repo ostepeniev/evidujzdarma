@@ -1,11 +1,11 @@
-import { TIMELINE, daysUntil, LIVE_DATE } from "@/content/facts";
+import { EFFECTIVE_DATE, TIMELINE, daysUntil } from "@/content/facts";
 
 export function Countdown({ now = new Date() }: { now?: Date }) {
-  const days = daysUntil(LIVE_DATE, now);
+  const days = daysUntil(EFFECTIVE_DATE, now);
   return (
     <div className="inline-flex items-baseline gap-2 rounded-2xl bg-sun-100 px-5 py-3">
       <span className="text-4xl font-extrabold tabular-nums text-ink">{days}</span>
-      <span className="text-base font-medium text-ink-soft">{days === 1 ? "den" : days >= 2 && days <= 4 ? "dny" : "dní"} do ostrého provozu EET 2.0</span>
+      <span className="text-base font-medium text-ink-soft">{days === 1 ? "den" : days >= 2 && days <= 4 ? "dny" : "dní"} do povinné evidence (1. 1. 2027)</span>
     </div>
   );
 }

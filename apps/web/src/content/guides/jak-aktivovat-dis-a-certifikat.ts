@@ -11,7 +11,7 @@ export const jakAktivovatDisACertifikat: Guide = {
   lead:
     "Od **1. 11. 2026** se k EET 2.0 přihlásíte v Daňové informační schránce (DIS+) na portálu MOJE daně. Tam založíte evidenční jednotky a v aplikaci Správa pokladních certifikátů EET si zdarma vygenerujete pokladní certifikát – soubor .p12 chráněný heslem, platný **366 dní**.",
   summary: [
-    "Funkce EET 2.0 v DIS+ se otevírají 1. 11. 2026, ostrý provoz začíná 1. 2. 2027.",
+    "Funkce EET 2.0 v DIS+ se otevírají 1. 11. 2026, evidovat se musí od 1. 1. 2027.",
     "Postup: přihlášení do DIS+ → přihlášení k evidenci tržeb → evidenční jednotky → pokladní certifikát.",
     "Certifikát je zdarma, platí 366 dní a patří podnikateli – jeden stačí pro všechny pokladny.",
     "Soubor .p12 a jeho heslo nikomu neposílejte e-mailem; kdo je má, může jménem podnikatele odesílat tržby.",
@@ -49,7 +49,7 @@ export const jakAktivovatDisACertifikat: Guide = {
         },
         { h3: "3. Založení evidenčních jednotek" },
         {
-          p: "V části Evidence tržeb → Evidenční jednotky založte každou jednotku: druh (stálá či mobilní provozovna, automat, internetová stránka, dopravní prostředek, nebo vy sami), identifikaci, převažující činnost. Systém každé jednotce přidělí **ID jednotky** – to budete potřebovat v pokladně. Podrobnosti v návodu [Evidenční jednotka](/navody/evidencni-jednotka).",
+          p: `V části Evidence tržeb → Evidenční jednotky založte každou jednotku: druh (stálá či mobilní provozovna, automat, internetová stránka, dopravní prostředek, nebo vy sami), identifikaci, převažující činnost. ${FACTS.units.allUnits} Systém každé jednotce přidělí **ID jednotky** – to budete potřebovat v pokladně. Podrobnosti v návodu [Evidenční jednotka](/navody/evidencni-jednotka).`,
         },
         { h3: "4. Vygenerování pokladního certifikátu" },
         {
@@ -59,10 +59,11 @@ export const jakAktivovatDisACertifikat: Guide = {
         {
           p: "V pokladní aplikaci nahrajte soubor .p12, zadejte heslo a vyplňte ID evidenčních jednotek. Pokladna od té chvíle podepisuje datové zprávy vaším certifikátem.",
         },
-        { h3: "6. Zkouška nanečisto v lednu" },
+        { h3: "6. Zkouška nanečisto v prosinci" },
         {
-          p: "Leden 2027 je podle harmonogramu Finanční správy **pilotní provoz**. Je to ideální čas ověřit, že pokladna tržby odesílá a dostává potvrzovací kód (POK). Od **1. 2. 2027** už evidence běží naostro.",
+          p: "Pokladnu vyzkoušejte ještě **v prosinci 2026** – v testovacím režimu pokladny, ověřovací zprávou nebo na Playgroundu Finanční správy. Ověřte, že pokladna tržby odesílá a dostává potvrzovací kód (POK). Od **1. 1. 2027** se eviduje naostro.",
         },
+        { note: FACTS.pilot.summary, tone: "warn" },
       ],
     },
     {
@@ -143,7 +144,7 @@ export const jakAktivovatDisACertifikat: Guide = {
       { name: "Založte evidenční jednotky", text: "V části Evidence tržeb → Evidenční jednotky založte každou provozovnu, stánek, vozidlo, web, nebo sebe, pokud provozovnu nemáte. Poznamenejte si přidělená ID jednotek." },
       { name: "Vygenerujte pokladní certifikát", text: "V aplikaci Správa pokladních certifikátů EET zvolte heslo k soukromému klíči a vygenerujte certifikát. Stáhněte soubor .p12." },
       { name: "Nahrajte certifikát do pokladny", text: "V pokladní aplikaci nahrajte soubor .p12, zadejte heslo a doplňte ID evidenčních jednotek." },
-      { name: "Vyzkoušejte evidenci v pilotním provozu", text: "V lednu 2027 ověřte, že pokladna tržby odesílá a dostává potvrzovací kód (POK). Ostrý provoz začíná 1. 2. 2027." },
+      { name: "Vyzkoušejte evidenci nanečisto", text: "V prosinci 2026 v testovacím režimu pokladny ověřte, že tržby odcházejí a vrací se potvrzovací kód (POK). Od 1. 1. 2027 se eviduje naostro." },
     ],
   },
   faq: [
@@ -168,10 +169,16 @@ export const jakAktivovatDisACertifikat: Guide = {
       a: "Pokladna s ním přestane úspěšně odesílat tržby. Proto ho obnovte před koncem platnosti (366 dní) – automaticky, pokud to pokladna umí, nebo ručně vydáním nového certifikátu v DIS+.",
     },
   ],
-  sources: [SOURCES.jakZacit, SOURCES.harmonogram, SOURCES.caeetPostupy, SOURCES.caeetNapoveda, SOURCES.mojeDane, SOURCES.vyvojari],
+  sources: [SOURCES.jakZacit, SOURCES.harmonogram, SOURCES.caeetPostupy, SOURCES.caeetNapoveda, SOURCES.mojeDane, SOURCES.vyvojari, SOURCES.fsPlayground, SOURCES.psp],
   related: ["evidencni-jednotka", "eet-2-0-kompletni-pruvodce", "eet-bez-internetu"],
   published: "2026-10-01",
   updated: "2026-10-01",
-  changelog: [{ date: "2026-10-01", text: "První verze návodu. Snímky obrazovek doplníme po spuštění funkcí v DIS+ 1. 11. 2026." }],
+  changelog: [
+    { date: "2026-10-01", text: "První verze návodu. Snímky obrazovek doplníme po spuštění funkcí v DIS+ 1. 11. 2026." },
+    {
+      date: "2026-10-01",
+      text: "Opraveno podle schváleného znění zákona: leden 2027 není zákonný pilotní provoz a evidovat se musí od 1. 1. 2027. Zkoušku nanečisto doporučujeme v prosinci 2026.",
+    },
+  ],
   reviewedBy: null,
 };

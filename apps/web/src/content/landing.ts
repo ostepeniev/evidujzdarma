@@ -11,7 +11,7 @@ export const WHO_MUST: readonly { title: string; text: string; tone: "yes" | "ma
   },
   {
     title: "Paušalisté v 1. pásmu s příjmy do 1 mil. Kč",
-    text: `Mohou zvolit EET OFF – přirážku ${formatKc(FACTS.eetOff.surchargeMonthly)} měsíčně místo evidence. Přihlásit se lze do ${FACTS.eetOff.deadline}.`,
+    text: `Mohou zvolit EET OFF – přirážku ${formatKc(FACTS.eetOff.surchargeMonthly)} měsíčně (${formatKc(FACTS.eetOff.surchargeYearly)} ročně) místo evidence. Volba platí na celý rok, přihlásit se lze do ${FACTS.eetOff.deadline}.`,
     tone: "maybe",
     href: "/kalkulacka-eet-off",
     linkLabel: "Kalkulačka EET OFF",
@@ -25,7 +25,7 @@ export const WHO_MUST: readonly { title: string; text: string; tone: "yes" | "ma
   },
   {
     title: "Vyjmuté činnosti",
-    text: "Např. část osobní dopravy, poštovní služby, hazardní hry nebo dodávky energií a vody (podle rozborů – výčet ověřte). Výjimka platí jen pro danou činnost.",
+    text: "Např. pravidelná osobní doprava, poštovní služby, hazardní hry nebo dodávky energií a vody (podle rozborů – výčet ověřte). Výjimka platí jen pro danou činnost. Výjimka „příležitostné tržby do 50 000 Kč“ v zákoně není.",
     tone: "maybe",
     href: "/musim-evidovat",
     linkLabel: "Kvíz: Musím evidovat?",
@@ -42,7 +42,7 @@ export const WHO_MUST: readonly { title: string; text: string; tone: "yes" | "ma
 export const LANDING_FAQ: readonly FaqItem[] = [
   {
     q: "Od kdy platí EET 2.0?",
-    a: "Zákon o evidenci tržeb nabývá účinnosti 1. 1. 2027. Leden je podle Ministerstva financí pilotní (dobrovolný) provoz, ostrý provoz začíná 1. 2. 2027. Přípravu v DIS+ – přihlášení k evidenci, evidenční jednotky a pokladní certifikát – lze zahájit od 1. 11. 2026.",
+    a: `${FACTS.pilot.summary} Přípravu v DIS+ – přihlášení k evidenci, evidenční jednotky a pokladní certifikát – lze zahájit od 1. 11. 2026.`,
   },
   {
     q: "Které platby se evidují?",
@@ -62,7 +62,11 @@ export const LANDING_FAQ: readonly FaqItem[] = [
   },
   {
     q: "Musím vydávat účtenku?",
-    a: FACTS.receipt.summary,
+    a: `${FACTS.receipt.summary} ${FACTS.confirmation.onReceipt}`,
+  },
+  {
+    q: "Platí výjimka pro příležitostné tržby do 50 000 Kč?",
+    a: FACTS.whoMust.occasional,
   },
   {
     q: "Co je evidenční jednotka?",
@@ -70,7 +74,7 @@ export const LANDING_FAQ: readonly FaqItem[] = [
   },
   {
     q: "Co je EET OFF a vyplatí se mi?",
-    a: `${FACTS.eetOff.summary} ${FACTS.eetOff.howTo} Zda se to vyplatí, spočítáte v naší kalkulačce.`,
+    a: `${FACTS.eetOff.summary} ${FACTS.eetOff.howTo} ${FACTS.eetOff.binding} Zda se to vyplatí, spočítáte v naší kalkulačce.`,
   },
   {
     q: "Jak získám certifikát pro evidenci tržeb?",

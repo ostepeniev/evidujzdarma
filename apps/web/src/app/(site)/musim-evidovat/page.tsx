@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 const FAQ = [
   { q: "Kdo musí od roku 2027 evidovat tržby?", a: FACTS.whoMust.summary },
   { q: "Které platby se evidují?", a: `${FACTS.evidenced.summary} ${FACTS.evidenced.notEvidenced}` },
-  { q: "Kdo má výjimku?", a: FACTS.whoMust.exemptions },
+  { q: "Kdo má výjimku?", a: `${FACTS.whoMust.exemptions} ${FACTS.whoMust.occasional}` },
   { q: "Můžu se evidenci vyhnout přirážkou?", a: FACTS.eetOff.summary },
 ];
 
@@ -30,7 +30,7 @@ export default function QuizPage() {
           { name: "Nástroje", path: "/nastroje" },
           { name: "Kvíz", path: "/musim-evidovat" },
         ]}
-        lead="Evidence tržeb EET 2.0 platí od 1. 1. 2027, ostrý provoz od 1. 2. 2027. Odpovězte na nejvýše 6 otázek a zjistěte, zda se vás týká, zda máte výjimku, nebo můžete zvolit EET OFF."
+        lead="Evidence tržeb EET 2.0 platí od 1. 1. 2027 a evidovat se musí od prvního dne. Odpovězte na nejvýše 6 otázek a zjistěte, zda se vás týká, zda máte výjimku, nebo můžete zvolit EET OFF."
       />
       <div className="container-page py-10">
         <Quiz />
