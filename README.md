@@ -15,8 +15,8 @@
 | **PWA-каса** (офлайн, PIN, каталог, оплати, повернення, чеки, історія, підсумок) | `/pokladna` | готово (mock / Playground / продакшн) |
 | Налаштування «EET za 15 minut» (ARES, одиниці, сертифікат, тестова тржба, пристрої, персонал) | `/pokladna/nastaveni` | готово |
 | **Фіскальне ядро EET 2.0** (SOAP v4.1, WS-Security, перевірка підпису відповіді, черга 48 год) | `packages/fiscal-core` | готово, перевірено на офіційному зразку FS |
-| Каталог фірм і провозовен (ARES / ČSÚ RES) | `/firma`, `/provozovna`, `/firmy` | у роботі |
-| Бухгалтери: hromadná kontrola IČO, šablony dopisů, партнерська програма | `/ucetni` | у роботі |
+| Каталог фірм і провозовен (ARES / ČSÚ RES, поступова індексація, GDPR-námitky) | `/firma`, `/provozovna`, `/firmy`, `/namitka` | готово (імпорт: `pnpm --filter @ez/worker catalog:import`) |
+| Бухгалтери: hromadná kontrola IČO, šablony dopisů, кабінет (готовність клієнтів, запрошення, експорт) | `/ucetni`, `/kabinet` | готово |
 | Інфраструктура: Docker, Caddy (HTTPS), бекапи, worker | `infra/`, `Dockerfile` | готово |
 
 ## Документація
@@ -24,6 +24,7 @@
 - [Архітектура і хостинг (чому без Supabase, Hetzner vs. чеські провайдери)](docs/architektura-i-hosting.md)
 - [Деплой на Hetzner](docs/deploy.md)
 - [Перевірені факти про EET 2.0 і джерела](docs/research/eet2-fakta-2026-10.md)
+- [Що має перевірити daňový poradce](docs/revize-danovy-poradce.md)
 - [Офіційні артефакти FS (XSD, WSDL, кореневі сертифікати)](packages/fiscal-core/official/README.md)
 
 ## Швидкий старт (розробка)

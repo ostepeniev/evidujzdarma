@@ -373,6 +373,7 @@ export const firms = pgTable(
     vatPayer: boolean("vat_payer").notNull().default(false),
     foundedAt: date("founded_at"),
     dissolvedAt: date("dissolved_at"),
+    /** datum posledního ověření subjektu v ARES (enrich); null = údaje jen z RES ČSÚ */
     aresUpdatedAt: date("ares_updated_at"),
     street: text("street"),
     city: text("city"),
@@ -401,6 +402,10 @@ export const firms = pgTable(
     index("firms_founded_idx").on(t.foundedAt),
     index("firms_nace_gin").using("gin", t.nace),
     index("firms_name_trgm").using("gin", sql`${t.name} gin_trgm_ops`),
+    // stránkování velkých krajů (Praha) bez řazení celého kraje
+    index("firms_listable_region_name")
+      .on(t.regionCode, t.name)
+      .where(sql`${t.noindex} = false and ${t.dissolvedAt} is null`),
   ],
 );
 
@@ -432,6 +437,8 @@ export const firmEstablishments = pgTable(
 /** Námitky dle čl. 21 GDPR a žádosti o opravu údajů. */
 export const objections = pgTable("objections", {
   id: uuid("id").primaryKey().defaultRandom(),
+  /** objection = námitka dle čl. 21 GDPR | correction = oprava údajů */
+  kind: varchar("kind", { length: 16 }).notNull().default("objection"),
   ico: varchar("ico", { length: 8 }),
   icp: varchar("icp", { length: 12 }),
   name: text("name").notNull(),

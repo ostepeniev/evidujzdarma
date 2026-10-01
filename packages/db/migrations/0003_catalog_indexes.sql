@@ -1,0 +1,2 @@
+ALTER TABLE "objections" ADD COLUMN "kind" varchar(16) DEFAULT 'objection' NOT NULL;--> statement-breakpoint
+CREATE INDEX "firms_listable_region_name" ON "firms" USING btree ("region_code","name") WHERE "firms"."noindex" = false and "firms"."dissolved_at" is null;

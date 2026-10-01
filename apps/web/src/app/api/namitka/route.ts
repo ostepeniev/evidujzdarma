@@ -1,6 +1,9 @@
+import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
+import { enqueueEmail, processOutbox } from "@/lib/server/mail";
+import { SITE } from "@/lib/site";
 import { isValidIco, normalizeIco } from "@ez/cz";
 import { getDb, hasDatabase, schema } from "@ez/db";
 import { establishmentPath, firmPath } from "@/components/catalog/paths";
@@ -84,14 +87,18 @@ export async function POST(req: Request) {
     }
   }
 
-  const prefix = body.kind === "correction" ? "[Oprava údajů]" : "[Námitka čl. 21 GDPR]";
-  await db.insert(schema.objections).values({
-    ico,
-    icp: body.icp,
-    name: body.name,
-    email: body.email,
-    message: `${prefix} ${body.message}`,
+  const kind = body.kind === "correction" ? "correction" : "objection";
+  await db.insert(schema.objections).values({ kind, ico, icp: body.icp, name: body.name, email: body.email, message: body.message });
+  // Provozovatel musí odpovědět do 30 dnů → upozornění do schránky
+  await enqueueEmail({
+    to: SITE.email,
+    template: "notice",
+    payload: {
+      subject: `${kind === "correction" ? "Oprava údajů" : "Námitka čl. 21 GDPR"}: ${ico ?? body.icp ?? "bez IČO"}`,
+      text: `Od: ${body.name} <${body.email}>\nIČO: ${ico ?? "—"} · IČP: ${body.icp ?? "—"}\n\n${body.message}\n\nStránka byla automaticky vyřazena z indexace. Odpovězte do 30 dnů.`,
+    },
   });
+  after(() => processOutbox(5));
 
   if (ico) {
     const [firm] = await db
