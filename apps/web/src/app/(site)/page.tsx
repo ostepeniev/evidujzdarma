@@ -4,6 +4,7 @@ import { ComparisonTable } from "@/components/comparison-table";
 import { Faq } from "@/components/faq";
 import { IcoQuickCheck } from "@/components/ico-quick-check";
 import { PreregForm } from "@/components/prereg-form";
+import { PosPreview } from "@/components/pos-preview";
 import { Countdown, Timeline } from "@/components/timeline";
 import { LANDING_FAQ, WHO_MUST } from "@/content/landing";
 import { FACTS_UPDATED } from "@/content/facts";
@@ -35,7 +36,7 @@ export default function HomePage() {
 
       {/* Hero */}
       <section className="border-b border-line bg-gradient-to-b from-brand-50 to-white">
-        <div className="container-page py-14 sm:py-20">
+        <div className="container-page grid items-center gap-12 py-14 sm:py-20 lg:grid-cols-[1.35fr_1fr]">
           <div className="max-w-3xl">
             <p className="chip mb-5 bg-white text-brand-700 ring-1 ring-brand-200">EET 2.0 · platí od roku 2027</p>
             <h1 className="text-4xl font-extrabold leading-[1.1] tracking-tight text-ink sm:text-6xl">
@@ -53,6 +54,9 @@ export default function HomePage() {
             <div className="mt-8">
               <Countdown />
             </div>
+          </div>
+          <div className="hidden lg:block">
+            <PosPreview />
           </div>
         </div>
       </section>
