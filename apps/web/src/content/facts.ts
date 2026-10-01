@@ -58,6 +58,69 @@ export const SOURCES = {
   },
   zos: { label: "Zákon o ochraně spotřebitele č. 634/1992 Sb., § 16", url: "https://www.zakonyprolidi.cz/cs/1992-634" },
   vyvojari: { label: "eet.gov.cz: Pro vývojáře", url: "https://eet.gov.cz/pro-vyvojare/" },
+  // --- doplněno pro návody (vlna 1, 1. 10. 2026) ---
+  fsVladaSchvalila: {
+    label: "Finanční správa: Vláda schválila EET 2.0",
+    url: "https://financnisprava.gov.cz/cs/financni-sprava/media-a-verejnost/tiskove-zpravy-gfr/tiskove-zpravy-2026/vlada-schvalila-eet-2-0",
+  },
+  srovnani: {
+    label: "Podnikatel.cz: V čem se EET 2.0 liší od EET 1.0",
+    url: "https://www.podnikatel.cz/clanky/v-cem-se-eet-2-0-lisi-od-eet-1-0-prinasime-velke-srovnani/",
+  },
+  podnikatelPrehled: {
+    label: "Podnikatel.cz: EET 2.0 – kdy začne, koho se týká, co se eviduje a jaké hrozí pokuty",
+    url: "https://www.podnikatel.cz/clanky/eet-2-0-kdy-zacne-koho-se-tyka-co-vsechno-se-bude-evidovat-a-jake-hrozi-pokuty/",
+  },
+  fsPausalFaq: {
+    label: "Finanční správa: Dotazy a odpovědi k paušální dani",
+    url: "https://financnisprava.gov.cz/cs/dane/dane/dan-z-prijmu/pausalni-dan/dotazy-a-odpovedi/dotazy-a-odpovedi-k-pausalni-dani",
+  },
+  caeetPostupy: {
+    label: "eet.gov.cz: Certifikační autorita EET v2.0 – postupy získání pokladního certifikátu (PDF)",
+    url: "https://eet.gov.cz/files/CAEET_postupy_zadost_certifikat_v2.pdf",
+  },
+  caeetNapoveda: {
+    label: "eet.gov.cz: Certifikační autorita EET v2.0 – nápověda webové aplikace (PDF)",
+    url: "https://eet.gov.cz/files/CAEET_napoveda_webove_aplikace_v2.pdf",
+  },
+  mojeDane: { label: "Portál MOJE daně – přihlášení do DIS+", url: "https://mojedane.gov.cz/pmd/home/prihlaseni-do-dis" },
+  usoudEet: {
+    label: "Ústavní soud: zrušení náběhu 3. a 4. etapy EET a evidence plateb kartou (Pl. ÚS 26/16)",
+    url: "https://www.usoud.cz/aktualne/ustavni-soud-zrusil-nabeh-treti-a-ctvrte-etapy-elektronicke-evidence-trzeb-ale-samotnou-evidenci-neshledal-protiustavni",
+  },
+  fsZruseni2023: {
+    label: "Finanční správa: Zrušení elektronické evidence tržeb od 1. 1. 2023",
+    url: "https://financnisprava.gov.cz/cs/financni-sprava/media-a-verejnost/tiskove-zpravy-gfr/tiskove-zpravy-2022/zruseni-elektronicke-evidence-trzeb-od",
+  },
+  businessinfoEet1: {
+    label: "BusinessInfo.cz: Speciál – Elektronická evidence tržeb (první EET)",
+    url: "https://www.businessinfo.cz/clanky/special-elektronicka-evidence-trzeb-eet/",
+  },
+  podnikatelDetail: {
+    label: "Podnikatel.cz: Jak bude vypadat EET 2.0 a doprovodné daňové změny – detailní přehled",
+    url: "https://www.podnikatel.cz/clanky/jak-bude-vypadat-eet-2-0-a-doprovodne-danove-zmeny-pripravili-jsme-detailni-prehled/",
+  },
+  podnikatelPilot: {
+    label: "Podnikatel.cz: EET 2.0 odstartuje v lednu 2027, první měsíc ale půjde jen o pilotní provoz",
+    url: "https://www.podnikatel.cz/clanky/eet-sice-odstartuje-v-lednu-2027-prvni-mesic-ale-pujde-jen-o-pilotni-provoz/",
+  },
+  finmagNavod: {
+    label: "Finmag.cz: Finanční správa doplnila návod, termíny a technické detaily EET 2.0",
+    url: "https://www.finmag.cz/byrokracie/492937-eet-2-0-se-blizi-nove-informace-a-prehled-terminu-a-technickych-detailu-financni-spravy",
+  },
+  fsPausalLhuta: {
+    label: "Finanční správa: Do 10. ledna se lze přihlásit, odhlásit a změnit pásmo paušální daně",
+    url: "https://financnisprava.gov.cz/cs/financni-sprava/media-a-verejnost/tiskove-zpravy-gfr/tiskove-zpravy-2023/do-10-ledna-se-lze-prihlasit-odhlasit-a",
+  },
+  zmp: { label: "Zákon o místních poplatcích č. 565/1990 Sb. (poplatek z pobytu)", url: "https://www.zakonyprolidi.cz/cs/1990-565" },
+  danovkyKontaktni: {
+    label: "Daňovky.cz: Finanční správa vysvětluje nový pojem kontaktní platby",
+    url: "https://danovky.cz/cs/eet-2-0-financni-sprava-vysvetluje-novy-pojem-kontaktni-platby",
+  },
+  leitnerNerezidenti: {
+    label: "LeitnerLeitner: Evidence tržeb (EET 2.0) se vrací – poplatníci daně z příjmů i nerezidenti",
+    url: "https://www.leitnerleitner.cz/novinky/evidence-trzeb-eet-2-0-se-vraci-povinnost-miri-na-poplatniky-dane-z-prijmu-a-za-urcitych-okolnosti-i-na-nerezidenty/",
+  },
 } as const satisfies Record<string, Source>;
 
 export interface TimelineItem {
@@ -130,7 +193,7 @@ export const FACTS = {
     summary: "Evidovat musí každý poplatník daně z příjmů (fyzická i právnická osoba), který přijímá evidované tržby.",
     notCovered: "Netýká se příjmů ze zaměstnání, kapitálových příjmů, nájmu a příležitostných příjmů.",
     exemptions:
-      "Zákon vyjímá některé činnosti (např. část železniční a letecké dopravy, poštovní služby, hazardní hry, dodávky energií a vody, nebankovní spotřebitelské úvěry) – výjimka se týká jen dané činnosti.",
+      "Zákon vyjímá některé činnosti – podle dostupných rozborů například část osobní dopravy, poštovní služby, hazardní hry, dodávky energií a vody nebo některé finanční služby. Výjimka se týká jen dané činnosti; přesný výčet ověřte na eet.gov.cz.",
     sources: [SOURCES.kdoMusi],
   },
   offline: {
@@ -141,7 +204,7 @@ export const FACTS = {
   },
   receipt: {
     summary:
-      "EET 2.0 neukládá povinnost vydat účtenku. Pokud o doklad zákazník požádá, vydává se podle § 16 zákona o ochraně spotřebitele (datum, zboží či služba, cena, jméno a IČO prodávajícího) – může být i elektronický.",
+      "EET 2.0 neukládá povinnost vydat účtenku. Pokud o doklad zákazník požádá, vydává se podle § 16 zákona o ochraně spotřebitele (datum, zboží či služba, cena, jméno a IČO prodávajícího); podle běžného výkladu ho lze vydat i elektronicky.",
     sources: [SOURCES.prezident, SOURCES.zos],
   },
   confirmation: {

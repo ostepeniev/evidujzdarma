@@ -42,7 +42,7 @@ const Q: Record<string, Question> = {
   q3: {
     id: "q3",
     text: "Patří vaše činnost mezi vyjmuté?",
-    help: "Např. část železniční osobní a letecké dopravy, poštovní služby, hazardní hry, licencované dodávky energií, voda a kanalizace, nebankovní spotřebitelské úvěry.",
+    help: "Podle dostupných rozborů např. část osobní dopravy, poštovní služby, hazardní hry, dodávky energií a vody nebo některé finanční služby. Přesný výčet ověřte na eet.gov.cz.",
     choices: [
       { label: "Ano, veškerá moje činnost je vyjmutá", next: "r-exempt" },
       { label: "Jen část činnosti", next: "q4" },

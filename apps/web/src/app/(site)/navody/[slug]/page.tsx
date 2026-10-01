@@ -71,7 +71,7 @@ export default async function GuidePage({ params }: PageProps<"/navody/[slug]">)
       </PageHeader>
 
       <div className="container-page grid gap-12 py-10 lg:grid-cols-[minmax(0,1fr)_280px]">
-        <article className="prose-ez min-w-0 max-w-3xl">
+        <article className="min-w-0 max-w-3xl">
           <p className="text-xl leading-relaxed text-ink">
             <RichText text={g.lead} />
           </p>
@@ -93,7 +93,7 @@ export default async function GuidePage({ params }: PageProps<"/navody/[slug]">)
           </aside>
 
           {g.sections.map((s) => (
-            <section key={s.id} id={s.id} className="scroll-mt-24">
+            <section key={s.id} id={s.id} className="prose-ez scroll-mt-24">
               <h2>{s.heading}</h2>
               {s.blocks.map((b, i) => (
                 <GuideBlock key={i} block={b} />
@@ -108,7 +108,7 @@ export default async function GuidePage({ params }: PageProps<"/navody/[slug]">)
             </section>
           )}
 
-          <section id="zdroje" className="mt-12 scroll-mt-24">
+          <section id="zdroje" className="prose-ez mt-12 scroll-mt-24">
             <h2>Zdroje</h2>
             <ul>
               {g.sources.map((s) => (
@@ -125,7 +125,7 @@ export default async function GuidePage({ params }: PageProps<"/navody/[slug]">)
           </section>
 
           {g.changelog && g.changelog.length > 0 && (
-            <section id="zmeny" className="mt-10">
+            <section id="zmeny" className="prose-ez mt-10">
               <h2>Historie změn</h2>
               <ul>
                 {g.changelog.map((c) => (

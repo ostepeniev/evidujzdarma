@@ -48,7 +48,7 @@ export function UnitsWizard() {
     const out: { type: string; count: number; note: string }[] = [];
     if (s.fixed) out.push({ type: "Stálá provozovna", count: s.fixed, note: "Obchod, salon, kancelář, dílna – každé místo zvlášť (pojmenujte podle adresy)." });
     if (s.mobile) out.push({ type: "Mobilní provozovna", count: s.mobile, note: "Stánek na trzích, food truck, prodej na akcích." });
-    if (s.vending) out.push({ type: "Automat", count: s.vending, note: "Každý prodejní automat, který přijímá hotovost nebo kartu." });
+    if (s.vending) out.push({ type: "Automat", count: s.vending, note: "Typ jednotky „automat“ v DIS+ existuje, u některých automatů ale může platit výjimka z evidence – ověřte na eet.gov.cz." });
     if (s.web) out.push({ type: "Internetová stránka", count: s.web, note: "Web nebo aplikace, přes které nabízíte zboží či služby. Platby přes platební bránu se ale neevidují." });
     if (s.vehicle) out.push({ type: "Dopravní prostředek", count: s.vehicle, note: "Taxi, přeprava osob, prodej z vozidla." });
     if (s.atCustomer && s.person === "fo") out.push({ type: "Vy sami (bez provozovny)", count: 1, note: "Podnikatel bez provozovny uvede jako evidenční jednotku sám sebe." });

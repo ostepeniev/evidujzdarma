@@ -25,7 +25,7 @@ export const WHO_MUST: readonly { title: string; text: string; tone: "yes" | "ma
   },
   {
     title: "Vyjmuté činnosti",
-    text: "Např. část železniční a letecké dopravy, poštovní služby, hazardní hry, dodávky energií a vody. Výjimka platí jen pro danou činnost.",
+    text: "Např. část osobní dopravy, poštovní služby, hazardní hry nebo dodávky energií a vody (podle rozborů – výčet ověřte). Výjimka platí jen pro danou činnost.",
     tone: "maybe",
     href: "/musim-evidovat",
     linkLabel: "Kvíz: Musím evidovat?",
