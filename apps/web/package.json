@@ -1,0 +1,37 @@
+{
+  "name": "@ez/web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@ez/cz": "workspace:*",
+    "@ez/db": "workspace:*",
+    "@ez/fiscal-core": "workspace:*",
+    "@fontsource-variable/inter": "^5",
+    "drizzle-orm": "^0.45.3",
+    "idb": "^8.0.3",
+    "next": "16.3.8",
+    "nodemailer": "^7",
+    "qrcode": "^1.5.4",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^22",
+    "@types/nodemailer": "^7",
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "tailwindcss": "^4.3.3",
+    "typescript": "5.9.3",
+    "vitest": "^5.0.3"
+  }
+}

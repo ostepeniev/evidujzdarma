@@ -1,0 +1,22 @@
+{
+  "name": "@ez/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "ares:sync": "tsx src/ares-sync.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ez/cz": "workspace:*",
+    "@ez/db": "workspace:*",
+    "@ez/fiscal-core": "workspace:*",
+    "drizzle-orm": "^0.45.3",
+    "tsx": "^4.23.15"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "@types/node": "^22"
+  }
+}

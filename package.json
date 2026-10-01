@@ -1,0 +1,18 @@
+{
+  "name": "evidujzdarma",
+  "private": true,
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @ez/web dev",
+    "build": "pnpm --filter @ez/web build",
+    "start": "pnpm --filter @ez/web start",
+    "test": "pnpm -r --if-present test",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "db:generate": "pnpm --filter @ez/db generate",
+    "db:migrate": "pnpm --filter @ez/db migrate",
+    "worker": "pnpm --filter @ez/worker start"
+  }
+}
