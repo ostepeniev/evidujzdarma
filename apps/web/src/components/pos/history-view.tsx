@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { PAYMENT_LABEL, PAYMENT_METHODS, decimalString, type PaymentMethod } from "@ez/fiscal-core";
 import { salesSince } from "@/lib/pos/db";
 import { onSyncChange } from "@/lib/pos/sync";
-import type { LocalSale } from "@/lib/pos/types";
+import type { LocalSale, PosConfig } from "@/lib/pos/types";
+import { CashPanel } from "./cash-panel";
 import { StatusChip, kc } from "./ui";
 
 const time = new Intl.DateTimeFormat("cs-CZ", { hour: "2-digit", minute: "2-digit" });
@@ -78,7 +79,7 @@ function csvCell(v: unknown): string {
   return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
-export function SummaryView() {
+export function SummaryView({ config, staff }: { config: PosConfig; staff: { id: string; name: string } | null }) {
   const sales = useSales(0);
   const today = sales.filter((s) => new Date(s.soldAt) >= startOfDay() && s.status !== "rejected");
   const byMethod = Object.fromEntries(PAYMENT_METHODS.map((m) => [m, 0])) as Record<PaymentMethod, number>;
@@ -116,6 +117,7 @@ export function SummaryView() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-4">
+      <CashPanel config={config} staff={staff} />
       <div className="rounded-3xl border border-line bg-white p-6">
         <p className="text-sm text-muted">Dnešní tržby ({today.length})</p>
         <p className="text-4xl font-extrabold tabular-nums">{kc(total)}</p>

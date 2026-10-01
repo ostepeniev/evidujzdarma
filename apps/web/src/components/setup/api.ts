@@ -25,6 +25,7 @@ export interface AccountStateDto {
     iban: string | null;
     receiptHeader: string | null;
     receiptFooter: string | null;
+    receiptShowPok: boolean;
     eetMode: string;
     plan: string;
   };

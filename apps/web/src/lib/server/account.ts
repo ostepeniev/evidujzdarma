@@ -95,6 +95,7 @@ export const AccountInput = z.object({
     .transform((v) => (v ? toIban(v) : null)),
   receiptHeader: z.string().trim().max(300).optional().nullable(),
   receiptFooter: z.string().trim().max(300).optional().nullable(),
+  receiptShowPok: z.boolean().optional(),
   ownerName: z.string().trim().min(1).max(80).optional(),
 });
 
@@ -108,8 +109,10 @@ export async function upsertAccount(user: CurrentUser, input: z.infer<typeof Acc
     eic: input.eic ?? input.dic,
     vatPayer: input.vatPayer,
     iban: input.iban,
-    receiptHeader: input.receiptHeader ?? null,
+    // nevyplněné pole formuláře nesmí přepsat uložené hodnoty
+    ...(input.receiptHeader !== undefined ? { receiptHeader: input.receiptHeader } : {}),
     receiptFooter: input.receiptFooter ?? null,
+    ...(input.receiptShowPok !== undefined ? { receiptShowPok: input.receiptShowPok } : {}),
   };
   if (owner) {
     await db.update(schema.accounts).set(values).where(eq(schema.accounts.id, owner.accountId));

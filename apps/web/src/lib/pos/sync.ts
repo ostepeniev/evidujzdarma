@@ -4,7 +4,7 @@
  * Synchronizace pokladny se serverem: odeslání offline fronty, načtení stavů (POK)
  * a konfigurace. Server je idempotentní, takže opakované odeslání stejné tržby je bezpečné.
  */
-import { getDevice, setMeta, unsettledSales, updateSale } from "./db";
+import { getDevice, markCashSynced, setMeta, unsettledSales, unsyncedCash, updateSale } from "./db";
 import type { LocalStatus, PosConfig } from "./types";
 
 type Listener = () => void;
@@ -69,10 +69,32 @@ interface ServerResult {
   lastError?: string | null;
 }
 
+/** Vklady/výběry a uzávěrky – nejsou tržby, posílají se odděleně a idempotentně. */
+async function syncCash(): Promise<void> {
+  const { movements, closings } = await unsyncedCash();
+  if (!movements.length && !closings.length) return;
+  const res = await api("/api/pokladna/uzaverky", {
+    method: "POST",
+    body: JSON.stringify({
+      movements: movements.slice(0, 200).map(({ syncedAt: _s, ...m }) => m),
+      closings: closings.slice(0, 50).map(({ syncedAt: _s, unitLabel: _u, ...c }) => c),
+    }),
+  });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? `Server odpověděl ${res.status}`);
+  const saved = (await res.json()) as { movements: string[]; closings: string[] };
+  await markCashSynced(saved.movements, saved.closings);
+}
+
 async function doSync(): Promise<SyncReport> {
   const pending = await unsettledSales();
   if (!pending.length) {
-    lastReport = { at: new Date().toISOString(), online: true, sent: 0, error: null };
+    try {
+      await syncCash();
+      lastReport = { at: new Date().toISOString(), online: true, sent: 0, error: null };
+    } catch (e) {
+      if (e instanceof DeviceRevokedError) throw e;
+      lastReport = { at: new Date().toISOString(), online: typeof navigator === "undefined" || navigator.onLine, sent: 0, error: e instanceof Error ? e.message : String(e) };
+    }
     return lastReport;
   }
   let sent = 0;
@@ -112,6 +134,7 @@ async function doSync(): Promise<SyncReport> {
         });
       }
     }
+    await syncCash();
     lastReport = { at: new Date().toISOString(), online: true, sent, error: null };
   } catch (e) {
     if (e instanceof DeviceRevokedError) throw e;

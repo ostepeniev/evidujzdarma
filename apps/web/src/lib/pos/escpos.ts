@@ -22,7 +22,7 @@ export function bluetoothSupported(): boolean {
 }
 
 function toAscii(text: string): Uint8Array {
-  const plain = text.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[–—]/g, "-").replace(/[„“”]/g, '"').replace(/[^\x0a\x20-\x7e]/g, "?");
+  const plain = text.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[–—−]/g, "-").replace(/[„“”]/g, '"').replace(/[^\x0a\x20-\x7e]/g, "?");
   return new TextEncoder().encode(plain);
 }
 

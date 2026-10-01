@@ -83,7 +83,7 @@ export const MYTHS: readonly Myth[] = [
     seenIn: "Návody, které vycházejí z první EET.",
     truth: `${FACTS.confirmation.onReceipt} ${FACTS.receipt.summary}`,
     comment:
-      "Zákazník z dokladu bez POK nepozná, zda evidujete, nebo jste v EET OFF – a poznat to nemusí. Pokud chcete, aby bylo vidět, že tržba prošla, POK na doklad tisknout můžete. Naše pokladna ho na doklad dává.",
+      "Zákazník z dokladu bez POK nepozná, zda evidujete, nebo jste v EET OFF – a poznat to nemusí. Pokud chcete, aby bylo vidět, že tržba prošla, POK na doklad tisknout můžete. V naší pokladně si v nastavení vyberete, zda ho na účtenku tisknout.",
     action: { text: "Co musí být na dokladu podle zákona o ochraně spotřebitele.", href: "/navody/musim-vydavat-uctenku", label: "Návod: Musím vydávat účtenku?" },
     sources: [SOURCES.prakticke, SOURCES.zos],
     asOf: "2026-10-01",

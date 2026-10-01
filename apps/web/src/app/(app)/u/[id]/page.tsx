@@ -104,7 +104,7 @@ export default async function ReceiptPage({ params }: PageProps<"/u/[id]">) {
               {s.registerId} / {s.unitId}
             </dd>
           </div>
-          {fiscal.confirmationCode ? (
+          {fiscal.showCode === false ? null : fiscal.confirmationCode ? (
             <div>
               <dt>POK (potvrzovací kód FS)</dt>
               <dd className="break-all font-mono text-xs">{fiscal.confirmationCode}</dd>

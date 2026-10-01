@@ -38,7 +38,12 @@ export function receiptTextFor(sale: LocalSale, config: PosConfig, width = 42): 
         vat: sale.vat,
         refundOf: sale.refundOf,
       },
-      fiscal: { confirmationCode: sale.confirmationCode, securityCode: null, mode: sale.mode === "production" ? "production" : "test" },
+      fiscal: {
+        confirmationCode: sale.confirmationCode,
+        securityCode: null,
+        mode: sale.mode === "production" ? "production" : "test",
+        showCode: config.account.receiptShowPok !== false,
+      },
       cashReceived: sale.cashReceived ?? undefined,
       url: `${location.origin}/u/${sale.id}`,
     },

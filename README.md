@@ -12,7 +12,7 @@
 | Kalkulačka EET OFF, kvíz «Musím evidovat?», průvodce evidenčními jednotkami, generátor QR platby | `/kalkulacka-eet-off`, `/musim-evidovat`, `/evidencni-jednotky`, `/qr-platba` | готово |
 | Гайди (контент-модель, Article/FAQ/HowTo schema, noindex до рецензії) | `/navody`, `apps/web/src/content/guides` | хвиля 1 |
 | SEO/GEO: robots (дозволено ШІ-ботів), sitemap, `llms.txt`, `llms-full.txt`, JSON-LD | `apps/web/src/app` | готово |
-| **PWA-каса** (офлайн, PIN, каталог, оплати, повернення, чеки, історія, підсумок) | `/pokladna` | готово (mock / Playground / продакшн) |
+| **PWA-каса** (офлайн, PIN, каталог, оплати, повернення, чеки, історія, підсумок, vklad/výběr, денне закриття) | `/pokladna` | готово (mock / Playground / продакшн) |
 | Налаштування «EET za 15 minut» (ARES, одиниці, сертифікат, тестова тржба, пристрої, персонал) | `/pokladna/nastaveni` | готово |
 | **Фіскальне ядро EET 2.0** (SOAP v4.1, WS-Security, перевірка підпису відповіді, черга 48 год) | `packages/fiscal-core` | готово, перевірено на офіційному зразку FS |
 | Каталог фірм і провозовен (ARES / ČSÚ RES, поступова індексація, GDPR-námitky) | `/firma`, `/provozovna`, `/firmy`, `/namitka` | готово (імпорт: `pnpm --filter @ez/worker catalog:import`) |

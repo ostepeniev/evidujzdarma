@@ -5,6 +5,8 @@ import { useEffect, useState, type ReactNode } from "react";
 import { formatCzk } from "@ez/fiscal-core";
 import { getDevice, setMeta, deleteMeta } from "@/lib/pos/db";
 import type { DeviceCredentials, PosConfig } from "@/lib/pos/types";
+import { FACTS } from "@/content/facts";
+import { pragueToday } from "@/lib/prague-time";
 import { call, UNIT_TYPE_LABEL, type AccountStateDto } from "./api";
 
 type State = AccountStateDto;
@@ -110,6 +112,7 @@ export function SetupApp({ initial }: { initial: State }) {
           <StaffSection state={state} reload={reload} />
           <CatalogSection state={state} reload={reload} />
           <ExportSection salesCount={state.salesCount ?? 0} />
+          <ClosingsSection />
         </>
       )}
       <p className="pt-4 text-center text-xs text-muted">
@@ -132,6 +135,7 @@ function CompanySection({ state, onSaved }: { state: State; onSaved: (s: State) 
     vatPayer: acc?.vatPayer ?? false,
     iban: acc?.iban ?? "",
     receiptFooter: acc?.receiptFooter ?? "",
+    receiptShowPok: acc?.receiptShowPok ?? true,
     ownerName: "",
   });
   const { busy, error, run } = useAction();
@@ -219,6 +223,15 @@ function CompanySection({ state, onSaved }: { state: State; onSaved: (s: State) 
           <input type="checkbox" checked={form.vatPayer} onChange={(e) => set("vatPayer", e.target.checked)} className="h-5 w-5 accent-brand-600" />
           Jsem plátce DPH (na účtence se zobrazí rozpis DPH)
         </label>
+        <div className="sm:col-span-2">
+          <label className="flex items-center gap-3">
+            <input type="checkbox" checked={form.receiptShowPok} onChange={(e) => set("receiptShowPok", e.target.checked)} className="h-5 w-5 accent-brand-600" />
+            Uvádět na účtence potvrzovací kód (POK)
+          </label>
+          <p className="mt-1 pl-8 text-sm text-muted">
+            {FACTS.confirmation.onReceipt} S kódem zákazník vidí, že tržba prošla evidencí; bez něj je účtenka kratší. V pokladně i v exportu POK zůstává vždy.
+          </p>
+        </div>
         <div className="sm:col-span-2">
           <button type="submit" className="btn-primary" disabled={busy}>
             {busy ? "Ukládám…" : acc ? "Uložit změny" : "Pokračovat"}
@@ -655,7 +668,7 @@ function CatalogSection({ state, reload }: { state: State; reload: () => Promise
 /* ───────────── 9. Export ───────────── */
 
 function ExportSection({ salesCount }: { salesCount: number }) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = pragueToday();
   const monthStart = `${today.slice(0, 8)}01`;
   const [from, setFrom] = useState(monthStart);
   const [to, setTo] = useState(today);
@@ -678,6 +691,115 @@ function ExportSection({ salesCount }: { salesCount: number }) {
           Stáhnout CSV
         </a>
       </div>
+    </Section>
+  );
+}
+
+/* ───────────── 10. Uzávěrky a pokladní kniha ───────────── */
+
+interface ClosingDto {
+  id: string;
+  number: number;
+  registerId: string;
+  closedAt: string;
+  staffName: string | null;
+  expectedCash: number;
+  countedCash: number;
+  difference: number;
+  cashOut: number;
+  closingCash: number;
+  gross: number;
+  pending: number;
+  note: string | null;
+  mode: string;
+}
+
+function ClosingsSection() {
+  const today = pragueToday();
+  const [from, setFrom] = useState(`${today.slice(0, 8)}01`);
+  const [to, setTo] = useState(today);
+  const [list, setList] = useState<ClosingDto[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    call<{ closings: ClosingDto[] }>(`/api/ucet/uzaverky?od=${from}&do=${to}`)
+      .then((d) => alive && setList(d.closings))
+      .catch((e) => alive && setError(e instanceof Error ? e.message : "Nepodařilo se načíst"));
+    return () => {
+      alive = false;
+    };
+  }, [from, to]);
+
+  const fmt = new Intl.DateTimeFormat("cs-CZ", { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Prague" });
+  const diffTotal = (list ?? []).reduce((a, c) => a + c.difference, 0);
+
+  return (
+    <Section
+      id="uzaverky"
+      step={10}
+      title="Uzávěrky a pokladní kniha"
+      lead="Denní uzávěrky dělá obsluha v pokladně (Přehled → Denní uzávěrka). Tady je vidíte ze všech pokladen a stáhnete pokladní knihu pro účetní."
+    >
+      <div className="flex flex-wrap items-end gap-3">
+        <div>
+          <label htmlFor="cl-od" className="label">
+            Od
+          </label>
+          <input id="cl-od" type="date" className="input" value={from} onChange={(e) => setFrom(e.target.value)} />
+        </div>
+        <div>
+          <label htmlFor="cl-do" className="label">
+            Do
+          </label>
+          <input id="cl-do" type="date" className="input" value={to} onChange={(e) => setTo(e.target.value)} />
+        </div>
+        <a href={`/api/ucet/uzaverky?od=${from}&do=${to}&format=csv`} className="btn-secondary">
+          Pokladní kniha (CSV)
+        </a>
+      </div>
+      <ErrorText error={error} />
+      {list && list.length === 0 && <p className="mt-4 text-ink-soft">V tomto období zatím žádná uzávěrka není.</p>}
+      {list && list.length > 0 && (
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full min-w-[36rem] text-left text-[15px]">
+            <thead>
+              <tr className="border-b border-line text-sm text-muted">
+                <th className="py-2 font-medium">Uzávěrka</th>
+                <th className="py-2 font-medium">Pokladna</th>
+                <th className="py-2 text-right font-medium">Tržby</th>
+                <th className="py-2 text-right font-medium">Má být</th>
+                <th className="py-2 text-right font-medium">Spočítáno</th>
+                <th className="py-2 text-right font-medium">Rozdíl</th>
+                <th className="py-2 text-right font-medium">Zůstatek</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line">
+              {list.map((c) => (
+                <tr key={c.id} title={c.note ?? undefined}>
+                  <td className="py-2">
+                    č. {c.number} · {fmt.format(new Date(c.closedAt))}
+                    {c.staffName && <span className="block text-sm text-muted">{c.staffName}</span>}
+                    {c.mode !== "production" && <span className="chip mt-1 bg-surface-2 text-ink-soft">test</span>}
+                  </td>
+                  <td className="py-2">{c.registerId}</td>
+                  <td className="py-2 text-right tabular-nums">{formatCzk(c.gross)}</td>
+                  <td className="py-2 text-right tabular-nums">{formatCzk(c.expectedCash)}</td>
+                  <td className="py-2 text-right tabular-nums">{formatCzk(c.countedCash)}</td>
+                  <td className={`py-2 text-right font-semibold tabular-nums ${c.difference < 0 ? "text-danger-600" : c.difference > 0 ? "text-warn-700" : "text-brand-700"}`}>
+                    {c.difference === 0 ? "0" : `${c.difference > 0 ? "+" : ""}${formatCzk(c.difference)}`}
+                  </td>
+                  <td className="py-2 text-right tabular-nums">{formatCzk(c.closingCash)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="mt-2 text-sm text-muted">
+            Součet rozdílů za období: <strong className={diffTotal < 0 ? "text-danger-600" : "text-ink"}>{formatCzk(diffTotal)}</strong>. Pokladní kniha je podklad pro účetní – tržby
+            v hotovosti v ní jsou souhrnně za každou uzávěrku.
+          </p>
+        </div>
+      )}
     </Section>
   );
 }

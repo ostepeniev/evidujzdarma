@@ -121,6 +121,8 @@ export const accounts = pgTable(
     /** obsah dokladu: hlavička, patička */
     receiptHeader: text("receipt_header"),
     receiptFooter: text("receipt_footer"),
+    /** POK na dokladu – podle FS dobrovolné */
+    receiptShowPok: boolean("receipt_show_pok").notNull().default(true),
     vatPayer: boolean("vat_payer").notNull().default(false),
     /** IBAN pro QR platby */
     iban: varchar("iban", { length: 34 }),
@@ -480,6 +482,60 @@ export const accountantClients = pgTable(
     createdAt: createdAt(),
   },
   (t) => [uniqueIndex("acc_clients_uq").on(t.accountantAccountId, t.ico)],
+);
+
+/* ────────────────────────────── Hotovost: pohyby a uzávěrky ────────────────────────────── */
+
+/** Vklady a výběry hotovosti (nejsou tržby, neevidují se). ID vzniká v zařízení → idempotentní synchronizace. */
+export const cashMovements = pgTable(
+  "cash_movements",
+  {
+    id: uuid("id").primaryKey(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    deviceId: uuid("device_id").references(() => devices.id, { onDelete: "set null" }),
+    registerId: varchar("register_id", { length: 20 }).notNull(),
+    at: timestamp("at", { withTimezone: true }).notNull(),
+    type: varchar("type", { length: 16 }).notNull(), // deposit | withdrawal
+    amount: bigint("amount", { mode: "number" }).notNull(),
+    note: text("note"),
+    staffId: uuid("staff_id"),
+    staffName: text("staff_name"),
+    createdAt: createdAt(),
+  },
+  (t) => [index("cash_movements_account_at").on(t.accountId, t.at)],
+);
+
+/** Denní uzávěrky (Z-report) jednotlivých pokladen, jak je obsluha potvrdila v zařízení. */
+export const closings = pgTable(
+  "closings",
+  {
+    id: uuid("id").primaryKey(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    deviceId: uuid("device_id").references(() => devices.id, { onDelete: "set null" }),
+    registerId: varchar("register_id", { length: 20 }).notNull(),
+    number: integer("number").notNull(),
+    periodFrom: timestamp("period_from", { withTimezone: true }),
+    closedAt: timestamp("closed_at", { withTimezone: true }).notNull(),
+    openingCash: bigint("opening_cash", { mode: "number" }).notNull(),
+    expectedCash: bigint("expected_cash", { mode: "number" }).notNull(),
+    countedCash: bigint("counted_cash", { mode: "number" }).notNull(),
+    difference: bigint("difference", { mode: "number" }).notNull(),
+    cashOut: bigint("cash_out", { mode: "number" }).notNull().default(0),
+    closingCash: bigint("closing_cash", { mode: "number" }).notNull(),
+    /** kompletní ClosingTotals z @ez/fiscal-core */
+    totals: jsonb("totals").notNull(),
+    denominations: jsonb("denominations").$type<Record<string, number>>(),
+    note: text("note"),
+    staffId: uuid("staff_id"),
+    staffName: text("staff_name"),
+    mode: varchar("mode", { length: 16 }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index("closings_account_closed").on(t.accountId, t.closedAt), index("closings_device_closed").on(t.deviceId, t.closedAt)],
 );
 
 /* ────────────────────────────── Monitor dostupnosti FS ────────────────────────────── */

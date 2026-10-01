@@ -23,12 +23,16 @@ export interface PosConfig {
     iban: string | null;
     receiptHeader: string | null;
     receiptFooter: string | null;
+    /** chybí u konfigurace uložené starší verzí → bereme jako true */
+    receiptShowPok?: boolean;
     mode: PosMode;
     plan: string;
   };
   units: { id: string; label: string; type: string; fsUnitId: number | null; active: boolean; address: string | null }[];
   staff: { id: string; name: string; role: string; pinHash: string | null }[];
   catalog: { id: string; name: string; price: number; vatRate: number; color: string | null }[];
+  /** poslední uzávěrka tohoto zařízení na serveru (záloha pro případ smazaných dat v prohlížeči) */
+  lastClosing?: { id: string; number: number; closedAt: string; closingCash: number } | null;
 }
 
 /** Stav tržby v zařízení. "local" = ještě nedorazila na server. */
@@ -58,4 +62,30 @@ export interface LocalSale {
   error: string | null;
   syncedAt: string | null;
   createdAt: string;
+}
+
+export interface LocalCashMovement {
+  id: string;
+  at: string;
+  type: "deposit" | "withdrawal";
+  amount: number;
+  note: string | null;
+  staffId: string | null;
+  staffName: string | null;
+  syncedAt: string | null;
+}
+
+export interface LocalClosing {
+  id: string;
+  number: number;
+  periodFrom: string | null;
+  closedAt: string;
+  totals: import("@ez/fiscal-core").ClosingTotals;
+  denominations: Record<string, number> | null;
+  note: string | null;
+  staffId: string | null;
+  staffName: string | null;
+  mode: PosMode;
+  unitLabel: string | null;
+  syncedAt: string | null;
 }

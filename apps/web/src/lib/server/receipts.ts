@@ -41,7 +41,12 @@ export async function loadReceipt(saleId: string): Promise<ReceiptData | null> {
       vat: sale.vatBreakdown,
       refundOf: sale.refundOf,
     },
-    fiscal: { confirmationCode: sale.confirmationCode, securityCode: null, mode: sale.mode === "production" ? "production" : "test" },
+    fiscal: {
+      confirmationCode: sale.confirmationCode,
+      securityCode: null,
+      mode: sale.mode === "production" ? "production" : "test",
+      showCode: account.receiptShowPok,
+    },
     url: absoluteUrl(`/u/${sale.id}`),
   };
 }

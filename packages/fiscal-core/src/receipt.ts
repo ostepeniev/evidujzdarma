@@ -21,6 +21,11 @@ export interface ReceiptFiscal {
   /** kód, který se tiskne místo POK, když tržba ještě nebyla potvrzena */
   securityCode: string | null;
   mode: "test" | "production";
+  /**
+   * Uvádět POK na dokladu? Podle FS je to dobrovolné (výchozí: ano).
+   * false = doklad neobsahuje POK ani upozornění na dodatečné odeslání.
+   */
+  showCode?: boolean;
 }
 
 export interface ReceiptData {
@@ -116,10 +121,11 @@ export function renderReceiptText(r: ReceiptData, width = 42): string {
   L.push(pad("Evid. jednotka", r.sale.unitId, width));
   L.push(pad("Pokladna", r.sale.registerId, width));
   L.push(pad("Číslo dokladu", r.sale.sequence, width));
-  if (r.fiscal.confirmationCode) {
+  const showCode = r.fiscal.showCode !== false;
+  if (showCode && r.fiscal.confirmationCode) {
     L.push("POK:");
     L.push(...wrap(r.fiscal.confirmationCode, width));
-  } else if (r.fiscal.securityCode) {
+  } else if (showCode && r.fiscal.securityCode) {
     L.push("Tržba bude odeslána dodatečně. Kód:");
     L.push(...wrap(r.fiscal.securityCode, width));
   }

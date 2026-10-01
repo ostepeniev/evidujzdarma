@@ -254,7 +254,7 @@ export function PosApp() {
             }}
           />
         ) : view === "summary" ? (
-          <SummaryView />
+          <SummaryView config={config} staff={staff} />
         ) : (
           <RegisterScreen config={config} cart={cart} setCart={setCart} discount={discount} setDiscount={setDiscount} onPay={() => (setPayError(null), setPaying({ refundOf: null }))} />
         )}
