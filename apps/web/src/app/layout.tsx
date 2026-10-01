@@ -20,6 +20,7 @@ export const metadata: Metadata = {
   },
   twitter: { card: "summary_large_image" },
   formatDetection: { telephone: false },
+  icons: { icon: "/icon.svg", apple: "/icons/180" },
   robots: { index: true, follow: true },
 };
 

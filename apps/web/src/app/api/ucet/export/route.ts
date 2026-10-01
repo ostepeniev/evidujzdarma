@@ -1,6 +1,9 @@
 import { and, asc, eq, gte, lt } from "drizzle-orm";
 import { getDb, schema } from "@ez/db";
 import { decimalString } from "@ez/fiscal-core";
+
+/** Český Excel očekává desetinnou čárku. */
+const num = (h: number) => decimalString(h).replace(".", ",");
 import { ownerRoute } from "@/lib/server/route-helpers";
 
 function csvCell(v: unknown): string {
@@ -60,16 +63,16 @@ export const GET = ownerRoute(async ({ req, accountId }) => {
       s.registerId,
       unit ?? "",
       s.sequence,
-      decimalString(s.total),
-      ...METHODS.map((m) => decimalString(byMethod[m] ?? 0)),
-      decimalString(s.tip),
-      decimalString(s.discount),
-      vat["21"] ? decimalString(vat["21"].base) : "",
-      vat["21"] ? decimalString(vat["21"].vat) : "",
-      vat["12"] ? decimalString(vat["12"].base) : "",
-      vat["12"] ? decimalString(vat["12"].vat) : "",
-      vat["0"] ? decimalString(vat["0"].base) : "",
-      decimalString(s.evidencedTotal),
+      num(s.total),
+      ...METHODS.map((m) => num(byMethod[m] ?? 0)),
+      num(s.tip),
+      num(s.discount),
+      vat["21"] ? num(vat["21"].base) : "",
+      vat["21"] ? num(vat["21"].vat) : "",
+      vat["12"] ? num(vat["12"].base) : "",
+      vat["12"] ? num(vat["12"].vat) : "",
+      vat["0"] ? num(vat["0"].base) : "",
+      num(s.evidencedTotal),
       s.confirmationCode ?? "",
       s.status,
       s.mode,

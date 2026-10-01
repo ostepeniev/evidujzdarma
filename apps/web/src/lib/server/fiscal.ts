@@ -84,8 +84,9 @@ export async function loadCredential(accountId: string, environment: "playground
   return value;
 }
 
-export function transportFor(account: AccountRow): Transport {
-  const mode = accountMode(account);
+/** Transport podle režimu — u tržby VŽDY režim, ve kterém vznikla (ne aktuální režim účtu). */
+export function transportFor(account: AccountRow, modeOverride?: string): Transport {
+  const mode = modeOverride ? accountMode({ eetMode: modeOverride }) : accountMode(account);
   if (mode === "mock") return new MockTransport({ latencyMs: 150 });
   return new Eet2Transport({
     environment: mode,
@@ -168,7 +169,7 @@ export async function processSale(saleId: string, account?: AccountRow): Promise
     if (!acc) throw new Error("Účet neexistuje");
     const eic = acc.eic ?? acc.dic;
     if (!eic) throw new Error("U účtu chybí EIČ (DIČ) pro evidenci");
-    result = await transportFor(acc).send(rowToSale(claimed), { firstAttempt, verifyOnly: false, eic });
+    result = await transportFor(acc, claimed.mode).send(rowToSale(claimed), { firstAttempt, verifyOnly: false, eic });
   } catch (e) {
     result = { ok: false, retryable: true, code: "INTERNAL", message: e instanceof Error ? e.message : String(e) };
   }

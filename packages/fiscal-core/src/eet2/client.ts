@@ -110,11 +110,17 @@ export class Eet2Transport implements Transport {
     }
 
     const text = await res.text();
-    if (res.status >= 500 && !text.includes("Odpoved")) {
-      return { ok: false, retryable: true, status: res.status, code: `HTTP_${res.status}`, message: "Služba EET je dočasně nedostupná", messageUuid };
-    }
-    if (!res.ok && !text.includes("Odpoved")) {
-      return { ok: false, retryable: res.status === 408 || res.status === 429, status: res.status, code: `HTTP_${res.status}`, message: text.slice(0, 300), messageUuid };
+    if (!text.includes("Odpoved")) {
+      // Bez odpovědi EET (výpadek, proxy, WAF, SOAP Fault) nevíme, že by FS zprávu odmítla →
+      // tržbu zkoušíme dál v rámci 48h lhůty; o zaseknutých tržbách upozorní připomínky.
+      return {
+        ok: false,
+        retryable: true,
+        status: res.status,
+        code: `HTTP_${res.status}`,
+        message: res.status >= 500 ? "Služba EET je dočasně nedostupná" : text.slice(0, 300) || `HTTP ${res.status}`,
+        messageUuid,
+      };
     }
 
     const v = verifyResponse(text, { expectedUuid: messageUuid, policy: this.trust });

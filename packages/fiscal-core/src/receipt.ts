@@ -84,10 +84,13 @@ export function renderReceiptText(r: ReceiptData, width = 42): string {
   L.push(hr);
   if (r.sale.refundOf) L.push(center("VRATKA / OPRAVNÝ DOKLAD", width));
   for (const line of r.sale.lines) {
-    const total = Math.round(line.qty * line.unitPrice);
+    const total = formatCzk(Math.round(line.qty * line.unitPrice));
+    if (line.qty === 1 && line.name.length + total.length + 1 <= width) {
+      L.push(pad(line.name, total, width));
+      continue;
+    }
     L.push(...wrap(line.name, width));
-    const qty = line.qty === 1 ? "" : `${line.qty} × ${formatCzk(line.unitPrice)}`;
-    L.push(pad(`  ${qty}`, formatCzk(total), width));
+    L.push(pad(line.qty === 1 ? "" : `  ${line.qty} × ${formatCzk(line.unitPrice)}`, total, width));
   }
   L.push(hr);
   if (r.sale.discount) L.push(pad("Sleva", `-${formatCzk(r.sale.discount)}`, width));
@@ -125,6 +128,6 @@ export function renderReceiptText(r: ReceiptData, width = 42): string {
     L.push(hr);
     for (const l of wrap(m.footer, width)) L.push(center(l, width));
   }
-  if (r.url) L.push(center(r.url, width));
+  if (r.url) for (let i = 0; i < r.url.length; i += width) L.push(center(r.url.slice(i, i + width), width));
   return L.join("\n");
 }

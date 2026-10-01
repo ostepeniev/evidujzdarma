@@ -214,6 +214,16 @@ describe("Eet2Transport", () => {
     expect(r).toMatchObject({ ok: false, retryable: true, code: "NETWORK" });
   });
 
+  it("treats HTTP errors without an EET answer as retryable", async () => {
+    const t = new Eet2Transport({
+      environment: "playground",
+      credential: async () => cred,
+      fetch: (async () => new Response("Forbidden", { status: 403 })) as typeof fetch,
+    });
+    const r = await t.send(sale, { firstAttempt: true, verifyOnly: false, eic: "CZ00000019" });
+    expect(r).toMatchObject({ ok: false, retryable: true, code: "HTTP_403" });
+  });
+
   it("maps positive error codes to non-retryable", async () => {
     const t = new Eet2Transport({
       environment: "playground",

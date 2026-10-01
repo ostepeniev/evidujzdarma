@@ -143,3 +143,28 @@ body {
     display: none !important;
   }
 }
+
+/* Tisk účtenky z pokladny: jen papírová část, šířka termotiskárny */
+@media print {
+  @page {
+    margin: 0;
+  }
+  body * {
+    visibility: hidden;
+  }
+  .receipt-paper,
+  .receipt-paper * {
+    visibility: visible;
+  }
+  .receipt-paper {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 72mm;
+    max-width: 72mm;
+    border: 0 !important;
+    padding: 2mm !important;
+    font-size: 9pt !important;
+    white-space: pre-wrap;
+  }
+}

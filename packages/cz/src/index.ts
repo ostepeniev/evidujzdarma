@@ -6,3 +6,4 @@ export * from "./regions.ts";
 export * from "./legal-form.ts";
 export * from "./nace.ts";
 export * from "./ares.ts";
+export * from "./res-csv.ts";
