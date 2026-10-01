@@ -1,3 +1,4 @@
+import path from "node:path";
 import type { NextConfig } from "next";
 
 const securityHeaders = [
@@ -10,6 +11,8 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // monorepo: trasování od kořene, aby standalone build obsahoval workspace balíčky
+  outputFileTracingRoot: path.join(__dirname, "../../"),
   poweredByHeader: false,
   transpilePackages: ["@ez/cz", "@ez/db", "@ez/fiscal-core"],
   serverExternalPackages: ["postgres", "node-forge", "nodemailer"],

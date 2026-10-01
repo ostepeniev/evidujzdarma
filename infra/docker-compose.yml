@@ -1,0 +1,107 @@
+# Produkční nasazení na jeden server (Hetzner Cloud / Proxmox / jakékoli VPS v EU).
+#   cp .env.production.example .env  &&  nano .env
+#   docker compose up -d --build
+name: evidujzdarma
+
+x-app-env: &app-env
+  DATABASE_URL: postgres://evidujzdarma:${POSTGRES_PASSWORD}@postgres:5432/evidujzdarma
+  NEXT_PUBLIC_SITE_URL: https://${DOMAIN}
+  APP_SECRET: ${APP_SECRET}
+  MASTER_KEY: ${MASTER_KEY}
+  CRON_SECRET: ${CRON_SECRET}
+  SMTP_URL: ${SMTP_URL}
+  MAIL_FROM: ${MAIL_FROM}
+  EET_TIMEOUT_MS: ${EET_TIMEOUT_MS:-10000}
+  CATALOG_INDEX_REGIONS: ${CATALOG_INDEX_REGIONS:-51}
+  GUIDES_INDEX_UNREVIEWED: ${GUIDES_INDEX_UNREVIEWED:-0}
+  INDEXNOW_KEY: ${INDEXNOW_KEY:-}
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: evidujzdarma
+      POSTGRES_USER: evidujzdarma
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U evidujzdarma -d evidujzdarma"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    shm_size: 256mb
+
+  migrate:
+    build: { context: .., target: migrate }
+    environment:
+      DATABASE_URL: postgres://evidujzdarma:${POSTGRES_PASSWORD}@postgres:5432/evidujzdarma
+    depends_on:
+      postgres: { condition: service_healthy }
+    restart: "no"
+
+  web:
+    build:
+      context: ..
+      target: web
+      args:
+        NEXT_PUBLIC_SITE_URL: https://${DOMAIN}
+        NEXT_PUBLIC_OPERATOR_ICO: ${OPERATOR_ICO:-}
+        NEXT_PUBLIC_OPERATOR_ADDRESS: ${OPERATOR_ADDRESS:-}
+    restart: unless-stopped
+    environment:
+      <<: *app-env
+      NEXT_PUBLIC_OPERATOR_ICO: ${OPERATOR_ICO:-}
+      NEXT_PUBLIC_OPERATOR_ADDRESS: ${OPERATOR_ADDRESS:-}
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+
+  worker:
+    build: { context: .., target: worker }
+    restart: unless-stopped
+    environment:
+      <<: *app-env
+      APP_INTERNAL_URL: http://web:3000
+      CATALOG_ENRICH: ${CATALOG_ENRICH:-0}
+    depends_on:
+      web: { condition: service_healthy }
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN}
+      ALT_DOMAINS: ${ALT_DOMAINS:-}
+      ACME_EMAIL: ${ACME_EMAIL}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+
+  backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      PGHOST: postgres
+      PGUSER: evidujzdarma
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: evidujzdarma
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+    volumes:
+      - ./backup.sh:/backup.sh:ro
+      - ${BACKUP_DIR:-./backups}:/backups
+    entrypoint: ["/bin/sh", "/backup.sh"]
+    depends_on:
+      postgres: { condition: service_healthy }
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

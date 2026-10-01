@@ -8,10 +8,10 @@
  * Údaje (POK) čteme z PODEPSANÉHO obsahu, ne z původního dokumentu (ochrana proti XML wrapping).
  */
 import { X509Certificate } from "node:crypto";
-import { readFileSync } from "node:fs";
 import { DOMParser } from "@xmldom/xmldom";
 import { SignedXml } from "xml-crypto";
 import { EET_NS, isPok, type EetEnvironment } from "./message.ts";
+import * as anchors from "./trust-anchors.ts";
 import type { EetWarning } from "../transport.ts";
 
 const MAX_BODY_BYTES = 256 * 1024;
@@ -79,14 +79,10 @@ export interface TrustPolicy {
   chain: X509Certificate[];
 }
 
-function loadCert(relPath: string): X509Certificate {
-  return new X509Certificate(readFileSync(new URL(`../../official/response-trust/${relPath}`, import.meta.url)));
-}
-
 export function defaultTrustPolicy(environment: EetEnvironment): TrustPolicy {
   return environment === "playground"
-    ? { environment, chain: [loadCert("playground/ica-public-rsa-06-2022.pem"), loadCert("playground/ica-root-rsa-05-2022.pem")] }
-    : { environment, chain: [loadCert("production/nca-subca2-rsa-12-2023.der"), loadCert("production/nca-root-rsa-10-2023.der")] };
+    ? { environment, chain: [new X509Certificate(anchors.playgroundIntermediate), new X509Certificate(anchors.playgroundRoot)] }
+    : { environment, chain: [new X509Certificate(anchors.productionIntermediate), new X509Certificate(anchors.productionRoot)] };
 }
 
 function verifyChain(leaf: X509Certificate, policy: TrustPolicy, at: Date): string | null {

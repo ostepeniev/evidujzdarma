@@ -1,0 +1,20 @@
+{
+	email {$ACME_EMAIL}
+}
+
+# Hlavní doména — automatické HTTPS (Let's Encrypt), HTTP/3, komprese
+{$DOMAIN} {
+	encode zstd gzip
+	reverse_proxy web:3000 {
+		header_up X-Real-IP {remote_host}
+	}
+	# interní endpoint nikdy nevystavovat ven
+	@internal path /api/internal/*
+	respond @internal 404
+	header -Server
+}
+
+# www a doplňkové domény (např. uctenkazdarma.cz) → přesměrování na hlavní doménu
+www.{$DOMAIN} {$ALT_DOMAINS} {
+	redir https://{$DOMAIN}{uri} permanent
+}
