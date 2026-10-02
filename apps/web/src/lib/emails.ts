@@ -27,6 +27,11 @@ ${esc(SITE.independenceNotice)} Provozovatel: ${esc(operatorLine())}. ${footerHt
 </td></tr></table></body></html>`;
 }
 
+/** Rozbije adresy tak, aby je poštovní klient neudělal klikacími (vloží zero-width space). */
+export function defangUrls(s: string): string {
+  return s.replace(/\b(https?):\/\//gi, "$1:\u200B//").replace(/\bwww\./gi, "www\u200B.");
+}
+
 function button(href: string, label: string): string {
   return `<p style="margin:24px 0"><a href="${esc(href)}" style="background:#0b7a57;color:#fff;text-decoration:none;padding:12px 20px;border-radius:10px;font-weight:600;display:inline-block">${esc(label)}</a></p>`;
 }
@@ -142,12 +147,16 @@ ${button(confirmUrl, "Potvrdit e-mail")}
     }
     case "receipt": {
       const url = String(p.url);
+      // texty účtenky píše prodejce – odkazy v nich nesmí být klikací (R3.8)
+      const body = defangUrls(String(p.receiptText ?? ""));
+      const abuse = `Nahlásit zneužití: pokud jste o účtenku nežádali, napište na ${SITE.email}.`;
       return {
-        subject: `Účtenka ${esc(p.merchant)} – ${esc(p.total)}`,
-        text: `${p.receiptText}\n\nOnline: ${url}`,
+        subject: `Účtenka ${defangUrls(String(p.merchant ?? ""))} – ${p.total}`,
+        text: `${body}\n\nOnline: ${url}\n\n${abuse}`,
         html: layout(
           "Účtenka",
-          `<pre style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;line-height:1.45;background:#f4f7f4;padding:16px;border-radius:10px;overflow:auto">${esc(p.receiptText)}</pre>${button(url, "Zobrazit účtenku online")}`,
+          `<pre style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;line-height:1.45;background:#f4f7f4;padding:16px;border-radius:10px;overflow:auto">${esc(body)}</pre>${button(url, "Zobrazit účtenku online")}`,
+          `Nahlásit zneužití: pokud jste o účtenku nežádali, napište na <a href="mailto:${esc(SITE.email)}" style="color:#66756e">${esc(SITE.email)}</a>.`,
         ),
       };
     }

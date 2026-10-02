@@ -5,6 +5,7 @@ import { hasDatabase } from "@ez/db";
 import { PAYMENT_LABEL, formatCzk, formatReceiptDate } from "@ez/fiscal-core";
 import { LogoMark } from "@/components/logo";
 import { loadReceipt } from "@/lib/server/receipts";
+import { SITE } from "@/lib/site";
 
 export const metadata: Metadata = { title: "Účtenka", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -125,6 +126,11 @@ export default async function ReceiptPage({ params }: PageProps<"/u/[id]">) {
           </Link>
         </span>
       </footer>
+      <p className="mx-auto mt-2 max-w-md text-center text-xs text-muted">
+        <a href={`mailto:${SITE.email}?subject=${encodeURIComponent("Zneužití účtenky")}`} className="underline">
+          Nahlásit zneužití
+        </a>
+      </p>
     </div>
   );
 }
