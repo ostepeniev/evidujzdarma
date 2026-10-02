@@ -221,9 +221,11 @@ export async function verifyStaffPin(
   staffId: string,
   pin: string,
   purpose: "unlock" | "refund",
+  refund?: { refundOf: string; amount: number },
 ): Promise<{ ok: true; approval: string | null } | { ok: false; error: string }> {
   try {
-    const res = await api("/api/pokladna/pin", { method: "POST", body: JSON.stringify({ staffId, pin, purpose }) });
+    // schválení vratky platí jen pro tuto tržbu a částku (R5.5)
+    const res = await api("/api/pokladna/pin", { method: "POST", body: JSON.stringify({ staffId, pin, purpose, ...refund }) });
     const data = (await res.json().catch(() => ({}))) as { approval?: string | null; error?: string; retryAfter?: number };
     if (res.ok) return { ok: true, approval: data.approval ?? null };
     if (res.status === 429 && data.retryAfter) return { ok: false, error: `Příliš mnoho chybných pokusů. Zkuste to za ${Math.ceil(data.retryAfter / 60)} min.` };

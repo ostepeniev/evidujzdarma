@@ -34,7 +34,9 @@ async function setup() {
   await getDb().update(schema.staff).set({ pinHash: await hashPin("246813") }).where(eq(schema.staff.id, s.owner.id));
   await getDb().update(schema.staff).set({ pinHash: await hashPin("1234") }).where(eq(schema.staff.id, s.cashier.id));
   const auth = { authorization: `Bearer ${token}`, "content-type": "application/json" };
-  const pin = (staffId: string, value: string, purpose = "refund") => pinRoute(new Request("http://localhost/api/pokladna/pin", { method: "POST", headers: auth, body: JSON.stringify({ staffId, pin: value, purpose }) }));
+  // vratka: od R5.5 schválení pro konkrétní tržbu a částku
+  const pin = (staffId: string, value: string, purpose = "unlock", refund: { refundOf?: string; amount?: number } = {}) =>
+    pinRoute(new Request("http://localhost/api/pokladna/pin", { method: "POST", headers: auth, body: JSON.stringify({ staffId, pin: value, purpose, ...refund }) }));
   return { s, auth, pin };
 }
 
@@ -77,7 +79,7 @@ describe("R3.10 – PIN", () => {
     const [claimed] = await ingestSales(ctx, [refund({ staffId: s.owner.id }) as never]);
     expect(claimed).toMatchObject({ ok: false, code: "REFUND_NOT_AUTHORIZED" });
 
-    const res = await pin(s.owner.id, "246813");
+    const res = await pin(s.owner.id, "246813", "refund", { refundOf: original.id, amount: 35000 });
     expect(res.status).toBe(200);
     const { approval } = (await res.json()) as { approval: string };
     // první znak MAC nese plných 6 bitů – změna je skutečný padělek (poslední znak má jen 4 platné bity)
@@ -93,9 +95,10 @@ describe("R3.10 – PIN", () => {
 
   it("an approval is accepted only in its canonical encoding (no malleable MAC)", async () => {
     const { s, pin } = await setup();
-    const { approval } = (await (await pin(s.owner.id, "246813")).json()) as { approval: string };
-    const where = { accountId: s.account.id, deviceId: s.device.id, soldAt: new Date().toISOString() };
-    expect(verifyApproval(approval, where)).toBe(s.owner.id);
+    const refundOf = crypto.randomUUID();
+    const { approval } = (await (await pin(s.owner.id, "246813", "refund", { refundOf, amount: 35000 })).json()) as { approval: string };
+    const where = { accountId: s.account.id, deviceId: s.device.id, soldAt: new Date().toISOString(), refundOf, amount: 35000 };
+    expect(verifyApproval(approval, where)?.approverId).toBe(s.owner.id);
     // poslední znak 43znakového base64url nese 4 bity + 2 výplňové; změna výplně dává stejné bajty
     const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
     const [body, mac] = approval.split(".");

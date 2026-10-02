@@ -31,7 +31,8 @@ async function setup() {
   const [r] = (await ingestSales(ctx, [original as never])) as R[];
   expect(r!.ok).toBe(true);
   // schválení vratky vydává server po ověření PINu vlastníka (R3.10)
-  const approve = async () => (await verifyStaffPinOnline(ctx, s.owner.id, "246813", "refund")).approval!;
+  // od R5.5 je schválení vázané na tržbu a částku (haléře, kladně)
+  const approve = async (of: string = original.id, amount = 35000) => (await verifyStaffPinOnline(ctx, s.owner.id, "246813", "refund", { refundOf: of, amount })).approval!;
   return { s, ctx, original, approve };
 }
 
@@ -58,7 +59,7 @@ describe("R1.7 – refunds are validated on the server", () => {
 
   it("a refund larger than the original is rejected", async () => {
     const { s, ctx, original, approve } = await setup();
-    const big = refundOf(s.unit.id, original, { staffId: s.owner.id, approval: await approve(), lines: [{ name: "Střih", qty: -2, unitPrice: 35000, vatRate: 21 }], payments: [{ method: "cash", amount: -70000 }] });
+    const big = refundOf(s.unit.id, original, { staffId: s.owner.id, approval: await approve(original.id, 70000), lines: [{ name: "Střih", qty: -2, unitPrice: 35000, vatRate: 21 }], payments: [{ method: "cash", amount: -70000 }] });
     const [r] = (await ingestSales(ctx, [big as never])) as R[];
     expect(r).toMatchObject({ ok: false, quarantined: true, code: "REFUND_EXCEEDS" });
   });
@@ -78,7 +79,8 @@ describe("R1.7 – refunds are validated on the server", () => {
     const other = await seedAccount();
     const [foreignStaff] = (await ingestSales(ctx, [deviceSale(s.unit.id, { staffId: other.owner.id }) as never])) as R[];
     expect(foreignStaff).toMatchObject({ ok: false, quarantined: true, code: "UNKNOWN_STAFF" });
-    const [unknownOriginal] = (await ingestSales(ctx, [refundOf(s.unit.id, { id: randomUUID() }, { staffId: s.owner.id, approval: await approve() }) as never])) as R[];
+    const unknownId = randomUUID();
+    const [unknownOriginal] = (await ingestSales(ctx, [refundOf(s.unit.id, { id: unknownId }, { staffId: s.owner.id, approval: await approve(unknownId) }) as never])) as R[];
     expect(unknownOriginal).toMatchObject({ ok: false, quarantined: true, code: "REFUND_UNKNOWN_ORIGINAL" });
     const [refundOfRefund] = (await ingestSales(ctx, [refundOf(s.unit.id, original, { staffId: s.owner.id, approval: await approve() }) as never])) as R[];
     expect(refundOfRefund!.ok).toBe(true);

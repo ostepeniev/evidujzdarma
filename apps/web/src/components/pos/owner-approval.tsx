@@ -9,7 +9,18 @@ import { Keypad, Sheet } from "./ui";
  * Vratku schvaluje vlastník PINem, který ověří server (R3.10) – otisk PINu vlastníka v zařízení není.
  * Server vrátí schválení podepsané pro toto zařízení; bez něj vratku nepřijme.
  */
-export function OwnerApproval({ config, onApprove, onClose }: { config: PosConfig; onApprove: (approval: string) => void; onClose: () => void }) {
+export function OwnerApproval({
+  config,
+  refund,
+  onApprove,
+  onClose,
+}: {
+  config: PosConfig;
+  /** kterou tržbu a jakou částku (haléře, kladně) vlastník schvaluje – server schválení na ně váže (R5.5) */
+  refund: { refundOf: string; amount: number };
+  onApprove: (approval: string) => void;
+  onClose: () => void;
+}) {
   const owners = config.staff.filter((s) => s.role === "owner");
   const [selected, setSelected] = useState(owners.length === 1 ? owners[0]! : null);
   const [pin, setPin] = useState("");
@@ -19,7 +30,7 @@ export function OwnerApproval({ config, onApprove, onClose }: { config: PosConfi
   async function tryPin(value: string) {
     if (!selected || busy) return;
     setBusy(true);
-    const r = await verifyStaffPin(selected.id, value, "refund");
+    const r = await verifyStaffPin(selected.id, value, "refund", refund);
     setBusy(false);
     if (r.ok && r.approval) onApprove(r.approval);
     else {

@@ -1,0 +1,2 @@
+ALTER TABLE "sales" ADD COLUMN "approval_jti" uuid;--> statement-breakpoint
+CREATE UNIQUE INDEX "sales_approval_jti_uq" ON "sales" USING btree ("approval_jti") WHERE "sales"."approval_jti" is not null;

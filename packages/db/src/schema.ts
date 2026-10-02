@@ -347,6 +347,8 @@ export const sales = pgTable(
     refundOf: uuid("refund_of"),
     /** vlastník, který vratku schválil PINem na pokladně (R1.7) */
     approvedBy: uuid("approved_by").references(() => staff.id, { onDelete: "set null" }),
+    /** id schválení vratky (jti) – každé schválení se dá použít jen jednou (R5.5) */
+    approvalJti: uuid("approval_jti"),
     /** částky datové zprávy (haléře): celk_trzba, urceno_cerp_zuct, cerp_zuct */
     evidencedTotal: bigint("evidenced_total", { mode: "number" }).notNull(),
     prepaymentAmount: bigint("prepayment_amount", { mode: "number" }).notNull().default(0),
@@ -379,6 +381,7 @@ export const sales = pgTable(
     index("sales_pending_idx").on(t.status, t.nextAttemptAt),
     /** na jednu tržbu nejvýš jedna vratka – drží i při souběhu (R1.7) */
     uniqueIndex("sales_refund_of_uq").on(t.refundOf).where(sql`${t.refundOf} is not null`),
+    uniqueIndex("sales_approval_jti_uq").on(t.approvalJti).where(sql`${t.approvalJti} is not null`),
   ],
 );
 

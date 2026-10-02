@@ -300,6 +300,7 @@ export function PosApp() {
       {approval && (
         <OwnerApproval
           config={config}
+          refund={{ refundOf: approval.id, amount: -refundInput(approval).payments[0]!.amount }}
           onClose={() => setApproval(null)}
           onApprove={(token) => {
             setPaying({ refundOf: approval, approval: token });

@@ -85,7 +85,7 @@ function stable(v: unknown): string {
  * Pokladní a vratka musí patřit k účtu; vratku dělá vlastník nebo ji vlastník schválí PINem.
  * Vratka nesmí přesáhnout původní tržbu a na jednu tržbu je nejvýš jedna (R1.7).
  */
-async function checkStaffAndRefund(accountId: string, deviceId: string, input: DeviceSale, total: number): Promise<string | null> {
+async function checkStaffAndRefund(accountId: string, deviceId: string, input: DeviceSale, total: number): Promise<{ approvedBy: string; approvalJti: string } | null> {
   const db = getDb();
   const staffRow = (id: string) => db.query.staff.findFirst({ where: and(eq(schema.staff.id, id), eq(schema.staff.accountId, accountId)) });
   const cashier = input.staffId ? await staffRow(input.staffId) : undefined;
@@ -93,10 +93,13 @@ async function checkStaffAndRefund(accountId: string, deviceId: string, input: D
   if (input.approval && !input.refundOf) throw new IngestRejection("INVALID_SALE", "Schválení vlastníkem patří jen k vratce");
   if (!input.refundOf) return null;
 
-  // Zařízení samo nemůže tvrdit, že prodává vlastník: vratka potřebuje schválení podepsané serverem (R3.10)
-  const approverId = verifyApproval(input.approval, { accountId, deviceId, soldAt: input.soldAt });
-  const approver = approverId ? await staffRow(approverId) : undefined;
-  if (approver?.role !== "owner" || !approver.active) throw new IngestRejection("REFUND_NOT_AUTHORIZED", "Vratku musí schválit vlastník (PIN ověřený online)", 403);
+  // Zařízení samo nemůže tvrdit, že prodává vlastník: vratka potřebuje schválení podepsané serverem (R3.10),
+  // vázané na tuto tržbu a částku a použitelné jednou (R5.5)
+  const approval = verifyApproval(input.approval, { accountId, deviceId, soldAt: input.soldAt, refundOf: input.refundOf, amount: -total });
+  const approver = approval ? await staffRow(approval.approverId) : undefined;
+  if (approver?.role !== "owner" || !approver.active) throw new IngestRejection("REFUND_NOT_AUTHORIZED", "Vratku musí schválit vlastník (PIN ověřený online) – pro tuto tržbu a částku", 403);
+  const usedBy = await db.query.sales.findFirst({ where: and(eq(schema.sales.approvalJti, approval!.jti), ne(schema.sales.id, input.id)), columns: { id: true } });
+  if (usedBy) throw new IngestRejection("REFUND_NOT_AUTHORIZED", "Toto schválení vratky už bylo použito – vlastník musí schválit znovu", 403);
   if (total >= 0) throw new IngestRejection("INVALID_SALE", "Vratka musí mít zápornou částku");
   const original = await db.query.sales.findFirst({ where: and(eq(schema.sales.id, input.refundOf), eq(schema.sales.accountId, accountId)) });
   if (!original) throw new IngestRejection("REFUND_UNKNOWN_ORIGINAL", "Původní tržba k vratce není na serveru");
@@ -104,7 +107,7 @@ async function checkStaffAndRefund(accountId: string, deviceId: string, input: D
   if (-total > original.total) throw new IngestRejection("REFUND_EXCEEDS", "Vratka je vyšší než původní tržba");
   const other = await db.query.sales.findFirst({ where: and(eq(schema.sales.refundOf, input.refundOf), ne(schema.sales.id, input.id)), columns: { id: true } });
   if (other) throw new IngestRejection("REFUND_DUPLICATE", "Tato tržba už byla vrácena", 409);
-  return approver.id;
+  return { approvedBy: approver.id, approvalJti: approval!.jti };
 }
 
 const MODE_LABEL: Record<EetMode, string> = { mock: "ukázkový", playground: "Playground", production: "ostrý provoz" };
@@ -171,7 +174,7 @@ export async function ingestSales(ctx: DeviceContext, inputs: DeviceSale[]): Pro
         if (e instanceof SaleValidationError) throw new IngestRejection("INVALID_SALE", e.issues.join("; "));
         throw e;
       }
-      const approvedBy = await checkStaffAndRefund(account.id, device.id, input, sale.total);
+      const approved = await checkStaffAndRefund(account.id, device.id, input, sale.total);
       const amounts = evidencedAmounts(sale);
 
       let inserted: { id: string }[];
@@ -195,7 +198,8 @@ export async function ingestSales(ctx: DeviceContext, inputs: DeviceSale[]): Pro
             items: sale.lines,
             vatBreakdown: sale.vat,
             refundOf: sale.refundOf,
-            approvedBy,
+            approvedBy: approved?.approvedBy ?? null,
+            approvalJti: approved?.approvalJti ?? null,
             evidencedTotal: amounts.total,
             prepaymentAmount: amounts.prepayment,
             redeemedAmount: amounts.redeemed,
@@ -209,6 +213,7 @@ export async function ingestSales(ctx: DeviceContext, inputs: DeviceSale[]): Pro
         // unikátní (zařízení, pořadové číslo) → jiná tržba už má toto číslo: trvalý konflikt
         if (/sales_device_seq_uq/.test(errorText(e))) throw new IngestRejection("SEQUENCE_CONFLICT", "Pořadové číslo už bylo použito jinou tržbou", 409);
         if (/sales_refund_of_uq/.test(errorText(e))) throw new IngestRejection("REFUND_DUPLICATE", "Tato tržba už byla vrácena", 409);
+        if (/sales_approval_jti_uq/.test(errorText(e))) throw new IngestRejection("REFUND_NOT_AUTHORIZED", "Toto schválení vratky už bylo použito – vlastník musí schválit znovu", 403);
         throw e;
       }
 

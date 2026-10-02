@@ -1,5 +1,5 @@
 import "server-only";
-import { createHmac } from "node:crypto";
+import { createHmac, randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { getDb, schema } from "@ez/db";
 import { verifyPin } from "@/lib/pos/pin";
@@ -28,7 +28,9 @@ export function resetPinAttempts(): void {
 }
 
 const APPROVAL_TTL_MS = 15 * 60_000;
-type Approval = { sid: string; aid: string; did: string; p: "refund" | "unlock"; iat: number };
+/** ref = vracená tržba, amt = částka vratky v haléřích (kladná), jti = jednorázové id (R5.5) */
+type Approval = { sid: string; aid: string; did: string; p: "refund"; iat: number; ref: string; amt: number; jti: string };
+export type RefundTarget = { refundOf: string; amount: number };
 
 function secret(): string {
   const s = process.env.APP_SECRET;
@@ -42,8 +44,14 @@ function sign(payload: Approval): string {
   return `${body}.${mac}`;
 }
 
-/** Ověří schválení vratky: podpis, účet, zařízení a čas vůči okamžiku prodeje. Vrátí id vlastníka. */
-export function verifyApproval(token: string | null | undefined, o: { accountId: string; deviceId: string; soldAt: string }): string | null {
+/**
+ * Ověří schválení vratky: podpis, účet, zařízení, čas vůči okamžiku prodeje a hlavně **kterou tržbu a jakou
+ * částku** vlastník schválil (R5.5). Vrátí id vlastníka a jti; jednorázovost hlídá ingest (sales.approval_jti).
+ */
+export function verifyApproval(
+  token: string | null | undefined,
+  o: { accountId: string; deviceId: string; soldAt: string; refundOf: string; amount: number },
+): { approverId: string; jti: string } | null {
   if (!token || token.length > 1000) return null;
   const [body, mac] = token.split(".");
   if (!body || !mac) return null;
@@ -57,13 +65,24 @@ export function verifyApproval(token: string | null | undefined, o: { accountId:
     return null;
   }
   if (p.p !== "refund" || p.aid !== o.accountId || p.did !== o.deviceId) return null;
+  if (p.ref !== o.refundOf || p.amt !== o.amount || typeof p.jti !== "string") return null;
   const sold = Date.parse(o.soldAt);
   // schválení vzniklo nejvýš 15 min před vratkou (a ne po ní, s tolerancí hodin 2 min)
   if (!(p.iat <= sold + 2 * 60_000 && sold - p.iat <= APPROVAL_TTL_MS)) return null;
-  return p.sid;
+  return { approverId: p.sid, jti: p.jti };
 }
 
-export async function verifyStaffPinOnline(ctx: DeviceContext, staffId: string, pin: string, purpose: "refund" | "unlock"): Promise<{ approval: string | null }> {
+export async function verifyStaffPinOnline(
+  ctx: DeviceContext,
+  staffId: string,
+  pin: string,
+  purpose: "refund" | "unlock",
+  refund?: RefundTarget,
+): Promise<{ approval: string | null }> {
+  // schválení vratky vždy jen pro jednu tržbu a částku (R5.5)
+  if (purpose === "refund" && (!refund || !Number.isInteger(refund.amount) || refund.amount <= 0)) {
+    throw new HttpError(400, "Schválení vratky musí uvést tržbu a částku.");
+  }
   const key = `${ctx.device.id}:${staffId}`;
   const now = Date.now();
   const state = attempts.get(key) ?? { failures: 0, lockedUntil: 0 };
@@ -82,5 +101,6 @@ export async function verifyStaffPinOnline(ctx: DeviceContext, staffId: string, 
   }
   attempts.delete(key);
   if (purpose === "refund" && staff!.role !== "owner") throw new HttpError(403, "Vratku schvaluje vlastník.");
-  return { approval: staff!.role === "owner" ? sign({ sid: staff!.id, aid: ctx.account.id, did: ctx.device.id, p: purpose, iat: now }) : null };
+  if (purpose !== "refund" || staff!.role !== "owner") return { approval: null };
+  return { approval: sign({ sid: staff!.id, aid: ctx.account.id, did: ctx.device.id, p: "refund", iat: now, ref: refund!.refundOf, amt: refund!.amount, jti: randomUUID() }) };
 }
