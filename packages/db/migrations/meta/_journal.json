@@ -148,6 +148,20 @@
       "when": 1790976894913,
       "tag": "0020_cert_active_uq",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1790979387762,
+      "tag": "0021_prereg_token_hash",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1790979397423,
+      "tag": "0022_prereg_drop_plain_tokens",
+      "breakpoints": true
     }
   ]
 }

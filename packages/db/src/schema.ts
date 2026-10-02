@@ -44,13 +44,17 @@ export const preregistrations = pgTable(
     needs: text("needs").array().notNull().default(sql`'{}'::text[]`),
     marketingConsent: boolean("marketing_consent").notNull().default(false),
     marketingConsentAt: timestamp("marketing_consent_at", { withTimezone: true }),
-    /** hash IP + UA pro doložení souhlasu, ne samotná IP */
+    /** doklad souhlasu: „souhlas:<verze textu>“ (B Дрібне 10); starší záznamy mají hash IP + UA */
     consentEvidence: text("consent_evidence"),
     referralCode: varchar("referral_code", { length: 12 }).notNull(),
     referredBy: varchar("referred_by", { length: 12 }),
-    confirmToken: varchar("confirm_token", { length: 64 }).notNull(),
+    /** SHA-256 potvrzovacího tokenu – token sám je jen v e-mailu (B Дрібне 9) */
+    confirmTokenHash: varchar("confirm_token_hash", { length: 64 }).notNull(),
+    /** kdy byl potvrzovací odkaz vydán – nepotvrzený platí 30 dní */
+    confirmTokenIssuedAt: timestamp("confirm_token_issued_at", { withTimezone: true }).notNull().defaultNow(),
     confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
-    unsubscribeToken: varchar("unsubscribe_token", { length: 64 }).notNull(),
+    /** SHA-256 odhlašovacího tokenu ze starších e-mailů; nové odkazy jsou podepsané (HMAC id), bez uloženého tokenu */
+    unsubscribeTokenHash: varchar("unsubscribe_token_hash", { length: 64 }),
     unsubscribedAt: timestamp("unsubscribed_at", { withTimezone: true }),
     locale: varchar("locale", { length: 5 }).notNull().default("cs"),
     utm: jsonb("utm").$type<Record<string, string>>(),
@@ -59,6 +63,8 @@ export const preregistrations = pgTable(
   (t) => [
     uniqueIndex("prereg_email_uq").on(sql`lower(${t.email})`),
     uniqueIndex("prereg_referral_uq").on(t.referralCode),
+    index("prereg_confirm_hash_idx").on(t.confirmTokenHash),
+    index("prereg_unsub_hash_idx").on(t.unsubscribeTokenHash),
     index("prereg_referred_by_idx").on(t.referredBy),
     index("prereg_created_idx").on(t.createdAt),
   ],

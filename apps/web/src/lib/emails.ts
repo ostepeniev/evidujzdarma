@@ -67,13 +67,17 @@ function renderBody(template: EmailTemplate, p: Record<string, unknown>): Render
       const plan = (p.plan as PlanStep[] | undefined) ?? TIMELINE.map((t) => ({ date: t.dateLabel, text: t.action }));
       const u = unsubscribe(p.unsubscribeToken);
       const company = p.companyName ? ` pro ${esc(p.companyName)}` : "";
+      // opakované vyplnění formuláře už potvrzeným e-mailem: jen odkaz na stav předregistrace (B Дрібне 11)
+      const already = p.alreadyConfirmed === true;
       return {
-        subject: "Váš EET plán – potvrďte prosím e-mail",
+        subject: already ? "Vaše předregistrace v EvidujZdarma" : "Váš EET plán – potvrďte prosím e-mail",
         unsubscribeUrl: u.url,
         text: [
           "Dobrý den,",
           "",
-          `děkujeme za předregistraci do EvidujZdarma. Potvrďte prosím e-mail: ${confirmUrl}`,
+          already
+            ? `tento e-mail už u nás je předregistrovaný a potvrzený. Pořadí a doporučovací odkaz najdete zde: ${confirmUrl}`
+            : `děkujeme za předregistraci do EvidujZdarma. Potvrďte prosím e-mail: ${confirmUrl}`,
           "",
           `Váš EET plán${p.companyName ? ` pro ${p.companyName}` : ""}:`,
           ...plan.map((s) => `• ${s.date}: ${s.text}`),
@@ -85,8 +89,13 @@ function renderBody(template: EmailTemplate, p: Record<string, unknown>): Render
         ].join("\n"),
         html: layout(
           "Váš EET plán",
-          `<p>Dobrý den,</p><p>děkujeme za předregistraci. Jedním kliknutím potvrďte e-mail – pošleme vám návody a včasný přístup k pokladně.</p>
-${button(confirmUrl, "Potvrdit e-mail")}
+          `${
+            already
+              ? `<p>Dobrý den,</p><p>tento e-mail už u nás je předregistrovaný a potvrzený. Pořadí a doporučovací odkaz najdete na stránce předregistrace.</p>
+${button(confirmUrl, "Zobrazit předregistraci")}`
+              : `<p>Dobrý den,</p><p>děkujeme za předregistraci. Jedním kliknutím potvrďte e-mail – pošleme vám návody a včasný přístup k pokladně.</p>
+${button(confirmUrl, "Potvrdit e-mail")}`
+          }
 <h2 style="font-size:18px;margin:28px 0 8px">Váš EET plán${company}</h2>
 <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%">${plan
             .map(

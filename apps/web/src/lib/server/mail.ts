@@ -29,9 +29,10 @@ export async function enqueueEmail(opts: {
   payload: Record<string, unknown>;
   dedupeKey?: string;
   sendAfter?: Date;
-}): Promise<void> {
+}): Promise<boolean> {
   const db = getDb();
-  await db
+  // true = e-mail je nově ve frontě; false = stejný dedupeKey už tam je
+  const rows = await db
     .insert(schema.emailOutbox)
     .values({
       to: opts.to,
@@ -40,7 +41,9 @@ export async function enqueueEmail(opts: {
       dedupeKey: opts.dedupeKey,
       sendAfter: opts.sendAfter ?? new Date(),
     })
-    .onConflictDoNothing();
+    .onConflictDoNothing()
+    .returning({ id: schema.emailOutbox.id });
+  return rows.length > 0;
 }
 
 type Transporter = { sendMail(msg: Record<string, unknown>): Promise<unknown> };

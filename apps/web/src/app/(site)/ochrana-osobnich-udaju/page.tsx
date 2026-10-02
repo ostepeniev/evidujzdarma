@@ -33,7 +33,7 @@ const PURPOSES: readonly { purpose: string; data: string; basis: string; retenti
   },
   {
     purpose: "Novinky k EET a nabídky e-mailem",
-    data: "E-mail, údaje z předregistrace, datum a doklad udělení souhlasu (otisk IP adresy a prohlížeče).",
+    data: "E-mail, údaje z předregistrace, datum udělení souhlasu, verze jeho textu a čas potvrzení e-mailu (u předregistrací do 2. 10. 2026 místo verze textu otisk IP adresy a prohlížeče).",
     basis: "Váš souhlas – čl. 6 odst. 1 písm. a) GDPR a § 7 zákona č. 480/2004 Sb., o některých službách informační společnosti.",
     retention: "Do odvolání souhlasu. Doklad o souhlasu a jeho odvolání uchováváme ještě 3 roky po odvolání pro případ sporu.",
   },

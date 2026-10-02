@@ -7,7 +7,7 @@ type State =
   | { kind: "idle" }
   | { kind: "sending" }
   | { kind: "error"; message: string; field?: string }
-  | { kind: "done"; position: number | null; referralCode: string | null; duplicate?: boolean };
+  | { kind: "done" };
 
 const NEEDS = [
   { value: "terminal", label: "Potřebuji platební terminál" },
@@ -68,13 +68,13 @@ export function PreregForm({ defaultIco = "" }: { defaultIco?: string }) {
         setState({ kind: "error", message: data.error ?? "Něco se nepovedlo.", field: data.field });
         return;
       }
-      setState({ kind: "done", position: data.position ?? null, referralCode: data.referralCode ?? null, duplicate: data.duplicate });
+      setState({ kind: "done" });
     } catch {
       setState({ kind: "error", message: "Nepodařilo se odeslat. Zkontrolujte připojení a zkuste to znovu." });
     }
   }
 
-  if (state.kind === "done") return <Success {...state} />;
+  if (state.kind === "done") return <Success />;
 
   const err = state.kind === "error" ? state : null;
   return (
@@ -182,41 +182,15 @@ export function PreregForm({ defaultIco = "" }: { defaultIco?: string }) {
   );
 }
 
-function Success({ position, referralCode, duplicate }: { position: number | null; referralCode: string | null; duplicate?: boolean }) {
-  const [copied, setCopied] = useState(false);
-  const link = referralCode ? `${window.location.origin}/?ref=${referralCode}` : null;
+function Success() {
+  // odpověď serveru je stejná pro nový i už registrovaný e-mail (B Дрібне 11); pořadí a odkaz pro pozvání
+  // ukáže stránka z potvrzovacího e-mailu
   return (
     <div className="space-y-5 text-center" role="status">
       <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-brand-100 text-2xl text-brand-700">✓</div>
-      <h3 className="text-2xl font-bold text-ink">{duplicate ? "Tento e-mail už u nás máme" : "Hotovo! Zkontrolujte e-mail"}</h3>
-      <p className="text-ink-soft">
-        {duplicate
-          ? "Pokud jste registraci ještě nepotvrdili, poslali jsme vám odkaz znovu."
-          : "Poslali jsme vám EET plán a odkaz pro potvrzení e-mailu."}
-      </p>
-      {position && (
-        <p className="text-lg">
-          Jste <strong className="text-brand-700">{position}.</strong> v pořadí na včasný přístup.
-        </p>
-      )}
-      {link && (
-        <div className="rounded-2xl bg-sun-100 p-5 text-left">
-          <p className="font-semibold text-ink">Pozvěte kolegu – oba získáte Premium na 3 měsíce zdarma</p>
-          <div className="mt-3 flex gap-2">
-            <input readOnly value={link} className="input bg-white text-sm" aria-label="Váš odkaz pro pozvání" onFocus={(e) => e.currentTarget.select()} />
-            <button
-              type="button"
-              className="btn-secondary shrink-0"
-              onClick={async () => {
-                await navigator.clipboard.writeText(link);
-                setCopied(true);
-              }}
-            >
-              {copied ? "Zkopírováno" : "Kopírovat"}
-            </button>
-          </div>
-        </div>
-      )}
+      <h3 className="text-2xl font-bold text-ink">Hotovo! Zkontrolujte e-mail</h3>
+      <p className="text-ink-soft">Poslali jsme vám EET plán a odkaz pro potvrzení e-mailu. Po potvrzení uvidíte své pořadí na včasný přístup a odkaz pro pozvání kolegů.</p>
+      <p className="text-sm text-muted">Pokud už u nás tento e-mail máte, poslali jsme vám odkaz na vaši předregistraci.</p>
     </div>
   );
 }

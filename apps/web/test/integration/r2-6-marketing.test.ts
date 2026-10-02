@@ -2,7 +2,7 @@
  * R2.6 / R2.7 (Р5) – marketing jen s DOI + souhlasem + bez odhlášení v okamžiku odeslání;
  * potvrzení a odhlášení mění stav jen přes POST.
  */
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { getDb, schema } from "@ez/db";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -23,7 +23,10 @@ afterAll(async () => t?.close());
 beforeEach(async () => t.reset());
 
 const token = () => randomBytes(18).toString("base64url");
+const sha = (v: string) => createHash("sha256").update(v).digest("hex");
 async function prereg(o: { confirmed?: boolean; consent?: boolean; unsubscribed?: boolean }) {
+  const confirmToken = token();
+  const unsubscribeToken = token();
   const [row] = await getDb()
     .insert(schema.preregistrations)
     .values({
@@ -33,11 +36,12 @@ async function prereg(o: { confirmed?: boolean; consent?: boolean; unsubscribed?
       confirmedAt: o.confirmed ? new Date() : null,
       unsubscribedAt: o.unsubscribed ? new Date() : null,
       referralCode: token().slice(0, 8).toLowerCase().replace(/[^a-z0-9]/g, "a"),
-      confirmToken: token(),
-      unsubscribeToken: token(),
+      // v DB jen hashe (B Дрібне 9); starší odhlašovací odkaz = náhodný token s uloženým hashem
+      confirmTokenHash: sha(confirmToken),
+      unsubscribeTokenHash: sha(unsubscribeToken),
     })
     .returning();
-  return row!;
+  return { ...row!, confirmToken, unsubscribeToken };
 }
 
 describe("R2.6 – marketing e-mails only with proof of consent at send time", () => {
@@ -60,8 +64,8 @@ describe("R2.6 – marketing e-mails only with proof of consent at send time", (
     expect(res.status).toBe(200);
     const queued = await getDb().select().from(schema.emailOutbox).where(eq(schema.emailOutbox.to, email));
     expect(queued.map((q) => q.template)).toEqual(["prereg-confirm"]);
-    const row = (await getDb().query.preregistrations.findFirst({ where: eq(schema.preregistrations.email, email) }))!;
-    const form = new URLSearchParams({ token: row.confirmToken });
+    const mail = (await getDb().select().from(schema.emailOutbox).where(eq(schema.emailOutbox.to, email)))[0]!;
+    const form = new URLSearchParams({ token: String((mail.payload as { confirmToken: string }).confirmToken) });
     const c = await confirmRoute.POST(new Request("http://localhost/api/registrace/potvrdit", { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: form }));
     expect(c.status).toBe(303);
     const after = await getDb().select({ template: schema.emailOutbox.template }).from(schema.emailOutbox).where(eq(schema.emailOutbox.to, email));

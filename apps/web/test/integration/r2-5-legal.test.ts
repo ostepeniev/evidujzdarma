@@ -98,12 +98,12 @@ describe("R2.5 – legal texts match the code", () => {
 
   it("retention periods from the privacy policy are executed", async () => {
     const db = getDb();
-    const base = { referralCode: "aaaa1111", confirmToken: "c".repeat(24), unsubscribeToken: "u".repeat(24) };
+    const base = { referralCode: "aaaa1111", confirmTokenHash: "c".repeat(64), unsubscribeTokenHash: "u".repeat(64) };
     const old = new Date("2026-10-01T00:00:00Z");
     await db.insert(schema.preregistrations).values([
       { ...base, email: "noconsent@example.cz", createdAt: old },
-      { ...base, email: "consent@example.cz", referralCode: "bbbb2222", confirmToken: "d".repeat(24), unsubscribeToken: "v".repeat(24), marketingConsent: true, confirmedAt: old, createdAt: old },
-      { ...base, email: "unsub@example.cz", referralCode: "cccc3333", confirmToken: "e".repeat(24), unsubscribeToken: "w".repeat(24), unsubscribedAt: old, createdAt: old },
+      { ...base, email: "consent@example.cz", referralCode: "bbbb2222", confirmTokenHash: "d".repeat(64), unsubscribeTokenHash: "v".repeat(64), marketingConsent: true, confirmedAt: old, createdAt: old },
+      { ...base, email: "unsub@example.cz", referralCode: "cccc3333", confirmTokenHash: "e".repeat(64), unsubscribeTokenHash: "w".repeat(64), unsubscribedAt: old, createdAt: old },
     ]);
     await db.insert(schema.objections).values({ name: "X", email: "x@example.cz", message: "m", status: "resolved", resolvedAt: old });
     await db.insert(schema.emailOutbox).values({ to: "x@example.cz", template: "notice", status: "sent", sendAfter: old, createdAt: old });

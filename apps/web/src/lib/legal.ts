@@ -2,8 +2,13 @@
 export const TERMS_VERSION = "2026-10-02";
 export const TERMS_VERSION_LABEL = "2. 10. 2026";
 /** Verze zásad ochrany osobních údajů. */
-export const PRIVACY_VERSION = "2026-10-02";
-export const PRIVACY_VERSION_LABEL = "2. 10. 2026";
+export const PRIVACY_VERSION = "2026-10-03";
+export const PRIVACY_VERSION_LABEL = "3. 10. 2026";
+/**
+ * Verze textu marketingového souhlasu v předregistraci (prereg-form.tsx). Ukládá se jako doklad souhlasu
+ * (preregistrations.consent_evidence = "souhlas:<verze>"); při změně textu zvýšit.
+ */
+export const MARKETING_CONSENT_VERSION = "2026-09-20";
 
 /** Doby uložení ze zásad – vykonává je cron (lib/server/lifecycle.ts → runRetention). */
 export const RETENTION = {

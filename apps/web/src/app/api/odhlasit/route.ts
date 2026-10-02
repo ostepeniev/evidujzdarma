@@ -1,17 +1,19 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { getDb, hasDatabase, schema } from "@ez/db";
+import { isUnsubscribeTokenShape, unsubscribeWhere } from "@/lib/server/preregistration";
 
 /**
  * Odhlášení z e-mailů. GET jen zobrazí stránku s tlačítkem (GET nesmí měnit stav – Р5),
  * POST odhlásí: tlačítko na stránce i RFC 8058 one-click z poštovního klienta (List-Unsubscribe-Post).
  */
 async function unsubscribe(token: string | null): Promise<boolean> {
-  if (!token || !hasDatabase() || !/^[A-Za-z0-9_-]{20,64}$/.test(token)) return false;
+  const where = token && hasDatabase() ? unsubscribeWhere(token) : null;
+  if (!where) return false;
   const db = getDb();
   const rows = await db
     .update(schema.preregistrations)
     .set({ unsubscribedAt: new Date(), marketingConsent: false })
-    .where(eq(schema.preregistrations.unsubscribeToken, token))
+    .where(where)
     .returning({ email: schema.preregistrations.email });
   const email = rows[0]?.email;
   if (!email) return false;
@@ -33,7 +35,7 @@ function page(title: string, body: string): Response {
 
 export async function GET(req: Request) {
   const token = new URL(req.url).searchParams.get("token") ?? "";
-  if (!/^[A-Za-z0-9_-]{20,64}$/.test(token)) return page("Odkaz je neplatný", "<p>Odkaz pro odhlášení je neplatný nebo neúplný.</p>");
+  if (!isUnsubscribeTokenShape(token)) return page("Odkaz je neplatný", "<p>Odkaz pro odhlášení je neplatný nebo neúplný.</p>");
   return page(
     "Odhlásit odběr?",
     `<p>Po odhlášení vám už nebudeme posílat novinky ani upozornění k termínům EET.</p>
