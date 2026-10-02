@@ -5,7 +5,8 @@
  * a konfigurace. Server je idempotentní, takže opakované odeslání stejné tržby je bezpečné.
  */
 import { getDevice, markCashSynced, setMeta, unsettledSales, unsyncedCash, updateSale } from "./db";
-import type { LocalStatus, PosConfig } from "./types";
+import { applyServerResult, clockOffsetFrom, type ServerSaleResult } from "./sync-result";
+import type { PosConfig } from "./types";
 
 type Listener = () => void;
 const listeners = new Set<Listener>();
@@ -37,11 +38,15 @@ export class DeviceRevokedError extends Error {}
 async function api(path: string, init: RequestInit = {}): Promise<Response> {
   const device = await getDevice();
   if (!device) throw new DeviceRevokedError("Zařízení není registrované");
+  const sentAt = Date.now();
   const res = await fetch(path, {
     ...init,
     headers: { ...(init.headers ?? {}), authorization: `Bearer ${device.token}`, "content-type": "application/json" },
     cache: "no-store",
   });
+  // posun hodin zařízení proti serveru – pokladna podle něj opraví čas prodeje (R1.1)
+  const offset = clockOffsetFrom(res.headers.get("date"), sentAt, Date.now());
+  if (offset !== null) void setMeta("clockOffset", { ms: Math.round(offset), at: Date.now() });
   if (res.status === 401) throw new DeviceRevokedError((await res.json().catch(() => ({}))).error ?? "Zařízení bylo odpojeno");
   return res;
 }
@@ -58,15 +63,6 @@ export async function refreshConfig(): Promise<PosConfig | null> {
     if (e instanceof DeviceRevokedError) throw e;
     return null;
   }
-}
-
-interface ServerResult {
-  id: string;
-  ok: boolean;
-  error?: string;
-  status?: LocalStatus;
-  confirmationCode?: string | null;
-  lastError?: string | null;
 }
 
 /** Vklady/výběry a uzávěrky – nejsou tržby, posílají se odděleně a idempotentně. */
@@ -120,19 +116,10 @@ async function doSync(): Promise<SyncReport> {
         }),
       });
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? `Server odpověděl ${res.status}`);
-      const { results } = (await res.json()) as { results: ServerResult[] };
+      const { results } = (await res.json()) as { results: ServerSaleResult[] };
       for (const r of results) {
-        if (!r.ok) {
-          await updateSale(r.id, { status: "rejected", error: r.error ?? "Tržbu se nepodařilo uložit" });
-          continue;
-        }
-        sent++;
-        await updateSale(r.id, {
-          status: (r.status as LocalStatus) ?? "queued",
-          confirmationCode: r.confirmationCode ?? null,
-          error: r.status === "rejected" ? (r.lastError ?? "Finanční správa tržbu odmítla") : (r.lastError ?? null),
-          syncedAt: new Date().toISOString(),
-        });
+        if (r.ok) sent++;
+        await updateSale(r.id, applyServerResult(r));
       }
     }
     await syncCash();
@@ -183,4 +170,10 @@ export async function emailReceipt(saleId: string, email: string): Promise<{ ok:
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Nepodařilo se odeslat" };
   }
+}
+
+/** „Odeslat znovu": odmítnutou tržbu vrátí do fronty (server ji znovu posoudí). */
+export async function resendSale(id: string): Promise<void> {
+  await updateSale(id, { status: "local", error: null });
+  await syncNow().catch(() => {});
 }

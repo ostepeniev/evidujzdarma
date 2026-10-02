@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { PAYMENT_LABEL, deadlineFor, formatRemaining, renderReceiptText, urgency } from "@ez/fiscal-core";
 import { getSale } from "@/lib/pos/db";
 import { bluetoothSupported, printEscPos } from "@/lib/pos/escpos";
-import { emailReceipt, onSyncChange, syncNow } from "@/lib/pos/sync";
+import { emailReceipt, onSyncChange, resendSale, syncNow } from "@/lib/pos/sync";
 import type { LocalSale, PosConfig } from "@/lib/pos/types";
 import { Sheet, StatusChip, kc } from "./ui";
 
@@ -101,7 +101,14 @@ export function ReceiptView({
               {navigator.onLine ? "Odesílám Finanční správě…" : "Jste offline – tržba je uložená a odešle se sama."} Lhůta: {formatRemaining(deadline)}.
             </p>
           )}
-          {sale.status === "rejected" && sale.error && <p className="text-sm text-danger-600">{sale.error}</p>}
+          {sale.status === "rejected" && (
+            <div className="space-y-2">
+              {sale.error && <p className="text-sm text-danger-600">{sale.error}</p>}
+              <button type="button" className="btn-secondary py-2 text-[15px]" onClick={() => void resendSale(sale.id)}>
+                Odeslat znovu
+              </button>
+            </div>
+          )}
           {sale.mode === "mock" && <p className="text-xs text-muted">Ukázkový režim – tržba se Finanční správě neodesílá.</p>}
         </div>
       </div>

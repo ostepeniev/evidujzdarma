@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { HttpError, authenticateDevice, errorResponse } from "@/lib/server/auth";
 import { processSale, salesStatus } from "@/lib/server/fiscal";
-import { DeviceSaleSchema, ingestSales } from "@/lib/server/sales";
+import { quarantineSale } from "@/lib/server/quarantine";
+import { DeviceSaleSchema, ingestSales, type IngestResult } from "@/lib/server/sales";
 
 const Body = z.object({ sales: z.array(z.unknown()).min(1).max(100) });
 /** Kolik času smí synchronizace strávit odesíláním do FS, než zbytek dořeší cron. */
@@ -14,9 +15,18 @@ export async function POST(req: Request) {
     if (!body.success) throw new HttpError(400, "Neplatný požadavek");
     const parsed = body.data.sales.map((s) => DeviceSaleSchema.safeParse(s));
     const valid = parsed.flatMap((p) => (p.success ? [p.data] : []));
-    const invalid = parsed.flatMap((p, i) =>
-      p.success ? [] : [{ id: String((body.data.sales[i] as { id?: unknown })?.id ?? i), ok: false, error: p.error.issues[0]?.message ?? "Neplatná tržba" }],
-    );
+    // Neúplná data z pokladny se také nezahazují: s platným id jdou do karantény (Р2).
+    const invalid: IngestResult[] = [];
+    for (const [i, p] of parsed.entries()) {
+      if (p.success) continue;
+      const raw = body.data.sales[i] as { id?: unknown };
+      const id = typeof raw?.id === "string" ? raw.id : String(i);
+      const error = p.error.issues[0]?.message ?? "Neplatná tržba";
+      if (/^[0-9a-f-]{36}$/i.test(id)) {
+        await quarantineSale(ctx, raw, "INVALID_PAYLOAD", error);
+        invalid.push({ id, ok: false, retryable: false, quarantined: true, code: "INVALID_PAYLOAD", error });
+      } else invalid.push({ id, ok: false, retryable: false, quarantined: false, code: "INVALID_PAYLOAD", error });
+    }
     const results = [...(await ingestSales(ctx, valid)), ...invalid];
 
     const started = Date.now();

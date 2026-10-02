@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { deadlineFor, formatRemaining, urgency } from "@ez/fiscal-core";
-import { unsettledSales } from "@/lib/pos/db";
+import { getMeta, rejectedSales, unsettledSales } from "@/lib/pos/db";
 import { lastSync, onSyncChange, syncNow } from "@/lib/pos/sync";
 import type { PosConfig } from "@/lib/pos/types";
 import { ModeBadge } from "./ui";
@@ -26,11 +26,16 @@ export function StatusBar({
 }) {
   const [online, setOnline] = useState(true);
   const [pending, setPending] = useState<{ n: number; oldest: string | null }>({ n: 0, oldest: null });
+  const [rejected, setRejected] = useState(0);
+  const [clockSkewMin, setClockSkewMin] = useState(0);
 
   useEffect(() => {
     const refresh = async () => {
       const list = await unsettledSales();
       setPending({ n: list.length, oldest: list[0]?.soldAt ?? null });
+      setRejected((await rejectedSales()).length);
+      const off = await getMeta<{ ms: number; at: number }>("clockOffset");
+      setClockSkewMin(off && Date.now() - off.at < 86_400_000 ? Math.round(off.ms / 60_000) : 0);
       setOnline(navigator.onLine && lastSync().online);
     };
     void refresh();
@@ -88,6 +93,11 @@ export function StatusBar({
             </span>
           )}
         </button>
+        {rejected > 0 && (
+          <button type="button" onClick={() => onView("history")} className="rounded-full bg-danger-50 px-3 py-1.5 text-sm font-semibold text-danger-600" title="Otevřít historii">
+            {rejected} odmítnuto
+          </button>
+        )}
         <nav className="flex gap-1" aria-label="Pokladna">
           {(
             [
@@ -115,6 +125,11 @@ export function StatusBar({
           </span>
         )}
       </div>
+      {Math.abs(clockSkewMin) >= 2 && (
+        <p role="alert" className="bg-sun-100 px-4 py-1.5 text-center text-sm text-warn-700">
+          Hodiny v zařízení se liší od skutečného času o {Math.abs(clockSkewMin)} min. Čas tržeb opravujeme podle serveru – nastavte prosím v zařízení automatický čas.
+        </p>
+      )}
     </header>
   );
 }

@@ -148,3 +148,16 @@ describe("certificates and signing", () => {
     expect(() => parseP12(p12, "spatne")).toThrow(CertificateError);
   });
 });
+
+describe("discount keeps line kind (R1.6, A В3)", () => {
+  it("a prepayment line with qty ≠ 1 stays a prepayment after the discount", () => {
+    const s = buildSale({
+      ...base,
+      lines: [{ name: "Dárkový poukaz", qty: 2, unitPrice: 50000, vatRate: 0, kind: "prepayment" }],
+      discount: 10000,
+      payments: [{ method: "cash", amount: 90000 }],
+      vatPayer: false,
+    });
+    expect(s.lines[0]!.kind).toBe("prepayment");
+  });
+});

@@ -359,6 +359,33 @@ export const sales = pgTable(
   ],
 );
 
+/**
+ * Karanténa tržeb (Р2): tržba, kterou server nemohl přijmout (datum, jednotka, konflikt…),
+ * se neztratí – uloží se celá, jak ji poslala pokladna, a čeká na rozhodnutí vlastníka.
+ */
+export const saleQuarantine = pgTable(
+  "sale_quarantine",
+  {
+    /** id tržby z pokladny */
+    id: uuid("id").primaryKey(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    deviceId: uuid("device_id").references(() => devices.id, { onDelete: "set null" }),
+    payload: jsonb("payload").notNull(),
+    reasonCode: varchar("reason_code", { length: 32 }).notNull(),
+    reason: text("reason").notNull(),
+    attempts: smallint("attempts").notNull().default(1),
+    receivedAt: timestamp("received_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    /** ingested = tržba přijata | dismissed = vlastník vyřídil ručně */
+    resolution: varchar("resolution", { length: 16 }),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+    note: text("note"),
+  },
+  (t) => [index("sale_quarantine_open").on(t.accountId, t.resolvedAt)],
+);
+
 /* ────────────────────────────── Katalog firem (ARES) ────────────────────────────── */
 
 export const eetRelevance = pgEnum("eet_relevance", ["likely", "possible", "unlikely"]);

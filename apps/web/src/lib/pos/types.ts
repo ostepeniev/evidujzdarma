@@ -60,6 +60,8 @@ export interface LocalSale {
   status: LocalStatus;
   confirmationCode: string | null;
   error: string | null;
+  /** server tržbu uložil do karantény (čeká na vlastníka) */
+  quarantined?: boolean;
   syncedAt: string | null;
   createdAt: string;
 }

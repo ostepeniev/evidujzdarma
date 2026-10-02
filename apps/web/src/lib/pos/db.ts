@@ -105,6 +105,11 @@ export async function unsettledSales(): Promise<LocalSale[]> {
   return out.sort((a, b) => a.soldAt.localeCompare(b.soldAt));
 }
 
+/** Tržby, které server nebo FS odmítly – pokladna není „čistá“, dokud je někdo nevyřeší (Р2). */
+export async function rejectedSales(): Promise<LocalSale[]> {
+  return (await posDb()).getAllFromIndex("sales", "byStatus", "rejected");
+}
+
 /** Smaže z IndexedDB potvrzené tržby starší než `days` (data zůstávají na serveru). */
 export async function pruneOld(days = 90): Promise<void> {
   const db = await posDb();

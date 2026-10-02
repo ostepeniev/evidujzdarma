@@ -115,6 +115,7 @@ export function SetupApp({ initial }: { initial: State }) {
           <CatalogSection state={state} reload={reload} />
           <ExportSection salesCount={state.salesCount ?? 0} />
           <ClosingsSection />
+          <ProblemSalesSection />
         </>
       )}
       <p className="pt-4 text-center text-xs text-muted">
@@ -817,5 +818,83 @@ function ClosingsSection() {
         </div>
       )}
     </Section>
+  );
+}
+
+/* ───────────── Problémové tržby (karanténa) ───────────── */
+
+interface QuarantineDto {
+  id: string;
+  reasonCode: string;
+  reason: string;
+  detail: string;
+  sequence: string | null;
+  soldAt: string | null;
+  total: number;
+  mode: string | null;
+  receivedAt: string;
+}
+
+function ProblemSalesSection() {
+  const [items, setItems] = useState<QuarantineDto[] | null>(null);
+  const { busy, error, run } = useAction();
+  const load = () => call<{ items: QuarantineDto[] }>("/api/ucet/karantena").then((d) => setItems(d.items));
+  useEffect(() => {
+    void load().catch(() => setItems([]));
+  }, []);
+  if (!items || items.length === 0) return null;
+  const act = (id: string, action: string, note?: string) =>
+    void run(async () => {
+      const r = await call<{ ok: boolean; result?: { error?: string } }>(`/api/ucet/karantena/${id}`, { method: "POST", json: { action, note } });
+      if (!r.ok) throw new Error(r.result?.error ?? "Tržbu se nepodařilo přijmout.");
+      await load();
+    });
+  const fmt = new Intl.DateTimeFormat("cs-CZ", { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Prague" });
+  return (
+    <section id="problemove-trzby" className="scroll-mt-24 rounded-3xl border-2 border-danger-600 bg-white p-6">
+      <h2 className="text-xl font-bold text-danger-600">Tržby k vyřízení ({items.length})</h2>
+      <p className="mt-1 text-[15px] text-ink-soft">
+        Tyto tržby pokladna poslala, ale nemohli jsme je přijmout. Jsou uložené a neztratí se – dokud je nevyřídíte, Finanční správě se neodešlou.
+      </p>
+      <ul className="mt-4 divide-y divide-line">
+        {items.map((q) => (
+          <li key={q.id} className="py-3">
+            <p className="font-semibold">
+              {q.soldAt ? fmt.format(new Date(q.soldAt)) : "—"} · {formatCzk(q.total)} · {q.sequence ?? "bez čísla"}
+              {q.mode && q.mode !== "production" && <span className="chip ml-2 bg-surface-2 text-ink-soft">{MODE_LABEL[q.mode] ?? q.mode}</span>}
+            </p>
+            <p className="text-[15px] text-danger-600">{q.reason}</p>
+            {q.detail !== q.reason && <p className="text-sm text-muted">{q.detail}</p>}
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button type="button" className="btn-secondary py-1.5 text-sm" disabled={busy} onClick={() => act(q.id, "retry")}>
+                Zkusit znovu přijmout
+              </button>
+              {q.reasonCode === "FUTURE_DATE" && (
+                <button
+                  type="button"
+                  className="btn-secondary py-1.5 text-sm"
+                  disabled={busy}
+                  onClick={() => window.confirm(`Použít jako čas tržby okamžik, kdy ji server přijal (${fmt.format(new Date(q.receivedAt))})?`) && act(q.id, "retry_with_received_time")}
+                >
+                  Použít čas přijetí
+                </button>
+              )}
+              <button
+                type="button"
+                className="btn-ghost py-1.5 text-sm"
+                disabled={busy}
+                onClick={() => {
+                  const note = window.prompt("Jak jste tržbu vyřídili? (např. evidována ručně, duplicitní)");
+                  if (note?.trim()) act(q.id, "dismiss", note.trim());
+                }}
+              >
+                Vyřízeno ručně
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+      <ErrorText error={error} />
+    </section>
   );
 }

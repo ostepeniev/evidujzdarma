@@ -1,7 +1,8 @@
 "use client";
 
 import { buildSale, refundLinesFrom, type Payment, type SaleLine } from "@ez/fiscal-core";
-import { nextSequence, saveSale } from "./db";
+import { getMeta, nextSequence, saveSale } from "./db";
+import { correctedNow } from "./sync-result";
 import type { DeviceCredentials, LocalSale, PosConfig } from "./types";
 
 export interface NewSaleInput {
@@ -23,7 +24,9 @@ export async function createLocalSale(device: DeviceCredentials, config: PosConf
   const unit = config.units.find((u) => u.id === input.unitId);
   if (!unit) throw new Error("Vyberte evidenční jednotku");
   const id = crypto.randomUUID();
-  const soldAt = new Date(Math.floor(Date.now() / 1000) * 1000).toISOString();
+  // čas prodeje opravený o posun hodin zařízení proti serveru (R1.1)
+  const now = correctedNow(await getMeta<{ ms: number; at: number }>("clockOffset"));
+  const soldAt = new Date(Math.floor(now / 1000) * 1000).toISOString();
   // Validace PŘED přidělením pořadového čísla — neplatná tržba číslo nespotřebuje.
   const probe = buildSale({
     id,

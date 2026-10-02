@@ -134,7 +134,9 @@ function applyDiscount(lines: SaleLine[], discount: Halere): SaleLine[] {
     remaining -= share;
     const newTotal = t - share;
     // jednotkovou cenu přepočteme tak, aby qty × cena = nový součet (u qty ≠ 1 vznikne jedna položka)
-    return l.qty === 1 ? { ...l, unitPrice: newTotal } : { name: `${l.name} (${l.qty}×, po slevě)`, qty: 1, unitPrice: newTotal, vatRate: l.vatRate };
+    if (l.qty === 1) return { ...l, unitPrice: newTotal };
+    // druh položky (např. záloha / poukaz) se nesmí ztratit – jinak by se změnilo urceno_cerp_zuct
+    return { name: `${l.name} (${l.qty}×, po slevě)`, qty: 1, unitPrice: newTotal, vatRate: l.vatRate, ...(l.kind ? { kind: l.kind } : {}) };
   });
 }
 

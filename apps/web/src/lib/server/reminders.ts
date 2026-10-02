@@ -2,16 +2,8 @@ import "server-only";
 import { and, eq, gt, isNull, lte, sql } from "drizzle-orm";
 import { getDb, schema } from "@ez/db";
 import { enqueueEmail } from "./mail";
+import { ownerEmails } from "./owners";
 import { absoluteUrl } from "@/lib/site";
-
-async function ownerEmails(accountId: string): Promise<string[]> {
-  const rows = await getDb()
-    .select({ email: schema.users.email })
-    .from(schema.memberships)
-    .innerJoin(schema.users, eq(schema.users.id, schema.memberships.userId))
-    .where(and(eq(schema.memberships.accountId, accountId), eq(schema.memberships.role, "owner")));
-  return rows.map((r) => r.email);
-}
 
 const dateCs = (d: Date) => d.toLocaleDateString("cs-CZ", { timeZone: "Europe/Prague" });
 

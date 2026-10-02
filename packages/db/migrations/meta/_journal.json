@@ -43,6 +43,13 @@
       "when": 1790897114124,
       "tag": "0005_cash_closings",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790900989075,
+      "tag": "0006_sale_quarantine",
+      "breakpoints": true
     }
   ]
 }
