@@ -170,6 +170,48 @@ docker compose run --rm migrate   # відновить права ролі evidu
 - [ ] Каталог: `CATALOG_INDEX_REGIONS=51`. Почніть з KV-краю, потім поступово додавайте краї.
 - [ ] Гайди: після рецензії daňovým poradcem заповніть `reviewedBy` у файлі гайду. Тоді гайд індексується.
 
+## 8. Наш прод: наявний сервер з nginx (Т7)
+
+EvidujZdarma працює на сервері власника `46.225.132.220` (Ubuntu 24.04, 2 vCPU, 4 ГБ RAM). Там уже є інші застосунки за nginx 1.24, тож порти 80/443 зайняті. Тому Caddy не запускаємо, а беремо `infra/docker-compose.nginx.yml` і vhost `infra/nginx/evidujzdarma.conf`. Чужі vhost-и не змінюємо, перед кожним reload — `nginx -t`.
+
+| Що | Де на сервері |
+| --- | --- |
+| Репозиторій (клон по HTTPS, лише читання) | `/opt/evidujzdarma` |
+| Секрети | `/opt/evidujzdarma/infra/.env` (0600), `/opt/evidujzdarma/infra/secrets/master_key` (0400, uid 1001) |
+| Бекапи (лише `*.dump.age`) | `/opt/evidujzdarma/infra/backups` |
+| vhost | `/etc/nginx/sites-available/evidujzdarma.cz` → `sites-enabled` |
+| Basic auth | `/etc/nginx/evidujzdarma.htpasswd` |
+| Web | `127.0.0.1:3100` |
+
+**Збирання.** Пам'яті на сервері мало, а поруч працюють інші застосунки. Тому образи збираємо окремим builder-ом з лімітом пам'яті: якщо збирання не вміститься, впаде лише воно. Потім builder видаляємо, щоб кеш не їв диск:
+
+```bash
+cd /opt/evidujzdarma && git pull --ff-only
+docker buildx create --name ezbuild --driver docker-container \
+  --driver-opt memory=1500m --driver-opt memory-swap=3000m --driver-opt cpu-quota=150000
+for t in web worker migrate; do
+  docker buildx build --builder ezbuild --load --target $t \
+    --build-arg NEXT_PUBLIC_SITE_URL=https://evidujzdarma.cz -t evidujzdarma-$t:latest .
+done
+docker buildx build --builder ezbuild --load -f infra/backup.Dockerfile -t evidujzdarma-backup:latest infra
+docker buildx rm ezbuild
+cd infra && docker compose -f docker-compose.yml -f docker-compose.nginx.yml up -d --no-build
+```
+
+**HTTPS.** Сертифікат — через webroot, щоб certbot не переписував конфіг:
+
+1. Поки сертифіката немає, вмикаємо лише перший `server` (порт 80).
+2. Запускаємо `certbot certonly --webroot -w /var/www/certbot -d evidujzdarma.cz -d www.evidujzdarma.cz`.
+3. Ставимо повний файл, `nginx -t`, `systemctl reload nginx`.
+
+Продовження робить системний таймер certbot.
+
+**Поки немає SMTP.** Production не стартує без `SMTP_URL` (Б2). До вибору провайдера в `.env` стоїть заглушка `smtp://127.0.0.1:25`: листи не відправляються, лишаються в черзі з повторами, у лог не потрапляють. Сайт до того закритий basic auth (відкритий лише `/api/health`), бо без пошти не працює вхід. Коли буде SMTP:
+
+1. Впишіть справжній `SMTP_URL` і `docker compose … up -d`.
+2. Додайте DKIM і SPF провайдера в DNS.
+3. Видаліть два рядки `auth_basic*` з vhost, `nginx -t`, reload.
+
 ## Локальна розробка
 
 ```bash

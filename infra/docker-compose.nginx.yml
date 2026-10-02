@@ -1,0 +1,9 @@
+# Варіант «наявний сервер з nginx» (docs/DECISIONS.md, Т7): Caddy не запускається,
+# web слухає лише 127.0.0.1, HTTPS і ліміти тримає vhost з infra/nginx/evidujzdarma.conf.
+#   docker compose -f docker-compose.yml -f docker-compose.nginx.yml up -d
+services:
+  caddy:
+    profiles: ["caddy"]
+  web:
+    ports:
+      - "127.0.0.1:${WEB_PORT:-3100}:3000"
