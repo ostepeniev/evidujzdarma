@@ -236,8 +236,12 @@ export async function parseP12Safe(data: Buffer | Uint8Array, password: string, 
     throw new CertificateError("Soubor certifikátu má neobvyklé parametry šifrování (příliš mnoho iterací). Vygenerujte certifikát znovu v DIS+.");
   }
   const forgePath = forgeModulePath();
-  // bez cesty k node-forge (neobvyklé prostředí) zůstává ochrana předběžnou kontrolou iterací
-  if (!forgePath) return parseP12(data, password);
+  // bez cesty k node-forge (neobvyklé prostředí) zůstává ochrana předběžnou kontrolou iterací;
+  // do logu, ať jde po deployi ověřit, že import běží ve workeru (B r2 Н2-3)
+  if (!forgePath) {
+    console.warn("[p12] node-forge pro worker nenalezen – certifikát se parsuje v hlavním vlákně (limity iterací platí)");
+    return parseP12(data, password);
+  }
   const timeoutMs = opts.timeoutMs ?? P12_LIMITS.timeoutMs;
   const result = await new Promise<{ ok: true; keys: string[]; certs: string[] } | { ok: false; message: string; loadError?: boolean }>((resolve, reject) => {
     const worker = new Worker(WORKER_SOURCE, { eval: true, workerData: { forgePath, data: Buffer.from(data), password }, resourceLimits: { maxOldGenerationSizeMb: 64 } });
@@ -256,7 +260,10 @@ export async function parseP12Safe(data: Buffer | Uint8Array, password: string, 
     });
   });
   // worker nenašel node-forge (neobvyklé rozložení balíčků) – limity iterací už prošly, parsujeme tady
-  if (!result.ok && result.loadError) return parseP12(data, password);
+  if (!result.ok && result.loadError) {
+    console.warn("[p12] worker nenačetl node-forge – certifikát se parsuje v hlavním vlákně (limity iterací platí)");
+    return parseP12(data, password);
+  }
   if (!result.ok) throw p12Error(new Error(result.message));
   return assemble(result.keys[0] ? (forge.pki.privateKeyFromPem(result.keys[0]) as forge.pki.rsa.PrivateKey) : undefined, result.certs.map((c) => forge.pki.certificateFromPem(c)));
 }

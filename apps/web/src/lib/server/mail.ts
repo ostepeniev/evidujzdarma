@@ -1,5 +1,5 @@
 import "server-only";
-import { and, eq, inArray, lte, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, lt, lte, or, sql } from "drizzle-orm";
 import { getDb, hasDatabase, schema } from "@ez/db";
 import { renderEmail, type EmailTemplate } from "@/lib/emails";
 import { safeError } from "./log";
@@ -61,14 +61,23 @@ async function getTransporter(): Promise<Transporter | null> {
   return transporter;
 }
 
+/** Jak dlouho smí e-mail zůstat ve stavu „sending“, než ho jiný běh vrátí do fronty. */
+const OUTBOX_STALE_MS = 10 * 60_000;
+
 /** Odešle čekající e-maily (max `limit`). Bezpečné pro souběh: řádky zamyká přes UPDATE … RETURNING. */
 export async function processOutbox(limit = 20): Promise<{ sent: number; failed: number }> {
   if (!hasDatabase()) return { sent: 0, failed: 0 };
   const tx = await getTransporter();
   const db = getDb();
+  // e-maily, které zůstaly ve stavu „sending“ po pádu procesu, se vrátí do fronty (B Дрібне 18);
+  // řádek bez claimed_at je z doby před sloupcem – zaseknutý určitě
+  await db
+    .update(schema.emailOutbox)
+    .set({ status: "queued", claimedAt: null })
+    .where(and(eq(schema.emailOutbox.status, "sending"), or(isNull(schema.emailOutbox.claimedAt), lt(schema.emailOutbox.claimedAt, new Date(Date.now() - OUTBOX_STALE_MS)))));
   const claimed = await db
     .update(schema.emailOutbox)
-    .set({ status: "sending", attempts: sql`${schema.emailOutbox.attempts} + 1` })
+    .set({ status: "sending", claimedAt: new Date(), attempts: sql`${schema.emailOutbox.attempts} + 1` })
     .where(
       inArray(
         schema.emailOutbox.id,

@@ -163,6 +163,21 @@ export async function runRetention(now = new Date()): Promise<Record<string, num
       .where(and(isNotNull(schema.objections.resolvedAt), lt(schema.objections.resolvedAt, addMonths(now, -12 * RETENTION.objectionYears))))
       .returning({ id: schema.objections.id }),
   );
+  // Nepotvrzené předregistrace (DOI nikdy neproběhlo): 90 dní od posledního odkazu – odkaz platí 30 dní,
+  // bez potvrzení údaje nejde použít k ničemu (B Дрібне 12). Odhlášení se drží 3 roky jako doklad (výše).
+  await count(
+    "preregistrationsUnconfirmed",
+    db
+      .delete(schema.preregistrations)
+      .where(
+        and(
+          isNull(schema.preregistrations.confirmedAt),
+          isNull(schema.preregistrations.unsubscribedAt),
+          lt(schema.preregistrations.confirmTokenIssuedAt, ago(now, RETENTION.unconfirmedPreregistrationDays * DAY)),
+        ),
+      )
+      .returning({ id: schema.preregistrations.id }),
+  );
   // Záznamy odeslaných e-mailů (obsahují adresy a obsah): 90 dnů
   await count(
     "emails",

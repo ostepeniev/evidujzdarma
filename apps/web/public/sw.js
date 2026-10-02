@@ -3,6 +3,16 @@
  * API se nikdy necachuje — tržby drží pokladna v IndexedDB a synchronizuje sama. */
 const VERSION = "ez-pos-v1";
 const SHELL = ["/pokladna", "/manifest.webmanifest", "/icon.svg", "/icons/192", "/icons/512"];
+/** Strop počtu souborů v cache: staré /_next/static z předchozích buildů jinak přibývají do změny VERSION (B Н-7). */
+const MAX_ENTRIES = 300;
+
+/** Smaže nejstarší položky (Cache API vrací klíče v pořadí vložení); shell zůstává. */
+function trim(cache) {
+  return cache.keys().then((keys) => {
+    const extra = keys.filter((k) => !SHELL.includes(new URL(k.url).pathname)).slice(0, Math.max(0, keys.length - MAX_ENTRIES));
+    return Promise.all(extra.map((k) => cache.delete(k)));
+  });
+}
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -38,7 +48,7 @@ self.addEventListener("fetch", (event) => {
           fetch(req).then((res) => {
             if (res.ok) {
               const copy = res.clone();
-              caches.open(VERSION).then((c) => c.put(req, copy));
+              caches.open(VERSION).then((c) => c.put(req, copy).then(() => trim(c)));
             }
             return res;
           }),

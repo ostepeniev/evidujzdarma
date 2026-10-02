@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, desc, eq, gt, isNull, sql, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, gt, isNull, ne, sql, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { isValidIco, normalizeIco, toIban } from "@ez/cz";
 import { getDb, schema } from "@ez/db";
@@ -232,5 +232,38 @@ export async function registerDevice(accountId: string, input: { name: string; r
       .returning({ id: schema.devices.id });
     deviceId = d!.id;
   }
+  // bezpečnostní upozornění: nová pokladna může prodávat a nahrávat tržby jménem účtu (B Дрібне 2)
+  await notifyOwners(accountId, `device-registered:${deviceId}:${Date.now()}`, `Nová pokladna ${input.registerId} v EvidujZdarma`, `K vašemu účtu bylo právě zaregistrováno zařízení „${input.name}“ jako pokladna ${input.registerId}. Pokud jste to nebyli vy, odpojte ho v nastavení pokladny (Zařízení) a změňte PIN vlastníka.`, "/pokladna/nastaveni");
   return { deviceId, token };
+}
+
+/** E-mail vlastníkům účtu (bezpečnostní upozornění; transakční, ne marketing). */
+export async function notifyOwners(accountId: string, dedupeKey: string, subject: string, text: string, path: string) {
+  const [{ enqueueEmail }, { ownerEmails }, { absoluteUrl }] = await Promise.all([import("./mail"), import("./owners"), import("@/lib/site")]);
+  for (const to of await ownerEmails(accountId)) {
+    await enqueueEmail({ to, template: "notice", dedupeKey: `${dedupeKey}:${to}`, payload: { subject, text, url: absoluteUrl(path), buttonLabel: "Otevřít nastavení" } });
+  }
+}
+
+/**
+ * Zapne / vypne evidenční jednotku. Zapnutí počítá limit plánu stejně jako založení nové (B Дрібне 6).
+ */
+export async function setUnitActive(accountId: string, unitId: string, active: boolean) {
+  const db = getDb();
+  if (active) {
+    const account = (await db.query.accounts.findFirst({ where: eq(schema.accounts.id, accountId) }))!;
+    const [{ n } = { n: 0 }] = await db
+      .select({ n: sql<number>`count(*)::int` })
+      .from(schema.evidenceUnits)
+      .where(and(eq(schema.evidenceUnits.accountId, accountId), eq(schema.evidenceUnits.active, true), ne(schema.evidenceUnits.id, unitId)));
+    const limit = limitsFor(account.plan).units;
+    if (n >= limit) throw new HttpError(400, `Zdarma můžete mít ${limit} evidenční jednotky. Více v Premium.`);
+  }
+  const [unit] = await db
+    .update(schema.evidenceUnits)
+    .set({ active, changedAt: new Date() })
+    .where(and(eq(schema.evidenceUnits.id, unitId), eq(schema.evidenceUnits.accountId, accountId)))
+    .returning();
+  if (!unit) throw new HttpError(404, "Jednotka nenalezena");
+  return unit;
 }

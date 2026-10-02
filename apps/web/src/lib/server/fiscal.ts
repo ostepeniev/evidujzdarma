@@ -803,17 +803,26 @@ export async function processPending(limit = 50, concurrency = 4): Promise<{ pro
   return { processed };
 }
 
+/**
+ * Stav tržeb pro pokladnu. Text chyby jen srozumitelný: odmítnutí FS (s nápovědou) a důvod blokace;
+ * interní zprávy serveru (INTERNAL, síť, SQL) pokladna nedostane (B Дрібне 19).
+ */
 export async function salesStatus(ids: string[], accountId: string) {
   if (!ids.length) return [];
-  return getDb()
+  const rows = await getDb()
     .select({
       id: schema.sales.id,
       status: schema.sales.status,
       confirmationCode: schema.sales.confirmationCode,
       lastError: schema.sales.lastError,
+      blockedReason: schema.sales.blockedReason,
       warnings: schema.sales.warnings,
       mode: schema.sales.mode,
     })
     .from(schema.sales)
     .where(and(eq(schema.sales.accountId, accountId), inArray(schema.sales.id, ids)));
+  return rows.map(({ blockedReason, lastError, ...r }) => ({
+    ...r,
+    lastError: r.status === "rejected" ? lastError : blockedReason ? (BLOCK_TEXT[blockedReason] ?? null) : null,
+  }));
 }

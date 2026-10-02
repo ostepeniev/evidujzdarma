@@ -162,6 +162,13 @@
       "when": 1790979397423,
       "tag": "0022_prereg_drop_plain_tokens",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1790979885516,
+      "tag": "0023_outbox_claimed_at",
+      "breakpoints": true
     }
   ]
 }

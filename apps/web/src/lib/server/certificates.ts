@@ -5,6 +5,7 @@ import { getDb, schema } from "@ez/db";
 import { buildSale, certificateEnvironment } from "@ez/fiscal-core";
 import { CertificateError, parseP12Safe } from "@ez/fiscal-core/server";
 import { HttpError } from "./auth";
+import { notifyOwners } from "./account";
 import { rateLimit } from "./rate-limit";
 import { accountMode, requeueBlocked, storeCertificate, transportFor, type EetMode } from "./fiscal";
 
@@ -50,6 +51,14 @@ export async function importCertificate(accountId: string, input: { file: Buffer
   }
 
   const id = await storeCertificate(accountId, cert, environment, accountEic ? {} : { setAccountEic: cert.info.dic });
+  // bezpečnostní upozornění vlastníkům (B Дрібне 2)
+  await notifyOwners(
+    accountId,
+    `certificate-uploaded:${id}`,
+    `Nahrán pokladní certifikát (${ENV_LABEL[environment]})`,
+    `K vašemu účtu byl nahrán pokladní certifikát pro EIČ ${cert.info.dic} (${ENV_LABEL[environment]}, platí do ${cert.info.validTo.toLocaleDateString("cs-CZ", { timeZone: "Europe/Prague" })}). Pokud jste to nebyli vy, ozvěte se nám a v DIS+ certifikát zneplatněte.`,
+    "/pokladna/nastaveni#certifikat",
+  );
   return { id, subject: cert.info.subject, eic: cert.info.dic, environment, issuer: cert.info.issuer, validFrom: cert.info.validFrom, validTo: cert.info.validTo };
 }
 

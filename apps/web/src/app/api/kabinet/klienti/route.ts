@@ -3,6 +3,7 @@ import { parseIcoList } from "@ez/cz";
 import { HttpError, errorResponse, getCurrentUser } from "@/lib/server/auth";
 import { lookupCompany } from "@/lib/server/ares";
 import { addClients, requireAccountant } from "@/lib/server/cabinet";
+import { rateLimit } from "@/lib/server/rate-limit";
 import { parseJson } from "@/lib/server/route-helpers";
 
 const MAX = 500;
@@ -15,8 +16,9 @@ export async function POST(req: Request) {
     const { valid, invalid } = parseIcoList(text);
     if (valid.length > MAX) throw new HttpError(400, `Najednou nejvýše ${MAX} IČO.`);
     const labels = new Map<string, string | null>();
-    // názvy jen pro prvních 50 (zbytek doplní stránka katalogu / další návštěva)
-    const queue = valid.slice(0, 50);
+    // názvy jen pro prvních 50 (zbytek doplní stránka katalogu / další návštěva); dotazy do ARES má účetní
+    // omezené na 10 dávek za hodinu – pak se klienti přidají bez názvu (B Н-4)
+    const queue = rateLimit(`kabinet-ares:${accountId}`, 10, 3600) ? valid.slice(0, 50) : [];
     await Promise.all(
       Array.from({ length: 4 }, async () => {
         for (let ico = queue.shift(); ico; ico = queue.shift()) {

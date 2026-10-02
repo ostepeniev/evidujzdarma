@@ -101,7 +101,8 @@ describe("R2.5 – legal texts match the code", () => {
     const base = { referralCode: "aaaa1111", confirmTokenHash: "c".repeat(64), unsubscribeTokenHash: "u".repeat(64) };
     const old = new Date("2026-10-01T00:00:00Z");
     await db.insert(schema.preregistrations).values([
-      { ...base, email: "noconsent@example.cz", createdAt: old },
+      // potvrzená bez souhlasu (nepotvrzené maže dřív pravidlo 90 dnů – R4, test r4-ops)
+      { ...base, email: "noconsent@example.cz", confirmedAt: old, createdAt: old },
       { ...base, email: "consent@example.cz", referralCode: "bbbb2222", confirmTokenHash: "d".repeat(64), unsubscribeTokenHash: "v".repeat(64), marketingConsent: true, confirmedAt: old, createdAt: old },
       { ...base, email: "unsub@example.cz", referralCode: "cccc3333", confirmTokenHash: "e".repeat(64), unsubscribeTokenHash: "w".repeat(64), unsubscribedAt: old, createdAt: old },
     ]);

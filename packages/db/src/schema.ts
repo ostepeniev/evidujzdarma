@@ -84,6 +84,8 @@ export const emailOutbox = pgTable(
     status: emailStatus("status").notNull().default("queued"),
     attempts: smallint("attempts").notNull().default(0),
     sendAfter: timestamp("send_after", { withTimezone: true }).notNull().defaultNow(),
+    /** kdy řádek zabral odesílač – „sending“ starší 10 min se vrací do fronty (B Дрібне 18) */
+    claimedAt: timestamp("claimed_at", { withTimezone: true }),
     sentAt: timestamp("sent_at", { withTimezone: true }),
     lastError: text("last_error"),
     createdAt: createdAt(),

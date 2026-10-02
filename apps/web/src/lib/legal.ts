@@ -15,6 +15,8 @@ export const RETENTION = {
   /** spuštění pokladny – od něj běží 12 měsíců pro předregistrace bez účtu a bez souhlasu */
   launch: "2026-12-01",
   preregistrationMonths: 12,
+  /** nepotvrzená předregistrace (bez DOI) – od posledního potvrzovacího odkazu */
+  unconfirmedPreregistrationDays: 90,
   consentProofYears: 3,
   objectionYears: 3,
   closedAccountDays: 30,
