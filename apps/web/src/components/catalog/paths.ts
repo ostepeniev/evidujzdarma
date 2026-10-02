@@ -39,6 +39,15 @@ export function objectionPath(q: { ico?: string; icp?: string }): string {
 }
 
 /** "12345679-jana-testovaci" → { ico, suffix }; IČO musí mít přesně 8 číslic. */
+/**
+ * Co udělat se suffixem v URL firmy/provozovny: kanonický → vykreslit, prázdný → jedno přesměrování,
+ * cokoli jiného → 404. Přesměrování z libovolného suffixu by z každé URL dělalo nový záznam v cache (R3.3).
+ */
+export function slugDecision(suffix: string, canonical: string): "ok" | "redirect" | "notfound" {
+  if (suffix === canonical) return "ok";
+  return suffix === "" ? "redirect" : "notfound";
+}
+
 export function parseFirmSlug(param: string): { ico: string; suffix: string } | null {
   const m = safeDecode(param).match(/^(\d{8})(?:-(.*))?$/);
   return m ? { ico: m[1]!, suffix: m[2] ?? "" } : null;

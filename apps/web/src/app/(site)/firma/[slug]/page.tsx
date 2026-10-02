@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { notFound, permanentRedirect } from "next/navigation";
 import { classifyNaceList, krajByCode, legalFormName, legalFormShort } from "@ez/cz";
 import { Facts } from "@/components/catalog/facts";
@@ -7,26 +8,31 @@ import { CATALOG_INDUSTRIES } from "@/components/catalog/industry";
 import { firmLd } from "@/components/catalog/jsonld";
 import { naceDivisionLabel } from "@/components/catalog/nace-labels";
 import { OwnerCta } from "@/components/catalog/owner-cta";
-import { aresUrl, dateCs, establishmentPath, firmPath, krajPath, oborKrajPath, parseFirmSlug } from "@/components/catalog/paths";
+import { aresUrl, dateCs, establishmentPath, firmPath, krajPath, oborKrajPath, parseFirmSlug, slugDecision } from "@/components/catalog/paths";
 import { RelevanceChip, RelevanceExplainer } from "@/components/catalog/relevance";
 import { SourceNote } from "@/components/catalog/source-note";
 import { PageHeader } from "@/components/page-header";
 import { JsonLd } from "@/lib/jsonld";
-import { getFirmView, type FirmView } from "@/lib/server/catalog";
+import { getFirmView, isFirmInCatalog, type FirmView } from "@/lib/server/catalog";
+import { clientIpFromHeaders, rateLimit } from "@/lib/server/rate-limit";
 
-// Stránky firem se renderují na vyžádání a cachují na 24 h (ISR); nic se negeneruje při buildu.
-export const revalidate = 86400;
-
-export async function generateStaticParams() {
-  return [];
-}
+// Stránky firem se renderují pro každý požadavek a neukládají se do ISR cache na disk: miliony
+// platných IČO by ji jinak mohly zaplnit (R3.3). Data z DB jsou levná, živé dotazy do ARES mají limit na IP.
+export const dynamic = "force-dynamic";
 
 async function loadFirm(slugParam: string): Promise<FirmView> {
   const parsed = parseFirmSlug(slugParam);
   if (!parsed) notFound();
+  // Firmy mimo naši DB (živě z ARES) se renderují dynamicky, bez ISR cache, a s limitem na IP (R3.3)
+  if (!(await isFirmInCatalog(parsed.ico))) {
+    const ip = clientIpFromHeaders(await headers());
+    if (!rateLimit(`firm-live:${ip}`, 30, 3600)) notFound();
+  }
   const firm = await getFirmView(parsed.ico);
   if (!firm) notFound();
-  if (parsed.suffix !== firm.slug) permanentRedirect(firmPath(firm));
+  const decision = slugDecision(parsed.suffix, firm.slug);
+  if (decision === "notfound") notFound();
+  if (decision === "redirect") permanentRedirect(firmPath(firm));
   return firm;
 }
 

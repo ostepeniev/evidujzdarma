@@ -262,6 +262,14 @@ async function liveFirmView(ico: string): Promise<FirmView | null> {
   };
 }
 
+/** Je firma v našem katalogu (DB)? Ostatní se ukazují živě z ARES a necachují se. */
+export const isFirmInCatalog = cache(async (icoInput: string): Promise<boolean> => {
+  const ico = normalizeIco(icoInput);
+  if (!ico || !isValidIco(ico) || !hasDatabase()) return false;
+  const [row] = await getDb().select({ ico: f.ico }).from(f).where(eq(f.ico, ico)).limit(1);
+  return !!row;
+});
+
 /** Firma pro stránku /firma/[slug]: z DB, jinak živě z ARES. Deduplikováno v rámci requestu. */
 export const getFirmView = cache(async (icoInput: string): Promise<FirmView | null> => {
   const ico = normalizeIco(icoInput);

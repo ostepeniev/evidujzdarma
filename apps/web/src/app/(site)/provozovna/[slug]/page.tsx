@@ -5,25 +5,24 @@ import { krajByCode, legalFormShort } from "@ez/cz";
 import { Facts } from "@/components/catalog/facts";
 import { establishmentLd } from "@/components/catalog/jsonld";
 import { OwnerCta } from "@/components/catalog/owner-cta";
-import { dateCs, establishmentPath, firmPath, krajPath, parseEstablishmentSlug } from "@/components/catalog/paths";
+import { dateCs, establishmentPath, firmPath, krajPath, parseEstablishmentSlug, slugDecision } from "@/components/catalog/paths";
 import { RelevanceChip, RelevanceExplainer } from "@/components/catalog/relevance";
 import { SourceNote } from "@/components/catalog/source-note";
 import { PageHeader } from "@/components/page-header";
 import { JsonLd } from "@/lib/jsonld";
 import { getEstablishmentPage, type EstablishmentPage } from "@/lib/server/catalog";
 
-export const revalidate = 86400;
-
-export async function generateStaticParams() {
-  return [];
-}
+// Renderuje se pro každý požadavek, bez ISR cache na disku (R3.3).
+export const dynamic = "force-dynamic";
 
 async function load(slugParam: string): Promise<EstablishmentPage> {
   const parsed = parseEstablishmentSlug(slugParam);
   if (!parsed) notFound();
   const page = await getEstablishmentPage(parsed.icp);
   if (!page) notFound();
-  if (parsed.suffix !== page.establishment.slug) permanentRedirect(establishmentPath(page.establishment));
+  const decision = slugDecision(parsed.suffix, page.establishment.slug);
+  if (decision === "notfound") notFound();
+  if (decision === "redirect") permanentRedirect(establishmentPath(page.establishment));
   return page;
 }
 

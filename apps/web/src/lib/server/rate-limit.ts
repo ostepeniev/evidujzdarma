@@ -21,6 +21,11 @@ export function rateLimit(key: string, limit: number, perSeconds: number): boole
   return allowed;
 }
 
+/** IP klienta z hlaviček v server komponentách (stejná logika jako clientIp). */
+export function clientIpFromHeaders(h: Headers): string {
+  return clientIp(new Request("http://localhost", { headers: h }));
+}
+
 export function clientIp(req: Request): string {
   const xff = req.headers.get("x-forwarded-for");
   return (xff?.split(",")[0] ?? req.headers.get("x-real-ip") ?? "unknown").trim();
