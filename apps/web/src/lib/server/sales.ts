@@ -2,7 +2,7 @@ import "server-only";
 import { and, eq, inArray, ne } from "drizzle-orm";
 import { z } from "zod";
 import { getDb, schema } from "@ez/db";
-import { PAYMENT_METHODS, SaleValidationError, buildSale, deadlineFor, evidencedAmounts } from "@ez/fiscal-core";
+import { EET_PRODUCTION_ACCEPTS_FROM, PAYMENT_METHODS, SaleValidationError, buildSale, deadlineFor, evidencedAmounts } from "@ez/fiscal-core";
 import type { DeviceContext } from "./auth";
 import { accountMode, type EetMode } from "./fiscal";
 import { ingestedFromQuarantine, markIngested, quarantineSale } from "./quarantine";
@@ -112,6 +112,11 @@ async function checkStaffAndRefund(accountId: string, deviceId: string, input: D
 
 const MODE_LABEL: Record<EetMode, string> = { mock: "ukázkový", playground: "Playground", production: "ostrý provoz" };
 
+/** Od kdy produkce FS přijímá tržby (produkce v1.1, 4.1; R5.9). Přepis přes env jen pro testy. */
+function productionAcceptsFrom(): number {
+  return Date.parse(process.env.EET_PRODUCTION_ACCEPTS_FROM || EET_PRODUCTION_ACCEPTS_FROM);
+}
+
 /**
  * Uloží tržby z pokladny. Idempotentní: stejné `id` se stejným obsahem se uloží jen jednou.
  * Trvalé problémy (datum, jednotka, konflikt) jdou do karantény; dočasné chyby serveru vrací
@@ -147,6 +152,9 @@ export async function ingestSales(ctx: DeviceContext, inputs: DeviceSale[]): Pro
             `Tržba je v režimu ${MODE_LABEL[mode]}, ale účet je od ${account.eetModeChangedAt.toLocaleString("cs-CZ", { timeZone: "Europe/Prague" })} v režimu ${MODE_LABEL[accountMode(account)]}. Pokladna měla staré nastavení.`,
           );
         }
+      }
+      if (mode === "production" && soldAtMs < productionAcceptsFrom()) {
+        throw new IngestRejection("PRODUCTION_NOT_OPEN", "Ostré prostředí Finanční správy přijímá tržby až od 1. 11. 2026 (přechodný režim).");
       }
       const unit = unitById.get(input.unitId);
       if (!unit) throw new IngestRejection("UNKNOWN_UNIT", "Neznámá evidenční jednotka");

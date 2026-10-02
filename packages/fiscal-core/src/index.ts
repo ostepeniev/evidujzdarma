@@ -7,3 +7,4 @@ export * from "./closing.ts";
 export * from "./transport.ts";
 export * from "./eet2/message.ts";
 export * from "./eet2/errors.ts";
+export * from "./eet2/cert-policy.ts";

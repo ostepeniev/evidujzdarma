@@ -17,6 +17,8 @@ export interface CertificateInfo {
   serialNumber: string;
   validFrom: Date;
   validTo: Date;
+  /** OID z rozšíření certificatePolicies – podle nich se pozná prostředí EET 2.0 (R5.9) */
+  policies: string[];
 }
 
 export interface LoadedCertificate {
@@ -63,6 +65,23 @@ export function parseP12(data: Buffer | Uint8Array, password: string): LoadedCer
   return assemble(key, certs);
 }
 
+const OID_CERT_POLICIES = "2.5.29.32";
+
+/** certificatePolicies: SEQUENCE OF PolicyInformation { policyIdentifier OID, … } – forge ho nerozebírá. */
+function certificatePolicies(cert: forge.pki.Certificate): string[] {
+  const ext = (cert.extensions as { id?: string; value?: unknown }[] | undefined)?.find((e) => e.id === OID_CERT_POLICIES);
+  if (!ext || typeof ext.value !== "string") return [];
+  try {
+    const seq = forge.asn1.fromDer(ext.value);
+    return (seq.value as forge.asn1.Asn1[])
+      .map((pi) => (pi.value as forge.asn1.Asn1[])[0])
+      .filter((oid): oid is forge.asn1.Asn1 => !!oid && oid.type === forge.asn1.Type.OID)
+      .map((oid) => forge.asn1.derToOid(oid.value as string));
+  } catch {
+    return [];
+  }
+}
+
 function assemble(key: forge.pki.rsa.PrivateKey | undefined, certs: forge.pki.Certificate[]): LoadedCertificate {
   if (!key) throw new CertificateError("V souboru chybí privátní klíč.");
   // Vybereme certifikát, jehož veřejný klíč odpovídá privátnímu klíči (soubor může obsahovat i CA řetězec).
@@ -92,6 +111,7 @@ function assemble(key: forge.pki.rsa.PrivateKey | undefined, certs: forge.pki.Ce
       serialNumber: cert.serialNumber,
       validFrom: cert.validity.notBefore,
       validTo: cert.validity.notAfter,
+      policies: certificatePolicies(cert),
     },
     privateKeyPem: forge.pki.privateKeyToPem(key),
     certificatePem,
@@ -245,7 +265,16 @@ export function daysUntilExpiry(info: CertificateInfo, now = new Date()): number
 }
 
 /** Vytvoří self-signed .p12 — jen pro testy a demo režim. */
-export function createTestP12(opts: { commonName: string; password: string; days?: number; issuerCommonName?: string; notBefore?: Date; notAfter?: Date }): Buffer {
+export function createTestP12(opts: {
+  commonName: string;
+  password: string;
+  days?: number;
+  issuerCommonName?: string;
+  notBefore?: Date;
+  notAfter?: Date;
+  /** Policy OID pokladního certifikátu (R5.9); bez něj certifikát rozšíření certificatePolicies nemá */
+  policyOid?: string | null;
+}): Buffer {
   const keys = forge.pki.rsa.generateKeyPair(2048);
   const cert = forge.pki.createCertificate();
   cert.publicKey = keys.publicKey;
@@ -255,6 +284,13 @@ export function createTestP12(opts: { commonName: string; password: string; days
   const attrs = [{ name: "commonName", value: opts.commonName }, { name: "countryName", value: "CZ" }];
   cert.setSubject(attrs);
   cert.setIssuer([{ name: "commonName", value: opts.issuerCommonName ?? "EvidujZdarma TEST CA" }]);
+  if (opts.policyOid) {
+    const { asn1 } = forge;
+    const policy = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false, asn1.oidToDer(opts.policyOid).getBytes())]),
+    ]);
+    cert.setExtensions([{ id: OID_CERT_POLICIES, value: policy }]);
+  }
   cert.sign(keys.privateKey, forge.md.sha256.create());
   const p12 = forge.pkcs12.toPkcs12Asn1(keys.privateKey, [cert], opts.password, { algorithm: "3des" });
   return Buffer.from(forge.asn1.toDer(p12).getBytes(), "binary");

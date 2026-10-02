@@ -347,3 +347,18 @@ describe("snapshot and blocked sends (R1.3, R1.5)", () => {
     expect(r.audit?.requestSha256).toMatch(/^[0-9a-f]{64}$/);
   });
 });
+
+describe("R5.9 – certificate environment from the policy OID", () => {
+  it("reads certificatePolicies and maps the EET 2.0 OIDs to the environment", async () => {
+    const { certificateEnvironment } = await import("../src/eet2/cert-policy.ts");
+    const prod = parseP12(createTestP12({ commonName: "CZ00000019", password: "x", policyOid: "1.2.203.19122063.10.1.102.3.7" }), "x");
+    expect(prod.info.policies).toEqual(["1.2.203.19122063.10.1.102.3.7"]);
+    expect(certificateEnvironment(prod.info.policies)).toBe("production");
+    const pg = parseP12(createTestP12({ commonName: "CZ00000019", password: "x", policyOid: "1.2.203.19122063.10.4.102.1.1" }), "x");
+    expect(certificateEnvironment(pg.info.policies)).toBe("playground");
+    const none = parseP12(createTestP12({ commonName: "CZ00000019", password: "x" }), "x");
+    expect(none.info.policies).toEqual([]);
+    expect(certificateEnvironment(none.info.policies)).toBeNull();
+    expect(certificateEnvironment(["1.2.203.19122063.10.1.1020.1"])).toBeNull(); // jen celý segment, ne předpona čísla
+  });
+});

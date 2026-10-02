@@ -22,6 +22,8 @@ export async function createTestDb(): Promise<TestDb> {
   process.env.DATABASE_URL ??= "pglite://memory";
   process.env.MASTER_KEY ??= Buffer.alloc(32, 7).toString("base64");
   process.env.APP_SECRET ??= "test-secret";
+  // produkce přijímá tržby od 1. 11. 2026 (R5.9); testy prodávají „dnes“, tak hranici posuneme dozadu
+  process.env.EET_PRODUCTION_ACCEPTS_FROM ??= "2000-01-01T00:00:00Z";
   const pg = new PGlite({ extensions: { pg_trgm } });
   await pg.exec("CREATE EXTENSION IF NOT EXISTS pg_trgm");
   const db = drizzle(pg, { schema });

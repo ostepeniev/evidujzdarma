@@ -2,17 +2,13 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { getDb, schema } from "@ez/db";
-import { buildSale } from "@ez/fiscal-core";
+import { buildSale, certificateEnvironment } from "@ez/fiscal-core";
 import { CertificateError, parseP12Safe } from "@ez/fiscal-core/server";
 import { HttpError } from "./auth";
 import { accountMode, storeCertificate, transportFor, type EetMode } from "./fiscal";
 
 export type CertEnvironment = "playground" | "production";
 
-/** Prostředí podle vydavatele certifikátu: testovací certifikáty vydává CA s „Playground“ v názvu. */
-export function environmentFromIssuer(issuer: string): CertEnvironment {
-  return /playground/i.test(issuer) ? "playground" : "production";
-}
 
 const ENV_LABEL: Record<CertEnvironment, string> = { production: "ostrý", playground: "testovací (Playground)" };
 /** Tolerance rozdílu hodin při kontrole „platný od“. */
@@ -35,7 +31,11 @@ export async function importCertificate(accountId: string, input: { file: Buffer
   if (cert.info.validFrom.getTime() > now + CLOCK_SKEW_MS) throw new HttpError(400, `Certifikát platí až od ${cert.info.validFrom.toLocaleString("cs-CZ", { timeZone: "Europe/Prague" })}.`);
   if (!cert.info.dic) throw new HttpError(400, "Z certifikátu nejde zjistit EIČ (DIČ). Nahrajte pokladní certifikát vydaný v DIS+.");
 
-  const environment = environmentFromIssuer(cert.info.issuer);
+  // prostředí podle Policy OID pokladního certifikátu (produkce 3.1.2, Playground 3.1.5; R5.9), ne podle názvu vydavatele
+  const environment = certificateEnvironment(cert.info.policies);
+  if (!environment) {
+    throw new HttpError(400, "Certifikát nemá politiku pokladního certifikátu EET 2.0. Nahrajte pokladní certifikát vydaný v DIS+ (ostrý nebo pro Playground).");
+  }
   if (input.expected && input.expected !== environment) {
     throw new HttpError(400, `Tento certifikát je ${ENV_LABEL[environment]}, ne ${ENV_LABEL[input.expected]}. Vydavatel: ${cert.info.issuer}.`);
   }
