@@ -3,12 +3,14 @@
  *
  * POK přijmeme jen tehdy, když:
  *  1. XML podpis odpovědi (exc-c14n, RSA-SHA256) sedí a podepsaná je právě soapenv:Body,
- *  2. podpisový certifikát vede k připnuté kotvě důvěry daného prostředí,
+ *  2. podpisový certifikát vede k připnuté kotvě důvěry daného prostředí a patří GFŘ
+ *     (organizationIdentifier NTRCZ-72080043, keyUsage digitalSignature + nonRepudiation),
  *  3. sedí uuid_zpravy a příznaky prostředí (Playground: test=true a POK končí "-ff").
  * Údaje (POK) čteme z PODEPSANÉHO obsahu, ne z původního dokumentu (ochrana proti XML wrapping).
  */
 import { X509Certificate } from "node:crypto";
 import { DOMParser } from "@xmldom/xmldom";
+import forge from "node-forge";
 import { SignedXml } from "xml-crypto";
 import { EET_NS, isPok, type EetEnvironment } from "./message.ts";
 import * as anchors from "./trust-anchors.ts";
@@ -96,6 +98,23 @@ function verifyChain(leaf: X509Certificate, policy: TrustPolicy, at: Date): stri
   return null;
 }
 
+/** Odpovědi podepisuje Generální finanční ředitelství (IČO 72080043). Jiný certifikát od stejné CA nestačí. */
+export const FS_SIGNER_ORGANIZATION_ID = "NTRCZ-72080043";
+
+function verifySigner(derB64: string): string | null {
+  let cert: forge.pki.Certificate;
+  try {
+    cert = forge.pki.certificateFromAsn1(forge.asn1.fromDer(forge.util.decode64(derB64.replace(/\s+/g, ""))));
+  } catch {
+    return "podpisový certifikát FS nelze přečíst";
+  }
+  const orgId = cert.subject.attributes.find((a) => a.type === "2.5.4.97")?.value;
+  if (orgId !== FS_SIGNER_ORGANIZATION_ID) return "odpověď nepodepsala Finanční správa (GFŘ)";
+  const ku = cert.getExtension("keyUsage") as { digitalSignature?: boolean; nonRepudiation?: boolean } | undefined;
+  if (!ku?.digitalSignature || !ku.nonRepudiation) return "podpisový certifikát FS nemá oprávnění k elektronickému podpisu";
+  return null;
+}
+
 function derToPem(b64: string): string {
   return `-----BEGIN CERTIFICATE-----\n${b64.replace(/\s+/g, "").match(/.{1,64}/g)!.join("\n")}\n-----END CERTIFICATE-----\n`;
 }
@@ -140,6 +159,8 @@ export function verifyResponse(xml: string, opts: { expectedUuid: string; policy
   }
   const chainError = verifyChain(leaf, opts.policy, opts.now ?? new Date());
   if (chainError) return { kind: "invalid", reason: chainError };
+  const signerError = verifySigner(tokens[0]!.textContent ?? "");
+  if (signerError) return { kind: "invalid", reason: signerError };
 
   const body = doc.getElementsByTagNameNS(EET_NS.soapenv, "Body")[0];
   const bodyId = body?.getAttributeNS(EET_NS.wsu, "Id");

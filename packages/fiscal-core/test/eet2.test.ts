@@ -15,6 +15,7 @@ import {
 } from "../src/eet2/message.ts";
 import { prepareRequest, Eet2Transport } from "../src/eet2/client.ts";
 import { defaultTrustPolicy, verifyResponse } from "../src/eet2/response.ts";
+import { GFR_SUBJECT, signedResponse, signerCert, testCa } from "./helpers/signed-response.ts";
 import { buildSale, evidencedAmounts, type SaleInput } from "../src/sale.ts";
 import { createTestP12, parseP12 } from "../src/p12.ts";
 
@@ -185,6 +186,34 @@ describe("response verification", () => {
 
   it("rejects DTDs", () => {
     expect(verifyResponse(`<!DOCTYPE x [<!ENTITY a "b">]>${accepted}`, { expectedUuid: uuid, policy, now: at }).kind).toBe("invalid");
+  });
+});
+
+describe("response signer pin (R1.11)", () => {
+  const ca = testCa();
+  const policy = { environment: "playground" as const, chain: ca.chain };
+  const uuid = "6f1c2b8e-3d4a-4f5b-9c6d-7e8f9a0b1c2d";
+  const pok = "11111111-2222-4333-8444-555555555555-ff";
+
+  it("accepts a response signed by the GFŘ signer (positive control of the test CA)", () => {
+    const v = verifyResponse(signedResponse(signerCert(ca), { uuid, pok, test: true }), { expectedUuid: uuid, policy });
+    expect(v.kind).toBe("confirmed");
+  });
+
+  it("gate: a response signed by another certificate from the same CA is invalid", () => {
+    const other = signerCert(ca, [
+      { name: "commonName", value: "Kdokoli s certifikátem od I.CA" },
+      { name: "countryName", value: "CZ" },
+      { name: "organizationName", value: "Jiná firma s.r.o." },
+      { type: "2.5.4.97", value: "NTRCZ-12345678" },
+    ]);
+    const v = verifyResponse(signedResponse(other, { uuid, pok, test: true }), { expectedUuid: uuid, policy });
+    expect(v).toMatchObject({ kind: "invalid" });
+  });
+
+  it("rejects a GFŘ certificate without digitalSignature + nonRepudiation", () => {
+    const encOnly = signerCert(ca, GFR_SUBJECT, { keyEncipherment: true, digitalSignature: true });
+    expect(verifyResponse(signedResponse(encOnly, { uuid, pok, test: true }), { expectedUuid: uuid, policy }).kind).toBe("invalid");
   });
 });
 
