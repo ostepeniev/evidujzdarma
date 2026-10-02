@@ -15,7 +15,7 @@ import { closeAccount, runRetention } from "@/lib/server/lifecycle";
 import { ingestSales } from "@/lib/server/sales";
 import { sha256 } from "@/lib/server/tokens";
 import { testCert } from "../helpers/certs";
-import { deviceContext, deviceSale, seedAccount } from "../helpers/fixtures";
+import { deviceContext, deviceSale, seedAccount, storeVerifiedCertificate } from "../helpers/fixtures";
 import { createTestDb, type TestDb } from "../helpers/test-db";
 
 let t: TestDb;
@@ -29,7 +29,7 @@ const DAY = 86_400_000;
 
 async function productionWithQueuedSale() {
   const s = await seedAccount({ mode: "production" });
-  await storeCertificate(s.account.id, testCert().cert, "production");
+  await storeVerifiedCertificate(s.account.id, testCert().cert, "production");
   const sale = deviceSale(s.unit.id, { mode: "production" });
   await ingestSales(await deviceContext(s.device.id), [sale as never]);
   return { s, sale };

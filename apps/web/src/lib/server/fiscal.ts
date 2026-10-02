@@ -1,6 +1,6 @@
 import "server-only";
 import { and, asc, eq, gt, gte, inArray, isNull, like, lte, desc, ne, notInArray, or, sql } from "drizzle-orm";
-import { getDb, schema } from "@ez/db";
+import { getDb, schema, type Db } from "@ez/db";
 import { createHash, randomUUID } from "node:crypto";
 import { safeError } from "./log";
 import { EetMessageError, MockTransport, buildSale, chybaHint, eetSnapshot, retryDelaySeconds, type EetData, type Sale, type SendResult, type Transport } from "@ez/fiscal-core";
@@ -52,10 +52,12 @@ export async function storeCertificate(
     certificatePem: cert.certificatePem,
     certificateDerBase64: cert.certificateDerBase64,
   };
-  const sealed = await encryptSecret(encryptor(), Buffer.from(JSON.stringify(payload)), `cert:${accountId}`);
+  const sealed = await encryptSecret(encryptor(), Buffer.from(JSON.stringify(payload)), certContext(accountId, environment));
   const db = getDb();
   // výměna certifikátu je atomická: buď platí nový, nebo zůstává starý (R1.9)
   const id = await db.transaction(async (tx) => {
+    // souběžné importy téhož účtu se seřadí (zámek řádku účtu); unikátní index je druhá pojistka (Д-4)
+    await tx.select({ id: schema.accounts.id }).from(schema.accounts).where(eq(schema.accounts.id, accountId)).for("update");
     // účet bez EIČ převezme EIČ z certifikátu – ve stejné transakci jako certifikát
     if (opts.setAccountEic) {
       await tx.update(schema.accounts).set({ eic: opts.setAccountEic }).where(and(eq(schema.accounts.id, accountId), isNull(schema.accounts.eic)));
@@ -79,15 +81,24 @@ export async function storeCertificate(
         encryptedKey: sealed.ciphertext,
         encryptedDek: sealed.encryptedDek,
         keyVersion: sealed.keyVersion,
+        aadVersion: 2,
       })
       .returning({ id: schema.certificates.id });
+    // tržby zablokované kvůli certifikátu se vrátí do fronty ve stejné transakci (R1.3, Д-4)
+    await requeueBlocked(accountId, CERT_BLOCKS, environment, tx);
+    if (opts.setAccountEic) await requeueBlocked(accountId, ACCOUNT_BLOCKS, undefined, tx);
     return row!.id;
   });
   credentialCache.delete(`${accountId}:${environment}`);
-  // tržby zablokované kvůli certifikátu se hned vrátí do fronty (R1.3)
-  await requeueBlocked(accountId, CERT_BLOCKS, environment);
-  if (opts.setAccountEic) await requeueBlocked(accountId, ACCOUNT_BLOCKS);
   return id;
+}
+
+/**
+ * AAD šifrovaného klíče (aad_version 2): účet + prostředí – klíč nejde přesunout do řádku jiného účtu
+ * ani prostředí (A Дрібне 3). Starší záznamy (aad_version 1) mají AAD jen s účtem.
+ */
+function certContext(accountId: string, environment: string): string {
+  return `cert:${accountId}:${environment}`;
 }
 
 const credentialCache = new Map<string, { at: number; value: Eet2Credential }>();
@@ -112,7 +123,8 @@ export async function loadCredential(accountId: string, environment: "playground
     orderBy: desc(schema.certificates.createdAt),
   });
   if (!row?.encryptedKey || !row.encryptedDek || !row.keyVersion) throw new Error("Chybí platný pokladní certifikát");
-  const plain = await decryptSecret(encryptor(), { ciphertext: row.encryptedKey, encryptedDek: row.encryptedDek, keyVersion: row.keyVersion }, `cert:${accountId}`);
+  const sealed = { ciphertext: row.encryptedKey, encryptedDek: row.encryptedDek, keyVersion: row.keyVersion };
+  const plain = await decryptSecret(encryptor(), sealed, row.aadVersion >= 2 ? certContext(accountId, environment) : `cert:${accountId}`);
   const value = JSON.parse(plain.toString("utf8")) as Eet2Credential;
   plain.fill(0);
   credentialCache.set(key, { at: Date.now(), value });
@@ -162,7 +174,7 @@ function rowToSale(row: SaleRow): Sale {
 /* ───────────── fronta ───────────── */
 
 /** Důvody blokace kvůli certifikátu / klíči – zmizí s novým certifikátem. */
-export const CERT_BLOCKS = ["CERT_MISSING", "CERT_EXPIRED", "CERT_NOT_YET_VALID", "PREPARE"] as const;
+export const CERT_BLOCKS = ["CERT_MISSING", "CERT_EXPIRED", "CERT_NOT_YET_VALID", "CERT_NOT_VERIFIED", "PREPARE"] as const;
 /** Důvody blokace kvůli údajům účtu – zmizí po opravě EIČ. */
 export const ACCOUNT_BLOCKS = ["EIC_MISSING", "MESSAGE_INVALID", "ACCOUNT_MISSING", "EIC_CERT_MISMATCH"] as const;
 /** Po kolika neověřitelných odpovědích po sobě se tržba označí a provozovatel dostane alert (R1.8). */
@@ -181,6 +193,7 @@ export const BLOCK_TEXT: Record<string, string> = {
   CERT_MISSING: "Chybí pokladní certifikát pro tento režim.",
   CERT_EXPIRED: "Pokladní certifikát vypršel – nahrajte nový z DIS+.",
   CERT_NOT_YET_VALID: "Pokladní certifikát ještě neplatí.",
+  CERT_NOT_VERIFIED: "Nový ostrý certifikát ještě není ověřený – v nastavení použijte „Odeslat ověřovací tržbu“. Tržby čekají a pak se odešlou samy.",
   PREPARE: "Zprávu nelze podepsat (certifikát nebo klíč) – zkusíme to znovu za hodinu, případně nahrajte certifikát znovu.",
   EIC_MISSING: "U účtu chybí EIČ (DIČ).",
   MESSAGE_INVALID: "Údaje tržby neodpovídají formátu EET (EIČ, číslo jednotky, označení pokladny).",
@@ -302,7 +315,15 @@ async function certificateBlock(accountId: string, environment: "playground" | "
   if (!cert) return { block: "CERT_MISSING", eic: null };
   if (cert.validTo <= now) return { block: "CERT_EXPIRED", eic: cert.eic };
   if (cert.validFrom > now) return { block: "CERT_NOT_YET_VALID", eic: cert.eic };
+  // ostré tržby obslouží jen ověřený certifikát – i po výměně v už zapnutém ostrém provozu (Д-6)
+  if (environment === "production" && !cert.verifiedAt) return { block: "CERT_NOT_VERIFIED", eic: cert.eic };
   return { block: null, eic: cert.eic };
+}
+
+/** Změnil se certifikát prostředí (nový nebo právě ověřený) od začátku pokusu? */
+async function certificateChangedSince(accountId: string, environment: string, since: Date): Promise<boolean> {
+  const cert = await activeCertificate(accountId, environment);
+  return !!cert && (cert.createdAt >= since || (!!cert.verifiedAt && cert.verifiedAt >= since));
 }
 
 /**
@@ -350,6 +371,11 @@ export async function processSale(saleId: string, account?: AccountRow): Promise
   } catch (e) {
     // do last_error (vidí ho vlastník) jen bezpečný popis – bez SQL a jeho parametrů
     outcome = { result: "retry", code: "INTERNAL", message: safeError(e).message };
+  }
+  // blok kvůli certifikátu, který se mezitím vyměnil (requeue nového certifikátu tržbu v „sending“ minul):
+  // zkusit hned znovu, ne za hodinu (Д-4)
+  if (outcome.result === "blocked" && mode && mode !== "mock" && (CERT_BLOCKS as readonly string[]).includes(outcome.code ?? "") && (await certificateChangedSince(claimed.accountId, mode, startedAt))) {
+    outcome = { result: "retry", code: outcome.code, message: "Certifikát se během pokusu změnil – zkusíme to hned znovu.", retryInMs: 0 };
   }
   const now = new Date();
   const applied = await applyOutcome(claimed, token, outcome, now);
@@ -594,9 +620,9 @@ export async function requeueInvalid(environment: "playground" | "production"): 
   return { environment, requeued: rows.length, resumed };
 }
 
-/** Vrátí zablokované tržby do fronty (nový certifikát, opravené EIČ). */
-export async function requeueBlocked(accountId: string, reasons: readonly string[], environment?: string): Promise<number> {
-  const rows = await getDb()
+/** Vrátí zablokované tržby do fronty (nový certifikát, opravené EIČ); `db` = i uvnitř transakce. */
+export async function requeueBlocked(accountId: string, reasons: readonly string[], environment?: string, db: Pick<Db, "update"> = getDb()): Promise<number> {
+  const rows = await db
     .update(schema.sales)
     .set({ blockedReason: null, nextAttemptAt: new Date() })
     .where(

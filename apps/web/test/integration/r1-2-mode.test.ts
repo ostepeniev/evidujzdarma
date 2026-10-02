@@ -5,11 +5,11 @@
 import { getDb, schema } from "@ez/db";
 import { eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { __setTransportFactoryForTests, processPending, processSale, storeCertificate } from "@/lib/server/fiscal";
+import { __setTransportFactoryForTests, processPending, processSale } from "@/lib/server/fiscal";
 import { ingestSales } from "@/lib/server/sales";
 import { testCert } from "../helpers/certs";
 import { fakeTransports } from "../helpers/fake-transport";
-import { deviceContext, deviceSale, seedAccount } from "../helpers/fixtures";
+import { deviceContext, deviceSale, seedAccount, storeVerifiedCertificate } from "../helpers/fixtures";
 import { createTestDb, type TestDb } from "../helpers/test-db";
 
 let t: TestDb;
@@ -29,7 +29,7 @@ describe("R1.2 – sale owns its mode", () => {
 
   it("T8: production sale synced after the account switched to mock goes to production FS, never to mock", async () => {
     const s = await seedAccount({ mode: "mock" });
-    await storeCertificate(s.account.id, testCert().cert, "production");
+    await storeVerifiedCertificate(s.account.id, testCert().cert, "production");
     const fake = fakeTransports();
     __setTransportFactoryForTests(fake.factory);
     const sale = deviceSale(s.unit.id, { mode: "production", soldAt: await soldBeforeSwitch(s.account.id) });

@@ -287,6 +287,8 @@ export const certificates = pgTable(
     encryptedKey: bytea("encrypted_key"),
     encryptedDek: bytea("encrypted_dek"),
     keyVersion: varchar("key_version", { length: 32 }),
+    /** AAD šifrovaného klíče: 1 = jen účet (starší záznamy), 2 = účet + prostředí (A Дрібне 3) */
+    aadVersion: smallint("aad_version").notNull().default(1),
     /** vydavatel – podle něj se určuje prostředí (Playground / ostrý), ne podle formuláře (R1.9) */
     issuer: text("issuer"),
     /** kdy certifikát prošel ověřovacím odesláním (overeni) – bez toho nelze přepnout na ostrý provoz */
@@ -294,7 +296,11 @@ export const certificates = pgTable(
     revokedAt: timestamp("revoked_at", { withTimezone: true }),
     createdAt: createdAt(),
   },
-  (t) => [index("certs_account_idx").on(t.accountId)],
+  (t) => [
+    index("certs_account_idx").on(t.accountId),
+    /** nejvýš jeden aktivní certifikát na účet a prostředí – drží i při souběžném importu (Д-4) */
+    uniqueIndex("certs_active_uq").on(t.accountId, t.environment).where(sql`${t.revokedAt} is null`),
+  ],
 );
 
 export const catalogItems = pgTable(

@@ -9,12 +9,12 @@ import { getDb, schema } from "@ez/db";
 import { and, eq, like } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { POST as requeueRoute } from "@/app/api/internal/fs-requeue/route";
-import { __setTransportFactoryForTests, processPending, storeCertificate } from "@/lib/server/fiscal";
+import { __setTransportFactoryForTests, processPending } from "@/lib/server/fiscal";
 import { ingestSales } from "@/lib/server/sales";
 import { SITE } from "@/lib/site";
 import { testCert } from "../helpers/certs";
 import { fakeTransports } from "../helpers/fake-transport";
-import { deviceContext, deviceSale, seedAccount } from "../helpers/fixtures";
+import { deviceContext, deviceSale, seedAccount, storeVerifiedCertificate } from "../helpers/fixtures";
 import { createTestDb, type TestDb } from "../helpers/test-db";
 
 let t: TestDb;
@@ -31,7 +31,7 @@ const ok = (): SendResult => ({ ok: true, confirmationCode: "11111111-2222-4333-
 
 async function saleIn(mode: "production" | "playground") {
   const s = await seedAccount({ mode });
-  await storeCertificate(s.account.id, testCert(mode === "playground" ? { issuer: "EET CA 1 Playground" } : {}).cert, mode);
+  await storeVerifiedCertificate(s.account.id, testCert(mode === "playground" ? { issuer: "EET CA 1 Playground" } : {}).cert, mode);
   const sale = deviceSale(s.unit.id, { mode });
   await ingestSales(await deviceContext(s.device.id), [sale as never]);
   return sale.id;

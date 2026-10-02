@@ -8,13 +8,13 @@ import { getDb, schema } from "@ez/db";
 import { eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { GET as salesGet, POST as salesPost } from "@/app/api/pokladna/sales/route";
-import { __setTransportFactoryForTests, processPending, storeCertificate } from "@/lib/server/fiscal";
+import { __setTransportFactoryForTests, processPending } from "@/lib/server/fiscal";
 import { resolveQuarantine } from "@/lib/server/quarantine";
 import { ingestSales } from "@/lib/server/sales";
 import { sha256 } from "@/lib/server/tokens";
 import { testCert } from "../helpers/certs";
 import { fakeTransports } from "../helpers/fake-transport";
-import { deviceContext, deviceSale, seedAccount } from "../helpers/fixtures";
+import { deviceContext, deviceSale, seedAccount, storeVerifiedCertificate } from "../helpers/fixtures";
 import { createTestDb, type TestDb } from "../helpers/test-db";
 
 let t: TestDb;
@@ -31,7 +31,7 @@ const iso = (ms: number) => new Date(Math.floor(ms / 1000) * 1000).toISOString()
 /** Účet přepnutý z mock do production v čase t0 (5 min zpět). */
 async function switchedToProduction() {
   const s = await seedAccount({ mode: "mock" });
-  await storeCertificate(s.account.id, testCert().cert, "production");
+  await storeVerifiedCertificate(s.account.id, testCert().cert, "production");
   const t0 = Date.now() - 5 * MIN;
   await getDb().update(schema.accounts).set({ eetMode: "production", eetModeChangedAt: new Date(t0) }).where(eq(schema.accounts.id, s.account.id));
   return { s, t0 };

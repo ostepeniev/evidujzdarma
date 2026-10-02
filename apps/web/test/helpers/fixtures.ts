@@ -48,3 +48,14 @@ export function deviceSale(unitId: string, over: Record<string, unknown> = {}) {
     ...over,
   };
 }
+
+/**
+ * Pokladní certifikát jako po úspěšném ověřovacím odeslání (overeni). Ostré tržby obslouží jen ověřený
+ * certifikát (Д-6) – testy, které neověřují samotné ověření, začínají v tomto stavu.
+ */
+export async function storeVerifiedCertificate(accountId: string, cert: Parameters<typeof import("@/lib/server/fiscal").storeCertificate>[1], environment: "playground" | "production") {
+  const { storeCertificate } = await import("@/lib/server/fiscal");
+  const id = await storeCertificate(accountId, cert, environment);
+  await getDb().update(schema.certificates).set({ verifiedAt: new Date() }).where(eq(schema.certificates.id, id));
+  return id;
+}

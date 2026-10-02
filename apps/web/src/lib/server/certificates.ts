@@ -5,7 +5,7 @@ import { getDb, schema } from "@ez/db";
 import { buildSale, certificateEnvironment } from "@ez/fiscal-core";
 import { CertificateError, parseP12Safe } from "@ez/fiscal-core/server";
 import { HttpError } from "./auth";
-import { accountMode, storeCertificate, transportFor, type EetMode } from "./fiscal";
+import { accountMode, requeueBlocked, storeCertificate, transportFor, type EetMode } from "./fiscal";
 
 export type CertEnvironment = "playground" | "production";
 
@@ -101,7 +101,11 @@ export async function verifyEnvironment(accountId: string, unitId: string, reque
     mode: "test",
   });
   const result = await transportFor(account, mode).send(sale, { firstAttempt: true, verifyOnly: true, eic });
-  if (result.ok && cert) await db.update(schema.certificates).set({ verifiedAt: new Date() }).where(eq(schema.certificates.id, cert.id));
+  if (result.ok && cert) {
+    await db.update(schema.certificates).set({ verifiedAt: new Date() }).where(eq(schema.certificates.id, cert.id));
+    // ostré tržby čekající na ověření nového certifikátu (Д-6) se hned vrátí do fronty
+    await requeueBlocked(accountId, ["CERT_NOT_VERIFIED"], mode);
+  }
   if (result.ok) return { ok: true as const, mode, test: result.test, warnings: result.warnings };
   return { ok: false as const, mode, code: result.code, message: result.message, retryable: result.retryable };
 }

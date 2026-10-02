@@ -13,7 +13,7 @@ import { ingestSales } from "@/lib/server/sales";
 import { SITE } from "@/lib/site";
 import { testCert } from "../helpers/certs";
 import { fakeTransports } from "../helpers/fake-transport";
-import { deviceContext, deviceSale, seedAccount } from "../helpers/fixtures";
+import { deviceContext, deviceSale, seedAccount, storeVerifiedCertificate } from "../helpers/fixtures";
 import { createTestDb, type TestDb } from "../helpers/test-db";
 
 let t: TestDb;
@@ -30,7 +30,7 @@ const getSale = (id: string) => getDb().query.sales.findFirst({ where: eq(schema
 
 async function productionSale(accountMode: "production" | "playground" = "production") {
   const s = await seedAccount({ mode: accountMode });
-  await storeCertificate(s.account.id, testCert().cert, accountMode);
+  await storeVerifiedCertificate(s.account.id, testCert().cert, accountMode);
   const sale = deviceSale(s.unit.id, { mode: accountMode });
   const [r] = await ingestSales(await deviceContext(s.device.id), [sale as never]);
   expect(r!.ok).toBe(true);
@@ -40,7 +40,7 @@ async function productionSale(accountMode: "production" | "playground" = "produc
 describe("R1.3 – blocked sales stay queued and recover", () => {
   it("T4: an expired certificate blocks (not rejects) the sale; a new certificate gets it confirmed", async () => {
     const s = await seedAccount({ mode: "production" });
-    await storeCertificate(s.account.id, testCert({ notBefore: new Date(Date.now() - 400 * 86_400_000), notAfter: new Date(Date.now() - 86_400_000) }).cert, "production");
+    await storeVerifiedCertificate(s.account.id, testCert({ notBefore: new Date(Date.now() - 400 * 86_400_000), notAfter: new Date(Date.now() - 86_400_000) }).cert, "production");
     const fake = fakeTransports(() => ok());
     __setTransportFactoryForTests(fake.factory);
     const sale = deviceSale(s.unit.id, { mode: "production" });
@@ -52,7 +52,7 @@ describe("R1.3 – blocked sales stay queued and recover", () => {
     expect(blocked!.blockedReason).toBe("CERT_EXPIRED");
     expect(fake.calls).toHaveLength(0);
 
-    await storeCertificate(s.account.id, testCert().cert, "production");
+    await storeVerifiedCertificate(s.account.id, testCert().cert, "production");
     const { processed } = await processPending();
     expect(processed).toBe(1);
     const done = await getSale(sale.id);
@@ -97,7 +97,7 @@ describe("R1.3 – blocked by account data", () => {
   it("a sale without EIČ is blocked; fixing EIČ requeues it and the owner gets one reminder a day", async () => {
     const s = await seedAccount({ mode: "production", eic: null });
     await getDb().update(schema.accounts).set({ dic: null }).where(eq(schema.accounts.id, s.account.id));
-    await storeCertificate(s.account.id, testCert().cert, "production");
+    await storeVerifiedCertificate(s.account.id, testCert().cert, "production");
     const fake = fakeTransports(() => ok());
     __setTransportFactoryForTests(fake.factory);
     const sale = deviceSale(s.unit.id, { mode: "production" });

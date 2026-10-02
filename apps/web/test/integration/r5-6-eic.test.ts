@@ -9,11 +9,11 @@ import { eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { AccountInput, upsertAccount } from "@/lib/server/account";
 import { HttpError } from "@/lib/server/auth";
-import { __setTransportFactoryForTests, processSale, rebuildSnapshots, storeCertificate } from "@/lib/server/fiscal";
+import { __setTransportFactoryForTests, processSale, rebuildSnapshots } from "@/lib/server/fiscal";
 import { ingestSales } from "@/lib/server/sales";
 import { testCert } from "../helpers/certs";
 import { fakeTransports } from "../helpers/fake-transport";
-import { deviceContext, deviceSale, seedAccount } from "../helpers/fixtures";
+import { deviceContext, deviceSale, seedAccount, storeVerifiedCertificate } from "../helpers/fixtures";
 import { createTestDb, type TestDb } from "../helpers/test-db";
 
 let t: TestDb;
@@ -28,7 +28,7 @@ const chyba = (kod: number): SendResult => ({ ok: false, retryable: false, error
 
 async function setup() {
   const s = await seedAccount({ mode: "production" });
-  await storeCertificate(s.account.id, testCert().cert, "production"); // CN = CZ12345679
+  await storeVerifiedCertificate(s.account.id, testCert().cert, "production"); // CN = CZ12345679
   const user = { id: s.user.id, email: s.user.email, name: null, memberships: [{ accountId: s.account.id, role: "owner" as const, accountName: "x", accountKind: "business" }] } as never;
   const setEicDirectly = (eic: string) => getDb().update(schema.accounts).set({ eic, dic: eic }).where(eq(schema.accounts.id, s.account.id));
   const row = (id: string) => getDb().query.sales.findFirst({ where: eq(schema.sales.id, id) });
