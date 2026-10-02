@@ -1,0 +1,87 @@
+/** Reviewer scratch (rev2) – NOT part of the repo. Confirms suspected bugs. */
+import { randomBytes } from "node:crypto";
+import { getDb, schema } from "@ez/db";
+import { eq } from "drizzle-orm";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { POST as pinRoute } from "@/app/api/pokladna/pin/route";
+import { hashPin } from "@/lib/pos/pin";
+import { planSync } from "@/lib/pos/sync-result";
+import { AccountInput, upsertAccount } from "@/lib/server/account";
+import { __setTransportFactoryForTests, processSale, requeueSales, storeCertificate } from "@/lib/server/fiscal";
+import { closeAccount } from "@/lib/server/lifecycle";
+import { ingestSales } from "@/lib/server/sales";
+import { resetPinAttempts } from "@/lib/server/staff-pin";
+import { sha256 } from "@/lib/server/tokens";
+import { testCert } from "../helpers/certs";
+import { fakeTransports } from "../helpers/fake-transport";
+import { deviceContext, deviceSale, seedAccount } from "../helpers/fixtures";
+import { createTestDb, type TestDb } from "../helpers/test-db";
+
+let t: TestDb;
+beforeAll(async () => {
+  t = await createTestDb();
+}, 60_000);
+afterAll(async () => t?.close());
+beforeEach(async () => {
+  await t.reset();
+  resetPinAttempts();
+});
+afterEach(() => __setTransportFactoryForTests(null));
+
+describe("rv2", () => {
+  it("one owner approval authorizes refunds of several different sales", async () => {
+    const s = await seedAccount();
+    const token = randomBytes(32).toString("base64url");
+    await getDb().update(schema.devices).set({ tokenHash: sha256(token) }).where(eq(schema.devices.id, s.device.id));
+    await getDb().update(schema.staff).set({ pinHash: await hashPin("246813") }).where(eq(schema.staff.id, s.owner.id));
+    const res = await pinRoute(
+      new Request("http://localhost/api/pokladna/pin", { method: "POST", headers: { authorization: `Bearer ${token}`, "content-type": "application/json" }, body: JSON.stringify({ staffId: s.owner.id, pin: "246813", purpose: "refund" }) }),
+    );
+    const { approval } = (await res.json()) as { approval: string };
+    const ctx = await deviceContext(s.device.id);
+    const o1 = deviceSale(s.unit.id);
+    const o2 = deviceSale(s.unit.id);
+    const o3 = deviceSale(s.unit.id);
+    await ingestSales(ctx, [o1, o2, o3] as never);
+    const refund = (of: string) => deviceSale(s.unit.id, { staffId: s.cashier.id, approval, refundOf: of, lines: [{ name: "Střih", qty: -1, unitPrice: 35000, vatRate: 21 }], payments: [{ method: "cash", amount: -35000 }] });
+    const out = await ingestSales(ctx, [refund(o1.id), refund(o2.id), refund(o3.id)] as never);
+    console.log("RV2 approval reuse:", out.map((r) => r.ok));
+    expect(out.every((r) => r.ok)).toBe(true); // bug confirmed if true
+  });
+
+  it("EIČ changed after certificate import: snapshot carries the new EIČ and requeue after fix still sends it", async () => {
+    const s = await seedAccount({ mode: "production" });
+    await storeCertificate(s.account.id, testCert().cert, "production"); // cert EIČ CZ12345679
+    const user = { id: s.user.id, email: s.user.email, name: null, memberships: [{ accountId: s.account.id, role: "owner" as const, accountName: "x", accountKind: "business" }] };
+    await upsertAccount(user, AccountInput.parse({ name: "Kadeřnictví Test", ico: "12345679", dic: "CZ12345678" })); // no 400
+    const fake = fakeTransports(() => ({ ok: false, retryable: false, code: "EET_6", message: "EIČ nesouhlasí s certifikátem" }));
+    __setTransportFactoryForTests(fake.factory);
+    const sale = deviceSale(s.unit.id, { mode: "production" });
+    await ingestSales(await deviceContext(s.device.id), [sale as never]);
+    await processSale(sale.id);
+    expect((await getDb().query.sales.findFirst({ where: eq(schema.sales.id, sale.id) }))!.status).toBe("rejected");
+    await upsertAccount(user, AccountInput.parse({ name: "Kadeřnictví Test", ico: "12345679", dic: "CZ12345679" }));
+    await requeueSales(s.account.id, [sale.id]);
+    await processSale(sale.id);
+    console.log("RV2 eic:", fake.calls.map((c) => c.ctx.snapshot?.eic_popl));
+    expect(fake.calls.map((c) => c.ctx.snapshot?.eic_popl)).toEqual(["CZ12345678", "CZ12345678"]);
+  });
+
+  it("closeAccount succeeds with an unsent production sale in the queue", async () => {
+    const s = await seedAccount({ mode: "production" });
+    await storeCertificate(s.account.id, testCert().cert, "production");
+    const sale = deviceSale(s.unit.id, { mode: "production" });
+    await ingestSales(await deviceContext(s.device.id), [sale as never]);
+    await expect(closeAccount(s.account.id)).resolves.toBeInstanceOf(Date);
+    const fake = fakeTransports();
+    __setTransportFactoryForTests(fake.factory);
+    await processSale(sale.id);
+    const row = await getDb().query.sales.findFirst({ where: eq(schema.sales.id, sale.id) });
+    console.log("RV2 close:", row!.status, row!.blockedReason);
+    expect(row!.blockedReason).toBe("CERT_MISSING");
+  });
+
+  it("device never polls rejected sales", () => {
+    expect(planSync([{ id: "a", status: "rejected" }])).toEqual({ post: [], poll: [] });
+  });
+});
