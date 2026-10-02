@@ -5,6 +5,14 @@
 # Hlavní doména — automatické HTTPS (Let's Encrypt), HTTP/3, komprese
 {$DOMAIN} {
 	encode zstd gzip
+	# limity těla požadavků (R3.2): pokladní certifikát má pár kB, nic jiného nepotřebuje víc než 1 MB
+	@certificate path /api/ucet/certifikat
+	request_body @certificate {
+		max_size 128KB
+	}
+	request_body {
+		max_size 1MB
+	}
 	reverse_proxy web:3000 {
 		header_up X-Real-IP {remote_host}
 	}

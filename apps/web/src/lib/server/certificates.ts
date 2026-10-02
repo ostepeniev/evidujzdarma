@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { getDb, schema } from "@ez/db";
 import { buildSale } from "@ez/fiscal-core";
-import { CertificateError, parseP12 } from "@ez/fiscal-core/server";
+import { CertificateError, parseP12Safe } from "@ez/fiscal-core/server";
 import { HttpError } from "./auth";
 import { accountMode, storeCertificate, transportFor, type EetMode } from "./fiscal";
 
@@ -25,7 +25,8 @@ const CLOCK_SKEW_MS = 5 * 60_000;
 export async function importCertificate(accountId: string, input: { file: Buffer; password: string; expected?: CertEnvironment }) {
   let cert;
   try {
-    cert = parseP12(input.file, input.password);
+    // limity iterací + worker s časovým limitem – soubor nesmí zablokovat server (R3.1)
+    cert = await parseP12Safe(input.file, input.password);
   } catch (e) {
     throw new HttpError(400, e instanceof CertificateError ? e.message : "Certifikát se nepodařilo načíst.");
   }

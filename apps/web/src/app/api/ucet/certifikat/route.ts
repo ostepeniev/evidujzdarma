@@ -1,10 +1,19 @@
+import { P12_LIMITS } from "@ez/fiscal-core/server";
 import { HttpError } from "@/lib/server/auth";
 import { importCertificate } from "@/lib/server/certificates";
+import { rateLimit } from "@/lib/server/rate-limit";
 import { ownerRoute } from "@/lib/server/route-helpers";
 
-const MAX_BYTES = 64 * 1024;
+const MAX_BYTES = P12_LIMITS.maxBytes;
+/** formulář = soubor + heslo + hranice multipart */
+const MAX_BODY = MAX_BYTES + 8 * 1024;
 
 export const POST = ownerRoute(async ({ req, accountId }) => {
+  // velikost se kontroluje před načtením těla (R3.1); chybějící Content-Length nepřijímáme
+  const length = Number(req.headers.get("content-length") ?? NaN);
+  if (!Number.isFinite(length)) throw new HttpError(411, "Chybí délka požadavku.");
+  if (length > MAX_BODY) throw new HttpError(413, "Soubor je příliš velký – pokladní certifikát má jen pár kB.");
+  if (!rateLimit(`cert-import:${accountId}`, 5, 3600)) throw new HttpError(429, "Certifikát lze nahrát nejvýše 5× za hodinu. Zkuste to prosím později.");
   const form = await req.formData().catch(() => {
     throw new HttpError(400, "Neplatný formulář");
   });
