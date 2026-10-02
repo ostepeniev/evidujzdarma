@@ -14,3 +14,10 @@ describe("R3.2 – Caddy request body limits", () => {
     expect(c).toMatch(/request_body \{\s+max_size 1MB/);
   });
 });
+
+describe("R5.11 – typecheck needs no manual step", () => {
+  it("apps/web typecheck generates the Next.js route types first", () => {
+    const pkg = JSON.parse(readFileSync(join(__dirname, "../package.json"), "utf8")) as { scripts: Record<string, string> };
+    expect(pkg.scripts.typecheck).toBe("next typegen && tsc --noEmit");
+  });
+});
