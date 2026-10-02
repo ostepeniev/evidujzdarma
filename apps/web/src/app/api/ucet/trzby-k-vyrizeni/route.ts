@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BLOCK_TEXT, processSale, requeueSales, salesNeedingAttention, salesStatus } from "@/lib/server/fiscal";
+import { BLOCK_TEXT, processSale, rebuildSnapshots, requeueSales, salesNeedingAttention, salesStatus } from "@/lib/server/fiscal";
 import { ownerRoute, parseJson } from "@/lib/server/route-helpers";
 
 /** Tržby odmítnuté Finanční správou nebo zablokované (certifikát, EIČ…) – čekají na vlastníka (R1.3). */
@@ -18,16 +18,27 @@ export const GET = ownerRoute(async ({ accountId }) => {
       total: r.total,
       mode: r.mode,
       deadlineAt: r.deadlineAt.toISOString(),
+      // určité odmítnutí FS → vlastník smí poslat s opraveným EIČ / číslem jednotky (R5.6; server to ověří znovu)
+      correctable: r.status === "rejected" && /^EET_[23467]:/.test(r.lastError ?? ""),
     })),
   });
 });
 
-const Body = z.object({ ids: z.array(z.string().uuid()).min(1).max(200) });
+const Body = z.object({ ids: z.array(z.string().uuid()).min(1).max(200), action: z.enum(["resend", "rebuild"]).default("resend") });
 
-/** „Odeslat znovu“: vrátí tržby do fronty a hned se je pokusí odeslat. */
+/**
+ * „Odeslat znovu“: vrátí tržby do fronty (se stejným snímkem) a hned se je pokusí odeslat.
+ * „rebuild“ = „Odeslat s opravenými údaji“ po určitém odmítnutí FS (Р3, R5.6).
+ */
 export const POST = ownerRoute(async ({ req, accountId }) => {
-  const { ids } = await parseJson(req, Body);
-  const requeued = await requeueSales(accountId, ids);
+  const { ids, action } = await parseJson(req, Body);
+  let skipped: { id: string; reason: string }[] = [];
+  let requeued: number;
+  if (action === "rebuild") {
+    const r = await rebuildSnapshots(accountId, ids);
+    requeued = r.rebuilt.length;
+    skipped = r.skipped;
+  } else requeued = await requeueSales(accountId, ids);
   let confirmed = 0;
   // jen vlastní tržby účtu, které jsou teď ve frontě
   const mine = (await salesStatus(ids, accountId)).filter((r) => r.status === "queued").map((r) => r.id);
@@ -35,5 +46,5 @@ export const POST = ownerRoute(async ({ req, accountId }) => {
     const row = await processSale(id);
     if (row?.status === "confirmed") confirmed++;
   }
-  return Response.json({ requeued, confirmed });
+  return Response.json({ requeued, confirmed, skipped });
 });

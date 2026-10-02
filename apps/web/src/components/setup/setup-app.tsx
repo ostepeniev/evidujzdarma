@@ -996,6 +996,7 @@ interface AttentionDto {
   total: number;
   mode: string;
   deadlineAt: string;
+  correctable?: boolean;
 }
 
 function FailedSalesSection() {
@@ -1007,10 +1008,10 @@ function FailedSalesSection() {
     void load().catch(() => setItems([]));
   }, []);
   if (!items || items.length === 0) return null;
-  const resend = (ids: string[]) =>
+  const resend = (ids: string[], action: "resend" | "rebuild" = "resend") =>
     void run(async () => {
-      const r = await call<{ requeued: number; confirmed: number }>("/api/ucet/trzby-k-vyrizeni", { method: "POST", json: { ids } });
-      setResult(`Znovu ve frontě: ${r.requeued}, potvrzeno hned: ${r.confirmed}.`);
+      const r = await call<{ requeued: number; confirmed: number; skipped?: { reason: string }[] }>("/api/ucet/trzby-k-vyrizeni", { method: "POST", json: { ids, action } });
+      setResult(`Znovu ve frontě: ${r.requeued}, potvrzeno hned: ${r.confirmed}.${r.skipped?.length ? ` ${r.skipped[0]!.reason}` : ""}`);
       await load();
     });
   const fmt = new Intl.DateTimeFormat("cs-CZ", { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Prague" });
@@ -1034,9 +1035,24 @@ function FailedSalesSection() {
             <p className="text-[15px] text-danger-600">{q.reason}</p>
             {q.detail && <p className="text-sm text-muted">{q.detail}</p>}
             <p className="text-sm text-muted">Lhůta do {fmt.format(new Date(q.deadlineAt))}</p>
-            <button type="button" className="btn-secondary mt-2 py-1.5 text-sm" disabled={busy} onClick={() => resend([q.id])}>
-              Odeslat znovu
-            </button>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button type="button" className="btn-secondary py-1.5 text-sm" disabled={busy} onClick={() => resend([q.id])}>
+                Odeslat znovu
+              </button>
+              {q.correctable && (
+                <button
+                  type="button"
+                  className="btn-secondary py-1.5 text-sm"
+                  disabled={busy}
+                  onClick={() =>
+                    window.confirm("Tržba se odešle s EIČ a číslem evidenční jednotky, které máte teď v nastavení. Pořadové číslo, čas i částka zůstanou. Pokračovat?") &&
+                    resend([q.id], "rebuild")
+                  }
+                >
+                  Odeslat s opravenými údaji
+                </button>
+              )}
+            </div>
           </li>
         ))}
       </ul>

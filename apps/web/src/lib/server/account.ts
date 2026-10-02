@@ -122,6 +122,18 @@ export async function upsertAccount(user: CurrentUser, input: z.infer<typeof Acc
     ...(input.receiptShowPok !== undefined ? { receiptShowPok: input.receiptShowPok } : {}),
   };
   if (owner) {
+    // EIČ = CN pokladního certifikátu (produkce v1.1, 3.1.2): jiné EIČ by FS odmítla a tržba by uvízla (R5.6)
+    const certs = await db
+      .select({ eic: schema.certificates.eic, environment: schema.certificates.environment })
+      .from(schema.certificates)
+      .where(and(eq(schema.certificates.accountId, owner.accountId), isNull(schema.certificates.revokedAt)));
+    const clash = certs.find((c) => c.eic && c.eic !== values.eic);
+    if (clash) {
+      throw new HttpError(
+        400,
+        `EIČ ${values.eic ?? "(prázdné)"} neodpovídá pokladnímu certifikátu (${clash.eic}). EIČ musí být stejné jako v certifikátu – opravte ho, nebo nejdřív certifikát odstraňte.`,
+      );
+    }
     const before = await db.query.accounts.findFirst({ where: eq(schema.accounts.id, owner.accountId), columns: { eic: true, dic: true } });
     await db.update(schema.accounts).set(values).where(eq(schema.accounts.id, owner.accountId));
     // Opravené EIČ uvolní tržby zablokované kvůli údajům účtu. Už odeslané tržby si drží svůj snímek (Р4).

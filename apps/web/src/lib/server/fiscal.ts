@@ -1,7 +1,7 @@
 import "server-only";
 import { and, asc, eq, gt, gte, inArray, isNull, like, lte, desc, notInArray, or, sql } from "drizzle-orm";
 import { getDb, schema } from "@ez/db";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { EetMessageError, MockTransport, buildSale, chybaHint, eetSnapshot, retryDelaySeconds, type EetData, type Sale, type SendResult, type Transport } from "@ez/fiscal-core";
 import {
   Eet2Transport,
@@ -151,7 +151,7 @@ function rowToSale(row: SaleRow): Sale {
 /** Důvody blokace kvůli certifikátu / klíči – zmizí s novým certifikátem. */
 export const CERT_BLOCKS = ["CERT_MISSING", "CERT_EXPIRED", "CERT_NOT_YET_VALID", "PREPARE"] as const;
 /** Důvody blokace kvůli údajům účtu – zmizí po opravě EIČ. */
-export const ACCOUNT_BLOCKS = ["EIC_MISSING", "MESSAGE_INVALID", "ACCOUNT_MISSING"] as const;
+export const ACCOUNT_BLOCKS = ["EIC_MISSING", "MESSAGE_INVALID", "ACCOUNT_MISSING", "EIC_CERT_MISMATCH"] as const;
 /** Po kolika neověřitelných odpovědích po sobě se tržba označí a provozovatel dostane alert (R1.8). */
 const INVALID_STREAK_LIMIT = 3;
 /** Neověřitelná odpověď: backoff 5 min × 4^(n−1), nejvýš 6 h – tržba zůstává ve frontě (R5.4). */
@@ -172,6 +172,7 @@ export const BLOCK_TEXT: Record<string, string> = {
   EIC_MISSING: "U účtu chybí EIČ (DIČ).",
   MESSAGE_INVALID: "Údaje tržby neodpovídají formátu EET (EIČ, číslo jednotky, označení pokladny).",
   ACCOUNT_MISSING: "Účet neexistuje.",
+  EIC_CERT_MISMATCH: "EIČ účtu neodpovídá pokladnímu certifikátu – opravte EIČ v nastavení (musí být stejné jako v certifikátu).",
   INVALID_RESPONSE: "Odpověď Finanční správy opakovaně nešla ověřit – tržbu zkoušíme dál s delším odstupem a řešíme to.",
 };
 
@@ -253,16 +254,21 @@ async function recordAttempt(row: SaleRow, o: Outcome, startedAt: Date, applied:
     });
 }
 
-/** Aktivní certifikát prostředí: null = v pořádku, jinak důvod blokace. */
-async function certificateBlock(accountId: string, environment: "playground" | "production", now: Date): Promise<string | null> {
-  const cert = await getDb().query.certificates.findFirst({
+/** Aktivní certifikát prostředí. */
+function activeCertificate(accountId: string, environment: string) {
+  return getDb().query.certificates.findFirst({
     where: and(eq(schema.certificates.accountId, accountId), eq(schema.certificates.environment, environment), isNull(schema.certificates.revokedAt)),
     orderBy: desc(schema.certificates.createdAt),
   });
-  if (!cert) return "CERT_MISSING";
-  if (cert.validTo <= now) return "CERT_EXPIRED";
-  if (cert.validFrom > now) return "CERT_NOT_YET_VALID";
-  return null;
+}
+
+/** Aktivní certifikát prostředí: null = v pořádku, jinak důvod blokace; vrací i EIČ z certifikátu. */
+async function certificateBlock(accountId: string, environment: "playground" | "production", now: Date): Promise<{ block: string | null; eic: string | null }> {
+  const cert = await activeCertificate(accountId, environment);
+  if (!cert) return { block: "CERT_MISSING", eic: null };
+  if (cert.validTo <= now) return { block: "CERT_EXPIRED", eic: cert.eic };
+  if (cert.validFrom > now) return { block: "CERT_NOT_YET_VALID", eic: cert.eic };
+  return { block: null, eic: cert.eic };
 }
 
 /**
@@ -311,9 +317,11 @@ export async function processSale(saleId: string, account?: AccountRow): Promise
 async function attempt(row: SaleRow, acc: AccountRow | undefined, mode: EetMode, firstAttempt: boolean, token: string): Promise<Outcome> {
   if (!acc) return { result: "blocked", code: "ACCOUNT_MISSING" };
   const now = new Date();
+  let certEic: string | null = null;
   if (mode !== "mock") {
-    const certBlock = await certificateBlock(acc.id, mode, now);
-    if (certBlock) return { result: "blocked", code: certBlock };
+    const cert = await certificateBlock(acc.id, mode, now);
+    if (cert.block) return { result: "blocked", code: cert.block };
+    certEic = cert.eic;
   }
   // Snímek dat zprávy vzniká jednou, před prvním odesláním; opakování ho jen převezmou (Р4).
   let snapshot = (row.eetData as EetData | null) ?? undefined;
@@ -321,6 +329,9 @@ async function attempt(row: SaleRow, acc: AccountRow | undefined, mode: EetMode,
     const eic = acc.eic ?? acc.dic;
     if (!eic) {
       if (mode !== "mock") return { result: "blocked", code: "EIC_MISSING" };
+    } else if (mode !== "mock" && certEic && eic !== certEic) {
+      // snímek s EIČ, které nenese certifikát, by FS odmítla a už by nešel opravit (R5.6)
+      return { result: "blocked", code: "EIC_CERT_MISMATCH", message: `EIČ účtu ${eic}, certifikát ${certEic}` };
     } else {
       try {
         snapshot = eetSnapshot(rowToSale(row), { eic });
@@ -518,6 +529,74 @@ export async function requeueBlocked(accountId: string, reasons: readonly string
     )
     .returning({ id: schema.sales.id });
   return rows.length;
+}
+
+/** Kódy určitého odmítnutí FS, po nichž smí vlastník opravit EIČ / jednotku ve snímku (Р3, R5.6). */
+const DEFINITE_REFUSAL = /^EET_[23467]$/;
+
+function snapshotHash(d: unknown): string {
+  const keys = Object.keys((d ?? {}) as object).sort();
+  return createHash("sha256").update(JSON.stringify(d, keys)).digest("hex");
+}
+
+/**
+ * „Odeslat s opravenými údaji“ (Р3, R5.6): po určitém odmítnutí FS (Chyba 2, 3, 4, 6, 7 – ne timeout ani
+ * INVALID) přestaví ve snímku jen eic_popl (podle EIČ účtu = CN certifikátu) a id_jednotky (podle jednotky).
+ * porad_cis, dat_trzby a částky zůstávají. Do auditu jdou hashe starého i nového snímku.
+ */
+export async function rebuildSnapshots(accountId: string, ids: string[]): Promise<{ rebuilt: string[]; skipped: { id: string; reason: string }[] }> {
+  const db = getDb();
+  const rebuilt: string[] = [];
+  const skipped: { id: string; reason: string }[] = [];
+  const acc = await db.query.accounts.findFirst({ where: eq(schema.accounts.id, accountId) });
+  for (const id of ids.slice(0, 200)) {
+    const row = await db.query.sales.findFirst({ where: and(eq(schema.sales.id, id), eq(schema.sales.accountId, accountId)) });
+    const old = row?.eetData as EetData | null | undefined;
+    if (!acc || !row || row.status !== "rejected" || !old) {
+      skipped.push({ id, reason: "Tržba není odmítnutá Finanční správou." });
+      continue;
+    }
+    const [last] = await db.select().from(schema.saleAttempts).where(eq(schema.saleAttempts.saleId, id)).orderBy(desc(schema.saleAttempts.startedAt)).limit(1);
+    if (!last || last.result !== "rejected" || !DEFINITE_REFUSAL.test(last.code ?? "")) {
+      skipped.push({ id, reason: "Opravit údaje lze jen po určitém odmítnutí FS (chyba 2, 3, 4, 6 nebo 7)." });
+      continue;
+    }
+    const eic = acc.eic ?? acc.dic;
+    const cert = row.mode === "mock" ? null : await activeCertificate(accountId, row.mode);
+    if (!eic || (cert && cert.eic !== eic)) {
+      skipped.push({ id, reason: BLOCK_TEXT.EIC_CERT_MISMATCH! });
+      continue;
+    }
+    const unit = row.unitId ? await db.query.evidenceUnits.findFirst({ where: eq(schema.evidenceUnits.id, row.unitId) }) : undefined;
+    const unitId = unit?.fsUnitId ?? row.fsUnitId;
+    const next: EetData = { ...old, eic_popl: eic, id_jednotky: unitId };
+    if (next.eic_popl === old.eic_popl && next.id_jednotky === old.id_jednotky) {
+      skipped.push({ id, reason: "EIČ ani číslo jednotky se nezměnily – opravte je nejdřív v nastavení." });
+      continue;
+    }
+    const now = new Date();
+    const done = await db
+      .update(schema.sales)
+      .set({ eetData: next, fsUnitId: unitId, status: "queued", blockedReason: null, claimToken: null, nextAttemptAt: now })
+      .where(and(eq(schema.sales.id, id), eq(schema.sales.status, "rejected")))
+      .returning({ id: schema.sales.id });
+    if (!done.length) {
+      skipped.push({ id, reason: "Tržba se mezitím změnila." });
+      continue;
+    }
+    await db.insert(schema.saleAttempts).values({
+      saleId: id,
+      attempt: row.attempts,
+      environment: row.mode,
+      firstAttempt: false,
+      startedAt: now,
+      result: "rebuilt",
+      code: "SNAPSHOT_REBUILT",
+      message: `vlastník: ${snapshotHash(old)} → ${snapshotHash(next)} (eic_popl ${old.eic_popl}→${next.eic_popl}, id_jednotky ${old.id_jednotky}→${next.id_jednotky})`,
+    });
+    rebuilt.push(id);
+  }
+  return { rebuilt, skipped };
 }
 
 /** „Odeslat znovu“ od vlastníka: odmítnuté i zablokované tržby zpět do fronty. */
