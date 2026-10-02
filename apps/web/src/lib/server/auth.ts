@@ -6,6 +6,10 @@ import { safeError } from "./log";
 import { randomToken, sha256 } from "./tokens";
 
 export const SESSION_COOKIE = "ez_session";
+/** Nonce prohlížeče, který o přihlašovací odkaz požádal; v produkci s prefixem __Host- (Secure, Path=/, bez Domain). */
+export const LOGIN_NONCE_COOKIE = process.env.NODE_ENV === "production" ? "__Host-ez_login" : "ez_login";
+/** Citlivé kroky (certifikát, ostrý provoz, zrušení účtu) chtějí přihlášení ne starší než 15 minut (R3.7). */
+export const FRESH_LOGIN_MINUTES = 15;
 const SESSION_DAYS = 30;
 const LOGIN_TOKEN_MINUTES = 15;
 
@@ -14,28 +18,47 @@ export interface CurrentUser {
   email: string;
   name: string | null;
   memberships: { accountId: string; role: "owner" | "cashier" | "accountant"; accountName: string; accountKind: string }[];
+  /** kdy vznikla aktuální session (čerstvost přihlášení pro citlivé kroky) */
+  sessionCreatedAt?: Date;
 }
 
-export async function createLoginToken(email: string, redirectTo?: string): Promise<string> {
+export async function createLoginToken(email: string, redirectTo?: string): Promise<{ token: string; nonce: string }> {
   const token = randomToken(32);
+  const nonce = randomToken(24);
   await getDb()
     .insert(schema.loginTokens)
     .values({
       tokenHash: sha256(token),
+      nonceHash: sha256(nonce),
       email: email.toLowerCase(),
       redirectTo: redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//") ? redirectTo : null,
       expiresAt: new Date(Date.now() + LOGIN_TOKEN_MINUTES * 60_000),
     });
-  return token;
+  return { token, nonce };
 }
 
-/** Spotřebuje jednorázový odkaz, založí uživatele (pokud neexistuje) a session. */
-export async function consumeLoginToken(token: string, userAgent: string | null): Promise<{ sessionToken: string; redirectTo: string | null } | null> {
+export function loginNonceCookieOptions() {
+  return { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax" as const, path: "/", maxAge: LOGIN_TOKEN_MINUTES * 60 };
+}
+
+/**
+ * Spotřebuje jednorázový odkaz (jen POSTem a jen s nonce prohlížeče, který o něj požádal),
+ * založí uživatele (pokud neexistuje) a session.
+ */
+export async function consumeLoginToken(token: string, nonce: string | null, userAgent: string | null): Promise<{ sessionToken: string; redirectTo: string | null } | null> {
+  if (!nonce) return null;
   const db = getDb();
   const [row] = await db
     .update(schema.loginTokens)
     .set({ usedAt: new Date() })
-    .where(and(eq(schema.loginTokens.tokenHash, sha256(token)), isNull(schema.loginTokens.usedAt), gt(schema.loginTokens.expiresAt, new Date())))
+    .where(
+      and(
+        eq(schema.loginTokens.tokenHash, sha256(token)),
+        eq(schema.loginTokens.nonceHash, sha256(nonce)),
+        isNull(schema.loginTokens.usedAt),
+        gt(schema.loginTokens.expiresAt, new Date()),
+      ),
+    )
     .returning();
   if (!row) return null;
 
@@ -80,7 +103,15 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     .from(schema.memberships)
     .innerJoin(schema.accounts, eq(schema.accounts.id, schema.memberships.accountId))
     .where(eq(schema.memberships.userId, user.id));
-  return { id: user.id, email: user.email, name: user.name, memberships: rows };
+  return { id: user.id, email: user.email, name: user.name, memberships: rows, sessionCreatedAt: session.createdAt };
+}
+
+/** Citlivý krok: přihlášení nesmí být starší než FRESH_LOGIN_MINUTES (R3.7). */
+export function requireFreshLogin(user: CurrentUser): void {
+  const created = user.sessionCreatedAt?.getTime() ?? 0;
+  if (Date.now() - created > FRESH_LOGIN_MINUTES * 60_000) {
+    throw new HttpError(401, "Z bezpečnostních důvodů se pro tento krok znovu přihlaste – pošleme vám nový odkaz e-mailem.", { reauth: true });
+  }
 }
 
 export async function destroySession(): Promise<void> {

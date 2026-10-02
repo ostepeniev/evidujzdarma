@@ -198,6 +198,8 @@ export const loginTokens = pgTable(
     tokenHash: varchar("token_hash", { length: 64 }).primaryKey(),
     email: varchar("email", { length: 254 }).notNull(),
     redirectTo: text("redirect_to"),
+    /** SHA-256 nonce z cookie prohlížeče, který o odkaz požádal (R3.7) */
+    nonceHash: varchar("nonce_hash", { length: 64 }),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     usedAt: timestamp("used_at", { withTimezone: true }),
     createdAt: createdAt(),

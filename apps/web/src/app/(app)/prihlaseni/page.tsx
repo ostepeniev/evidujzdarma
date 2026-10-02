@@ -21,6 +21,11 @@ export default async function LoginPage({ searchParams }: PageProps<"/prihlaseni
             Odkaz vypršel nebo už byl použit. Pošleme nový.
           </p>
         )}
+        {chyba === "prohlizec" && (
+          <p role="alert" className="mt-4 rounded-xl bg-danger-50 p-3 text-[15px] text-danger-600">
+            Odkaz otevřete ve stejném prohlížeči, ve kterém jste o přihlášení požádali – nebo si tady pošlete nový.
+          </p>
+        )}
         <LoginForm redirectTo={redirectTo} />
       </div>
       <p className="mt-6 max-w-sm text-center text-xs text-muted">Nezávislá služba, není provozována Finanční správou.</p>

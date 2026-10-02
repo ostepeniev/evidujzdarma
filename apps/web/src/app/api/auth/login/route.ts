@@ -1,7 +1,7 @@
-import { after } from "next/server";
+import { NextResponse, after } from "next/server";
 import { z } from "zod";
 import { hasDatabase } from "@ez/db";
-import { createLoginToken } from "@/lib/server/auth";
+import { LOGIN_NONCE_COOKIE, createLoginToken, loginNonceCookieOptions } from "@/lib/server/auth";
 import { enqueueEmail, processOutbox } from "@/lib/server/mail";
 import { clientIp, rateLimit } from "@/lib/server/rate-limit";
 import { SITE_URL } from "@/lib/site";
@@ -16,13 +16,17 @@ export async function POST(req: Request) {
   if (!rateLimit(`login:${clientIp(req)}`, 10, 600) || !rateLimit(`login-mail:${email}`, 3, 600)) {
     return Response.json({ error: "Příliš mnoho pokusů. Zkuste to za pár minut." }, { status: 429 });
   }
-  const token = await createLoginToken(email, redirectTo);
+  const { token, nonce } = await createLoginToken(email, redirectTo);
+  // Odkaz vede na stránku s tlačítkem – samotné otevření (i skenerem pošty) nic nespotřebuje (R3.7)
   await enqueueEmail({
     to: email,
     template: "login-link",
-    payload: { url: `${SITE_URL}/api/auth/callback?token=${encodeURIComponent(token)}` },
+    payload: { url: `${SITE_URL}/prihlaseni/overeni?token=${encodeURIComponent(token)}` },
   });
   after(() => processOutbox(5));
   // Stejná odpověď pro existující i nové e-maily (neprozrazujeme registrace).
-  return Response.json({ ok: true });
+  const res = NextResponse.json({ ok: true });
+  // přihlášení dokončí jen prohlížeč, který o odkaz požádal
+  res.cookies.set(LOGIN_NONCE_COOKIE, nonce, loginNonceCookieOptions());
+  return res;
 }

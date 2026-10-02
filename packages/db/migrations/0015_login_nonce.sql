@@ -1,0 +1,1 @@
+ALTER TABLE "login_tokens" ADD COLUMN "nonce_hash" varchar(64);

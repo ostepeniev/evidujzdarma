@@ -31,12 +31,40 @@ function Section({ id, step, title, done, children, lead }: { id: string; step: 
   );
 }
 
+/** Značka chyby „přihlaste se znovu“ (citlivý krok chce čerstvé přihlášení, R3.7). */
+const REAUTH_PREFIX = "\u0000reauth:";
+
 function ErrorText({ error }: { error: string | null }) {
   if (!error) return null;
+  if (error.startsWith(REAUTH_PREFIX)) return <ReauthNotice message={error.slice(REAUTH_PREFIX.length)} />;
   return (
     <p role="alert" className="mt-3 rounded-xl bg-danger-50 p-3 text-[15px] text-danger-600">
       {error}
     </p>
+  );
+}
+
+function ReauthNotice({ message }: { message: string }) {
+  const [sent, setSent] = useState<string | null>(null);
+  return (
+    <div role="alert" className="mt-3 rounded-xl bg-sun-100 p-3 text-[15px]">
+      <p>{message}</p>
+      {sent ? (
+        <p className="mt-2 font-semibold">{sent}</p>
+      ) : (
+        <button
+          type="button"
+          className="btn-secondary mt-2 py-1.5 text-sm"
+          onClick={async () => {
+            const state = await call<AccountStateDto>("/api/ucet");
+            await call("/api/auth/login", { method: "POST", json: { email: state.user.email, redirectTo: "/pokladna/nastaveni" } });
+            setSent(`Odkaz jsme poslali na ${state.user.email}. Otevřete ho v tomto prohlížeči a krok zopakujte.`);
+          }}
+        >
+          Poslat přihlašovací odkaz
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -49,7 +77,8 @@ function useAction() {
     try {
       await fn();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Něco se nepovedlo");
+      const reauth = e instanceof ApiError && (e.data as { reauth?: boolean } | undefined)?.reauth;
+      setError(e instanceof Error ? (reauth ? REAUTH_PREFIX + e.message : e.message) : "Něco se nepovedlo");
     } finally {
       setBusy(false);
     }
@@ -415,7 +444,7 @@ function CertificateSection({ state, reload }: { state: State; reload: () => Pro
           void run(async () => {
             const res = await fetch("/api/ucet/certifikat", { method: "POST", body: fd });
             const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(data.error ?? "Nahrání se nezdařilo");
+            if (!res.ok) throw new ApiError(data.error ?? "Nahrání se nezdařilo", res.status, data);
             formEl.reset();
             await reload();
           });
