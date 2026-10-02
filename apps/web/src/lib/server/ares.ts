@@ -7,12 +7,20 @@ import { ARES_FIXTURES } from "./ares-fixtures";
 const client = new AresClient({ timeoutMs: 6000 });
 
 /**
- * Společný limit živých dotazů do ARES pro celý proces (ARES blokuje nad ~500 dotazů/min).
- * Cache tento limit nespotřebovává. Při vyčerpání se čeká max. 5 s, pak AresBusyError.
+ * Limit živých dotazů do ARES (ARES blokuje nad ~500 dotazů/min) rozdělený podle účelu (R3.11):
+ * hromadné dotazy ani živý katalog nesmí vyčerpat interaktivní kontrolu IČO. Součet 240/min pro
+ * web; noční obohacení katalogu běží ve workeru s vlastním limitem (výchozí 120/min).
+ * Cache limit nespotřebovává. Při vyčerpání se čeká nejvýš 5 s, pak AresBusyError.
  */
-const ARES_PER_MINUTE = Number(process.env.ARES_RATE_PER_MINUTE ?? 240);
-let tokens = ARES_PER_MINUTE;
-let refilledAt = Date.now();
+export type AresPool = "interactive" | "bulk" | "catalog" | "mcp";
+const pool = (name: string, def: number) => Number(process.env[`ARES_POOL_${name}`] ?? def);
+export const ARES_POOLS: Record<AresPool, number> = {
+  interactive: pool("INTERACTIVE", 120),
+  bulk: pool("BULK", 60),
+  catalog: pool("CATALOG", 30),
+  mcp: pool("MCP", 30),
+};
+const buckets = new Map<AresPool, { tokens: number; at: number }>();
 
 export class AresBusyError extends Error {
   constructor() {
@@ -20,17 +28,20 @@ export class AresBusyError extends Error {
   }
 }
 
-async function takeAresToken(): Promise<void> {
-  const deadline = Date.now() + 5_000;
+export async function takeAresToken(name: AresPool, maxWaitMs = 5_000): Promise<void> {
+  const perMinute = ARES_POOLS[name];
+  const deadline = Date.now() + maxWaitMs;
   for (;;) {
     const now = Date.now();
-    tokens = Math.min(ARES_PER_MINUTE, tokens + ((now - refilledAt) * ARES_PER_MINUTE) / 60_000);
-    refilledAt = now;
-    if (tokens >= 1) {
-      tokens -= 1;
+    const b = buckets.get(name) ?? { tokens: perMinute, at: now };
+    b.tokens = Math.min(perMinute, b.tokens + ((now - b.at) * perMinute) / 60_000);
+    b.at = now;
+    buckets.set(name, b);
+    if (b.tokens >= 1) {
+      b.tokens -= 1;
       return;
     }
-    if (now > deadline) throw new AresBusyError();
+    if (now >= deadline) throw new AresBusyError();
     await new Promise((r) => setTimeout(r, 250));
   }
 }
@@ -76,7 +87,8 @@ async function cached(key: string, load: () => Promise<unknown>): Promise<{ valu
 }
 
 /** Základní údaje + živnostenský rejstřík (provozovny). `null` = IČO v ARES neexistuje. */
-export async function lookupCompany(icoInput: string): Promise<CompanyLookup | null> {
+export async function lookupCompany(icoInput: string, opts: { pool?: AresPool } = {}): Promise<CompanyLookup | null> {
+  const pool = opts.pool ?? "interactive";
   const ico = normalizeIco(icoInput);
   if (!ico) return null;
 
@@ -86,14 +98,14 @@ export async function lookupCompany(icoInput: string): Promise<CompanyLookup | n
     return { subject: mapSubject(f.subject), rzp: f.rzp ? mapRzp(f.rzp) : null, fetchedAt: new Date().toISOString(), source: "fixture" };
   }
 
-  const subj = await cached(`subject:${ico}`, async () => (await takeAresToken(), client.rawSubject(ico)));
+  const subj = await cached(`subject:${ico}`, async () => (await takeAresToken(pool), client.rawSubject(ico)));
   if (!subj.value) return null;
   const subject = mapSubject(subj.value);
 
   let rzp: RzpRecord | null = null;
   if (subject.registrations.rzp && subject.registrations.rzp !== "NEEXISTUJICI") {
     try {
-      const r = await cached(`rzp:${ico}`, async () => (await takeAresToken(), client.rawRzp(ico)));
+      const r = await cached(`rzp:${ico}`, async () => (await takeAresToken(pool), client.rawRzp(ico)));
       rzp = r.value ? mapRzp(r.value) : null;
     } catch {
       rzp = null; // RŽP je doplněk — bez něj umíme odpovědět také

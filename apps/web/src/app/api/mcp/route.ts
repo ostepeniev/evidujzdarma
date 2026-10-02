@@ -37,7 +37,7 @@ export async function POST(req: Request) {
   if (!rateLimit(`mcp:${ip}`, 120, 60)) return jsonRpcError(429, -32000, "Too many requests – limit is 120 per minute per client. Retry later.");
 
   const server = createEetMcpServer({
-    lookupCompany,
+    lookupCompany: (ico: string) => lookupCompany(ico, { pool: "mcp" }),
     fsStatus: async () => (hasDatabase() ? statusSummary() : null),
     allow: (bucket, limit, perSeconds) => rateLimit(`mcp:${bucket}:${ip}`, limit, perSeconds),
   });

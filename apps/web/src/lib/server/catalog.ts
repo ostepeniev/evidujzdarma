@@ -214,7 +214,7 @@ function establishmentSlug(name: string | null, firmName: string, city: string |
 
 /** Živý záznam z ARES (firma ještě není v DB) — vždy noindex. */
 async function liveFirmView(ico: string): Promise<FirmView | null> {
-  const live = await lookupCompany(ico);
+  const live = await lookupCompany(ico, { pool: "catalog" });
   if (!live) return null;
   const s = live.subject;
   const natural = isNaturalPerson(s.legalForm);

@@ -8,7 +8,7 @@
  *   --likely            navíc všechny subjekty s eet_relevance = likely (i mimo kraje)
  *   --max-age-days 30   znovu ověřit záznamy starší než N dní (výchozí 30)
  *   --limit <n>         max. počet subjektů v jednom běhu (výchozí bez limitu)
- *   --rpm 240           dotazů na ARES za minutu (tvrdý strop 300; ARES blokuje > 500/min)
+ *   --rpm 120           dotazů na ARES za minutu (tvrdý strop 300; ARES blokuje > 500/min; web má vlastních 240/min – R3.11)
  *   --from-ico <ico>    začít od IČO (jinak od začátku; hotové záznamy se přeskočí samy)
  *   --ico <ico>         jen jeden subjekt
  *   --mock              bez sítě: syntetické odpovědi, jen pro ukázková data (název „Ukázkov…“)
@@ -222,7 +222,7 @@ async function main() {
   const args = parseArgs();
   const stop = stopSignal();
   const mock = !!args.mock;
-  const rpm = Math.min(MAX_RPM, Math.max(1, argNumber(args, "rpm", 240)));
+  const rpm = Math.min(MAX_RPM, Math.max(1, argNumber(args, "rpm", 120)));
   const maxAge = Math.max(0, argNumber(args, "max-age-days", 30));
   const limit = argNumber(args, "limit", 0) || Infinity;
   const regions = argRegions(args) ?? argRegions({ r: process.env.CATALOG_INDEX_REGIONS ?? "51" }, "r") ?? [51];

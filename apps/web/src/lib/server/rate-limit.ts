@@ -26,7 +26,27 @@ export function clientIpFromHeaders(h: Headers): string {
   return clientIp(new Request("http://localhost", { headers: h }));
 }
 
+/**
+ * IP klienta pro limity (R3.11): jen z X-Real-IP, kterou nastavuje Caddy ({remote_host}) a kterou klient
+ * nemůže podvrhnout. X-Forwarded-For ignorujeme – její první položku si klient napíše sám.
+ * IPv6 klíčujeme po /64: jedna přípojka má celý blok adres.
+ */
 export function clientIp(req: Request): string {
-  const xff = req.headers.get("x-forwarded-for");
-  return (xff?.split(",")[0] ?? req.headers.get("x-real-ip") ?? "unknown").trim();
+  const ip = (req.headers.get("x-real-ip") ?? "").trim();
+  if (!ip) return "unknown";
+  return ip.includes(":") ? ipv6Prefix(ip) : ip;
+}
+
+function ipv6Prefix(ip: string): string {
+  const addr = ip.replace(/^\[|\]$/g, "").split("%")[0]!.toLowerCase();
+  const mapped = addr.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
+  if (mapped) return mapped[1]!;
+  const [head = "", tail = ""] = addr.split("::");
+  const h = head ? head.split(":") : [];
+  const t = addr.includes("::") ? (tail ? tail.split(":") : []) : [];
+  const groups = addr.includes("::") ? [...h, ...Array(Math.max(0, 8 - h.length - t.length)).fill("0"), ...t] : h;
+  return `${groups
+    .slice(0, 4)
+    .map((g) => (parseInt(g || "0", 16) || 0).toString(16))
+    .join(":")}::/64`;
 }

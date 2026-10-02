@@ -21,7 +21,7 @@ export async function POST(req: Request) {
       Array.from({ length: 4 }, async () => {
         for (let ico = queue.shift(); ico; ico = queue.shift()) {
           try {
-            labels.set(ico, (await lookupCompany(ico))?.subject.name ?? null);
+            labels.set(ico, (await lookupCompany(ico, { pool: "bulk" }))?.subject.name ?? null);
           } catch {
             labels.set(ico, null);
           }

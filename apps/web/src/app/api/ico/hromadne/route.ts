@@ -24,7 +24,7 @@ async function checkOne(ico: string): Promise<BulkRow> {
   const empty: BulkRow = { ico, name: null, legalForm: null, city: null, verdict: null, eetOff: null, establishments: null, error: null };
   if (!rateLimit("ico-bulk:global", GLOBAL_LOOKUPS_PER_MIN, 60)) return { ...empty, error: "busy" };
   try {
-    const found = await lookupCompany(ico);
+    const found = await lookupCompany(ico, { pool: "bulk" });
     if (!found) return { ...empty, error: "not_found" };
     const a = assess(found.subject, found.rzp);
     return {

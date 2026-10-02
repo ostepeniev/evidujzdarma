@@ -8,7 +8,9 @@ import { PageHeader } from "@/components/page-header";
 import { ToolCta } from "@/components/tool-cta";
 import { FACTS } from "@/content/facts";
 import { JsonLd, faqLd } from "@/lib/jsonld";
+import { headers } from "next/headers";
 import { lookupCompany, type CompanyLookup } from "@/lib/server/ares";
+import { clientIpFromHeaders, rateLimit } from "@/lib/server/rate-limit";
 
 export async function generateMetadata({ searchParams }: PageProps<"/kontrola-ico">): Promise<Metadata> {
   const { ico } = await searchParams;
@@ -47,10 +49,15 @@ export default async function IcoCheckPage({ searchParams }: PageProps<"/kontrol
       error = "Zadané IČO není platné. IČO má 8 číslic a poslední z nich je kontrolní.";
     } else {
       try {
+        // živé dotazy do ARES z této stránky omezujeme i na IP (R3.11)
+        if (!rateLimit(`ico-page:${clientIpFromHeaders(await headers())}`, 30, 60)) throw new Error("rate");
         result = await lookupCompany(ico);
         if (!result) error = "Subjekt s tímto IČO jsme v ARES nenašli.";
-      } catch {
-        error = "Registr ARES teď neodpovídá. Zkuste to prosím za chvíli znovu.";
+      } catch (e) {
+        error =
+          e instanceof Error && e.message === "rate"
+            ? "Z vaší sítě přišlo příliš mnoho dotazů. Zkuste to prosím za minutu."
+            : "Registr ARES teď neodpovídá. Zkuste to prosím za chvíli znovu.";
       }
     }
   }
