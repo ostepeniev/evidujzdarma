@@ -84,9 +84,18 @@ export async function loadCredential(accountId: string, environment: "playground
   return value;
 }
 
+type TransportFactory = (account: AccountRow, mode: EetMode) => Transport;
+let testTransportFactory: TransportFactory | null = null;
+
+/** Jen pro testy: podstrčí transport (skriptované odpovědi FS). */
+export function __setTransportFactoryForTests(factory: TransportFactory | null): void {
+  testTransportFactory = factory;
+}
+
 /** Transport podle režimu — u tržby VŽDY režim, ve kterém vznikla (ne aktuální režim účtu). */
 export function transportFor(account: AccountRow, modeOverride?: string): Transport {
   const mode = modeOverride ? accountMode({ eetMode: modeOverride }) : accountMode(account);
+  if (testTransportFactory) return testTransportFactory(account, mode);
   if (mode === "mock") return new MockTransport({ latencyMs: 150 });
   return new Eet2Transport({
     environment: mode,
@@ -169,7 +178,10 @@ export async function processSale(saleId: string, account?: AccountRow): Promise
     if (!acc) throw new Error("Účet neexistuje");
     const eic = acc.eic ?? acc.dic;
     if (!eic) throw new Error("U účtu chybí EIČ (DIČ) pro evidenci");
-    result = await transportFor(acc, claimed.mode).send(rowToSale(claimed), { firstAttempt, verifyOnly: false, eic });
+    const transport = transportFor(acc, claimed.mode);
+    // Р3: tržba z Playgroundu nebo ostrého provozu nikdy neskončí v simulaci
+    if (claimed.mode !== "mock" && transport.name === "mock") throw new Error(`Invariant: tržba v režimu ${claimed.mode} nesmí jít přes mock`);
+    result = await transport.send(rowToSale(claimed), { firstAttempt, verifyOnly: false, eic });
   } catch (e) {
     result = { ok: false, retryable: true, code: "INTERNAL", message: e instanceof Error ? e.message : String(e) };
   }

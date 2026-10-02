@@ -22,6 +22,14 @@ export function getDb(): Db {
   return globalForDb.__ezDb;
 }
 
+/**
+ * Jen pro testy: podstrčí instanci databáze (např. PGlite se stejnými migracemi).
+ * V aplikaci se nepoužívá.
+ */
+export function __setDbForTests(db: unknown): void {
+  globalForDb.__ezDb = db as Db;
+}
+
 export function hasDatabase(): boolean {
   return !!process.env.DATABASE_URL;
 }

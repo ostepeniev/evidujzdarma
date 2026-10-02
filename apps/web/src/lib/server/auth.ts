@@ -93,6 +93,8 @@ export class HttpError extends Error {
   constructor(
     readonly status: number,
     message: string,
+    /** doplňující strukturovaná data pro klienta (např. seznam blokujících tržeb) */
+    readonly details?: Record<string, unknown>,
   ) {
     super(message);
   }
@@ -130,7 +132,7 @@ export async function authenticateDevice(req: Request): Promise<DeviceContext> {
 }
 
 export function errorResponse(e: unknown): Response {
-  if (e instanceof HttpError) return Response.json({ error: e.message }, { status: e.status });
+  if (e instanceof HttpError) return Response.json({ error: e.message, ...(e.details ?? {}) }, { status: e.status });
   console.error(e);
   return Response.json({ error: "Interní chyba serveru" }, { status: 500 });
 }

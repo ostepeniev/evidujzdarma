@@ -4,7 +4,6 @@ import { z } from "zod";
 import { getDb, schema } from "@ez/db";
 import { PAYMENT_METHODS, SaleValidationError, buildSale, deadlineFor, evidencedAmounts } from "@ez/fiscal-core";
 import type { DeviceContext } from "./auth";
-import { accountMode } from "./fiscal";
 
 /** Tržba tak, jak ji posílá pokladna (částky v haléřích). */
 export const DeviceSaleSchema = z.object({
@@ -32,6 +31,8 @@ export const DeviceSaleSchema = z.object({
   discount: z.number().int().min(0).optional(),
   tip: z.number().int().min(0).optional(),
   refundOf: z.string().uuid().nullable().optional(),
+  /** režim v okamžiku prodeje – tržba se odesílá jen v něm (Р3), nikdy podle aktuálního režimu účtu */
+  mode: z.enum(["mock", "playground", "production"]),
 });
 export type DeviceSale = z.infer<typeof DeviceSaleSchema>;
 
@@ -59,10 +60,10 @@ export async function ingestSales(ctx: DeviceContext, inputs: DeviceSale[]): Pro
         .where(and(eq(schema.evidenceUnits.accountId, account.id), inArray(schema.evidenceUnits.id, unitIds)))
     : [];
   const unitById = new Map(units.map((u) => [u.id, u]));
-  const mode = accountMode(account);
   const results: IngestResult[] = [];
 
   for (const input of inputs) {
+    const mode = input.mode;
     try {
       const soldAtMs = Date.parse(input.soldAt);
       if (soldAtMs - Date.now() > MAX_FUTURE_MS) throw new Error("Datum tržby je v budoucnosti – zkontrolujte čas v zařízení.");

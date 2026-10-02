@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, desc, eq, gt, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, isNull, sql, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { isValidIco, normalizeIco, toIban } from "@ez/cz";
 import { getDb, schema } from "@ez/db";
@@ -126,10 +126,26 @@ export async function upsertAccount(user: CurrentUser, input: z.infer<typeof Acc
   });
 }
 
-export async function setEetMode(accountId: string, mode: "mock" | "playground" | "production") {
+/** Tržby, které ještě nemají konečný stav – patří k režimu, ve kterém vznikly. */
+export async function unsettledByMode(accountId: string) {
+  return getDb()
+    .select({ mode: schema.sales.mode, count: sql<number>`count(*)::int`, oldest: sql<string>`min(${schema.sales.soldAt})::text` })
+    .from(schema.sales)
+    .where(and(eq(schema.sales.accountId, accountId), inArray(schema.sales.status, ["queued", "sending", "failed", "rejected"])))
+    .groupBy(schema.sales.mode);
+}
+
+export async function setEetMode(accountId: string, mode: "mock" | "playground" | "production", opts: { confirm?: boolean } = {}) {
   const db = getDb();
   const account = await db.query.accounts.findFirst({ where: eq(schema.accounts.id, accountId) });
   if (!account) throw new HttpError(404, "Účet neexistuje");
+  if (account.eetMode !== mode && !opts.confirm) {
+    // Přepnutí nemění režim už prodaných tržeb (Р3) – ale vlastník o nich musí vědět.
+    const pending = (await unsettledByMode(accountId)).filter((p) => p.count > 0);
+    if (pending.length) {
+      throw new HttpError(409, "Některé tržby ještě nejsou vyřízené. Odešlou se v režimu, ve kterém vznikly. Potvrďte přepnutí.", { pending });
+    }
+  }
   if (mode !== "mock") {
     if (!(account.eic ?? account.dic)) throw new HttpError(400, "Nejdřív vyplňte EIČ (DIČ).");
     const cert = await db.query.certificates.findFirst({

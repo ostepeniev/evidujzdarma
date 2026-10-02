@@ -115,6 +115,7 @@ async function doSync(): Promise<SyncReport> {
             discount: s.discount,
             tip: s.tip,
             refundOf: s.refundOf,
+            mode: s.mode,
           })),
         }),
       });

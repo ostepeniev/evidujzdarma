@@ -7,7 +7,9 @@ import { getDevice, setMeta, deleteMeta } from "@/lib/pos/db";
 import type { DeviceCredentials, PosConfig } from "@/lib/pos/types";
 import { FACTS } from "@/content/facts";
 import { pragueToday } from "@/lib/prague-time";
-import { call, UNIT_TYPE_LABEL, type AccountStateDto } from "./api";
+import { ApiError, call, UNIT_TYPE_LABEL, type AccountStateDto } from "./api";
+
+const MODE_LABEL: Record<string, string> = { mock: "ukázkový", playground: "Playground", production: "ostrý provoz" };
 
 type State = AccountStateDto;
 
@@ -414,7 +416,21 @@ function ModeSection({ state, reload, hasProdCert, hasPgCert }: { state: State; 
               type="button"
               disabled={busy || disabled}
               aria-pressed={mode === m.v}
-              onClick={() => void run(async () => (await call("/api/ucet/rezim", { method: "POST", json: { mode: m.v } }), await reload()))}
+              onClick={() =>
+                void run(async () => {
+                  try {
+                    await call("/api/ucet/rezim", { method: "POST", json: { mode: m.v } });
+                  } catch (e) {
+                    const pending = e instanceof ApiError && e.status === 409 ? (e.data as { pending?: { mode: string; count: number; oldest: string }[] }).pending : undefined;
+                    if (!pending) throw e;
+                    const list = pending.map((p) => `• ${p.count}× v režimu ${MODE_LABEL[p.mode] ?? p.mode} (nejstarší ${new Date(p.oldest).toLocaleString("cs-CZ")})`).join("\n");
+                    const ok = window.confirm(`Tyto tržby ještě nejsou vyřízené:\n${list}\n\nOdešlou se v režimu, ve kterém vznikly – přepnutí na ně nemá vliv. Přepnout režim?`);
+                    if (!ok) return;
+                    await call("/api/ucet/rezim", { method: "POST", json: { mode: m.v, confirm: true } });
+                  }
+                  await reload();
+                })
+              }
               className={`rounded-2xl border p-4 text-left disabled:opacity-50 ${mode === m.v ? "border-brand-600 bg-brand-50" : "border-line bg-white"}`}
             >
               <span className="block font-semibold">{m.l}</span>

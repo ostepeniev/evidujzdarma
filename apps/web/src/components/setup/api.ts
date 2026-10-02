@@ -1,5 +1,15 @@
 "use client";
 
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+    readonly data: unknown,
+  ) {
+    super(message);
+  }
+}
+
 export async function call<T = unknown>(path: string, init: RequestInit & { json?: unknown } = {}): Promise<T> {
   const { json, ...rest } = init;
   const res = await fetch(path, {
@@ -9,7 +19,7 @@ export async function call<T = unknown>(path: string, init: RequestInit & { json
     cache: "no-store",
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error((data as { error?: string }).error ?? `Chyba ${res.status}`);
+  if (!res.ok) throw new ApiError((data as { error?: string }).error ?? `Chyba ${res.status}`, res.status, data);
   return data as T;
 }
 
