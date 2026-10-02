@@ -38,6 +38,7 @@ export interface AccountStateDto {
     receiptShowPok: boolean;
     eetMode: string;
     plan: string;
+    closedAt: string | null;
   };
   limits?: { staff: number; units: number; devices: number };
   units?: { id: string; type: string; label: string; fsUnitId: number | null; address: string | null; active: boolean }[];
@@ -46,6 +47,7 @@ export interface AccountStateDto {
   devices?: { id: string; name: string; registerId: string; unitId: string | null; lastSeenAt: string | null }[];
   certificates?: { id: string; subject: string; eic: string | null; environment: string; validFrom: string; validTo: string; verifiedAt: string | null }[];
   salesCount?: number;
+  accountants?: { id: string; name: string }[];
 }
 
 export const UNIT_TYPE_LABEL: Record<string, string> = {

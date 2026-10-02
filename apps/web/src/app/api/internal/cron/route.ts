@@ -1,6 +1,7 @@
 import { hasDatabase } from "@ez/db";
 import { processPending } from "@/lib/server/fiscal";
 import { alertStaleSales, runFsProbes } from "@/lib/server/fs-monitor";
+import { runRetention } from "@/lib/server/lifecycle";
 import { processOutbox } from "@/lib/server/mail";
 import { runReminders } from "@/lib/server/reminders";
 import { safeEqual } from "@/lib/server/tokens";
@@ -25,6 +26,8 @@ export async function POST(req: Request) {
   if (url.searchParams.get("reminders") === "1") {
     out.reminders = await runReminders();
     out.stale = await alertStaleSales().catch((e: unknown) => ({ error: e instanceof Error ? e.message : String(e) }));
+    // doby uložení ze zásad ochrany osobních údajů (R2.5)
+    out.retention = await runRetention().catch((e: unknown) => ({ error: e instanceof Error ? e.name : String(e) }));
   }
   out.emails = await processOutbox(50);
   return Response.json(out);

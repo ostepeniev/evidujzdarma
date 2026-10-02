@@ -89,6 +89,12 @@ export function SetupApp({ initial }: { initial: State }) {
         </div>
       </header>
 
+      {acc?.closedAt && (
+        <p role="alert" className="rounded-3xl border-2 border-danger-600 bg-white p-5 text-[15px]">
+          <strong className="text-danger-600">Účet je zrušený.</strong> Zařízení a certifikáty už nefungují. Data smažeme{" "}
+          {new Date(new Date(acc.closedAt).getTime() + 30 * 86_400_000).toLocaleDateString("cs-CZ")} – do té doby si stáhněte export tržeb níže.
+        </p>
+      )}
       <CompanySection state={state} onSaved={setState} />
       {acc && (
         <>
@@ -118,6 +124,8 @@ export function SetupApp({ initial }: { initial: State }) {
           <ClosingsSection />
           <ProblemSalesSection />
           <FailedSalesSection />
+          <AccountantsSection state={state} reload={reload} />
+          {!acc.closedAt && <CloseAccountSection reload={reload} />}
         </>
       )}
       <p className="pt-4 text-center text-xs text-muted">
@@ -142,6 +150,7 @@ function CompanySection({ state, onSaved }: { state: State; onSaved: (s: State) 
     receiptFooter: acc?.receiptFooter ?? "",
     receiptShowPok: acc?.receiptShowPok ?? true,
     ownerName: "",
+    acceptTerms: false,
   });
   const { busy, error, run } = useAction();
   const [lookup, setLookup] = useState<string | null>(null);
@@ -237,6 +246,22 @@ function CompanySection({ state, onSaved }: { state: State; onSaved: (s: State) 
             {FACTS.confirmation.onReceipt} S kódem zákazník vidí, že tržba prošla evidencí; bez něj je účtenka kratší. V pokladně i v exportu POK zůstává vždy.
           </p>
         </div>
+        {!acc && (
+          <label className="flex items-start gap-3 text-[15px] text-ink-soft sm:col-span-2">
+            <input type="checkbox" required checked={form.acceptTerms} onChange={(e) => set("acceptTerms", e.target.checked)} className="mt-1 h-5 w-5 shrink-0 accent-brand-600" />
+            <span>
+              Souhlasím s{" "}
+              <a href="/podminky" target="_blank" className="underline">
+                obchodními podmínkami
+              </a>
+              . Jak zpracováváme osobní údaje, popisují{" "}
+              <a href="/ochrana-osobnich-udaju" target="_blank" className="underline">
+                zásady ochrany osobních údajů
+              </a>
+              .
+            </span>
+          </label>
+        )}
         <div className="sm:col-span-2">
           <button type="submit" className="btn-primary" disabled={busy}>
             {busy ? "Ukládám…" : acc ? "Uložit změny" : "Pokračovat"}
@@ -352,7 +377,7 @@ function CertificateSection({ state, reload }: { state: State; reload: () => Pro
       step={4}
       title="Pokladní certifikát"
       done={certs.some((c) => c.environment === "production")}
-      lead="Certifikát (.p12) vygenerujete zdarma v DIS+. Privátní klíč ukládáme šifrovaně na serverech v EU a dešifrujeme ho jen v paměti při odeslání tržby."
+      lead="Certifikát (.p12) vygenerujete zdarma v DIS+. Privátní klíč ukládáme šifrovaně na serverech v EU a dešifrujeme ho jen v paměti při odeslání tržby. Heslo k certifikátu neukládáme."
     >
       {certs.length > 0 && (
         <ul className="mb-4 space-y-2">
@@ -360,6 +385,20 @@ function CertificateSection({ state, reload }: { state: State; reload: () => Pro
             <li key={c.id} className="rounded-2xl bg-surface p-3 text-[15px]">
               <strong>{c.environment === "production" ? "Ostrý certifikát" : "Testovací (Playground)"}</strong> · EIČ {c.eic ?? "—"} · platný do {new Date(c.validTo).toLocaleDateString("cs-CZ")}
               {c.environment === "production" && <span className="ml-1 text-muted">· {c.verifiedAt ? "ověřeno" : "zatím neověřeno – použijte „Odeslat ověřovací tržbu“"}</span>}
+              <button
+                type="button"
+                className="ml-2 text-sm text-muted underline hover:text-danger-600"
+                disabled={busy}
+                onClick={() =>
+                  window.confirm("Odstranit certifikát ze služby? Smažeme i jeho šifrovaný klíč. V DIS+ ho můžete zneplatnit.") &&
+                  void run(async () => {
+                    await call(`/api/ucet/certifikat/${c.id}`, { method: "DELETE" });
+                    await reload();
+                  })
+                }
+              >
+                Odstranit
+              </button>
             </li>
           ))}
         </ul>
@@ -838,6 +877,75 @@ function ClosingsSection() {
         </div>
       )}
     </Section>
+  );
+}
+
+/* ───────────── Účetní s přístupem a zrušení účtu ───────────── */
+
+function AccountantsSection({ state, reload }: { state: State; reload: () => Promise<void> }) {
+  const list = state.accountants ?? [];
+  const { busy, error, run } = useAction();
+  if (!list.length) return null;
+  return (
+    <section id="ucetni" className="scroll-mt-24 rounded-3xl border border-line bg-white p-6">
+      <h2 className="text-xl font-bold">Účetní s přístupem</h2>
+      <p className="mt-1 text-[15px] text-ink-soft">Tyto účetní vidí stav vaší připravenosti na EET a mohou stáhnout export tržeb.</p>
+      <ul className="mt-4 divide-y divide-line">
+        {list.map((a) => (
+          <li key={a.id} className="flex items-center justify-between gap-3 py-3">
+            <span className="font-semibold">{a.name}</span>
+            <button
+              type="button"
+              className="btn-ghost py-1.5 text-sm"
+              disabled={busy}
+              onClick={() => window.confirm(`Zrušit propojení s „${a.name}“? Účetní ztratí přístup k vašim tržbám.`) && void run(async () => {
+                await call(`/api/ucet/ucetni/${a.id}`, { method: "DELETE" });
+                await reload();
+              })}
+            >
+              Zrušit propojení
+            </button>
+          </li>
+        ))}
+      </ul>
+      <ErrorText error={error} />
+    </section>
+  );
+}
+
+function CloseAccountSection({ reload }: { reload: () => Promise<void> }) {
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState("");
+  const { busy, error, run } = useAction();
+  return (
+    <section id="zrusit-ucet" className="scroll-mt-24 rounded-3xl border border-line bg-white p-6">
+      <h2 className="text-xl font-bold">Zrušit účet</h2>
+      <p className="mt-1 text-[15px] text-ink-soft">
+        Zařízení a pokladní certifikáty přestanou okamžitě fungovat. Na export dat máte 30 dnů, potom data smažeme. Certifikát nezapomeňte zneplatnit v DIS+.
+      </p>
+      {!open ? (
+        <button type="button" className="btn-ghost mt-3 text-danger-600" onClick={() => setOpen(true)}>
+          Chci zrušit účet
+        </button>
+      ) : (
+        <form
+          className="mt-3 flex flex-wrap items-center gap-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void run(async () => {
+              await call("/api/ucet/zrusit", { method: "POST", json: { confirm: text.trim() } });
+              await reload();
+            });
+          }}
+        >
+          <input aria-label="Pro potvrzení napište ZRUSIT" className="input max-w-[12rem]" placeholder="napište ZRUSIT" value={text} onChange={(e) => setText(e.target.value)} />
+          <button type="submit" className="btn-secondary text-danger-600" disabled={busy || text.trim() !== "ZRUSIT"}>
+            Zrušit účet
+          </button>
+        </form>
+      )}
+      <ErrorText error={error} />
+    </section>
   );
 }
 

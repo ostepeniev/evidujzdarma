@@ -28,7 +28,7 @@ const BENEFITS = [
   { title: "Až 5 uživatelů zdarma", text: "Každá pokladní má vlastní PIN, vy vidíte všechny tržby a denní přehled." },
   { title: "Účtenka papírově i digitálně", text: "Tisk na Bluetooth tiskárnu, e-mail, SMS odkaz nebo QR kód na displeji." },
   { title: "Pro účetní", text: "Export CSV zdarma, hromadná kontrola IČO a přehled připravenosti všech klientů." },
-  { title: "Bezpečně v EU", text: "Data i certifikáty jsou šifrovaně uložené na serverech v Evropské unii." },
+  { title: "Bezpečně v EU", text: "Data na serverech v Evropské unii, klíče certifikátů šifrovaně, heslo k certifikátu neukládáme." },
 ];
 
 export default function HomePage() {

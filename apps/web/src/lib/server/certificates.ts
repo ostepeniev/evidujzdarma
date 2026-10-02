@@ -41,6 +41,7 @@ export async function importCertificate(accountId: string, input: { file: Buffer
 
   const account = await getDb().query.accounts.findFirst({ where: eq(schema.accounts.id, accountId) });
   if (!account) throw new HttpError(404, "Účet neexistuje");
+  if (account.closedAt) throw new HttpError(400, "Účet je zrušený.");
   const accountEic = account.eic ?? account.dic;
   if (accountEic && cert.info.dic !== accountEic) {
     throw new HttpError(400, `Certifikát patří EIČ ${cert.info.dic}, ale u účtu je ${accountEic}. Zkontrolujte EIČ v nastavení.`);

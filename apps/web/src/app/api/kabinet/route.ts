@@ -28,6 +28,7 @@ const Body = z.object({
     .optional()
     .transform((v) => (v ? normalizeIco(v) : null))
     .refine((v) => v === null || isValidIco(v), "Neplatné IČO"),
+  acceptTerms: z.boolean().optional(),
 });
 
 export async function POST(req: Request) {

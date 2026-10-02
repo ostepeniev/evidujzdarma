@@ -142,7 +142,7 @@ export default function AboutPage() {
               Data a bezpečnost
             </h2>
             <ul>
-              <li>Data pokladen i pokladní certifikáty ukládáme šifrovaně na serverech v Evropské unii.</li>
+              <li>Data pokladen ukládáme na serverech v Evropské unii, privátní klíče pokladních certifikátů šifrovaně. Heslo k certifikátu neukládáme.</li>
               <li>Osobní údaje nepředáváme mimo EU a neprodáváme je.</li>
               <li>
                 Údaje o firmách v nástrojích bereme z veřejných registrů (ARES). U fyzických osob nezobrazujeme adresu bydliště.

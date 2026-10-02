@@ -2,18 +2,19 @@
 // Zkontrolovat zejména: (1) omezení a vyloučení odpovědnosti s ohledem na § 2898 OZ a na uživatele-spotřebitele
 // (služba je určena podnikatelům, ale ověřit dopady § 1810 a násl. OZ); (2) závazek „jádro zdarma navždy“ v čl. 6;
 // (3) obsah přílohy SLA k Premium (dostupnost, kompenzace, doba reakce podpory) – zatím nevydána; (4) lhůty
-// v čl. 10 a 11 (30 dní na export po ukončení, 60 dní výpověď ze strany provozovatele, 30 dní oznámení změn);
-// (5) zda data pokladny zpracováváme jako zpracovatel (čl. 28 GDPR) a zda je třeba samostatná zpracovatelská smlouva;
+// v čl. 11 a 12 (30 dní na export po ukončení, 60 dní výpověď ze strany provozovatele, 30 dní oznámení změn);
+// (5) zpracovatelská doložka dle čl. 28 GDPR je v čl. 10 – ověřit, zda stačí, nebo je třeba samostatná smlouva;
 // (6) identifikační údaje provozovatele jsou v lib/site.ts (OPERATOR, ověřeno v OR 2. 10. 2026).
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { PageHeader } from "@/components/page-header";
 import { FACTS } from "@/content/facts";
+import { TERMS_VERSION, TERMS_VERSION_LABEL } from "@/lib/legal";
 import { SITE, operatorLine } from "@/lib/site";
 
-const VERSION_DATE = "2026-10-01";
-const VERSION_LABEL = "1. 10. 2026";
+const VERSION_DATE = TERMS_VERSION;
+const VERSION_LABEL = TERMS_VERSION_LABEL;
 
 export const metadata: Metadata = {
   title: "Obchodní podmínky",
@@ -214,20 +215,61 @@ const SECTIONS: readonly { id: string; title: string; body: ReactNode }[] = [
     body: (
       <>
         <p>
-          9.1 Data pokladny (tržby, doklady, katalog, přehledy) i pokladní certifikáty ukládá provozovatel šifrovaně na serverech
-          v Evropské unii.
+          9.1 Data pokladny (tržby, doklady, katalog, přehledy) ukládá provozovatel na serverech v Evropské unii. Privátní klíče
+          pokladních certifikátů ukládá šifrovaně; šifrovací klíč je uložen mimo databázi.
         </p>
         <p>
-          9.2 Pokladní certifikát a jeho heslo používá provozovatel výhradně k podepisování datových zpráv za uživatele. Uživatel
-          může certifikát ze služby kdykoli odstranit a v DIS+ zneplatnit.
+          9.2 Privátní klíč pokladního certifikátu používá provozovatel výhradně k podepisování datových zpráv za uživatele. Heslo
+          k souboru certifikátu provozovatel neukládá – použije ho jen při nahrání. Uživatel může certifikát ze služby kdykoli
+          odstranit v nastavení pokladny (tím se smaže i jeho šifrovaný klíč) a v DIS+ zneplatnit.
         </p>
         <p>
           9.3 Data pokladny patří uživateli. Uživatel je může kdykoli exportovat (nejméně ve formátu CSV). Provozovatel je
           nepoužívá k jiným účelům než k poskytování služby a neprodává je.
         </p>
         <p>
-          9.4 Zpracování osobních údajů popisují <Link href="/ochrana-osobnich-udaju">zásady ochrany osobních údajů</Link>.
+          9.4 Osobní údaje, které provozovatel zpracovává pro uživatele (údaje v pokladně), upravuje čl. 10. Zpracování, u kterého
+          je provozovatel správcem (účet, předregistrace, katalog firem), popisují{" "}
+          <Link href="/ochrana-osobnich-udaju">zásady ochrany osobních údajů</Link>.
         </p>
+      </>
+    ),
+  },
+  {
+    id: "zpracovani",
+    title: "Zpracování osobních údajů pro uživatele (čl. 28 GDPR)",
+    body: (
+      <>
+        <p>
+          10.1 Pokud uživatel do pokladny zadá osobní údaje dalších osob (jména pokladních, e-mail zákazníka, kterému
+          posílá doklad e-mailem), je jejich správcem uživatel a provozovatel je zpracovává jako zpracovatel podle čl. 28 nařízení (EU)
+          2016/679 (GDPR). Tento článek je smlouvou o zpracování osobních údajů.
+        </p>
+        <p>
+          10.2 <strong>Předmět a doba:</strong> zpracování po dobu poskytování služby a 30 dnů po zrušení účtu (čl. 11.3).{" "}
+          <strong>Povaha a účel:</strong> uložení, zobrazení, odeslání dokladu e-mailem a export – výhradně pro poskytování služby.{" "}
+          <strong>Typ údajů:</strong> jméno a PIN pokladní (PIN jen jako otisk), e-mail zákazníka.{" "}
+          <strong>Subjekty údajů:</strong> pokladní a zaměstnanci uživatele, zákazníci uživatele.
+        </p>
+        <p>10.3 Provozovatel:</p>
+        <ol>
+          <li>zpracovává údaje jen na doložené pokyny uživatele, které tvoří tyto podmínky a nastavení služby;</li>
+          <li>zajistí, že osoby s přístupem k údajům jsou vázány mlčenlivostí;</li>
+          <li>
+            přijímá technická a organizační opatření podle čl. 32 GDPR (zejména šifrovaný přenos, šifrování klíčů certifikátů,
+            oddělení účtů, omezení přístupu na pověřené osoby);
+          </li>
+          <li>
+            využívá další zpracovatele (hosting a doručování e-mailů v EU) s obecným souhlasem uživatele, který tímto dává; o
+            zamýšlené změně ho informuje e-mailem a uživatel může vznést námitku; s dalšími zpracovateli má smlouvu se stejnými
+            povinnostmi;
+          </li>
+          <li>údaje nepředává mimo Evropský hospodářský prostor;</li>
+          <li>pomáhá uživateli vyřizovat žádosti subjektů údajů a plnit povinnosti podle čl. 32 až 36 GDPR;</li>
+          <li>porušení zabezpečení osobních údajů oznámí uživateli bez zbytečného odkladu, nejpozději do 48 hodin od zjištění;</li>
+          <li>po zrušení účtu údaje smaže (čl. 11.3); export si uživatel může stáhnout předem;</li>
+          <li>poskytne uživateli informace potřebné k doložení plnění těchto povinností a umožní audit v přiměřeném rozsahu.</li>
+        </ol>
       </>
     ),
   },
@@ -236,14 +278,17 @@ const SECTIONS: readonly { id: string; title: string; body: ReactNode }[] = [
     title: "Ukončení",
     body: (
       <>
-        <p>10.1 Uživatel může službu kdykoli přestat používat a zrušit účet v nastavení nebo e-mailem na {SITE.email}.</p>
         <p>
-          10.2 Provozovatel může tarif Zdarma ukončit s výpovědní dobou 60 dnů oznámenou e-mailem. Při závažném porušení podmínek
+          11.1 Uživatel může službu kdykoli přestat používat a zrušit účet v nastavení pokladny (Zrušit účet) nebo e-mailem na{" "}
+          {SITE.email}.
+        </p>
+        <p>
+          11.2 Provozovatel může tarif Zdarma ukončit s výpovědní dobou 60 dnů oznámenou e-mailem. Při závažném porušení podmínek
           uživatelem (např. zneužití služby) může provozovatel přístup omezit nebo účet zrušit s okamžitou účinností.
         </p>
         <p>
-          10.3 Po ukončení má uživatel 30 dnů na export dat. Poté provozovatel data smaže, pokud mu jejich další uchování
-          neukládá právní předpis.
+          11.3 Zrušením účtu přestanou zařízení a pokladní certifikáty ve službě okamžitě fungovat. Uživatel má 30 dnů na export
+          dat; poté provozovatel data smaže, pokud mu jejich další uchování neukládá právní předpis.
         </p>
       </>
     ),
@@ -253,7 +298,7 @@ const SECTIONS: readonly { id: string; title: string; body: ReactNode }[] = [
     title: "Změny podmínek",
     body: (
       <p>
-        11.1 Provozovatel může podmínky měnit. Změnu oznámí uživatelům e-mailem nejméně 30 dnů před její účinností. Nesouhlasí-li
+        12.1 Provozovatel může podmínky měnit. Změnu oznámí uživatelům e-mailem nejméně 30 dnů před její účinností. Nesouhlasí-li
         uživatel se změnou, může službu do dne účinnosti změny ukončit; zaplacené a nevyčerpané předplatné mu provozovatel vrátí.
       </p>
     ),
@@ -264,11 +309,11 @@ const SECTIONS: readonly { id: string; title: string; body: ReactNode }[] = [
     body: (
       <>
         <p>
-          12.1 Tyto podmínky a vztahy z nich vyplývající se řídí právem České republiky, zejména zákonem č. 89/2012 Sb., občanský
+          13.1 Tyto podmínky a vztahy z nich vyplývající se řídí právem České republiky, zejména zákonem č. 89/2012 Sb., občanský
           zákoník. Spory rozhodují obecné soudy České republiky.
         </p>
-        <p>12.2 Je-li některé ustanovení neplatné nebo neúčinné, ostatní ustanovení tím nejsou dotčena.</p>
-        <p>12.3 Tato verze podmínek je platná od {VERSION_LABEL}.</p>
+        <p>13.2 Je-li některé ustanovení neplatné nebo neúčinné, ostatní ustanovení tím nejsou dotčena.</p>
+        <p>13.3 Tato verze podmínek je platná od {VERSION_LABEL}. Souhlas s ní zaznamenáváme při založení účtu.</p>
       </>
     ),
   },
@@ -304,8 +349,8 @@ export default function TermsPage() {
           <div className="prose-ez min-w-0 max-w-3xl">
             <p className="mt-0 rounded-2xl border border-line bg-surface p-5 text-base text-ink">
               <strong>Ve zkratce:</strong> pokladna je technický nástroj – povinnost evidovat tržby máte vy. Tarif Zdarma je zdarma
-              navždy, ale bez garancí; Premium bude mít garantovanou úroveň služeb. Data i certifikáty ukládáme šifrovaně v EU a
-              kdykoli si je vyexportujete. Shrnutí nenahrazuje plné znění níže.
+              navždy, ale bez garancí; Premium bude mít garantovanou úroveň služeb. Data ukládáme v EU, klíče certifikátů šifrovaně
+              (heslo k certifikátu neukládáme), a kdykoli si je vyexportujete. Shrnutí nenahrazuje plné znění níže.
             </p>
             {SECTIONS.map((s, i) => (
               <section key={s.id} id={s.id} aria-labelledby={`${s.id}-h`} className="scroll-mt-24">

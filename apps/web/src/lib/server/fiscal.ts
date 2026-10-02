@@ -80,6 +80,11 @@ export async function storeCertificate(
 const credentialCache = new Map<string, { at: number; value: Eet2Credential }>();
 const CREDENTIAL_TTL = 5 * 60_000;
 
+/** Zahodí dešifrované klíče účtu z paměti (odstranění certifikátu, zrušení účtu). */
+export function forgetCredential(accountId: string): void {
+  for (const env of ["playground", "production"]) credentialCache.delete(`${accountId}:${env}`);
+}
+
 export async function loadCredential(accountId: string, environment: "playground" | "production"): Promise<Eet2Credential> {
   const key = `${accountId}:${environment}`;
   const hit = credentialCache.get(key);

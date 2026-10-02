@@ -100,6 +100,9 @@ export const users = pgTable(
     email: varchar("email", { length: 254 }).notNull(),
     name: text("name"),
     emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
+    /** verze obchodních podmínek, se kterou uživatel souhlasil, a kdy (R2.5) */
+    termsVersion: varchar("terms_version", { length: 16 }),
+    termsAcceptedAt: timestamp("terms_accepted_at", { withTimezone: true }),
     createdAt: createdAt(),
   },
   (t) => [uniqueIndex("users_email_uq").on(sql`lower(${t.email})`)],
@@ -129,6 +132,8 @@ export const accounts = pgTable(
     /** mock = ukázkový režim bez FS | playground = testovací prostředí FS | production = ostrý provoz */
     eetMode: varchar("eet_mode", { length: 16 }).notNull().default("mock"),
     referredByAccountantId: uuid("referred_by_accountant_id"),
+    /** účet zrušen vlastníkem – data cron smaže po 30 dnech (podmínky čl. 11.3) */
+    closedAt: timestamp("closed_at", { withTimezone: true }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },

@@ -10,10 +10,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { PageHeader } from "@/components/page-header";
+import { PRIVACY_VERSION, PRIVACY_VERSION_LABEL } from "@/lib/legal";
 import { SITE, operatorLine } from "@/lib/site";
 
-const VERSION_DATE = "2026-10-01";
-const VERSION_LABEL = "1. 10. 2026";
+const VERSION_DATE = PRIVACY_VERSION;
+const VERSION_LABEL = PRIVACY_VERSION_LABEL;
 
 export const metadata: Metadata = {
   title: "Ochrana osobních údajů (GDPR)",
@@ -27,19 +28,27 @@ const PURPOSES: readonly { purpose: string; data: string; basis: string; retenti
     purpose: "Předregistrace k pokladně a přihláška na webinář",
     data: "E-mail, nepovinně IČO a název firmy z ARES, obor, počet provozoven, o co máte zájem, kód doporučení, zdroj návštěvy (UTM).",
     basis: "Provedení opatření před uzavřením smlouvy na vaši žádost – čl. 6 odst. 1 písm. b) GDPR.",
-    retention: "Do spuštění pokladny a poté nejvýše 12 měsíců, pokud si nezaložíte účet; dříve na vaši žádost.",
+    retention:
+      "Do spuštění pokladny (1. 12. 2026) a poté nejvýše 12 měsíců od spuštění, nebo od registrace, pokud proběhla později – pokud si nezaložíte účet ani neudělíte souhlas s novinkami; dříve na vaši žádost.",
   },
   {
     purpose: "Novinky k EET a nabídky e-mailem",
     data: "E-mail, údaje z předregistrace, datum a doklad udělení souhlasu (otisk IP adresy a prohlížeče).",
     basis: "Váš souhlas – čl. 6 odst. 1 písm. a) GDPR a § 7 zákona č. 480/2004 Sb., o některých službách informační společnosti.",
-    retention: "Do odvolání souhlasu. Doklad o souhlasu uchováváme ještě 3 roky po odvolání pro případ sporu.",
+    retention: "Do odvolání souhlasu. Doklad o souhlasu a jeho odvolání uchováváme ještě 3 roky po odvolání pro případ sporu.",
   },
   {
     purpose: "Účet a provoz pokladny",
     data: "E-mail a jméno uživatele, údaje firmy (název, IČO, DIČ), jména pokladních, evidenční jednotky, pokladní certifikát, tržby, doklady.",
     basis: "Plnění smlouvy – čl. 6 odst. 1 písm. b) GDPR; u placených tarifů také právní povinnost (účetní a daňové doklady) – písm. c).",
-    retention: "Po dobu trvání účtu a 30 dnů po jeho zrušení (na export). Účetní doklady k platbám po dobu stanovenou zákonem.",
+    retention: "Po dobu trvání účtu a 30 dnů po jeho zrušení (na export), potom údaje smažeme. Účetní doklady k platbám po dobu stanovenou zákonem.",
+  },
+  {
+    purpose: "Účetní kabinet",
+    data: "U účetní: e-mail, název a IČO kanceláře, seznam IČO a popisků klientů. U klienta, který pozvánku přijme: stav připravenosti na EET a export tržeb, které účetní uvidí.",
+    basis:
+      "Plnění smlouvy s účetní – čl. 6 odst. 1 písm. b) GDPR. Seznam IČO klientů je oprávněný zájem účetní na správě klientů – písm. f). Sdílení dat z pokladny jen po přijetí pozvánky klientem.",
+    retention: "Po dobu trvání účtu účetní. Propojení s klientem trvá, dokud ho klient nebo účetní nezruší (klient ho zruší v nastavení pokladny).",
   },
   {
     purpose: "Katalog firem a kontrola IČO",
@@ -57,7 +66,8 @@ const PURPOSES: readonly { purpose: string; data: string; basis: string; retenti
     purpose: "Bezpečnost a ochrana před zneužitím",
     data: "IP adresa a technické údaje o požadavku (např. pro omezení počtu dotazů), přihlašovací relace.",
     basis: "Oprávněný zájem – čl. 6 odst. 1 písm. f) GDPR: zabezpečení služby.",
-    retention: "Po nezbytně nutnou dobu, u bezpečnostních záznamů nejvýše 90 dnů.",
+    retention:
+      "Přihlašovací relace a odkazy do vypršení, záznamy o odeslaných e-mailech 90 dnů. Technické záznamy serveru jsou omezené velikostí a průběžně se přepisují.",
   },
 ];
 
@@ -140,13 +150,14 @@ const SECTIONS: readonly { id: string; title: string; body: ReactNode }[] = [
       <>
         <p>
           Údaje o vašich tržbách, dokladech a pokladních zpracováváme proto, abychom vám mohli poskytovat pokladnu a odesílat
-          datové zprávy Finanční správě. Pokladní certifikát a jeho heslo ukládáme šifrovaně a používáme je jen k podepisování
-          datových zpráv za vás.
+          datové zprávy Finanční správě. Privátní klíč pokladního certifikátu ukládáme šifrovaně a používáme ho jen k podepisování
+          datových zpráv za vás. Heslo k souboru certifikátu neukládáme – použijeme ho jen jednou při nahrání.
         </p>
         <p>
           Pokud v pokladně zadáte osobní údaje dalších osob (například e-mail zákazníka, kterému posíláte doklad, nebo jména
           pokladních), jste ve vztahu k nim správcem vy a my je zpracováváme jen podle vašich pokynů a pro účel poskytování
-          služby. Podrobnosti upravují <Link href="/podminky">obchodní podmínky</Link>.
+          služby. Podrobnosti upravuje zpracovatelská doložka v{" "}
+          <Link href="/podminky#zpracovani">čl. 10 obchodních podmínek</Link>.
         </p>
       </>
     ),
@@ -254,8 +265,9 @@ const SECTIONS: readonly { id: string; title: string; body: ReactNode }[] = [
     title: "Zabezpečení",
     body: (
       <p>
-        Data i certifikáty ukládáme šifrovaně na serverech v Evropské unii, přenos probíhá šifrovaně (HTTPS) a přístup k datům
-        mají jen pověřené osoby v rozsahu nezbytném pro provoz a podporu.
+        Data ukládáme na serverech v Evropské unii. Privátní klíče pokladních certifikátů ukládáme šifrovaně (AES-256-GCM,
+        šifrovací klíč je uložen mimo databázi); heslo k souboru certifikátu neukládáme. Přenos probíhá šifrovaně (HTTPS) a
+        přístup k datům mají jen pověřené osoby v rozsahu nezbytném pro provoz a podporu.
       </p>
     ),
   },

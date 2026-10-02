@@ -1,4 +1,5 @@
 import "server-only";
+import { TERMS_VERSION } from "@/lib/legal";
 import { and, eq, gt, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 import { getDb, schema } from "@ez/db";
 import { HttpError, type CurrentUser } from "./auth";
@@ -16,10 +17,12 @@ export async function requireAccountant(user: CurrentUser | null): Promise<strin
   return m.accountId;
 }
 
-export async function createAccountantAccount(user: CurrentUser, input: { name: string; ico: string | null }): Promise<string> {
+export async function createAccountantAccount(user: CurrentUser, input: { name: string; ico: string | null; acceptTerms?: boolean }): Promise<string> {
   const existing = accountantMembership(user);
   if (existing) return existing.accountId;
+  if (input.acceptTerms !== true) throw new HttpError(400, "Pro založení kabinetu je potřeba souhlasit s obchodními podmínkami.");
   return getDb().transaction(async (tx) => {
+    await tx.update(schema.users).set({ termsVersion: TERMS_VERSION, termsAcceptedAt: new Date() }).where(eq(schema.users.id, user.id));
     const [acc] = await tx.insert(schema.accounts).values({ kind: "accountant", name: input.name, ico: input.ico, plan: "partner" }).returning({ id: schema.accounts.id });
     await tx.insert(schema.memberships).values({ accountId: acc!.id, userId: user.id, role: "owner" });
     return acc!.id;

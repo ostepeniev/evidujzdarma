@@ -201,6 +201,7 @@ export function CabinetApp({ initial }: { initial: CabinetState }) {
 function CreateCabinet({ onCreated }: { onCreated: () => Promise<void> }) {
   const [name, setName] = useState("");
   const [ico, setIco] = useState("");
+  const [terms, setTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   return (
     <div className="mx-auto max-w-lg px-4 py-12">
@@ -212,7 +213,7 @@ function CreateCabinet({ onCreated }: { onCreated: () => Promise<void> }) {
           e.preventDefault();
           setError(null);
           try {
-            await call("/api/kabinet", { method: "POST", json: { name, ico: ico || undefined } });
+            await call("/api/kabinet", { method: "POST", json: { name, ico: ico || undefined, acceptTerms: terms } });
             await onCreated();
           } catch (err) {
             setError(err instanceof Error ? err.message : "Nepodařilo se");
@@ -231,6 +232,20 @@ function CreateCabinet({ onCreated }: { onCreated: () => Promise<void> }) {
           </label>
           <input id="cab-ico" className="input" inputMode="numeric" value={ico} onChange={(e) => setIco(e.target.value)} />
         </div>
+        <label className="flex items-start gap-3 text-[15px] text-ink-soft">
+          <input type="checkbox" required checked={terms} onChange={(e) => setTerms(e.target.checked)} className="mt-1 h-5 w-5 shrink-0 accent-brand-600" />
+          <span>
+            Souhlasím s{" "}
+            <a href="/podminky" target="_blank" className="underline">
+              obchodními podmínkami
+            </a>
+            . Jak zpracováváme osobní údaje, popisují{" "}
+            <a href="/ochrana-osobnich-udaju" target="_blank" className="underline">
+              zásady ochrany osobních údajů
+            </a>
+            .
+          </span>
+        </label>
         {error && <p className="text-danger-600">{error}</p>}
         <button type="submit" className="btn-primary w-full">
           Založit kabinet

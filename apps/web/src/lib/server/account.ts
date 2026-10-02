@@ -4,7 +4,9 @@ import { z } from "zod";
 import { isValidIco, normalizeIco, toIban } from "@ez/cz";
 import { getDb, schema } from "@ez/db";
 import { HttpError, type CurrentUser } from "./auth";
+import { TERMS_VERSION } from "@/lib/legal";
 import { ACCOUNT_BLOCKS, requeueBlocked } from "./fiscal";
+import { linkedAccountants } from "./lifecycle";
 import { randomToken, sha256 } from "./tokens";
 
 export const FREE_LIMITS = { staff: 5, units: 3, devices: 10 } as const;
@@ -64,6 +66,7 @@ export async function accountState(user: CurrentUser) {
     devices: devices.filter((d) => !d.revokedAt),
     certificates,
     salesCount: salesCount[0]?.n ?? 0,
+    accountants: await linkedAccountants(account.id),
   };
 }
 
@@ -99,6 +102,8 @@ export const AccountInput = z.object({
   receiptFooter: z.string().trim().max(300).optional().nullable(),
   receiptShowPok: z.boolean().optional(),
   ownerName: z.string().trim().min(1).max(80).optional(),
+  /** souhlas s obchodními podmínkami – povinný při založení účtu (R2.5) */
+  acceptTerms: z.boolean().optional(),
 });
 
 export async function upsertAccount(user: CurrentUser, input: z.infer<typeof AccountInput>) {
@@ -125,7 +130,9 @@ export async function upsertAccount(user: CurrentUser, input: z.infer<typeof Acc
     }
     return owner.accountId;
   }
+  if (input.acceptTerms !== true) throw new HttpError(400, "Pro založení účtu je potřeba souhlasit s obchodními podmínkami.");
   return db.transaction(async (tx) => {
+    await tx.update(schema.users).set({ termsVersion: TERMS_VERSION, termsAcceptedAt: new Date() }).where(eq(schema.users.id, user.id));
     const [acc] = await tx.insert(schema.accounts).values({ ...values, kind: "business" }).returning({ id: schema.accounts.id });
     await tx.insert(schema.memberships).values({ accountId: acc!.id, userId: user.id, role: "owner" });
     await tx.insert(schema.staff).values({ accountId: acc!.id, name: input.ownerName ?? "Vlastník", role: "owner" });
@@ -146,6 +153,7 @@ export async function setEetMode(accountId: string, mode: "mock" | "playground" 
   const db = getDb();
   const account = await db.query.accounts.findFirst({ where: eq(schema.accounts.id, accountId) });
   if (!account) throw new HttpError(404, "Účet neexistuje");
+  if (account.closedAt) throw new HttpError(400, "Účet je zrušený.");
   if (account.eetMode !== mode && !opts.confirm) {
     // Přepnutí nemění režim už prodaných tržeb (Р3) – ale vlastník o nich musí vědět.
     const pending = (await unsettledByMode(accountId)).filter((p) => p.count > 0);
@@ -178,6 +186,7 @@ export async function setEetMode(accountId: string, mode: "mock" | "playground" 
 export async function registerDevice(accountId: string, input: { name: string; registerId: string; unitId: string | null }) {
   const db = getDb();
   const account = (await db.query.accounts.findFirst({ where: eq(schema.accounts.id, accountId) }))!;
+  if (account.closedAt) throw new HttpError(400, "Účet je zrušený.");
   const active = await db
     .select({ n: sql<number>`count(*)::int` })
     .from(schema.devices)
