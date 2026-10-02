@@ -47,7 +47,27 @@ export async function takeAresToken(name: AresPool, maxWaitMs = 5_000): Promise<
 }
 
 const TTL_MS = 24 * 3_600_000;
+/**
+ * Paměťová vrstva před DB (ares_cache): LRU s TTL a pevným stropem i s databází (R5.12). Na sdíleném serveru
+ * (Т7) by jinak rostla s každým novým IČO. Úplnou cache drží DB; bez DB je paměť jediná cache.
+ */
 const memory = new Map<string, { at: number; value: unknown }>();
+const memoryMax = () => Number(process.env.ARES_MEMORY_MAX) || 2_000;
+
+function memoryGet(key: string, now: number) {
+  const e = memory.get(key);
+  if (!e) return undefined;
+  memory.delete(key);
+  if (now - e.at >= TTL_MS) return undefined; // prošlé už neservírujeme a uvolníme
+  memory.set(key, e); // nedávno použité na konec (LRU)
+  return e;
+}
+
+function memorySet(key: string, entry: { at: number; value: unknown }) {
+  memory.delete(key);
+  memory.set(key, entry);
+  for (const max = memoryMax(); memory.size > max; ) memory.delete(memory.keys().next().value!);
+}
 
 export interface CompanyLookup {
   subject: Subject;
@@ -62,14 +82,14 @@ function useFixtures(): boolean {
 
 async function cached(key: string, load: () => Promise<unknown>): Promise<{ value: unknown; at: number; hit: boolean }> {
   const now = Date.now();
-  const mem = memory.get(key);
-  if (mem && now - mem.at < TTL_MS) return { value: mem.value, at: mem.at, hit: true };
+  const mem = memoryGet(key, now);
+  if (mem) return { value: mem.value, at: mem.at, hit: true };
 
   if (hasDatabase()) {
     const db = getDb();
     const row = await db.query.aresCache.findFirst({ where: eq(schema.aresCache.key, key) });
     if (row && now - row.fetchedAt.getTime() < TTL_MS) {
-      memory.set(key, { at: row.fetchedAt.getTime(), value: row.payload });
+      memorySet(key, { at: row.fetchedAt.getTime(), value: row.payload });
       return { value: row.payload, at: row.fetchedAt.getTime(), hit: true };
     }
     const value = await load();
@@ -77,12 +97,11 @@ async function cached(key: string, load: () => Promise<unknown>): Promise<{ valu
       .insert(schema.aresCache)
       .values({ key, payload: value as object, fetchedAt: new Date(now) })
       .onConflictDoUpdate({ target: schema.aresCache.key, set: { payload: value as object, fetchedAt: new Date(now) } });
-    memory.set(key, { at: now, value });
+    memorySet(key, { at: now, value });
     return { value, at: now, hit: false };
   }
   const value = await load();
-  memory.set(key, { at: now, value });
-  if (memory.size > 5000) memory.delete(memory.keys().next().value!);
+  memorySet(key, { at: now, value });
   return { value, at: now, hit: false };
 }
 
@@ -113,3 +132,11 @@ export async function lookupCompany(icoInput: string, opts: { pool?: AresPool } 
   }
   return { subject, rzp, fetchedAt: new Date(subj.at).toISOString(), source: subj.hit ? "cache" : "ares" };
 }
+
+/** Jen pro testy (R5.12). */
+export const __aresCacheForTests = {
+  cached,
+  size: () => memory.size,
+  clear: () => memory.clear(),
+  peek: (key: string) => memory.has(key),
+};
