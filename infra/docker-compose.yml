@@ -1,5 +1,5 @@
 # Produkční nasazení na jeden server (Hetzner Cloud / Proxmox / jakékoli VPS v EU).
-#   cp .env.production.example .env  &&  nano .env
+#   cp .env.example .env  &&  nano .env   (DOMAIN, APP_SECRET, CRON_SECRET, APP_DB_PASSWORD … – viz docs/deploy.md)
 #   MASTER_KEY do secrets/master_key (0400, vlastník 1001) – viz docs/deploy.md
 #   docker compose up -d --build
 name: evidujzdarma

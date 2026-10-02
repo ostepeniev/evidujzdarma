@@ -523,12 +523,16 @@ function ModeSection({ state, reload, hasProdCert, hasPgCert }: { state: State; 
             onClick={() =>
               void run(async () => {
                 setResult(null);
-                const r = await call<{ ok: boolean; mode: string; message?: string; code?: string }>("/api/ucet/overeni", { method: "POST", json: { unitId: units[0]!.id } });
+                const r = await call<{ ok: boolean; mode: string; message?: string; code?: string; simulated?: boolean; warnings?: { code: number; text: string }[] }>("/api/ucet/overeni", {
+                  method: "POST",
+                  json: { unitId: units[0]!.id },
+                });
+                const warn = r.warnings?.length ? ` Upozornění FS: ${r.warnings.map((w) => w.text).join("; ")}` : "";
                 setResult(
                   r.ok
-                    ? r.mode === "mock"
-                      ? "Ukázkový režim: testovací tržba proběhla (bez odeslání do FS)."
-                      : `Finanční správa (${MODE_LABEL[r.mode] ?? r.mode}) ověřovací zprávu přijala – certifikát, EIČ i číslo jednotky jsou v pořádku.`
+                    ? r.simulated || r.mode === "mock"
+                      ? "Ukázkový režim: nic se do FS neodeslalo, certifikát tím ověřený není."
+                      : `Finanční správa (${MODE_LABEL[r.mode] ?? r.mode}) ověřovací zprávu přijala – certifikát, EIČ i číslo jednotky jsou v pořádku.${warn}`
                     : `Finanční správa zprávu odmítla: ${r.message ?? r.code}`,
                 );
               })
@@ -1013,15 +1017,31 @@ interface AttentionDto {
   correctable?: boolean;
 }
 
+interface WarnedDto {
+  id: string;
+  sequence: string;
+  registerId: string;
+  soldAt: string;
+  total: number;
+  mode: string;
+  warnings: { code: number; text: string }[];
+}
+
 function FailedSalesSection() {
   const [items, setItems] = useState<AttentionDto[] | null>(null);
+  const [warned, setWarned] = useState<WarnedDto[]>([]);
   const [result, setResult] = useState<string | null>(null);
   const { busy, error, run } = useAction();
-  const load = () => call<{ items: AttentionDto[] }>("/api/ucet/trzby-k-vyrizeni").then((d) => setItems(d.items));
+  const load = () =>
+    call<{ items: AttentionDto[]; warnings?: WarnedDto[] }>("/api/ucet/trzby-k-vyrizeni").then((d) => {
+      setItems(d.items);
+      setWarned(d.warnings ?? []);
+    });
   useEffect(() => {
     void load().catch(() => setItems([]));
   }, []);
-  if (!items || items.length === 0) return null;
+  if (!items || (items.length === 0 && warned.length === 0)) return null;
+  if (items.length === 0) return <FsWarnings items={warned} />;
   const resend = (ids: string[], action: "resend" | "rebuild" = "resend") =>
     void run(async () => {
       const r = await call<{ requeued: number; confirmed: number; skipped?: { reason: string }[] }>("/api/ucet/trzby-k-vyrizeni", { method: "POST", json: { ids, action } });
@@ -1071,6 +1091,33 @@ function FailedSalesSection() {
         ))}
       </ul>
       <ErrorText error={error} />
+      {warned.length > 0 && <FsWarnings items={warned} />}
+    </section>
+  );
+}
+
+/** Upozornění Finanční správy (Varovani) k přijatým tržbám – tržba má POK, ale FS hlásí nesoulad (A Дрібне 15). */
+function FsWarnings({ items }: { items: WarnedDto[] }) {
+  const fmt = new Intl.DateTimeFormat("cs-CZ", { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Prague" });
+  return (
+    <section className="mt-6 rounded-3xl border border-line bg-white p-6">
+      <h2 className="text-lg font-bold">Upozornění Finanční správy ({items.length})</h2>
+      <p className="mt-1 text-[15px] text-ink-soft">Tyto tržby Finanční správa přijala, ale připojila k nim upozornění. Zkontrolujte údaje (EIČ, čas v pokladně), ať se to neopakuje.</p>
+      <ul className="mt-3 divide-y divide-line">
+        {items.map((w) => (
+          <li key={w.id} className="py-2 text-[15px]">
+            <p className="font-semibold">
+              {fmt.format(new Date(w.soldAt))} · {formatCzk(w.total)} · {w.registerId}/{w.sequence}
+              {w.mode !== "production" && <span className="chip ml-2 bg-surface-2 text-ink-soft">{MODE_LABEL[w.mode] ?? w.mode}</span>}
+            </p>
+            {w.warnings.map((x, i) => (
+              <p key={i} className="text-sm text-warn-700">
+                {x.text} (kód {x.code})
+              </p>
+            ))}
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { getConfig, getDevice, getMeta, pruneOld, setMeta, deleteMeta } from "@/lib/pos/db";
+import { getConfig, getDevice, getMeta, pruneOld, rejectedSales, setMeta, deleteMeta, unsettledSales } from "@/lib/pos/db";
 import { createLocalSale, refundInput } from "@/lib/pos/sale-factory";
 import { DeviceRevokedError, configVersion, isConfigStale, onSyncChange, refreshConfig, startAutoSync, syncNow } from "@/lib/pos/sync";
 import type { DeviceCredentials, LocalSale, PosConfig } from "@/lib/pos/types";
@@ -193,6 +193,9 @@ export function PosApp() {
             type="button"
             className="mt-3 block w-full text-sm text-muted underline"
             onClick={async () => {
+              // neodeslané tržby zůstanou v zařízení, ale odejdou až po nové registraci (A r1 nové Дрібне 6)
+              const waiting = (await unsettledSales()).length + (await rejectedSales()).length;
+              if (waiting && !window.confirm(`V zařízení ${waiting === 1 ? "je 1 neodeslaná tržba" : `je ${waiting} neodeslaných tržeb`}. Zůstanou uložené, ale Finanční správě se odešlou až po nové registraci pokladny. Pokračovat?`)) return;
               await deleteMeta("device");
               await deleteMeta("config");
               location.reload();

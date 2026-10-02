@@ -5,6 +5,7 @@ import { getDb, schema } from "@ez/db";
 import { buildSale, certificateEnvironment } from "@ez/fiscal-core";
 import { CertificateError, parseP12Safe } from "@ez/fiscal-core/server";
 import { HttpError } from "./auth";
+import { rateLimit } from "./rate-limit";
 import { accountMode, requeueBlocked, storeCertificate, transportFor, type EetMode } from "./fiscal";
 
 export type CertEnvironment = "playground" | "production";
@@ -69,6 +70,8 @@ async function defaultEnvironment(accountId: string, mode: EetMode): Promise<Eet
  * jednotky), ale tržbu neeviduje. Úspěch se zapíše k aktivnímu certifikátu daného prostředí.
  */
 export async function verifyEnvironment(accountId: string, unitId: string, requested?: EetMode) {
+  // každé ověření je zpráva do FS: nejvýš 6 za 10 minut na účet (A Дрібне 13)
+  if (!rateLimit(`overeni:${accountId}`, 6, 600)) throw new HttpError(429, "Ověřovacích odeslání bylo teď příliš mnoho. Zkuste to za pár minut.");
   const db = getDb();
   const account = await db.query.accounts.findFirst({ where: eq(schema.accounts.id, accountId) });
   if (!account) throw new HttpError(404, "Účet neexistuje");
@@ -106,6 +109,7 @@ export async function verifyEnvironment(accountId: string, unitId: string, reque
     // ostré tržby čekající na ověření nového certifikátu (Д-6) se hned vrátí do fronty
     await requeueBlocked(accountId, ["CERT_NOT_VERIFIED"], mode);
   }
-  if (result.ok) return { ok: true as const, mode, test: result.test, warnings: result.warnings };
+  // ukázkový režim nic do FS neposílá – výsledek je jen simulace, ne ověření certifikátu (A Дрібне 13)
+  if (result.ok) return { ok: true as const, mode, test: result.test, warnings: result.warnings, ...(mode === "mock" ? { simulated: true as const } : {}) };
   return { ok: false as const, mode, code: result.code, message: result.message, retryable: result.retryable };
 }

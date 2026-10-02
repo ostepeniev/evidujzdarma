@@ -89,7 +89,7 @@ export function StatusBar({
           {!online ? "Offline" : "Online"}
           {pending.n > 0 && deadline && (
             <span>
-              · {pending.n} čeká ({formatRemaining(deadline)})
+              · {pending.n} čeká ({urg === "overdue" ? "lhůta uplynula" : formatRemaining(deadline)})
             </span>
           )}
         </button>

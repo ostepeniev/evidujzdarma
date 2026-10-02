@@ -45,6 +45,8 @@ export async function loadReceipt(saleId: string): Promise<ReceiptData | null> {
       confirmationCode: sale.confirmationCode,
       securityCode: null,
       mode: sale.mode === "production" ? "production" : "test",
+      environment: sale.mode === "production" || sale.mode === "playground" ? sale.mode : "mock",
+      status: sale.status,
       showCode: account.receiptShowPok,
     },
     url: absoluteUrl(`/u/${sale.id}`),

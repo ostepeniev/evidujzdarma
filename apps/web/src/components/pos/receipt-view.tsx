@@ -42,6 +42,8 @@ export function receiptTextFor(sale: LocalSale, config: PosConfig, width = 42): 
         confirmationCode: sale.confirmationCode,
         securityCode: null,
         mode: sale.mode === "production" ? "production" : "test",
+        environment: sale.mode,
+        status: sale.status,
         showCode: config.account.receiptShowPok !== false,
       },
       cashReceived: sale.cashReceived ?? undefined,
@@ -98,11 +100,12 @@ export function ReceiptView({
           </p>
         )}
         <div className="mt-4 flex flex-col items-center gap-2">
-          <StatusChip status={sale.status} />
-          {sale.confirmationCode && <p className="break-all font-mono text-xs text-ink-soft">POK {sale.confirmationCode}</p>}
+          <StatusChip status={sale.status} mode={sale.mode} />
+          {sale.confirmationCode && sale.mode !== "mock" && <p className="break-all font-mono text-xs text-ink-soft">POK {sale.confirmationCode}</p>}
           {pending && (
             <p className={`text-sm ${urg === "critical" || urg === "overdue" ? "text-danger-600" : "text-ink-soft"}`}>
-              {navigator.onLine ? "Odesílám Finanční správě…" : "Jste offline – tržba je uložená a odešle se sama."} Lhůta: {formatRemaining(deadline)}.
+              {navigator.onLine ? "Odesílám Finanční správě…" : "Jste offline – tržba je uložená a odešle se sama."}{" "}
+              {urg === "overdue" ? "Lhůta 48 hodin uplynula – připojte zařízení k internetu, tržba se odešle hned, jak to půjde." : `Lhůta: ${formatRemaining(deadline)}.`}
             </p>
           )}
           {sale.status === "rejected" && (

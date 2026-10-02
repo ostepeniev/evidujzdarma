@@ -1,11 +1,22 @@
 import { z } from "zod";
-import { BLOCK_TEXT, processSale, rebuildSnapshots, requeueSales, salesNeedingAttention, salesStatus } from "@/lib/server/fiscal";
+import { BLOCK_TEXT, processSale, rebuildSnapshots, requeueSales, salesNeedingAttention, salesStatus, salesWithWarnings } from "@/lib/server/fiscal";
 import { ownerRoute, parseJson } from "@/lib/server/route-helpers";
 
 /** Tržby odmítnuté Finanční správou nebo zablokované (certifikát, EIČ…) – čekají na vlastníka (R1.3). */
 export const GET = ownerRoute(async ({ accountId }) => {
-  const rows = await salesNeedingAttention(accountId);
+  const [rows, warned] = await Promise.all([salesNeedingAttention(accountId), salesWithWarnings(accountId)]);
   return Response.json({
+    // upozornění FS (Varovani) k přijatým tržbám za 30 dní (A Дрібне 15)
+    warnings: warned.map((w) => ({
+      id: w.id,
+      status: w.status,
+      sequence: w.sequence,
+      registerId: w.registerId,
+      soldAt: w.soldAt.toISOString(),
+      total: w.total,
+      mode: w.mode,
+      warnings: w.warnings ?? [],
+    })),
     items: rows.map((r) => ({
       id: r.id,
       status: r.status,

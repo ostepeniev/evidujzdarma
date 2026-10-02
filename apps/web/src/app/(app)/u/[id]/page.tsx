@@ -10,6 +10,12 @@ import { SITE } from "@/lib/site";
 export const metadata: Metadata = { title: "Účtenka", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
+/** Proč na účtence chybí POK (A r1 nové Дрібне 1). */
+const STATUS_TEXT: Record<string, string> = {
+  not_required: "Tato tržba se do EET neeviduje (např. bankovní převod na základě faktury).",
+  rejected: "Tržba zatím není potvrzená Finanční správou – obchodník ji řeší.",
+};
+
 export default async function ReceiptPage({ params }: PageProps<"/u/[id]">) {
   const { id } = await params;
   const r = hasDatabase() ? await loadReceipt(id) : null;
@@ -105,15 +111,17 @@ export default async function ReceiptPage({ params }: PageProps<"/u/[id]">) {
               {s.registerId} / {s.unitId}
             </dd>
           </div>
-          {fiscal.showCode === false ? null : fiscal.confirmationCode ? (
+          {fiscal.environment === "mock" ? (
+            <p className="font-semibold text-warn-700">Ukázkový doklad – tržba se Finanční správě neodesílá.</p>
+          ) : fiscal.showCode === false ? null : fiscal.confirmationCode ? (
             <div>
               <dt>POK (potvrzovací kód FS)</dt>
               <dd className="break-all font-mono text-xs">{fiscal.confirmationCode}</dd>
             </div>
           ) : (
-            <p>Tržba čeká na potvrzení Finanční správou.</p>
+            <p>{STATUS_TEXT[fiscal.status ?? ""] ?? "Tržba čeká na potvrzení Finanční správou."}</p>
           )}
-          {fiscal.mode === "test" && <p className="font-semibold text-warn-700">Testovací doklad – tržba nebyla evidována v ostrém provozu.</p>}
+          {fiscal.environment === "playground" && <p className="font-semibold text-warn-700">Testovací doklad – tržba nebyla evidována v ostrém provozu.</p>}
         </dl>
         {m.footer && <p className="mt-4 text-center text-sm">{m.footer}</p>}
       </article>

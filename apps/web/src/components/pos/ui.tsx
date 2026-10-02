@@ -29,7 +29,9 @@ const STATUS: Record<LocalStatus, { label: string; cls: string }> = {
   not_required: { label: "Neeviduje se", cls: "bg-surface-2 text-ink-soft" },
 };
 
-export function StatusChip({ status }: { status: LocalStatus }) {
+export function StatusChip({ status, mode }: { status: LocalStatus; mode?: PosMode }) {
+  // ukázkový „POK“ není potvrzení Finanční správy – čip to nesmí tvrdit (A r1 nové Дрібне 3)
+  if (mode === "mock" && status === "confirmed") return <span className="chip bg-surface-2 text-ink-soft">Ukázka – bez FS</span>;
   const s = STATUS[status];
   return <span className={`chip ${s.cls}`}>{s.label}</span>;
 }

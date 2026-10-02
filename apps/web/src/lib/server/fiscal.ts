@@ -737,6 +737,25 @@ export async function salesNeedingAttention(accountId: string) {
     .limit(200);
 }
 
+/** Tržby za posledních 30 dní, ke kterým FS připojila upozornění (Varovani) – vlastník je má vidět (A Дрібне 15). */
+export async function salesWithWarnings(accountId: string, since = new Date(Date.now() - 30 * 86_400_000)) {
+  return getDb()
+    .select({
+      id: schema.sales.id,
+      status: schema.sales.status,
+      sequence: schema.sales.sequence,
+      registerId: schema.sales.registerId,
+      soldAt: schema.sales.soldAt,
+      total: schema.sales.total,
+      mode: schema.sales.mode,
+      warnings: schema.sales.warnings,
+    })
+    .from(schema.sales)
+    .where(and(eq(schema.sales.accountId, accountId), gte(schema.sales.soldAt, since), sql`jsonb_array_length(coalesce(${schema.sales.warnings}, '[]'::jsonb)) > 0`))
+    .orderBy(desc(schema.sales.soldAt))
+    .limit(100);
+}
+
 /** Fronta pro cron: tržby čekající na (opakované) odeslání, s omezeným souběhem. */
 export async function processPending(limit = 50, concurrency = 4): Promise<{ processed: number }> {
   const db = getDb();

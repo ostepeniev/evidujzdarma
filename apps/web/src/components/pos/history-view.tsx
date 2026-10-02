@@ -63,7 +63,7 @@ export function HistoryView({ onOpen }: { onOpen: (id: string) => void }) {
                   </span>
                   <span className="text-right">
                     <span className={`block font-semibold tabular-nums ${s.total < 0 ? "text-danger-600" : ""}`}>{kc(s.total)}</span>
-                    <StatusChip status={s.status} />
+                    <StatusChip status={s.status} mode={s.mode} />
                   </span>
                 </button>
               </li>

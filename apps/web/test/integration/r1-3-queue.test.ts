@@ -107,8 +107,10 @@ describe("R1.3 – blocked by account data", () => {
     expect(fake.calls).toHaveLength(0);
     expect((await salesNeedingAttention(s.account.id)).map((r) => r.id)).toEqual([sale.id]);
 
-    expect(await runReminders()).toBeGreaterThan(0);
-    await runReminders();
+    // denní přehled chodí od 7:00 pražského času – test běží „dopoledne“
+    const morning = new Date(`${new Date().toISOString().slice(0, 10)}T08:30:00Z`);
+    expect(await runReminders(morning)).toBeGreaterThan(0);
+    await runReminders(morning);
     const mails = await getDb().select().from(schema.emailOutbox).where(eq(schema.emailOutbox.to, s.user.email));
     expect(mails.filter((m) => m.dedupeKey?.startsWith("attention:"))).toHaveLength(1);
 
