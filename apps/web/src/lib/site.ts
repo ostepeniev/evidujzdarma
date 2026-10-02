@@ -12,15 +12,21 @@ export const SITE = {
 } as const;
 
 /**
- * Provozovatel. Údaje se zobrazují v patičce a v "O nás" — DOPLŇTE skutečné IČO a adresu
- * před spuštěním. Prázdné hodnoty se nevykreslí (nevymýšlíme údaje).
+ * Provozovatel (§ 435 OZ) – veřejné údaje z obchodního rejstříku (ARES/VR, ověřeno 2. 10. 2026).
+ * Jsou v kódu, ne v env: musí být na webu, v podmínkách i v každém e-mailu vždy (Р9).
  */
 export const OPERATOR = {
   name: "Swipe Scape s.r.o.",
-  ico: process.env.NEXT_PUBLIC_OPERATOR_ICO ?? "",
-  address: process.env.NEXT_PUBLIC_OPERATOR_ADDRESS ?? "",
-  registry: process.env.NEXT_PUBLIC_OPERATOR_REGISTRY ?? "",
+  ico: "22269134",
+  dic: "CZ22269134",
+  address: "Chebská 38/5, Dvory, 360 06 Karlovy Vary",
+  registry: "zapsaná v obchodním rejstříku vedeném Krajským soudem v Plzni, oddíl C, vložka 47634",
 } as const;
+
+/** Úplná identifikace provozovatele na jednom řádku (patička, podmínky, e-maily). */
+export function operatorLine(): string {
+  return `${OPERATOR.name}, IČO ${OPERATOR.ico}, DIČ ${OPERATOR.dic}, se sídlem ${OPERATOR.address}, ${OPERATOR.registry}`;
+}
 
 export function absoluteUrl(path = "/"): string {
   return `${SITE_URL}${path.startsWith("/") ? path : `/${path}`}`;

@@ -5,12 +5,12 @@
 // podnikatele) a potřebu zpracovatelské smlouvy dle čl. 28 GDPR v obchodních podmínkách; (4) doplnit jména
 // zpracovatelů (hosting v EU, doručování e-mailů, později platební partner a poskytovatel AI přehledu – u AI ověřit,
 // že data neopustí EU); (5) cookies – nyní jen nezbytné (přihlášení) a localStorage pro kód doporučení; při nasazení
-// analytiky doplnit; (6) identifikační údaje správce (IČO, sídlo) – doplnit do env NEXT_PUBLIC_OPERATOR_*.
+// analytiky doplnit; (6) identifikační údaje správce jsou v lib/site.ts (OPERATOR, ověřeno v OR 2. 10. 2026).
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { PageHeader } from "@/components/page-header";
-import { OPERATOR, SITE } from "@/lib/site";
+import { SITE, operatorLine } from "@/lib/site";
 
 const VERSION_DATE = "2026-10-01";
 const VERSION_LABEL = "1. 10. 2026";
@@ -62,10 +62,7 @@ const PURPOSES: readonly { purpose: string; data: string; basis: string; retenti
 ];
 
 function controllerIdentity(): string {
-  const parts: string[] = [OPERATOR.name];
-  if (OPERATOR.ico) parts.push(`IČO ${OPERATOR.ico}`);
-  if (OPERATOR.address) parts.push(`se sídlem ${OPERATOR.address}`);
-  return parts.join(", ");
+  return operatorLine();
 }
 
 const SECTIONS: readonly { id: string; title: string; body: ReactNode }[] = [

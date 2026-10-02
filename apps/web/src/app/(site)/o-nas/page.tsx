@@ -41,7 +41,6 @@ const PRINCIPLES = [
 ];
 
 export default function AboutPage() {
-  const hasOperatorDetails = Boolean(OPERATOR.ico || OPERATOR.address || OPERATOR.registry);
   return (
     <>
       <JsonLd
@@ -168,24 +167,14 @@ export default function AboutPage() {
               </dd>
               <dt className="font-semibold text-ink">Provozovatel</dt>
               <dd className="text-ink-soft">{OPERATOR.name}</dd>
-              {OPERATOR.ico && (
-                <>
-                  <dt className="font-semibold text-ink">IČO</dt>
-                  <dd className="text-ink-soft">{OPERATOR.ico}</dd>
-                </>
-              )}
-              {OPERATOR.address && (
-                <>
-                  <dt className="font-semibold text-ink">Sídlo</dt>
-                  <dd className="text-ink-soft">{OPERATOR.address}</dd>
-                </>
-              )}
-              {OPERATOR.registry && (
-                <>
-                  <dt className="font-semibold text-ink">Zápis</dt>
-                  <dd className="text-ink-soft">{OPERATOR.registry}</dd>
-                </>
-              )}
+              <dt className="font-semibold text-ink">IČO / DIČ</dt>
+              <dd className="text-ink-soft">
+                {OPERATOR.ico} / {OPERATOR.dic}
+              </dd>
+              <dt className="font-semibold text-ink">Sídlo</dt>
+              <dd className="text-ink-soft">{OPERATOR.address}</dd>
+              <dt className="font-semibold text-ink">Zápis</dt>
+              <dd className="text-ink-soft">{OPERATOR.registry}</dd>
               <dt className="font-semibold text-ink">Oprava údajů</dt>
               <dd className="text-ink-soft">
                 Námitku proti zobrazení údajů v katalogu firem nebo žádost o opravu podáte přes{" "}
@@ -195,9 +184,6 @@ export default function AboutPage() {
                 .
               </dd>
             </dl>
-            {!hasOperatorDetails && (
-              <p className="mt-6 text-sm text-muted">Identifikační údaje provozovatele doplníme před spuštěním pokladny.</p>
-            )}
             <p className="mt-6 text-sm text-muted">
               Na dotazy k vašim daňovým povinnostem neodpovídáme závazně – obraťte se na daňového poradce nebo na Finanční správu.
             </p>

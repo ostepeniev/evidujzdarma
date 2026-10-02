@@ -21,7 +21,9 @@ export function organizationLd(): Ld {
     parentOrganization: {
       "@type": "Organization",
       name: OPERATOR.name,
-      ...(OPERATOR.ico ? { identifier: OPERATOR.ico, taxID: OPERATOR.ico } : {}),
+      identifier: OPERATOR.ico,
+      taxID: OPERATOR.dic,
+      address: OPERATOR.address,
     },
   };
 }

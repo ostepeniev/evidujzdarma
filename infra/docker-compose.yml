@@ -50,13 +50,9 @@ services:
       target: web
       args:
         NEXT_PUBLIC_SITE_URL: https://${DOMAIN}
-        NEXT_PUBLIC_OPERATOR_ICO: ${OPERATOR_ICO:-}
-        NEXT_PUBLIC_OPERATOR_ADDRESS: ${OPERATOR_ADDRESS:-}
     restart: unless-stopped
     environment:
       <<: *app-env
-      NEXT_PUBLIC_OPERATOR_ICO: ${OPERATOR_ICO:-}
-      NEXT_PUBLIC_OPERATOR_ADDRESS: ${OPERATOR_ADDRESS:-}
     depends_on:
       migrate: { condition: service_completed_successfully }
 

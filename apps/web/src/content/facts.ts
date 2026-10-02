@@ -157,7 +157,7 @@ export const TIMELINE: readonly TimelineItem[] = [
     date: "2026-12-01",
     dateLabel: "1. 12. 2026",
     title: "Státní aplikace MOJE eet",
-    action: "Vyberte pokladnu a vyzkoušejte si ji – státní MOJE eet, nebo pokladnu s prací bez signálu.",
+    action: "Vyberte pokladnu a vyzkoušejte si ji – státní MOJE eet, nebo jinou pokladnu, například EvidujZdarma.",
     source: SOURCES.harmonogram,
   },
   {
@@ -328,7 +328,7 @@ export const FACTS = {
   },
   mojeEet: {
     summary:
-      "MOJE eet je bezplatná webová aplikace Finanční správy (od 1. 12. 2026): až 2 evidenční jednotky a přístup pro 2 zaměstnance, katalog zboží, PDF doklady, dvoufázové ověření při přihlášení. Pro provoz potřebuje připojení k internetu.",
+      "MOJE eet je bezplatná webová aplikace Finanční správy (od 1. 12. 2026): až 2 evidenční jednotky a přístup pro 2 zaměstnance, katalog zboží, PDF doklady, dvoufázové ověření při přihlášení. Zda bude fungovat bez připojení k internetu, Finanční správa zatím nezveřejnila; podle dostupných informací připojení vyžaduje.",
     sources: [SOURCES.mojeEet, SOURCES.mojeEet2fa],
   },
 } as const;

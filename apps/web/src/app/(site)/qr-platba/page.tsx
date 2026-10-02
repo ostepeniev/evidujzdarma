@@ -3,6 +3,7 @@ import { Faq } from "@/components/faq";
 import { PageHeader } from "@/components/page-header";
 import { QrGenerator } from "@/components/qr-generator";
 import { ToolCta } from "@/components/tool-cta";
+import { SOURCES } from "@/content/facts";
 import { JsonLd, faqLd } from "@/lib/jsonld";
 
 export const metadata: Metadata = {
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
 const FAQ = [
   {
     q: "Je QR platba tržbou, kterou musím evidovat v EET 2.0?",
-    a: "Záleží na tom, jak zákon o evidenci tržeb vymezuje evidované platby. Bezhotovostní převod na účet se v původní EET neevidoval; jak je tomu v EET 2.0, popisujeme v návodu Kontaktní platba: co se eviduje a co ne. V pokladně EvidujZdarma můžete QR platbu zaznamenat jako samostatný způsob úhrady.",
+    a: "Ano, pokud vám zákazník zaplatí QR kódem při osobním kontaktu – v provozovně, u stánku nebo u vás na místě. Podle Ministerstva financí a eet.gov.cz se taková platba eviduje stejně jako hotovost nebo karta. Neeviduje se platba na dálku, například přes QR kód na webu e-shopu nebo úhrada faktury převodem. Bankovní převod, který zákazník odešle na místě bez QR kódu, oficiální zdroje zatím jednoznačně neřeší.",
   },
   {
     q: "Jaký formát QR kódu generátor používá?",
@@ -30,6 +31,9 @@ const FAQ = [
     a: "Některé starší bankovní aplikace diakritiku v QR platbě zobrazují chybně, proto ji pro jistotu odstraňujeme. Zpráva může mít nejvýše 60 znaků, jméno příjemce 35 znaků.",
   },
 ];
+
+/** Zdroje k odpovědi o evidenci QR platby. */
+const FAQ_SOURCES = [SOURCES.kdoMusi, SOURCES.mfPredstavuje];
 
 export default function QrPage() {
   return (
@@ -48,6 +52,17 @@ export default function QrPage() {
         <section className="mx-auto mt-14 max-w-3xl">
           <h2 className="mb-6 text-2xl font-bold">Časté otázky</h2>
           <Faq items={FAQ} />
+          <p className="mt-3 text-base text-muted">
+            Zdroje:{" "}
+            {FAQ_SOURCES.map((s, i) => (
+              <span key={s.url}>
+                {i > 0 && " · "}
+                <a href={s.url} rel="noopener">
+                  {s.label}
+                </a>
+              </span>
+            ))}
+          </p>
         </section>
         <ToolCta text="V pokladně EvidujZdarma se QR kód na přesnou částku zobrazí jedním dotykem a platba se rovnou zapíše do denního přehledu." />
       </div>

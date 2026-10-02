@@ -1,4 +1,4 @@
-import { SITE, SITE_URL } from "./site";
+import { SITE, SITE_URL, operatorLine } from "./site";
 import { TIMELINE } from "@/content/facts";
 
 export type EmailTemplate = "prereg-confirm" | "dis-launch" | "app-ready" | "login-link" | "receipt" | "notice";
@@ -23,7 +23,7 @@ function layout(title: string, bodyHtml: string, footerHtml = ""): string {
 <tr><td style="padding:8px 28px 28px;font-size:16px;line-height:1.6">${bodyHtml}</td></tr>
 </table>
 <p style="max-width:560px;font-size:12px;color:#66756e;line-height:1.5;margin:16px auto 0">
-${esc(SITE.independenceNotice)} ${footerHtml}</p>
+${esc(SITE.independenceNotice)} Provozovatel: ${esc(operatorLine())}. ${footerHtml}</p>
 </td></tr></table></body></html>`;
 }
 
@@ -45,7 +45,13 @@ interface PlanStep {
   text: string;
 }
 
+/** Každý e-mail nese identifikaci provozovatele (§ 435 OZ) – v HTML i v textové části. */
 export function renderEmail(template: EmailTemplate, p: Record<string, unknown>): RenderedEmail {
+  const e = renderBody(template, p);
+  return { ...e, text: `${e.text}\n\n--\n${SITE.name} · Provozovatel: ${operatorLine()}` };
+}
+
+function renderBody(template: EmailTemplate, p: Record<string, unknown>): RenderedEmail {
   switch (template) {
     case "prereg-confirm": {
       const confirmUrl = `${SITE_URL}/registrace/potvrzeni?token=${encodeURIComponent(String(p.confirmToken))}`;

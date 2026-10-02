@@ -68,7 +68,7 @@ git clone https://github.com/ostepeniev/evidujzdarma.git && cd evidujzdarma/infr
 cp .env.production.example .env
 # згенеруйте секрети:
 for k in POSTGRES_PASSWORD APP_SECRET CRON_SECRET MASTER_KEY; do echo "$k=$(openssl rand -base64 32)"; done
-nano .env          # вставте секрети, DOMAIN, SMTP_URL, OPERATOR_ICO, OPERATOR_ADDRESS
+nano .env          # вставте секрети, DOMAIN, SMTP_URL, ALERT_EMAIL (дані оператора — у коді, lib/site.ts)
 docker compose up -d --build
 docker compose logs -f web worker
 ```

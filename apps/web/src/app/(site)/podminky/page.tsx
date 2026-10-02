@@ -4,13 +4,13 @@
 // (3) obsah přílohy SLA k Premium (dostupnost, kompenzace, doba reakce podpory) – zatím nevydána; (4) lhůty
 // v čl. 10 a 11 (30 dní na export po ukončení, 60 dní výpověď ze strany provozovatele, 30 dní oznámení změn);
 // (5) zda data pokladny zpracováváme jako zpracovatel (čl. 28 GDPR) a zda je třeba samostatná zpracovatelská smlouva;
-// (6) identifikační údaje provozovatele (IČO, sídlo, zápis v OR) – doplnit do env NEXT_PUBLIC_OPERATOR_*.
+// (6) identifikační údaje provozovatele jsou v lib/site.ts (OPERATOR, ověřeno v OR 2. 10. 2026).
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { PageHeader } from "@/components/page-header";
 import { FACTS } from "@/content/facts";
-import { OPERATOR, SITE } from "@/lib/site";
+import { SITE, operatorLine } from "@/lib/site";
 
 const VERSION_DATE = "2026-10-01";
 const VERSION_LABEL = "1. 10. 2026";
@@ -23,11 +23,7 @@ export const metadata: Metadata = {
 };
 
 function operatorIdentity(): string {
-  const parts: string[] = [OPERATOR.name];
-  if (OPERATOR.ico) parts.push(`IČO ${OPERATOR.ico}`);
-  if (OPERATOR.address) parts.push(`se sídlem ${OPERATOR.address}`);
-  if (OPERATOR.registry) parts.push(OPERATOR.registry);
-  return parts.join(", ");
+  return operatorLine();
 }
 
 const SECTIONS: readonly { id: string; title: string; body: ReactNode }[] = [

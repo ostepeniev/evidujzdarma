@@ -76,10 +76,10 @@ export const eetBezInternetu: Guide = {
     },
     {
       q: "Funguje státní aplikace MOJE eet bez signálu?",
-      a: "Podle zveřejněných informací potřebuje MOJE eet pro provoz připojení k internetu. Pokladna EvidujZdarma tržby bez signálu ukládá a odesílá je automaticky později.",
+      a: "Finanční správa zatím nezveřejnila, zda MOJE eet bude fungovat bez připojení; podle dostupných informací ([Podnikatel.cz](https://www.podnikatel.cz/clanky/jak-bude-fungovat-aplikace-zdarma-moje-eet-zjistili-jsme-detaily-od-financni-spravy/)) připojení vyžaduje. Pokladna EvidujZdarma tržby bez signálu ukládá a odešle je automaticky později.",
     },
   ],
-  sources: [SOURCES.prakticke, SOURCES.fsFaq, SOURCES.prezident, SOURCES.pokuty],
+  sources: [SOURCES.prakticke, SOURCES.fsFaq, SOURCES.prezident, SOURCES.pokuty, SOURCES.mojeEet],
   related: ["eet-2-0-kompletni-pruvodce", "evidencni-jednotka", "pokuty-eet"],
   published: "2026-10-01",
   updated: "2026-10-01",

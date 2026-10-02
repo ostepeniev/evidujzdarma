@@ -1,3 +1,4 @@
+import { SITE } from "@/lib/site";
 import { COMPARISON_ROWS, COMPARISON_SOURCES } from "@/content/comparison";
 
 export function ComparisonTable() {
@@ -45,6 +46,10 @@ export function ComparisonTable() {
         . Státní aplikace má být dostupná od 1. 12. 2026 na{" "}
         <a href="https://eet.gov.cz" className="underline underline-offset-2" rel="noopener">
           eet.gov.cz
+        </a>
+        . Stav k 2. 10. 2026. MOJE eet zatím není spuštěná – údaje upřesníme podle oficiálního popisu Finanční správy. Pokud najdete nepřesnost, napište nám na{" "}
+        <a href={`mailto:${SITE.email}`} className="underline underline-offset-2">
+          {SITE.email}
         </a>
         .
       </p>

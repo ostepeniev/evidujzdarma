@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { OPERATOR, SITE } from "@/lib/site";
+import { SITE, operatorLine } from "@/lib/site";
 import { Logo } from "./logo";
 
 const COLUMNS = [
@@ -82,10 +82,7 @@ export function SiteFooter() {
       <div className="border-t border-line">
         <div className="container-page flex flex-col gap-2 py-6 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">
           <p>
-            Provozovatel: {OPERATOR.name}
-            {OPERATOR.ico && <>, IČO {OPERATOR.ico}</>}
-            {OPERATOR.address && <>, {OPERATOR.address}</>}
-            {OPERATOR.registry && <>, {OPERATOR.registry}</>} ·{" "}
+            Provozovatel: {operatorLine()} ·{" "}
             <a href={`mailto:${SITE.email}`} className="underline underline-offset-2">
               {SITE.email}
             </a>
