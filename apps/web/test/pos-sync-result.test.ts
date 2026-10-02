@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyPolledStatuses, applyServerResult, clockOffsetFrom, correctedNow, planSync } from "@/lib/pos/sync-result";
+import { accountModeChanged, applyPolledStatuses, applyServerResult, clockOffsetFrom, correctedNow, planSync } from "@/lib/pos/sync-result";
 
 describe("POS handling of server results (R1.1)", () => {
   it("keeps a sale in the queue on a temporary server error", () => {
@@ -41,5 +41,15 @@ describe("POS sync plan (R1.8)", () => {
     const out = new Map(applyPolledStatuses(["a", "b"], [{ id: "a", status: "confirmed", confirmationCode: "POK", lastError: null }]));
     expect(out.get("a")).toMatchObject({ status: "confirmed", confirmationCode: "POK" });
     expect(out.get("b")).toEqual({ status: "local" });
+  });
+});
+
+describe("R5.1 – POS notices the account switched mode", () => {
+  it("a different mode reported by the server means stale configuration", () => {
+    expect(accountModeChanged("production", "mock")).toBe(true);
+    expect(accountModeChanged("production", "production")).toBe(false);
+    // starší server bez pole nebo chybějící konfigurace nevyvolá falešný poplach
+    expect(accountModeChanged(undefined, "mock")).toBe(false);
+    expect(accountModeChanged("mock", undefined)).toBe(true);
   });
 });

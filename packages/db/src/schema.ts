@@ -131,6 +131,8 @@ export const accounts = pgTable(
     iban: varchar("iban", { length: 34 }),
     /** mock = ukázkový režim bez FS | playground = testovací prostředí FS | production = ostrý provoz */
     eetMode: varchar("eet_mode", { length: 16 }).notNull().default("mock"),
+    /** kdy se režim naposledy změnil – tržba v jiném režimu prodaná po tomto čase jde do karantény (R5.1) */
+    eetModeChangedAt: timestamp("eet_mode_changed_at", { withTimezone: true }).notNull().defaultNow(),
     referredByAccountantId: uuid("referred_by_accountant_id"),
     /** účet zrušen vlastníkem – data cron smaže po 30 dnech (podmínky čl. 11.3) */
     closedAt: timestamp("closed_at", { withTimezone: true }),

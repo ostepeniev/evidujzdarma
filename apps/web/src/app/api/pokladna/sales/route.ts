@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { HttpError, authenticateDevice, errorResponse } from "@/lib/server/auth";
-import { processSale, salesStatus } from "@/lib/server/fiscal";
+import { accountMode, processSale, salesStatus } from "@/lib/server/fiscal";
 import { quarantineSale } from "@/lib/server/quarantine";
 import { DeviceSaleSchema, ingestSales, type IngestResult } from "@/lib/server/sales";
 
@@ -44,6 +44,8 @@ export async function POST(req: Request) {
     const byId = new Map(statuses.map((s) => [s.id, s]));
     return Response.json({
       results: results.map((r) => ({ ...r, ...(byId.get(r.id) ?? {}) })),
+      // pokladna podle toho pozná, že má staré nastavení, a před dalším prodejem ho načte (R5.1)
+      accountMode: accountMode(ctx.account),
     });
   } catch (e) {
     return errorResponse(e);
@@ -55,7 +57,7 @@ export async function GET(req: Request) {
   try {
     const ctx = await authenticateDevice(req);
     const ids = (new URL(req.url).searchParams.get("ids") ?? "").split(",").filter((x) => /^[0-9a-f-]{36}$/i.test(x)).slice(0, 200);
-    return Response.json({ statuses: await salesStatus(ids, ctx.account.id) });
+    return Response.json({ statuses: await salesStatus(ids, ctx.account.id), accountMode: accountMode(ctx.account) });
   } catch (e) {
     return errorResponse(e);
   }

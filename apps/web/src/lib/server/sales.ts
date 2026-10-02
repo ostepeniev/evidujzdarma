@@ -4,6 +4,7 @@ import { z } from "zod";
 import { getDb, schema } from "@ez/db";
 import { PAYMENT_METHODS, SaleValidationError, buildSale, deadlineFor, evidencedAmounts } from "@ez/fiscal-core";
 import type { DeviceContext } from "./auth";
+import { accountMode, type EetMode } from "./fiscal";
 import { markIngested, quarantineSale } from "./quarantine";
 import { verifyApproval } from "./staff-pin";
 
@@ -106,6 +107,8 @@ async function checkStaffAndRefund(accountId: string, deviceId: string, input: D
   return approver.id;
 }
 
+const MODE_LABEL: Record<EetMode, string> = { mock: "ukázkový", playground: "Playground", production: "ostrý provoz" };
+
 /**
  * Uloží tržby z pokladny. Idempotentní: stejné `id` se stejným obsahem se uloží jen jednou.
  * Trvalé problémy (datum, jednotka, konflikt) jdou do karantény; dočasné chyby serveru vrací
@@ -130,6 +133,18 @@ export async function ingestSales(ctx: DeviceContext, inputs: DeviceSale[]): Pro
       const soldAtMs = Date.parse(input.soldAt);
       if (soldAtMs - Date.now() > MAX_FUTURE_MS) throw new IngestRejection("FUTURE_DATE", "Datum tržby je v budoucnosti – zkontrolujte čas v zařízení.");
       if (Date.now() - soldAtMs > MAX_PAST_MS) throw new IngestRejection("TOO_OLD", "Tržba je starší než 45 dní.");
+      // Pokladna se starou konfigurací (kiosk, offline při přepnutí) nesmí po přepnutí účtu prodávat
+      // v předchozím režimu – „mock“ by dostal falešný POK a do FS by nic nešlo (R5.1). Tržby prodané
+      // před přepnutím zůstávají ve svém režimu (Р3, T8/T9). Už přijatá tržba se posuzuje dál podle id.
+      if (mode !== accountMode(account) && soldAtMs >= account.eetModeChangedAt.getTime()) {
+        const known = await db.query.sales.findFirst({ where: and(eq(schema.sales.id, input.id), eq(schema.sales.accountId, account.id)), columns: { id: true } });
+        if (!known) {
+          throw new IngestRejection(
+            "MODE_MISMATCH",
+            `Tržba je v režimu ${MODE_LABEL[mode]}, ale účet je od ${account.eetModeChangedAt.toLocaleString("cs-CZ", { timeZone: "Europe/Prague" })} v režimu ${MODE_LABEL[accountMode(account)]}. Pokladna měla staré nastavení.`,
+          );
+        }
+      }
       const unit = unitById.get(input.unitId);
       if (!unit) throw new IngestRejection("UNKNOWN_UNIT", "Neznámá evidenční jednotka");
       if (mode !== "mock" && !unit.fsUnitId) throw new IngestRejection("UNIT_WITHOUT_FS_ID", "Evidenční jednotka nemá číslo přidělené Finanční správou");

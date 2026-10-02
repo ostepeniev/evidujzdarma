@@ -80,3 +80,14 @@ export function correctedNow(offset: { ms: number; at: number } | undefined, now
   if (!offset || Math.abs(offset.ms) < 30_000 || now - offset.at > 86_400_000) return now;
   return now + offset.ms;
 }
+
+/**
+ * Server hlásí jiný režim účtu, než má pokladna v uložené konfiguraci → pokladna má staré nastavení
+ * a nesmí prodávat, dokud ho nenačte (R5.1).
+ */
+export function accountModeChanged(serverMode: unknown, configMode: string | undefined): boolean {
+  return typeof serverMode === "string" && serverMode !== "" && serverMode !== configMode;
+}
+
+/** Konfiguraci obnovujeme nejméně jednou za 5 minut, i když se nic nezměnilo (R5.1). */
+export const CONFIG_REFRESH_MS = 5 * 60_000;

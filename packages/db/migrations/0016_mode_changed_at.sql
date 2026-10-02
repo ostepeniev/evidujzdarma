@@ -1,0 +1,1 @@
+ALTER TABLE "accounts" ADD COLUMN "eet_mode_changed_at" timestamp with time zone DEFAULT now() NOT NULL;

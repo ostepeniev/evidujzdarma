@@ -179,7 +179,9 @@ export async function setEetMode(accountId: string, mode: "mock" | "playground" 
     if (!units.length) throw new HttpError(400, "Přidejte alespoň jednu evidenční jednotku.");
     if (units.some((u) => !u.fsUnitId)) throw new HttpError(400, "Všechny evidenční jednotky musí mít číslo přidělené Finanční správou.");
   }
-  await db.update(schema.accounts).set({ eetMode: mode }).where(eq(schema.accounts.id, accountId));
+  if (account.eetMode === mode) return;
+  // okamžik přepnutí: tržba v jiném režimu prodaná po něm jde do karantény MODE_MISMATCH (R5.1)
+  await db.update(schema.accounts).set({ eetMode: mode, eetModeChangedAt: new Date() }).where(eq(schema.accounts.id, accountId));
 }
 
 /** Registrace zařízení — token se vrací jen jednou, v DB je jen jeho hash. */

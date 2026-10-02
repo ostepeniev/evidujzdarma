@@ -1090,9 +1090,30 @@ function ProblemSalesSection() {
             <p className="text-[15px] text-danger-600">{q.reason}</p>
             {q.detail !== q.reason && <p className="text-sm text-muted">{q.detail}</p>}
             <div className="mt-2 flex flex-wrap gap-2">
-              <button type="button" className="btn-secondary py-1.5 text-sm" disabled={busy} onClick={() => act(q.id, "retry")}>
-                Zkusit znovu přijmout
-              </button>
+              {q.reasonCode === "MODE_MISMATCH" ? (
+                <>
+                  <button
+                    type="button"
+                    className="btn-primary py-1.5 text-sm"
+                    disabled={busy}
+                    onClick={() => window.confirm("Tržba byla skutečná a odešle se v režimu, který účet má teď. Pokračovat?") && act(q.id, "send_current_mode")}
+                  >
+                    Odeslat v aktuálním režimu
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-secondary py-1.5 text-sm"
+                    disabled={busy}
+                    onClick={() => window.confirm("Tržba byla jen zkouška a nebude se evidovat. Záznam zůstane uložený. Pokračovat?") && act(q.id, "was_test")}
+                  >
+                    Byla to zkouška
+                  </button>
+                </>
+              ) : (
+                <button type="button" className="btn-secondary py-1.5 text-sm" disabled={busy} onClick={() => act(q.id, "retry")}>
+                  Zkusit znovu přijmout
+                </button>
+              )}
               {q.reasonCode === "FUTURE_DATE" && (
                 <button
                   type="button"

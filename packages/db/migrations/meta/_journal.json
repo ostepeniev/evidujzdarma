@@ -113,6 +113,13 @@
       "when": 1790907141293,
       "tag": "0015_login_nonce",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1790971811233,
+      "tag": "0016_mode_changed_at",
+      "breakpoints": true
     }
   ]
 }

@@ -21,12 +21,18 @@ beforeEach(async () => t.reset());
 afterEach(() => __setTransportFactoryForTests(null));
 
 describe("R1.2 – sale owns its mode", () => {
+  // prodáno 10 min před přepnutím účtu (od R5.1 záleží na pořadí: tržba prodaná po přepnutí jde do karantény)
+  const soldBeforeSwitch = async (accountId: string) => {
+    await getDb().update(schema.accounts).set({ eetModeChangedAt: new Date() }).where(eq(schema.accounts.id, accountId));
+    return new Date(Math.floor((Date.now() - 10 * 60_000) / 1000) * 1000).toISOString();
+  };
+
   it("T8: production sale synced after the account switched to mock goes to production FS, never to mock", async () => {
     const s = await seedAccount({ mode: "mock" });
     await storeCertificate(s.account.id, testCert().cert, "production");
     const fake = fakeTransports();
     __setTransportFactoryForTests(fake.factory);
-    const sale = deviceSale(s.unit.id, { mode: "production" });
+    const sale = deviceSale(s.unit.id, { mode: "production", soldAt: await soldBeforeSwitch(s.account.id) });
     const [r] = await ingestSales(await deviceContext(s.device.id), [sale as never]);
     expect(r!.ok).toBe(true);
     const row = await getDb().query.sales.findFirst({ where: eq(schema.sales.id, sale.id) });
@@ -39,7 +45,7 @@ describe("R1.2 – sale owns its mode", () => {
     const s = await seedAccount({ mode: "production" });
     const fake = fakeTransports();
     __setTransportFactoryForTests(fake.factory);
-    const sale = deviceSale(s.unit.id, { mode: "mock" });
+    const sale = deviceSale(s.unit.id, { mode: "mock", soldAt: await soldBeforeSwitch(s.account.id) });
     const [r] = await ingestSales(await deviceContext(s.device.id), [sale as never]);
     expect(r!.ok).toBe(true);
     const row = await getDb().query.sales.findFirst({ where: eq(schema.sales.id, sale.id) });

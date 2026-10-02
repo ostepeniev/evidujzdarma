@@ -26,6 +26,7 @@ export const QUARANTINE_REASON_TEXT: Record<string, string> = {
   REFUND_DUPLICATE: "K této tržbě už vratka existuje.",
   REFUND_NOT_AUTHORIZED: "Vratku smí udělat jen vlastník nebo s jeho schválením.",
   UNKNOWN_STAFF: "Pokladní nepatří k tomuto účtu.",
+  MODE_MISMATCH: "Pokladna prodávala v režimu, který už neplatí – účet byl mezitím přepnut. Rozhodněte, zda tržbu odeslat v aktuálním režimu, nebo šlo o zkoušku.",
 };
 
 export async function quarantineSale(ctx: DeviceContext, payload: unknown, reasonCode: string, reason: string): Promise<void> {
@@ -80,7 +81,7 @@ export async function listQuarantine(accountId: string) {
     .limit(200);
 }
 
-export type QuarantineAction = "retry" | "retry_with_received_time" | "dismiss";
+export type QuarantineAction = "retry" | "retry_with_received_time" | "dismiss" | "send_current_mode" | "was_test";
 
 /**
  * Rozhodnutí vlastníka: znovu přijmout (po opravě nastavení), přijmout s časem přijetí serverem
@@ -91,11 +92,13 @@ export async function resolveQuarantine(accountId: string, id: string, opts: { a
   const row = await db.query.saleQuarantine.findFirst({ where: and(eq(schema.saleQuarantine.id, id), eq(schema.saleQuarantine.accountId, accountId)) });
   if (!row) throw new HttpError(404, "Tržba v karanténě neexistuje");
   if (row.resolvedAt) return { ok: true as const, already: true };
-  if (opts.action === "dismiss") {
-    await db
-      .update(schema.saleQuarantine)
-      .set({ resolution: "dismissed", resolvedAt: new Date(), updatedAt: new Date(), note: opts.note?.slice(0, 500) ?? null })
-      .where(eq(schema.saleQuarantine.id, id));
+  if ((opts.action === "send_current_mode" || opts.action === "was_test") && row.reasonCode !== "MODE_MISMATCH") {
+    throw new HttpError(400, "Tuto volbu lze použít jen u tržby prodané ve starém režimu.");
+  }
+  if (opts.action === "dismiss" || opts.action === "was_test") {
+    // „byla to zkouška“: tržba se neeviduje, ale záznam s celým obsahem zůstává (R5.1)
+    const note = opts.action === "was_test" ? "Byla to zkouška – pokladna prodávala ve starém režimu, do FS se neposílá." : (opts.note?.slice(0, 500) ?? null);
+    await db.update(schema.saleQuarantine).set({ resolution: "dismissed", resolvedAt: new Date(), updatedAt: new Date(), note }).where(eq(schema.saleQuarantine.id, id));
     return { ok: true as const };
   }
   if (!row.deviceId) throw new HttpError(409, "Pokladna, ze které tržba přišla, už neexistuje – vyřiďte tržbu ručně.");
@@ -106,6 +109,11 @@ export async function resolveQuarantine(accountId: string, id: string, opts: { a
   if (opts.action === "retry_with_received_time") {
     if (row.reasonCode !== "FUTURE_DATE") throw new HttpError(400, "Čas přijetí lze použít jen u tržby s datem v budoucnosti.");
     payload = { ...payload, soldAt: new Date(Math.floor(row.receivedAt.getTime() / 1000) * 1000).toISOString() };
+  }
+  if (opts.action === "send_current_mode") {
+    // vlastník rozhodl: tržba byla skutečná → odeslat v režimu, který účet má teď (R5.1)
+    const { accountMode } = await import("./fiscal");
+    payload = { ...payload, mode: accountMode(account) };
   }
   const { ingestSales, DeviceSaleSchema } = await import("./sales");
   const parsed = DeviceSaleSchema.safeParse(payload);

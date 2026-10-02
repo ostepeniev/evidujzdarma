@@ -4,8 +4,8 @@
  * Synchronizace pokladny se serverem: odeslání offline fronty, načtení stavů (POK)
  * a konfigurace. Server je idempotentní, takže opakované odeslání stejné tržby je bezpečné.
  */
-import { getDevice, markCashSynced, setMeta, unsettledSales, unsyncedCash, updateSale } from "./db";
-import { applyPolledStatuses, applyServerResult, clockOffsetFrom, planSync, type ServerSaleResult, type ServerSaleStatus } from "./sync-result";
+import { getDevice, getMeta, markCashSynced, setMeta, unsettledSales, unsyncedCash, updateSale } from "./db";
+import { CONFIG_REFRESH_MS, accountModeChanged, applyPolledStatuses, applyServerResult, clockOffsetFrom, planSync, type ServerSaleResult, type ServerSaleStatus } from "./sync-result";
 import type { PosConfig } from "./types";
 
 type Listener = () => void;
@@ -35,6 +35,31 @@ export function lastSync(): SyncReport {
 
 export class DeviceRevokedError extends Error {}
 
+/* ── konfigurace a režim účtu (R5.1) ── */
+let configStale = false;
+let configVer = 0;
+let lastConfigAt = 0;
+
+/** Server hlásí jiný režim účtu, než má pokladna – do načtení nového nastavení se neprodává. */
+export function isConfigStale(): boolean {
+  return configStale;
+}
+
+/** Zvyšuje se při každém načtení konfigurace ze serveru (pokladna podle něj obnoví obrazovku). */
+export function configVersion(): number {
+  return configVer;
+}
+
+async function checkAccountMode(serverMode: unknown): Promise<void> {
+  const current = await getMeta<PosConfig>("config");
+  if (!accountModeChanged(serverMode, current?.account.mode)) return;
+  configStale = true;
+  emit();
+  const fresh = await refreshConfig();
+  if (fresh && !accountModeChanged(serverMode, fresh.account.mode)) configStale = false;
+  emit();
+}
+
 async function api(path: string, init: RequestInit = {}): Promise<Response> {
   const device = await getDevice();
   if (!device) throw new DeviceRevokedError("Zařízení není registrované");
@@ -57,6 +82,10 @@ export async function refreshConfig(): Promise<PosConfig | null> {
     if (!res.ok) return null;
     const cfg = (await res.json()) as PosConfig;
     await setMeta("config", cfg);
+    lastConfigAt = Date.now();
+    configVer++;
+    // čerstvá konfigurace je pravda o režimu účtu
+    configStale = false;
     emit();
     return cfg;
   } catch (e) {
@@ -82,6 +111,8 @@ async function syncCash(): Promise<void> {
 }
 
 async function doSync(): Promise<SyncReport> {
+  // kiosk s trvale viditelnou kartou: konfigurace se jinak obnovuje jen při startu a návratu (R5.1)
+  if (Date.now() - lastConfigAt > CONFIG_REFRESH_MS) await refreshConfig();
   const pending = await unsettledSales();
   if (!pending.length) {
     try {
@@ -119,19 +150,21 @@ async function doSync(): Promise<SyncReport> {
         }),
       });
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? `Server odpověděl ${res.status}`);
-      const { results } = (await res.json()) as { results: ServerSaleResult[] };
+      const { results, accountMode } = (await res.json()) as { results: ServerSaleResult[]; accountMode?: string };
       for (const r of results) {
         if (r.ok) sent++;
         await updateSale(r.id, applyServerResult(r));
       }
+      await checkAccountMode(accountMode);
     }
     // přijaté tržby: jen stav (POK doplní server/cron), nikdy znovu odeslání
     for (let i = 0; i < plan.poll.length; i += 200) {
       const ids = plan.poll.slice(i, i + 200);
       const res = await api(`/api/pokladna/sales?ids=${ids.join(",")}`);
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? `Server odpověděl ${res.status}`);
-      const { statuses } = (await res.json()) as { statuses: ServerSaleStatus[] };
+      const { statuses, accountMode } = (await res.json()) as { statuses: ServerSaleStatus[]; accountMode?: string };
       for (const [id, patch] of applyPolledStatuses(ids, statuses)) await updateSale(id, patch);
+      await checkAccountMode(accountMode);
     }
     await syncCash();
     lastReport = { at: new Date().toISOString(), online: true, sent, error: null };

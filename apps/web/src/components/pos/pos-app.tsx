@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { getConfig, getDevice, getMeta, pruneOld, setMeta, deleteMeta } from "@/lib/pos/db";
 import { createLocalSale, refundInput } from "@/lib/pos/sale-factory";
-import { DeviceRevokedError, refreshConfig, startAutoSync, syncNow } from "@/lib/pos/sync";
+import { DeviceRevokedError, configVersion, isConfigStale, onSyncChange, refreshConfig, startAutoSync, syncNow } from "@/lib/pos/sync";
 import type { DeviceCredentials, LocalSale, PosConfig } from "@/lib/pos/types";
 import { HistoryView, SummaryView } from "./history-view";
 import { PaymentSheet, type PaymentResult } from "./payment-sheet";
@@ -103,6 +103,20 @@ export function PosApp() {
     };
     document.addEventListener("visibilitychange", onVisible);
     return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [device, applyConfig]);
+
+  // Konfigurace načtená synchronizací (změna režimu účtu, obnova každých 5 min) se projeví hned (R5.1)
+  const [configStale, setConfigStale] = useState(false);
+  useEffect(() => {
+    if (!device) return;
+    let applied = configVersion();
+    return onSyncChange(() => {
+      setConfigStale(isConfigStale());
+      const v = configVersion();
+      if (v === applied) return;
+      applied = v;
+      void getConfig().then((cfg) => cfg && applyConfig(cfg, device));
+    });
   }, [device, applyConfig]);
 
   // Aktivita obsluhy prodlužuje přihlášení
@@ -231,6 +245,11 @@ export function PosApp() {
           setView(v);
         }}
       />
+      {configStale && (
+        <p role="alert" className="bg-sun-100 px-4 py-2 text-center text-sm font-medium text-ink">
+          Účet změnil režim evidence. Pokladna načítá nové nastavení – do té doby nelze prodávat. Zkontrolujte připojení k internetu.
+        </p>
+      )}
       <main className="mx-auto max-w-6xl px-3 py-4 sm:px-4">
         {activeUnits.length === 0 ? (
           <div className="mx-auto max-w-md rounded-3xl bg-white p-8 text-center">
