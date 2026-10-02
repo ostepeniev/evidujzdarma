@@ -415,6 +415,19 @@ export const saleAttempts = pgTable(
  * Karanténa tržeb (Р2): tržba, kterou server nemohl přijmout (datum, jednotka, konflikt…),
  * se neztratí – uloží se celá, jak ji poslala pokladna, a čeká na rozhodnutí vlastníka.
  */
+/**
+ * Pojistka prostředí FS (R5.4): když neověřitelné odpovědi chodí od více účtů najednou, odesílání do daného
+ * prostředí stojí. Jednou za `probe_at` projde jedna zkušební tržba; potvrzená pojistku zruší.
+ * Řádek existuje jen po dobu pozastavení.
+ */
+export const fsBreaker = pgTable("fs_breaker", {
+  environment: varchar("environment", { length: 16 }).primaryKey(),
+  pausedAt: timestamp("paused_at", { withTimezone: true }).notNull().defaultNow(),
+  probeAt: timestamp("probe_at", { withTimezone: true }).notNull(),
+  invalidCount: integer("invalid_count").notNull(),
+  accountCount: integer("account_count").notNull(),
+});
+
 export const saleQuarantine = pgTable(
   "sale_quarantine",
   {

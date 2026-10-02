@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, eq, gt, inArray, isNull, lte, desc, sql } from "drizzle-orm";
+import { and, asc, eq, gt, gte, inArray, isNull, like, lte, desc, notInArray, or, sql } from "drizzle-orm";
 import { getDb, schema } from "@ez/db";
 import { randomUUID } from "node:crypto";
 import { EetMessageError, MockTransport, buildSale, chybaHint, eetSnapshot, retryDelaySeconds, type EetData, type Sale, type SendResult, type Transport } from "@ez/fiscal-core";
@@ -152,8 +152,12 @@ function rowToSale(row: SaleRow): Sale {
 export const CERT_BLOCKS = ["CERT_MISSING", "CERT_EXPIRED", "CERT_NOT_YET_VALID", "PREPARE"] as const;
 /** Důvody blokace kvůli údajům účtu – zmizí po opravě EIČ. */
 export const ACCOUNT_BLOCKS = ["EIC_MISSING", "MESSAGE_INVALID", "ACCOUNT_MISSING"] as const;
-/** Kolikrát po sobě smí přijít neověřitelná odpověď, než frontu tržby zastavíme (R1.8). */
+/** Po kolika neověřitelných odpovědích po sobě se tržba označí a provozovatel dostane alert (R1.8). */
 const INVALID_STREAK_LIMIT = 3;
+/** Neověřitelná odpověď: backoff 5 min × 4^(n−1), nejvýš 6 h – tržba zůstává ve frontě (R5.4). */
+const INVALID_MAX_DELAY_MS = 6 * 3_600_000;
+/** Pojistka prostředí (R5.4): ≥ 3 INVALID od ≥ 3 účtů za 10 min → pauza; zkušební tržba jednou za hodinu. */
+const BREAKER = { windowMs: 10 * 60_000, minInvalid: 3, minAccounts: 3, probeMs: 3_600_000 } as const;
 const BLOCKED_RETRY_MS = 3_600_000;
 /** Kód 8 („technická chyba nebo chyba dat“): nejvýš 3 pokusy po 20 min, pak odmítnuto (R5.3). */
 const AMBIGUOUS_MAX_ATTEMPTS = 3;
@@ -168,7 +172,7 @@ export const BLOCK_TEXT: Record<string, string> = {
   EIC_MISSING: "U účtu chybí EIČ (DIČ).",
   MESSAGE_INVALID: "Údaje tržby neodpovídají formátu EET (EIČ, číslo jednotky, označení pokladny).",
   ACCOUNT_MISSING: "Účet neexistuje.",
-  INVALID_RESPONSE: "Odpověď Finanční správy opakovaně nešla ověřit – odesílání je pozastavené, řešíme to.",
+  INVALID_RESPONSE: "Odpověď Finanční správy opakovaně nešla ověřit – tržbu zkoušíme dál s delším odstupem a řešíme to.",
 };
 
 type Outcome = { result: "confirmed" | "rejected" | "retry" | "blocked" | "invalid"; send?: SendResult; code?: string; message?: string; retryInMs?: number };
@@ -267,6 +271,11 @@ async function certificateBlock(accountId: string, environment: "playground" | "
  */
 export async function processSale(saleId: string, account?: AccountRow): Promise<SaleRow | null> {
   const db = getDb();
+  // pojistka prostředí (R5.4): při pauze tržbu nezabíráme, nic se nezapočítá ani neodešle
+  const pre = await db.query.sales.findFirst({ where: eq(schema.sales.id, saleId), columns: { mode: true, status: true } });
+  if (!pre) return null;
+  const gate = pre.status === "queued" ? await breakerGate(pre.mode) : "open";
+  if (gate === "paused") return (await db.query.sales.findFirst({ where: eq(schema.sales.id, saleId) })) ?? null;
   const token = randomUUID();
   const startedAt = new Date();
   const [claimed] = await db
@@ -290,7 +299,12 @@ export async function processSale(saleId: string, account?: AccountRow): Promise
   const now = new Date();
   const applied = await applyOutcome(claimed, token, outcome, now);
   await recordAttempt(claimed, outcome, startedAt, applied, firstAttempt);
-  if (applied && outcome.result === "invalid") await checkInvalidStreak(claimed);
+  if (applied && outcome.result === "invalid") {
+    await checkInvalidStreak(claimed);
+    await maybeTripBreaker(claimed.mode);
+  }
+  // potvrzená zkušební tržba = podpis FS jde zase ověřit → pojistka se ruší
+  if (gate === "probe" && applied && outcome.result === "confirmed") await db.delete(schema.fsBreaker).where(eq(schema.fsBreaker.environment, claimed.mode));
   return (await db.query.sales.findFirst({ where: eq(schema.sales.id, saleId) })) ?? null;
 }
 
@@ -322,7 +336,7 @@ async function attempt(row: SaleRow, acc: AccountRow | undefined, mode: EetMode,
   const result = await transport.send(rowToSale(row), { firstAttempt, verifyOnly: false, eic: snapshot?.eic_popl ?? acc.eic ?? acc.dic ?? "CZ00000000", snapshot });
   if (result.ok) return { result: "confirmed", send: result };
   if (result.blocked) return { result: "blocked", send: result, code: result.blocked, message: result.message };
-  if (result.code === "INVALID_RESPONSE") return { result: "invalid", send: result };
+  if (result.code === "INVALID_RESPONSE") return { result: "invalid", send: result, retryInMs: invalidDelayMs((await invalidStreak(row.id)) + 1) };
   return chybaOutcome(row, result);
 }
 
@@ -372,19 +386,36 @@ async function alertUnexpectedChyba(row: SaleRow, result: Extract<SendResult, { 
   });
 }
 
-/** Po N neověřitelných odpovědích po sobě tržbu zastavíme a upozorníme provozovatele (R1.8). */
-async function checkInvalidStreak(row: SaleRow) {
-  const db = getDb();
-  const last = await db
+/** Počet neověřitelných odpovědí po sobě u tržby (bez právě probíhajícího pokusu). */
+async function invalidStreak(saleId: string): Promise<number> {
+  const last = await getDb()
     .select({ result: schema.saleAttempts.result })
     .from(schema.saleAttempts)
-    .where(eq(schema.saleAttempts.saleId, row.id))
-    .orderBy(desc(schema.saleAttempts.attempt))
-    .limit(INVALID_STREAK_LIMIT);
-  if (last.length < INVALID_STREAK_LIMIT || last.some((a) => a.result !== "invalid")) return;
+    .where(eq(schema.saleAttempts.saleId, saleId))
+    .orderBy(desc(schema.saleAttempts.startedAt))
+    .limit(10);
+  let n = 0;
+  for (const a of last) {
+    if (a.result !== "invalid") break;
+    n++;
+  }
+  return n;
+}
+
+export function invalidDelayMs(streak: number): number {
+  return Math.min(INVALID_MAX_DELAY_MS, 5 * 60_000 * 4 ** Math.max(0, streak - 1));
+}
+
+/**
+ * Po N neověřitelných odpovědích po sobě tržbu označíme (vlastník ji vidí) a upozorníme provozovatele.
+ * Tržba zůstává ve frontě s backoffem do 6 h – opakování je bezpečné, FS ji ztotožní podle šesti polí (R5.4).
+ */
+async function checkInvalidStreak(row: SaleRow) {
+  const db = getDb();
+  if ((await invalidStreak(row.id)) < INVALID_STREAK_LIMIT) return;
   await db
     .update(schema.sales)
-    .set({ blockedReason: "INVALID_RESPONSE", nextAttemptAt: new Date(Date.now() + 365 * 86_400_000) })
+    .set({ blockedReason: "INVALID_RESPONSE" })
     .where(and(eq(schema.sales.id, row.id), eq(schema.sales.status, "queued")));
   const { enqueueEmail } = await import("./mail");
   const { SITE } = await import("@/lib/site");
@@ -394,9 +425,82 @@ async function checkInvalidStreak(row: SaleRow) {
     dedupeKey: `invalid-response:${new Date().toISOString().slice(0, 13)}`,
     payload: {
       subject: `⚠️ Neověřitelné odpovědi FS (${row.mode})`,
-      text: `Tržba ${row.id} dostala ${INVALID_STREAK_LIMIT}× po sobě odpověď, kterou nešlo ověřit (podpis / certifikát FS). Odesílání této tržby je pozastavené. Syrové odpovědi jsou v tabulce sale_attempts. Zkontrolujte kotvy důvěry a podpisový certifikát FS.`,
+      text: `Tržba ${row.id} dostala ${INVALID_STREAK_LIMIT}× po sobě odpověď, kterou nešlo ověřit (podpis / certifikát FS). Zkoušíme ji dál s odstupem až 6 h. Syrové odpovědi jsou v tabulce sale_attempts. Zkontrolujte kotvy důvěry a podpisový certifikát FS.`,
     },
   });
+}
+
+/* ───────────── pojistka prostředí (R5.4) ───────────── */
+
+/**
+ * Smí se teď odesílat do prostředí? „probe“ = pojistka je zapnutá, ale je čas na jednu zkušební tržbu
+ * (slot se bere atomicky, takže ji dostane jen jeden souběžný pokus).
+ */
+async function breakerGate(environment: string, now = new Date()): Promise<"open" | "probe" | "paused"> {
+  if (environment !== "playground" && environment !== "production") return "open";
+  const db = getDb();
+  const row = await db.query.fsBreaker.findFirst({ where: eq(schema.fsBreaker.environment, environment) });
+  if (!row) return "open";
+  const [probe] = await db
+    .update(schema.fsBreaker)
+    .set({ probeAt: new Date(now.getTime() + BREAKER.probeMs) })
+    .where(and(eq(schema.fsBreaker.environment, environment), lte(schema.fsBreaker.probeAt, now)))
+    .returning({ environment: schema.fsBreaker.environment });
+  return probe ? "probe" : "paused";
+}
+
+/** Neověřitelné odpovědi od více účtů najednou = problém prostředí (kotvy, podpis FS), ne jedné tržby. */
+async function maybeTripBreaker(environment: string) {
+  if (environment !== "playground" && environment !== "production") return;
+  const db = getDb();
+  const [st] = await db
+    .select({ invalid: sql<number>`count(*)::int`, accounts: sql<number>`count(distinct ${schema.sales.accountId})::int` })
+    .from(schema.saleAttempts)
+    .innerJoin(schema.sales, eq(schema.sales.id, schema.saleAttempts.saleId))
+    .where(and(eq(schema.saleAttempts.environment, environment), eq(schema.saleAttempts.result, "invalid"), gte(schema.saleAttempts.startedAt, new Date(Date.now() - BREAKER.windowMs))));
+  if (!st || st.invalid < BREAKER.minInvalid || st.accounts < BREAKER.minAccounts) return;
+  const [tripped] = await db
+    .insert(schema.fsBreaker)
+    .values({ environment, probeAt: new Date(Date.now() + BREAKER.probeMs), invalidCount: st.invalid, accountCount: st.accounts })
+    .onConflictDoNothing()
+    .returning();
+  if (!tripped) return;
+  const { enqueueEmail } = await import("./mail");
+  const { SITE } = await import("@/lib/site");
+  await enqueueEmail({
+    to: SITE.email,
+    template: "notice",
+    dedupeKey: `fs-breaker:${environment}:${tripped.pausedAt.toISOString()}`,
+    payload: {
+      subject: `🛑 Odesílání do FS (${environment}) pozastaveno – neověřitelné odpovědi`,
+      text:
+        `Za posledních 10 minut přišlo ${st.invalid} odpovědí FS, které nešly ověřit, od ${st.accounts} účtů. Odesílání do prostředí ${environment} je pozastavené; ` +
+        `jednou za hodinu projde jedna zkušební tržba a potvrzená pojistku zruší. Tržby zůstávají ve frontě. Syrové odpovědi: sale_attempts (result = 'invalid').\n\n` +
+        `Po opravě (kotvy důvěry, podpisový certifikát FS) vraťte tržby do fronty ze serveru:\n` +
+        `curl -X POST http://127.0.0.1:3100/api/internal/fs-requeue -H "authorization: Bearer $CRON_SECRET" -H "content-type: application/json" -d '{"environment":"${environment}"}'`,
+    },
+  });
+}
+
+/**
+ * Provozovatel (R5.4): zruší pojistku prostředí a vrátí do fronty tržby zastavené kvůli neověřitelným
+ * odpovědím. Každá se pak odešle jednou, se svým snímkem.
+ */
+export async function requeueInvalid(environment: "playground" | "production"): Promise<{ environment: string; requeued: number; resumed: boolean }> {
+  const db = getDb();
+  const resumed = (await db.delete(schema.fsBreaker).where(eq(schema.fsBreaker.environment, environment)).returning()).length > 0;
+  const rows = await db
+    .update(schema.sales)
+    .set({ blockedReason: null, nextAttemptAt: new Date() })
+    .where(
+      and(
+        eq(schema.sales.status, "queued"),
+        eq(schema.sales.mode, environment),
+        or(eq(schema.sales.blockedReason, "INVALID_RESPONSE"), like(schema.sales.lastError, "INVALID_RESPONSE%")),
+      ),
+    )
+    .returning({ id: schema.sales.id });
+  return { environment, requeued: rows.length, resumed };
 }
 
 /** Vrátí zablokované tržby do fronty (nový certifikát, opravené EIČ). */
@@ -456,12 +560,26 @@ export async function processPending(limit = 50, concurrency = 4): Promise<{ pro
     .update(schema.sales)
     .set({ status: "queued", claimToken: null })
     .where(and(eq(schema.sales.status, "sending"), lte(schema.sales.sentAt, new Date(Date.now() - STALE_CLAIM_MS))));
+  // pozastavená prostředí (R5.4) se nevybírají; je-li čas na zkoušku, přidá se z nich jedna tržba
+  const now = new Date();
+  const breakers = await db.select().from(schema.fsBreaker);
+  const paused = breakers.map((b) => b.environment);
   const due = await db
     .select({ id: schema.sales.id })
     .from(schema.sales)
-    .where(and(eq(schema.sales.status, "queued"), lte(schema.sales.nextAttemptAt, new Date())))
+    .where(and(eq(schema.sales.status, "queued"), lte(schema.sales.nextAttemptAt, now), ...(paused.length ? [notInArray(schema.sales.mode, paused)] : [])))
     .orderBy(asc(schema.sales.nextAttemptAt))
     .limit(limit);
+  for (const b of breakers) {
+    if (b.probeAt > now) continue;
+    const [probe] = await db
+      .select({ id: schema.sales.id })
+      .from(schema.sales)
+      .where(and(eq(schema.sales.status, "queued"), eq(schema.sales.mode, b.environment), lte(schema.sales.nextAttemptAt, now)))
+      .orderBy(asc(schema.sales.nextAttemptAt))
+      .limit(1);
+    if (probe) due.push(probe);
+  }
   let processed = 0;
   let next = 0;
   await Promise.all(
