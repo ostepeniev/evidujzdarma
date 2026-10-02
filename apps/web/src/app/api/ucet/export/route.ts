@@ -51,6 +51,7 @@ export const GET = ownerRoute(async ({ req, accountId }) => {
     "Evidovaná částka",
     "POK",
     "Stav",
+    "Důvod (odmítnuto / zablokováno)",
     "Režim",
     "Vratka k",
     "Pokladní",
@@ -76,6 +77,8 @@ export const GET = ownerRoute(async ({ req, accountId }) => {
       num(s.evidencedTotal),
       s.confirmationCode ?? "",
       s.status,
+      // R1.13: odmítnuté a zablokované tržby jsou v exportu i s důvodem
+      s.status === "rejected" || s.blockedReason ? (s.lastError ?? s.blockedReason ?? "") : "",
       s.mode,
       s.refundOf ?? "",
       staff ?? "",

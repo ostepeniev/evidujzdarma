@@ -8,6 +8,7 @@
  * Logika úloh žije ve web aplikaci (jeden zdroj pravdy); worker je jen spolehlivý časovač.
  */
 import { spawn } from "node:child_process";
+import { CronHealth } from "./alert.ts";
 
 const APP_URL = (process.env.APP_INTERNAL_URL ?? "http://web:3000").replace(/\/$/, "");
 const CRON_SECRET = process.env.CRON_SECRET;
@@ -26,6 +27,8 @@ let enrichRunning = false;
 function log(msg: string, extra?: unknown) {
   console.log(`[worker] ${new Date().toISOString()} ${msg}`, extra ?? "");
 }
+
+const health = new CronHealth(log);
 
 async function runCron(reminders: boolean) {
   const res = await fetch(`${APP_URL}/api/internal/cron${reminders ? "?reminders=1" : ""}`, {
@@ -58,8 +61,12 @@ async function tick() {
   try {
     await runCron(reminders);
     if (reminders) lastReminderHour = hour;
+    await health.succeeded(now);
   } catch (e) {
-    log("chyba cronu", e instanceof Error ? e.message : e);
+    const message = e instanceof Error ? e.message : String(e);
+    log("chyba cronu", message);
+    // po 5 selháních po sobě alert provozovateli, pak 1× za hodinu, a zpráva o obnovení (R1.14)
+    await health.failed(message, now);
   }
   const day = now.toISOString().slice(0, 10);
   if (process.env.CATALOG_ENRICH === "1" && hour === ENRICH_HOUR && lastEnrichDay !== day) {

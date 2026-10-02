@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import { formatCzk } from "@ez/fiscal-core";
 import { getDevice, setMeta, deleteMeta } from "@/lib/pos/db";
+import { requestPersistentStorage, type PersistState } from "@/lib/pos/storage";
 import type { DeviceCredentials, PosConfig } from "@/lib/pos/types";
 import { FACTS } from "@/content/facts";
 import { pragueToday } from "@/lib/prague-time";
@@ -493,16 +494,29 @@ function DeviceSection({ state, reload }: { state: State; reload: () => Promise<
   }, []);
 
   const thisDevice = local ? devices.find((d) => d.id === local.deviceId) : undefined;
+  const [persist, setPersist] = useState<PersistState | null>(null);
+  useEffect(() => {
+    if (local) void requestPersistentStorage().then(setPersist);
+  }, [local]);
 
   return (
     <Section id="zarizeni" step={6} title="Toto zařízení jako pokladna" done={!!thisDevice} lead="Zařízení dostane vlastní klíč – pokladní se pak přihlašují jen PINem, i bez internetu.">
       {thisDevice ? (
-        <p className="rounded-2xl bg-brand-50 p-4 text-[15px]">
-          Toto zařízení je pokladna <strong>{thisDevice.registerId}</strong> ({thisDevice.name}).{" "}
-          <Link href="/pokladna" className="font-semibold text-brand-700 underline">
-            Otevřít pokladnu →
-          </Link>
-        </p>
+        <>
+          <p className="rounded-2xl bg-brand-50 p-4 text-[15px]">
+            Toto zařízení je pokladna <strong>{thisDevice.registerId}</strong> ({thisDevice.name}).{" "}
+            <Link href="/pokladna" className="font-semibold text-brand-700 underline">
+              Otevřít pokladnu →
+            </Link>
+          </p>
+          {persist && persist !== "granted" && (
+            // R1.12: bez trvalého úložiště smí prohlížeč IndexedDB smazat i s neodeslanými tržbami
+            <p role="alert" className="mt-3 rounded-2xl bg-sun-100 p-4 text-[15px]">
+              Prohlížeč nepotvrdil trvalé uložení dat. Při nedostatku místa by mohl smazat tržby, které ještě nedošly na server. Přidejte pokladnu na plochu
+              (Instalovat aplikaci / Přidat na plochu) a nechte zařízení často online – tržby se pak hned uloží i na serveru.
+            </p>
+          )}
+        </>
       ) : (
         <form
           className="grid gap-3 sm:grid-cols-3"
@@ -523,6 +537,7 @@ function DeviceSection({ state, reload }: { state: State; reload: () => Promise<
               await setMeta("config", cfg);
               await setMeta("counter", 0);
               await deleteMeta("activeStaff");
+              setPersist(await requestPersistentStorage());
               setLocal(await getDevice());
               await reload();
             });

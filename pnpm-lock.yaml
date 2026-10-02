@@ -98,6 +98,9 @@ importers:
       drizzle-orm:
         specifier: ^0.45.3
         version: 0.45.3(@electric-sql/pglite@0.5.8)(postgres@3.4.9)
+      nodemailer:
+        specifier: ^7.0.13
+        version: 7.0.13
       tsx:
         specifier: ^4.23.15
         version: 4.23.15
@@ -108,6 +111,9 @@ importers:
       '@types/node':
         specifier: ^22
         version: 22.20.4
+      '@types/nodemailer':
+        specifier: ^7.0.12
+        version: 7.0.12
       typescript:
         specifier: 5.9.3
         version: 5.9.3

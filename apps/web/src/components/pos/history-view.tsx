@@ -74,6 +74,16 @@ export function HistoryView({ onOpen }: { onOpen: (id: string) => void }) {
   );
 }
 
+const STATUS_CSV: Record<string, string> = {
+  confirmed: "potvrzeno",
+  local: "čeká na odeslání",
+  queued: "čeká na odeslání",
+  sending: "odesílá se",
+  failed: "čeká na odeslání",
+  rejected: "odmítnuto",
+  not_required: "neeviduje se",
+};
+
 function csvCell(v: unknown): string {
   const s = v === null || v === undefined ? "" : String(v);
   return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
@@ -81,7 +91,9 @@ function csvCell(v: unknown): string {
 
 export function SummaryView({ config, staff }: { config: PosConfig; staff: { id: string; name: string } | null }) {
   const sales = useSales(0);
-  const today = sales.filter((s) => new Date(s.soldAt) >= startOfDay() && s.status !== "rejected");
+  // R1.13: odmítnuté tržby se nesmí ztratit z přehledu – peníze se přijaly, jen nejsou v EET
+  const today = sales.filter((s) => new Date(s.soldAt) >= startOfDay());
+  const todayRejected = today.filter((s) => s.status === "rejected");
   const byMethod = Object.fromEntries(PAYMENT_METHODS.map((m) => [m, 0])) as Record<PaymentMethod, number>;
   for (const s of today) for (const p of s.payments) byMethod[p.method] += p.amount;
   const total = today.reduce((a, s) => a + s.total, 0);
@@ -91,7 +103,7 @@ export function SummaryView({ config, staff }: { config: PosConfig; staff: { id:
   const rejected = sales.filter((s) => s.status === "rejected");
 
   function exportCsv() {
-    const head = ["Čas", "Pořadové číslo", "Položky", "Celkem", "Způsob platby", "Spropitné", "Sleva", "POK", "Stav", "Pokladní"];
+    const head = ["Čas", "Pořadové číslo", "Položky", "Celkem", "Způsob platby", "Spropitné", "Sleva", "POK", "Stav", "Důvod odmítnutí", "Pokladní"];
     const rows = today.map((s) =>
       [
         new Date(s.soldAt).toLocaleString("cs-CZ"),
@@ -102,7 +114,8 @@ export function SummaryView({ config, staff }: { config: PosConfig; staff: { id:
         decimalString(s.tip),
         decimalString(s.discount),
         s.confirmationCode ?? "",
-        s.status,
+        STATUS_CSV[s.status] ?? s.status,
+        s.status === "rejected" ? (s.error ?? "") : "",
         s.staffName ?? "",
       ]
         .map(csvCell)
@@ -136,6 +149,11 @@ export function SummaryView({ config, staff }: { config: PosConfig; staff: { id:
         <p className="mt-4 text-[15px] text-ink-soft">
           Vratky: {refunds.length} ({kc(refunds.reduce((a, s) => a + s.total, 0))})
         </p>
+        {todayRejected.length > 0 && (
+          <p className="mt-1 text-[15px] font-semibold text-danger-600">
+            Z toho odmítnuto: {todayRejected.length} ({kc(todayRejected.reduce((a, s) => a + s.total, 0))}) – nejsou evidované v EET, vyřiďte je v historii nebo v nastavení.
+          </p>
+        )}
       </div>
       <div className={`rounded-3xl border p-5 ${pending.length ? "border-sun-500 bg-sun-100" : "border-line bg-white"}`}>
         <p className="font-semibold">{pending.length ? `${pending.length} tržeb čeká na potvrzení (POK)` : "Všechny tržby jsou potvrzené."}</p>
