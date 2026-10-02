@@ -274,6 +274,43 @@ describe("Eet2Transport", () => {
   });
 });
 
+describe("R5.3 – Chyba codes per Popis datového rozhraní v1.2, 3.5.4", () => {
+  const cred = parseP12(createTestP12({ commonName: "CZ00000019", password: "x" }), "x");
+  const sale = buildSale(saleInput);
+  const uuid = "123e4567-e89b-42d3-a456-426614174000";
+  const send = (kod: number, verifyOnly = false) =>
+    new Eet2Transport({
+      environment: "playground",
+      credential: async () => cred,
+      fetch: (async () => new Response(fixture("unsigned-error.xml").replace('kod="3"', `kod="${kod}"`), { status: 200 })) as typeof fetch,
+    }).send(sale, { firstAttempt: true, verifyOnly, eic: "CZ00000019", messageUuid: uuid });
+
+  const table: [number, boolean, string][] = [
+    [-1, true, "temporary"], // „odešlete později“
+    [-42, true, "temporary"], // -999…-2 rezervováno: záporný = dočasný
+    [8, true, "ambiguous"], // „technická chyba nebo chyba dat“ – omezené opakování
+    [2, false, "permanent"],
+    [3, false, "permanent"],
+    [4, false, "permanent"],
+    [6, false, "permanent"],
+    [7, false, "permanent"],
+    [0, false, "unexpected"], // úspěch jen v ověřovacím módu
+    [1, false, "unexpected"],
+    [5, false, "unexpected"],
+    [9, false, "unexpected"],
+    [123, false, "unexpected"],
+  ];
+  for (const [kod, retryable, errorClass] of table) {
+    it(`kod ${kod} → retryable ${retryable}, ${errorClass}`, async () => {
+      expect(await send(kod)).toMatchObject({ ok: false, retryable, code: `EET_${kod}`, errorClass });
+    });
+  }
+
+  it("kod 0 in the verification mode is the success of the check", async () => {
+    expect(await send(0, true)).toMatchObject({ ok: true, confirmationCode: null });
+  });
+});
+
 describe("snapshot and blocked sends (R1.3, R1.5)", () => {
   const cred = parseP12(createTestP12({ commonName: "CZ00000019", password: "x" }), "x");
   const sale = buildSale(saleInput);

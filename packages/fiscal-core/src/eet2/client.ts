@@ -19,6 +19,7 @@ import {
   type EetEnvironment,
   type EetMessage,
 } from "./message.ts";
+import { classifyChyba } from "./errors.ts";
 import { defaultTrustPolicy, verifyResponse, type TrustPolicy } from "./response.ts";
 
 export interface Eet2Credential {
@@ -140,7 +141,9 @@ export class Eet2Transport implements Transport {
       if (code === 0 && ctx.verifyOnly) {
         return { ok: true, confirmationCode: null, test: v.parsed.test, receivedAt: new Date().toISOString(), messageUuid, warnings: v.parsed.warnings, audit };
       }
-      return { ok: false, retryable: code < 0, status: res.status, code: `EET_${code}`, message: msg, messageUuid, warnings: v.parsed.warnings, audit };
+      // klasifikace podle Popis v1.2, 3.5.4 (R5.3): kód 8 se opakuje omezeně, neznámé kódy nejsou tiché
+      const errorClass = classifyChyba(code);
+      return { ok: false, retryable: errorClass === "temporary" || errorClass === "ambiguous", errorClass, status: res.status, code: `EET_${code}`, message: msg, messageUuid, warnings: v.parsed.warnings, audit };
     }
     return {
       ok: true,

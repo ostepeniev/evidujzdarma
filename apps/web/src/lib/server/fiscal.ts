@@ -2,7 +2,7 @@ import "server-only";
 import { and, asc, eq, gt, inArray, isNull, lte, desc, sql } from "drizzle-orm";
 import { getDb, schema } from "@ez/db";
 import { randomUUID } from "node:crypto";
-import { EetMessageError, MockTransport, buildSale, eetSnapshot, retryDelaySeconds, type EetData, type Sale, type SendResult, type Transport } from "@ez/fiscal-core";
+import { EetMessageError, MockTransport, buildSale, chybaHint, eetSnapshot, retryDelaySeconds, type EetData, type Sale, type SendResult, type Transport } from "@ez/fiscal-core";
 import {
   Eet2Transport,
   LocalKeyEncryptor,
@@ -155,6 +155,9 @@ export const ACCOUNT_BLOCKS = ["EIC_MISSING", "MESSAGE_INVALID", "ACCOUNT_MISSIN
 /** Kolikrát po sobě smí přijít neověřitelná odpověď, než frontu tržby zastavíme (R1.8). */
 const INVALID_STREAK_LIMIT = 3;
 const BLOCKED_RETRY_MS = 3_600_000;
+/** Kód 8 („technická chyba nebo chyba dat“): nejvýš 3 pokusy po 20 min, pak odmítnuto (R5.3). */
+const AMBIGUOUS_MAX_ATTEMPTS = 3;
+const AMBIGUOUS_RETRY_MS = 20 * 60_000;
 const STALE_CLAIM_MS = 120_000;
 
 export const BLOCK_TEXT: Record<string, string> = {
@@ -168,7 +171,7 @@ export const BLOCK_TEXT: Record<string, string> = {
   INVALID_RESPONSE: "Odpověď Finanční správy opakovaně nešla ověřit – odesílání je pozastavené, řešíme to.",
 };
 
-type Outcome = { result: "confirmed" | "rejected" | "retry" | "blocked" | "invalid"; send?: SendResult; code?: string; message?: string };
+type Outcome = { result: "confirmed" | "rejected" | "retry" | "blocked" | "invalid"; send?: SendResult; code?: string; message?: string; retryInMs?: number };
 
 /**
  * Zapíše výsledek pokusu – jen pokud tržbu pořád drží tento pokus (claim token) a není potvrzená.
@@ -216,7 +219,7 @@ async function applyOutcome(row: SaleRow, token: string, o: Outcome, now: Date):
         lastMessageUuid: f?.messageUuid ?? row.lastMessageUuid,
         lastError: `${o.code ?? f?.code}: ${o.message ?? f?.message ?? ""}`.slice(0, 1000),
         warnings: f?.warnings ?? row.warnings,
-        nextAttemptAt: new Date(now.getTime() + retryDelaySeconds(row.attempts) * 1000),
+        nextAttemptAt: new Date(now.getTime() + (o.retryInMs ?? retryDelaySeconds(row.attempts) * 1000)),
       })
       .where(mine)
       .returning({ id: schema.sales.id });
@@ -320,7 +323,53 @@ async function attempt(row: SaleRow, acc: AccountRow | undefined, mode: EetMode,
   if (result.ok) return { result: "confirmed", send: result };
   if (result.blocked) return { result: "blocked", send: result, code: result.blocked, message: result.message };
   if (result.code === "INVALID_RESPONSE") return { result: "invalid", send: result };
-  return { result: result.retryable ? "retry" : "rejected", send: result };
+  return chybaOutcome(row, result);
+}
+
+/** Výsledek podle třídy kódu Chyba (Popis v1.2, 3.5.4; R5.3). Bez třídy (síť, HTTP) rozhoduje `retryable`. */
+async function chybaOutcome(row: SaleRow, result: Extract<SendResult, { ok: false }>): Promise<Outcome> {
+  const kod = Number(result.code.replace(/^EET_/, ""));
+  const explained = `${result.message} – ${chybaHint(kod)}`;
+  switch (result.errorClass) {
+    case "ambiguous": {
+      // počítají se jen pokusy této série; odmítnutí (a následné „Odeslat znovu“ vlastníka) začíná novou
+      const recent = await getDb()
+        .select({ code: schema.saleAttempts.code, result: schema.saleAttempts.result })
+        .from(schema.saleAttempts)
+        .where(eq(schema.saleAttempts.saleId, row.id))
+        .orderBy(desc(schema.saleAttempts.startedAt))
+        .limit(AMBIGUOUS_MAX_ATTEMPTS);
+      let prior = 0;
+      for (const a of recent) {
+        if (a.code !== result.code || a.result !== "retry") break;
+        prior++;
+      }
+      if (prior + 1 >= AMBIGUOUS_MAX_ATTEMPTS) return { result: "rejected", send: result, message: `${explained} (${AMBIGUOUS_MAX_ATTEMPTS}× za sebou)` };
+      return { result: "retry", send: result, retryInMs: AMBIGUOUS_RETRY_MS };
+    }
+    case "permanent":
+      return { result: "rejected", send: result, message: explained };
+    case "unexpected":
+      await alertUnexpectedChyba(row, result);
+      return { result: "rejected", send: result, message: explained };
+    default:
+      return { result: result.retryable ? "retry" : "rejected", send: result };
+  }
+}
+
+/** Neznámý / rezervovaný kód Chyba: tržba se odmítne a provozovatel se to dozví (ne tiše). */
+async function alertUnexpectedChyba(row: SaleRow, result: Extract<SendResult, { ok: false }>) {
+  const { enqueueEmail } = await import("./mail");
+  const { SITE } = await import("@/lib/site");
+  await enqueueEmail({
+    to: SITE.email,
+    template: "notice",
+    dedupeKey: `unexpected-chyba:${result.code}:${new Date().toISOString().slice(0, 13)}`,
+    payload: {
+      subject: `⚠️ Neočekávaný kód odpovědi FS ${result.code} (${row.mode})`,
+      text: `Tržba ${row.id} dostala od Finanční správy kód ${result.code}, který podle Popisu datového rozhraní v1.2 (kap. 3.5.4) neočekáváme: „${result.message}“. Tržba je odmítnutá a vlastník ji vidí v „Tržby k vyřízení“. Syrová odpověď je v sale_attempts.`,
+    },
+  });
 }
 
 /** Po N neověřitelných odpovědích po sobě tržbu zastavíme a upozorníme provozovatele (R1.8). */

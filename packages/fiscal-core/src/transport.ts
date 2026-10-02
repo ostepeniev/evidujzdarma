@@ -4,6 +4,7 @@
  *   - Eet2Transport (server.ts): skutečné rozhraní EET 2.0, SOAP v4.1 — Playground / produkce
  */
 import type { Sale } from "./sale.ts";
+import type { EetErrorClass } from "./eet2/errors.ts";
 
 export interface SendContext {
   /** true = první pokus o odeslání; false = opakované/dodatečné odeslání */
@@ -56,6 +57,8 @@ export type SendResult =
       warnings?: EetWarning[];
       /** tržbu nelze odeslat, dokud se nezmění nastavení (certifikát, EIČ, klíč) – fronta ji drží */
       blocked?: string;
+      /** třída chybového kódu FS (Popis v1.2, 3.5.4) – jen u odpovědi s Chyba (R5.3) */
+      errorClass?: EetErrorClass;
       audit?: SendAudit;
     };
 
@@ -95,7 +98,7 @@ export class MockTransport implements Transport {
       return { ok: false, retryable: true, code: "NETWORK", message: "Simulovaný výpadek spojení", messageUuid };
     }
     if (!/^CZ\d{8,10}$/.test(ctx.eic)) {
-      return { ok: false, retryable: false, code: "EET_6", message: "Neplatné EIČ poplatníka", messageUuid };
+      return { ok: false, retryable: false, errorClass: "permanent", code: "EET_6", message: "Neplatné EIČ poplatníka", messageUuid };
     }
     const warnings: EetWarning[] = [];
     if (!ctx.firstAttempt) warnings.push({ code: 0, text: "Dodatečně odeslaná tržba (simulace)" });
