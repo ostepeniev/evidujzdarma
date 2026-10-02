@@ -82,7 +82,7 @@ const R: Record<string, Result> = {
   "r-not-business": {
     id: "r-not-business",
     tone: "no",
-    title: "Evidence tržeb se vás netýká",
+    title: "Evidence tržeb se vás pravděpodobně netýká",
     text: FACTS.whoMust.notCovered,
     links: [{ href: "/navody/koho-se-eet-tyka", label: "Koho se EET týká" }],
     sources: [SOURCES.kdoMusi],
@@ -106,7 +106,7 @@ const R: Record<string, Result> = {
   "r-eetoff": {
     id: "r-eetoff",
     tone: "maybe",
-    title: "Evidovat musíte – nebo zvolte EET OFF",
+    title: "Pravděpodobně budete evidovat – nebo zvolte EET OFF",
     text: `Splňujete podmínky režimu EET OFF: za přirážku ${formatKc(FACTS.eetOff.surchargeMonthly)} měsíčně k paušální záloze tržby evidovat nemusíte. ${FACTS.eetOff.howTo}`,
     links: [
       { href: "/kalkulacka-eet-off", label: "Spočítat, zda se EET OFF vyplatí" },
@@ -117,7 +117,7 @@ const R: Record<string, Result> = {
   "r-yes": {
     id: "r-yes",
     tone: "yes",
-    title: "Ano, tržby budete evidovat",
+    title: "Tržby budete pravděpodobně evidovat",
     text: `${FACTS.whoMust.summary} Od 1. 11. 2026 se přihlaste k evidenci v DIS+, oznamte provozovnu jako evidenční jednotku a vygenerujte pokladní certifikát. Evidovat musíte od 1. 1. 2027 – pokladnu si vyzkoušejte ještě v prosinci.`,
     links: [
       { href: "/evidencni-jednotky", label: "Průvodce evidenčními jednotkami" },
@@ -128,7 +128,7 @@ const R: Record<string, Result> = {
   "r-yes-mobile": {
     id: "r-yes-mobile",
     tone: "yes",
-    title: "Ano, tržby budete evidovat – i mimo provozovnu",
+    title: "Tržby budete pravděpodobně evidovat – i mimo provozovnu",
     text: `${FACTS.units.summary} Pokladna by měla zvládat i práci bez signálu. ${FACTS.offline.summary}`,
     links: [
       { href: "/evidencni-jednotky", label: "Které jednotky oznámit" },

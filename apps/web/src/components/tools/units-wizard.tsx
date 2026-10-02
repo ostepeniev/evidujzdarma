@@ -101,7 +101,7 @@ export function UnitsWizard() {
           <p className="mt-1 text-2xl font-bold text-ink">
             {total === 0
               ? "Zatím žádná evidenční jednotka"
-              : `Oznamte v DIS+ ${total} ${total === 1 ? "evidenční jednotku" : total < 5 ? "evidenční jednotky" : "evidenčních jednotek"}`}
+              : `Pravděpodobně oznámíte v DIS+ ${total} ${total === 1 ? "evidenční jednotku" : total < 5 ? "evidenční jednotky" : "evidenčních jednotek"}`}
           </p>
           {units.length > 0 && (
             <ul className="mt-4 space-y-3">
@@ -128,6 +128,7 @@ export function UnitsWizard() {
           </p>
           <p>{FACTS.units.change}</p>
           <p>Číslo provozovny z živnostenského rejstříku (IČP) není číslo evidenční jednotky.</p>
+          <p className="text-sm text-muted">Orientační doporučení podle vašich odpovědí, nejde o daňové poradenství. Konečné rozhodnutí je na vás, případně na daňovém poradci.</p>
           {total > 2 && <p>Státní aplikace MOJE eet zvládne nejvýše 2 evidenční jednotky. EvidujZdarma má zdarma 3, více v Premium.</p>}
         </div>
         <div className="flex flex-wrap gap-3">

@@ -13,7 +13,7 @@ export const kohoSeEetTyka: Guide = {
   summary: [
     "Evidovat musí podnikatel (FO i PO), který přijímá platby osobně: hotovost, karta, QR kód, poukázka.",
     "Nezáleží na oboru ani na tom, zda jste plátce DPH. Výjimka pro „příležitostné tržby do 50 000 Kč“ ve schváleném zákoně není.",
-    "Netýká se příjmů ze zaměstnání, kapitálových příjmů, nájmu a příležitostných příjmů.",
+    "Netýká se příjmů ze zaměstnání, kapitálových příjmů, nájmu a ostatních (příležitostných) příjmů podle § 10 ZDP.",
     "Vyjmuté jsou jen konkrétní činnosti (např. část dopravy, poštovní služby, hazard, energie) – ne celé obory.",
     `Paušalisté v 1. pásmu s příjmy do 1 mil. Kč se mohou evidenci vyhnout přirážkou ${formatKc(FACTS.eetOff.surchargeMonthly)} měsíčně (EET OFF).`,
   ],

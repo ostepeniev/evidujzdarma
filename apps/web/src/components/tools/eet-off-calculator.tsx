@@ -150,7 +150,7 @@ export function EetOffCalculator() {
                 {r.verdict === "eet-off"
                   ? "EET OFF se vám pravděpodobně vyplatí."
                   : r.verdict === "evidence"
-                    ? "Evidence vás vyjde levněji než EET OFF."
+                    ? "Evidence vás pravděpodobně vyjde levněji než EET OFF."
                     : "Vychází to zhruba nastejno."}
               </p>
               <p className="mt-2 text-ink-soft">
@@ -159,6 +159,10 @@ export function EetOffCalculator() {
                   : r.verdict === "evidence"
                     ? `Přirážka by vás stála o ${kc(-r.difference)} ${period(r.months)} víc než evidence.`
                     : "Rozhodněte se podle toho, co je pro vás pohodlnější."}
+              </p>
+              <p className="mt-3 text-sm text-muted">
+                Orientační výpočet podle vašich odhadů, nejde o daňové poradenství. Volba EET OFF platí na celý kalendářní rok (při zahájení
+                činnosti v průběhu roku od měsíce zahájení) – počítejte proto s příjmy a prací za celé toto období.
               </p>
             </div>
             <div className="card">
@@ -204,7 +208,9 @@ export function EetOffCalculator() {
                   Přihlásit se k EET OFF je třeba do <strong className="text-ink">{FACTS.eetOff.deadline}</strong>. Pozdní oznámení je neúčinné a zpětně se přihlásit nelze.
                 </p>
               ) : (
-                <p>Při zahájení činnosti v průběhu roku platíte přirážku od měsíce zahájení. Lhůtu pro oznámení si ověřte na eet.gov.cz nebo u svého finančního úřadu.</p>
+                <p>
+                  Při zahájení činnosti v průběhu roku platíte přirážku od měsíce zahájení. {FACTS.eetOff.startDeadline}
+                </p>
               )}
               <ul className="mt-3 list-disc space-y-1 pl-5">
                 <li>{FACTS.eetOff.binding}</li>

@@ -251,11 +251,12 @@ export const FACTS = {
   },
   whoMust: {
     summary: "Evidovat musí každý poplatník daně z příjmů (fyzická i právnická osoba), který přijímá evidované tržby.",
-    notCovered: "Netýká se příjmů ze zaměstnání, kapitálových příjmů, nájmu a příležitostných příjmů.",
+    notCovered:
+      "Netýká se příjmů ze zaměstnání, kapitálových příjmů, nájmu a ostatních (příležitostných) příjmů podle § 10 ZDP – ty nejsou příjmy z podnikání.",
     exemptions:
       "Zákon vyjímá některé činnosti – podle dostupných rozborů například pravidelnou osobní dopravu (platba ve vozidle), poštovní služby, hazardní hry, dodávky energií a vody, finanční služby bank a pojišťoven nebo prodej kaprů před Vánoci. Výjimka se týká jen dané činnosti; přesný výčet ověřte na eet.gov.cz.",
     occasional:
-      "Pevná hranice pro „příležitostné tržby“ (např. 50 000 Kč ročně) ve schváleném zákoně není. Tisková zpráva MF z února 2026 ji zmiňovala, do zákona se ale nedostala. Zákon pracuje jen s tržbou, která je ojedinělá z hlediska obvykle přijímaných tržeb (§ 7) – a to se posuzuje podle okolností, ne podle částky.",
+      "Pevná hranice pro „příležitostné tržby“ (např. 50 000 Kč ročně) ve schváleném zákoně není. Tisková zpráva MF z února 2026 ji zmiňovala, do zákona se ale nedostala. Zákon pracuje jen s tržbou, která je ojedinělá z hlediska obvykle přijímaných tržeb (§ 7) – a to se posuzuje podle okolností, ne podle částky. Finanční správa ji popisuje jako platbu přijatou výjimečně a nečekaně, kterou běžný model podnikání nepředpokládá; tržba, která se opakuje, byť s dlouhými odstupy, mezi ně nepatří.",
     sources: [SOURCES.kdoMusi, SOURCES.podnikatelDetail, SOURCES.psp],
   },
   offline: {
@@ -306,6 +307,7 @@ export const FACTS = {
     overLimit:
       "Když příjmy v průběhu roku přesáhnou 1 mil. Kč, přirážku platíte do konce roku a evidovat tržby musíte až od následujícího roku.",
     exit: "Z režimu se odhlásíte oznámením do 10. dne následujícího roku.",
+    startDeadline: "Kdo činnost teprve zahajuje, podává oznámení o vstupu do paušálního režimu nejpozději v den zahájení činnosti.",
     sources: [SOURCES.eetOff, SOURCES.eetOffJak],
   },
   pausal: {

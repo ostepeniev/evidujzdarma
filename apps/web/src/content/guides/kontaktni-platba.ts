@@ -103,7 +103,7 @@ export const kontaktniPlatba: Guide = {
       blocks: [
         {
           ul: [
-            "Příjmy, které nejsou z podnikání: mzda, nájem, dividendy, příležitostné příjmy (viz [Koho se EET týká](/navody/koho-se-eet-tyka)).",
+            "Příjmy, které nejsou z podnikání: mzda, nájem, dividendy, ostatní (příležitostné) příjmy podle § 10 ZDP (viz [Koho se EET týká](/navody/koho-se-eet-tyka)).",
             "Tržby z vyjmutých činností (například poštovní služby nebo hazardní hry).",
             "Platby, které podnikatel přijímá vzdáleně – brána, převod na fakturu, platba z domova.",
             "Tržby podnikatele v režimu [EET OFF](/navody/eet-off).",
