@@ -278,6 +278,10 @@ export const certificates = pgTable(
     encryptedKey: bytea("encrypted_key"),
     encryptedDek: bytea("encrypted_dek"),
     keyVersion: varchar("key_version", { length: 32 }),
+    /** vydavatel – podle něj se určuje prostředí (Playground / ostrý), ne podle formuláře (R1.9) */
+    issuer: text("issuer"),
+    /** kdy certifikát prošel ověřovacím odesláním (overeni) – bez toho nelze přepnout na ostrý provoz */
+    verifiedAt: timestamp("verified_at", { withTimezone: true }),
     revokedAt: timestamp("revoked_at", { withTimezone: true }),
     createdAt: createdAt(),
   },

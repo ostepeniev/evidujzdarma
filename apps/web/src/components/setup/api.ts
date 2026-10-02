@@ -44,7 +44,7 @@ export interface AccountStateDto {
   staff?: { id: string; name: string; role: string; active: boolean; hasPin: boolean }[];
   catalog?: { id: string; name: string; price: number; vatRate: number; color: string | null; active: boolean }[];
   devices?: { id: string; name: string; registerId: string; unitId: string | null; lastSeenAt: string | null }[];
-  certificates?: { id: string; subject: string; eic: string | null; environment: string; validFrom: string; validTo: string }[];
+  certificates?: { id: string; subject: string; eic: string | null; environment: string; validFrom: string; validTo: string; verifiedAt: string | null }[];
   salesCount?: number;
 }
 

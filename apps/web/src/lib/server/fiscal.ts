@@ -28,7 +28,12 @@ function encryptor(): LocalKeyEncryptor {
 }
 
 /** Uloží certifikát šifrovaně (privátní klíč nikdy neopustí server v otevřené podobě). */
-export async function storeCertificate(accountId: string, cert: LoadedCertificate, environment: "playground" | "production") {
+export async function storeCertificate(
+  accountId: string,
+  cert: LoadedCertificate,
+  environment: "playground" | "production",
+  opts: { setAccountEic?: string } = {},
+) {
   const payload: Eet2Credential = {
     privateKeyPem: cert.privateKeyPem,
     certificatePem: cert.certificatePem,
@@ -38,6 +43,10 @@ export async function storeCertificate(accountId: string, cert: LoadedCertificat
   const db = getDb();
   // výměna certifikátu je atomická: buď platí nový, nebo zůstává starý (R1.9)
   const id = await db.transaction(async (tx) => {
+    // účet bez EIČ převezme EIČ z certifikátu – ve stejné transakci jako certifikát
+    if (opts.setAccountEic) {
+      await tx.update(schema.accounts).set({ eic: opts.setAccountEic }).where(and(eq(schema.accounts.id, accountId), isNull(schema.accounts.eic)));
+    }
     await tx
       .update(schema.certificates)
       .set({ revokedAt: new Date() })
@@ -50,6 +59,7 @@ export async function storeCertificate(accountId: string, cert: LoadedCertificat
         eic: cert.info.dic,
         environment,
         serialNumber: cert.info.serialNumber,
+        issuer: cert.info.issuer,
         validFrom: cert.info.validFrom,
         validTo: cert.info.validTo,
         storage: "server",
@@ -63,6 +73,7 @@ export async function storeCertificate(accountId: string, cert: LoadedCertificat
   credentialCache.delete(`${accountId}:${environment}`);
   // tržby zablokované kvůli certifikátu se hned vrátí do fronty (R1.3)
   await requeueBlocked(accountId, CERT_BLOCKS, environment);
+  if (opts.setAccountEic) await requeueBlocked(accountId, ACCOUNT_BLOCKS);
   return id;
 }
 

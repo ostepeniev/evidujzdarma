@@ -47,6 +47,7 @@ export async function accountState(user: CurrentUser) {
         environment: schema.certificates.environment,
         validFrom: schema.certificates.validFrom,
         validTo: schema.certificates.validTo,
+        verifiedAt: schema.certificates.verifiedAt,
       })
       .from(schema.certificates)
       .where(and(eq(schema.certificates.accountId, account.id), isNull(schema.certificates.revokedAt), gt(schema.certificates.validTo, new Date())))
@@ -161,8 +162,11 @@ export async function setEetMode(accountId: string, mode: "mock" | "playground" 
         isNull(schema.certificates.revokedAt),
         gt(schema.certificates.validTo, new Date()),
       ),
+      orderBy: desc(schema.certificates.createdAt),
     });
     if (!cert) throw new HttpError(400, mode === "production" ? "Nahrajte platný pokladní certifikát z DIS+." : "Nahrajte testovací certifikát pro Playground.");
+    // ostrý provoz až po úspěšném ověřovacím odeslání s tímto certifikátem (R1.9)
+    if (mode === "production" && !cert.verifiedAt) throw new HttpError(400, "Nejdřív ověřte spojení s Finanční správou (tlačítko „Ověřit“) s ostrým certifikátem.");
     const units = await db.select().from(schema.evidenceUnits).where(and(eq(schema.evidenceUnits.accountId, accountId), eq(schema.evidenceUnits.active, true)));
     if (!units.length) throw new HttpError(400, "Přidejte alespoň jednu evidenční jednotku.");
     if (units.some((u) => !u.fsUnitId)) throw new HttpError(400, "Všechny evidenční jednotky musí mít číslo přidělené Finanční správou.");

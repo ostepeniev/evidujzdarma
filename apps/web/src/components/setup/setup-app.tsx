@@ -343,7 +343,7 @@ function UnitRow({ unit, reload }: { unit: NonNullable<State["units"]>[number]; 
 
 function CertificateSection({ state, reload }: { state: State; reload: () => Promise<void> }) {
   const certs = state.certificates ?? [];
-  const [environment, setEnvironment] = useState<"production" | "playground">("production");
+  const [environment, setEnvironment] = useState<"" | "production" | "playground">("");
   const { busy, error, run } = useAction();
   return (
     <Section
@@ -358,6 +358,7 @@ function CertificateSection({ state, reload }: { state: State; reload: () => Pro
           {certs.map((c) => (
             <li key={c.id} className="rounded-2xl bg-surface p-3 text-[15px]">
               <strong>{c.environment === "production" ? "Ostrý certifikát" : "Testovací (Playground)"}</strong> · EIČ {c.eic ?? "—"} · platný do {new Date(c.validTo).toLocaleDateString("cs-CZ")}
+              {c.environment === "production" && <span className="ml-1 text-muted">· {c.verifiedAt ? "ověřeno" : "zatím neověřeno – použijte „Odeslat ověřovací tržbu“"}</span>}
             </li>
           ))}
         </ul>
@@ -367,7 +368,9 @@ function CertificateSection({ state, reload }: { state: State; reload: () => Pro
         onSubmit={(e) => {
           e.preventDefault();
           const fd = new FormData(e.currentTarget);
-          fd.set("environment", environment);
+          // prostředí pozná server podle vydavatele; volba jen kontroluje, že jde o očekávaný certifikát
+          if (environment) fd.set("environment", environment);
+          else fd.delete("environment");
           const formEl = e.currentTarget;
           void run(async () => {
             const res = await fetch("/api/ucet/certifikat", { method: "POST", body: fd });
@@ -380,7 +383,8 @@ function CertificateSection({ state, reload }: { state: State; reload: () => Pro
       >
         <input aria-label="Soubor certifikátu" name="file" type="file" accept=".p12,.pfx,application/x-pkcs12" required className="input py-2 sm:col-span-2" />
         <input aria-label="Heslo k certifikátu" name="password" type="password" autoComplete="off" className="input" placeholder="Heslo k certifikátu" />
-        <select aria-label="Prostředí" className="input" value={environment} onChange={(e) => setEnvironment(e.target.value as "production" | "playground")}>
+        <select aria-label="Prostředí" className="input" value={environment} onChange={(e) => setEnvironment(e.target.value as "" | "production" | "playground")}>
+          <option value="">Rozpoznat podle certifikátu</option>
           <option value="production">Ostrý certifikát (z DIS+)</option>
           <option value="playground">Testovací certifikát (Playground)</option>
         </select>
@@ -455,7 +459,7 @@ function ModeSection({ state, reload, hasProdCert, hasPgCert }: { state: State; 
                   r.ok
                     ? r.mode === "mock"
                       ? "Ukázkový režim: testovací tržba proběhla (bez odeslání do FS)."
-                      : "Finanční správa ověřovací zprávu přijala – certifikát, EIČ i číslo jednotky jsou v pořádku."
+                      : `Finanční správa (${MODE_LABEL[r.mode] ?? r.mode}) ověřovací zprávu přijala – certifikát, EIČ i číslo jednotky jsou v pořádku.`
                     : `Finanční správa zprávu odmítla: ${r.message ?? r.code}`,
                 );
               })
