@@ -10,7 +10,8 @@ const SEND_BUDGET_MS = 8_000;
 
 export async function POST(req: Request) {
   try {
-    const ctx = await authenticateDevice(req);
+    // i po zrušení účtu se uložené tržby z pokladny přijmou – neztratí se (R5.8)
+    const ctx = await authenticateDevice(req, { allowClosed: true });
     const body = Body.safeParse(await req.json().catch(() => null));
     if (!body.success) throw new HttpError(400, "Neplatný požadavek");
     const parsed = body.data.sales.map((s) => DeviceSaleSchema.safeParse(s));
@@ -55,7 +56,7 @@ export async function POST(req: Request) {
 /** Stav dříve odeslaných tržeb (POK doplněný cronem po výpadku). */
 export async function GET(req: Request) {
   try {
-    const ctx = await authenticateDevice(req);
+    const ctx = await authenticateDevice(req, { allowClosed: true });
     const ids = (new URL(req.url).searchParams.get("ids") ?? "").split(",").filter((x) => /^[0-9a-f-]{36}$/i.test(x)).slice(0, 200);
     const statuses = await salesStatus(ids, ctx.account.id);
     // tržby mimo evidenci: stav karantény (čeká na vlastníka / vyřízeno), ať je pokladna znovu neposílá (R5.7)

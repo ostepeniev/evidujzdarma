@@ -27,6 +27,8 @@ export interface PosConfig {
     receiptShowPok?: boolean;
     mode: PosMode;
     plan: string;
+    /** účet je zrušený – pokladna jen dovyveze uložené tržby (R5.8) */
+    closed?: boolean;
   };
   units: { id: string; label: string; type: string; fsUnitId: number | null; active: boolean; address: string | null }[];
   /** pinHash jen u pokladních; PIN vlastníka se ověřuje online (onlinePin) – R3.10 */

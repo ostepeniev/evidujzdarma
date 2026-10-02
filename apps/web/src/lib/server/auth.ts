@@ -147,7 +147,11 @@ export interface DeviceContext {
 }
 
 /** Autentizace pokladny tokenem zařízení (Authorization: Bearer …). */
-export async function authenticateDevice(req: Request): Promise<DeviceContext> {
+/**
+ * Zařízení podle tokenu. U zrušeného účtu (R5.8) smí jen dovyvézt uložené tržby a pokladní záznamy
+ * a načíst konfiguraci (`allowClosed`); prodej, PIN a účtenky ne.
+ */
+export async function authenticateDevice(req: Request, opts: { allowClosed?: boolean } = {}): Promise<DeviceContext> {
   const auth = req.headers.get("authorization") ?? "";
   const token = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
   if (token.length < 30) throw new HttpError(401, "Chybí token zařízení");
@@ -156,6 +160,7 @@ export async function authenticateDevice(req: Request): Promise<DeviceContext> {
   if (!device) throw new HttpError(401, "Zařízení není registrované nebo bylo odpojeno");
   const account = await db.query.accounts.findFirst({ where: eq(schema.accounts.id, device.accountId) });
   if (!account) throw new HttpError(401, "Účet neexistuje");
+  if (account.closedAt && !opts.allowClosed) throw new HttpError(403, "Účet je zrušený – pokladna už jen odešle uložené tržby.");
   // lastSeen aktualizujeme nejvýše jednou za minutu
   if (!device.lastSeenAt || Date.now() - device.lastSeenAt.getTime() > 60_000) {
     await db.update(schema.devices).set({ lastSeenAt: new Date() }).where(eq(schema.devices.id, device.id));

@@ -120,7 +120,7 @@ export function SetupApp({ initial }: { initial: State }) {
 
       {acc?.closedAt && (
         <p role="alert" className="rounded-3xl border-2 border-danger-600 bg-white p-5 text-[15px]">
-          <strong className="text-danger-600">Účet je zrušený.</strong> Zařízení a certifikáty už nefungují. Data smažeme{" "}
+          <strong className="text-danger-600">Účet je zrušený.</strong> Certifikáty už nefungují a pokladny neprodávají – jen odešlou uložené tržby. Data smažeme{" "}
           {new Date(new Date(acc.closedAt).getTime() + 30 * 86_400_000).toLocaleDateString("cs-CZ")} – do té doby si stáhněte export tržeb níže.
         </p>
       )}
@@ -954,7 +954,7 @@ function CloseAccountSection({ reload }: { reload: () => Promise<void> }) {
     <section id="zrusit-ucet" className="scroll-mt-24 rounded-3xl border border-line bg-white p-6">
       <h2 className="text-xl font-bold">Zrušit účet</h2>
       <p className="mt-1 text-[15px] text-ink-soft">
-        Zařízení a pokladní certifikáty přestanou okamžitě fungovat. Na export dat máte 30 dnů, potom data smažeme. Certifikát nezapomeňte zneplatnit v DIS+.
+        Pokladní certifikáty přestanou okamžitě fungovat a pokladny přestanou prodávat (uložené tržby ještě odešlou). Na export dat máte 30 dnů, potom data smažeme. Certifikát nezapomeňte zneplatnit v DIS+.
       </p>
       {!open ? (
         <button type="button" className="btn-ghost mt-3 text-danger-600" onClick={() => setOpen(true)}>
@@ -966,7 +966,21 @@ function CloseAccountSection({ reload }: { reload: () => Promise<void> }) {
           onSubmit={(e) => {
             e.preventDefault();
             void run(async () => {
-              await call("/api/ucet/zrusit", { method: "POST", json: { confirm: text.trim() } });
+              try {
+                await call("/api/ucet/zrusit", { method: "POST", json: { confirm: text.trim() } });
+              } catch (e) {
+                // neodeslané tržby nebo karanténa → seznam a výslovné potvrzení (R5.8)
+                if (!(e instanceof ApiError && e.status === 409)) throw e;
+                const d = e.data as { pending?: { mode: string; count: number; oldest: string }[]; quarantine?: number; devices?: { name: string; lastSeenAt: string | null }[] };
+                const lines = [
+                  ...(d.pending ?? []).map((p) => `• ${p.count}× neodeslaná tržba v režimu ${MODE_LABEL[p.mode] ?? p.mode} (nejstarší ${new Date(p.oldest).toLocaleString("cs-CZ")})`),
+                  ...(d.quarantine ? [`• ${d.quarantine}× tržba čeká na vaše rozhodnutí`] : []),
+                  ...(d.devices ?? []).map((x) => `• pokladna ${x.name}: naposledy online ${x.lastSeenAt ? new Date(x.lastSeenAt).toLocaleString("cs-CZ") : "nikdy"}`),
+                ].join("\n");
+                const ok = window.confirm(`${e.message}\n\n${lines}\n\nTyto tržby se po zrušení Finanční správě neodešlou – evidujte je jinak (např. MOJE eet). Opravdu zrušit účet?`);
+                if (!ok) return;
+                await call("/api/ucet/zrusit", { method: "POST", json: { confirm: text.trim(), acknowledgeUnsent: true } });
+              }
               await reload();
             });
           }}

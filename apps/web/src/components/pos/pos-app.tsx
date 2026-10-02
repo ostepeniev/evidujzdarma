@@ -245,6 +245,11 @@ export function PosApp() {
           setView(v);
         }}
       />
+      {config.account.closed && (
+        <p role="alert" className="bg-danger-50 px-4 py-2 text-center text-sm font-medium text-danger-600">
+          Účet je zrušený. Pokladna už neprodává – jen odešle tržby, které jsou v ní uložené.
+        </p>
+      )}
       {configStale && (
         <p role="alert" className="bg-sun-100 px-4 py-2 text-center text-sm font-medium text-ink">
           Účet změnil režim evidence. Pokladna načítá nové nastavení – do té doby nelze prodávat. Zkontrolujte připojení k internetu.

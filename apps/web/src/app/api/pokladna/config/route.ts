@@ -10,7 +10,7 @@ import { accountMode } from "@/lib/server/fiscal";
  */
 export async function GET(req: Request) {
   try {
-    const { device, account } = await authenticateDevice(req);
+    const { device, account } = await authenticateDevice(req, { allowClosed: true });
     const db = getDb();
     const [units, staff, catalog, lastClosing] = await Promise.all([
       db.select().from(schema.evidenceUnits).where(eq(schema.evidenceUnits.accountId, account.id)).orderBy(asc(schema.evidenceUnits.createdAt)),
@@ -42,6 +42,8 @@ export async function GET(req: Request) {
           receiptShowPok: account.receiptShowPok,
           mode: accountMode(account),
           plan: account.plan,
+          // zrušený účet: pokladna už neprodává, jen dovyveze uložené tržby (R5.8)
+          closed: !!account.closedAt,
         },
         units: units.map((u) => ({ id: u.id, label: u.label, type: u.type, fsUnitId: u.fsUnitId, active: u.active, address: u.address })),
         staff: staff.map((x) => (x.role === "owner" ? { ...x, pinHash: null, onlinePin: true } : x)),

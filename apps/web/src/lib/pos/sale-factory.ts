@@ -25,6 +25,7 @@ export interface NewSaleInput {
  */
 export async function createLocalSale(device: DeviceCredentials, config: PosConfig, input: NewSaleInput): Promise<LocalSale> {
   // účet mezitím přepnul režim evidence – prodej v původním režimu by se tiše neevidoval (R5.1)
+  if (config.account.closed) throw new Error("Účet je zrušený – pokladna už neprodává. Uložené tržby se odešlou samy.");
   if (isConfigStale()) throw new Error("Účet změnil režim evidence. Pokladna načítá nové nastavení – zkuste to za chvíli (je potřeba připojení k internetu).");
   const unit = config.units.find((u) => u.id === input.unitId);
   if (!unit) throw new Error("Vyberte evidenční jednotku");

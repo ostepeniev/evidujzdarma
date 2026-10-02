@@ -287,8 +287,11 @@ const SECTIONS: readonly { id: string; title: string; body: ReactNode }[] = [
           uživatelem (např. zneužití služby) může provozovatel přístup omezit nebo účet zrušit s okamžitou účinností.
         </p>
         <p>
-          11.3 Zrušením účtu přestanou zařízení a pokladní certifikáty ve službě okamžitě fungovat. Uživatel má 30 dnů na export
-          dat; poté provozovatel data smaže, pokud mu jejich další uchování neukládá právní předpis.
+          11.3 Zrušením účtu přestanou pokladní certifikáty ve službě okamžitě fungovat a pokladny přestanou prodávat; mohou už jen
+          odeslat tržby, které v nich zůstaly uložené. Má-li účet tržby, které ještě nebyly odeslány Finanční správě, služba před
+          zrušením zobrazí jejich seznam a zrušení musí uživatel výslovně potvrdit. Uživatel má 30 dnů na export dat; poté
+          provozovatel data smaže, pokud mu jejich další uchování neukládá právní předpis. Účet s tržbami, které Finanční správa
+          nepotvrdila, provozovatel automaticky nesmaže.
         </p>
       </>
     ),

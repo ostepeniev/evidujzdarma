@@ -10,7 +10,8 @@ const Body = z.object({
 /** Synchronizace pohybů hotovosti a denních uzávěrek ze zařízení (idempotentní). */
 export async function POST(req: Request) {
   try {
-    const ctx = await authenticateDevice(req);
+    // pokladní záznamy (vklady, výběry, uzávěrky) se po zrušení účtu ještě přijmou (R5.8)
+    const ctx = await authenticateDevice(req, { allowClosed: true });
     const body = Body.safeParse(await req.json().catch(() => null));
     if (!body.success) throw new HttpError(400, "Neplatný požadavek");
     const errors: { id: string; error: string }[] = [];

@@ -76,14 +76,17 @@ describe("R2.5 – legal texts match the code", () => {
     expect((await getDb().query.accountantClients.findFirst({ where: eq(schema.accountantClients.id, link!.id) }))!.clientAccountId).toBeNull();
   });
 
-  it("'zrušit účet': devices and certificates stop at once, data is deleted by cron after 30 days", async () => {
+  it("'zrušit účet': certificates stop at once, POS only uploads stored sales, data is deleted by cron after 30 days", async () => {
     const s = await seedAccount({ mode: "playground" });
     await storeCertificate(s.account.id, testCert({ issuer: "EET CA 1 Playground" }).cert, "playground");
-    await ingestSales(await deviceContext(s.device.id), [deviceSale(s.unit.id) as never]);
-    await closeAccount(s.account.id);
+    await ingestSales(await deviceContext(s.device.id), [deviceSale(s.unit.id, { mode: "playground" }) as never]);
+    // neodeslaná tržba → zrušení jen s výslovným potvrzením (R5.8, podmínky čl. 11.3)
+    await expect(closeAccount(s.account.id)).rejects.toMatchObject({ status: 409 });
+    await closeAccount(s.account.id, { confirm: true });
     const acc = (await getDb().query.accounts.findFirst({ where: eq(schema.accounts.id, s.account.id) }))!;
     expect(acc.closedAt).not.toBeNull();
-    expect((await getDb().query.devices.findFirst({ where: eq(schema.devices.id, s.device.id) }))!.revokedAt).not.toBeNull();
+    // zařízení se neodpojí – po zrušení smí jen dovyvézt uložené tržby (authenticateDevice allowClosed)
+    expect((await getDb().query.devices.findFirst({ where: eq(schema.devices.id, s.device.id) }))!.revokedAt).toBeNull();
     expect((await getDb().select().from(schema.certificates).where(eq(schema.certificates.accountId, s.account.id))).every((c) => c.encryptedKey === null)).toBe(true);
 
     await runRetention(new Date(Date.now() + 29 * DAY));

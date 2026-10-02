@@ -1,5 +1,5 @@
 import "server-only";
-import { and, eq, isNotNull, isNull, lt, ne, notExists, or, sql } from "drizzle-orm";
+import { and, eq, exists, inArray, isNotNull, isNull, lt, ne, notExists, notInArray, or, sql } from "drizzle-orm";
 import { getDb, schema } from "@ez/db";
 import { RETENTION } from "@/lib/legal";
 import { HttpError } from "./auth";
@@ -40,16 +40,46 @@ export async function linkedAccountants(clientAccountId: string) {
     .where(eq(schema.accountantClients.clientAccountId, clientAccountId));
 }
 
-/**
- * „Zrušit účet“ (podmínky čl. 11.1, 11.3): zařízení a certifikáty přestanou fungovat hned,
- * vlastník má 30 dnů na export, potom data smaže cron (runRetention).
- */
-export async function closeAccount(accountId: string): Promise<Date> {
+/** Tržby bez konečného stavu (mimo ukázkový režim), otevřená karanténa a zařízení – co by zrušení účtu ohrozilo. */
+export async function closureBlockers(accountId: string) {
   const db = getDb();
+  const pending = await db
+    .select({ mode: schema.sales.mode, count: sql<number>`count(*)::int`, oldest: sql<string>`min(${schema.sales.soldAt})::text` })
+    .from(schema.sales)
+    .where(and(eq(schema.sales.accountId, accountId), ne(schema.sales.mode, "mock"), inArray(schema.sales.status, ["queued", "sending", "failed", "rejected"])))
+    .groupBy(schema.sales.mode);
+  const [q] = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(schema.saleQuarantine)
+    .where(and(eq(schema.saleQuarantine.accountId, accountId), isNull(schema.saleQuarantine.resolvedAt)));
+  const devices = await db
+    .select({ name: schema.devices.name, registerId: schema.devices.registerId, lastSeenAt: schema.devices.lastSeenAt })
+    .from(schema.devices)
+    .where(and(eq(schema.devices.accountId, accountId), isNull(schema.devices.revokedAt)));
+  return { pending, quarantine: q?.n ?? 0, devices };
+}
+
+/**
+ * „Zrušit účet“ (podmínky čl. 11.1, 11.3): certifikáty přestanou fungovat hned, vlastník má 30 dnů na export,
+ * potom data smaže cron (runRetention). Neodeslané tržby nebo otevřená karanténa → 409 se seznamem, dokud to
+ * vlastník výslovně nepotvrdí (R5.8, invariant 1). Zařízení po zrušení jen dovyvezou uložené tržby.
+ */
+export async function closeAccount(accountId: string, opts: { confirm?: boolean } = {}): Promise<Date> {
+  const db = getDb();
+  if (!opts.confirm) {
+    const blockers = await closureBlockers(accountId);
+    if (blockers.pending.length || blockers.quarantine > 0) {
+      throw new HttpError(409, "Některé tržby ještě nejsou odeslané Finanční správě nebo čekají na vaše rozhodnutí. Vyřiďte je, nebo zrušení výslovně potvrďte.", {
+        pending: blockers.pending,
+        quarantine: blockers.quarantine,
+        devices: blockers.devices.map((d) => ({ ...d, lastSeenAt: d.lastSeenAt?.toISOString() ?? null })),
+      });
+    }
+  }
   const now = new Date();
   await db.transaction(async (tx) => {
     await tx.update(schema.accounts).set({ closedAt: now }).where(and(eq(schema.accounts.id, accountId), isNull(schema.accounts.closedAt)));
-    await tx.update(schema.devices).set({ revokedAt: now }).where(and(eq(schema.devices.accountId, accountId), isNull(schema.devices.revokedAt)));
+    // zařízení se neodpojují: po zrušení smí jen dovyvézt uložené tržby a pokladní záznamy (authenticateDevice)
     await tx
       .update(schema.certificates)
       .set({ revokedAt: sql`coalesce(${schema.certificates.revokedAt}, now())`, encryptedKey: null, encryptedDek: null })
@@ -75,11 +105,29 @@ export async function runRetention(now = new Date()): Promise<Record<string, num
   const count = async (k: string, p: Promise<unknown[]>) => (out[k] = (await p).length);
   const DAY = 86_400_000;
 
-  // Zrušené účty: 30 dnů na export, pak smazání (kaskáda: tržby, zařízení, jednotky, personál…)
-  await count(
-    "accounts",
-    db.delete(schema.accounts).where(and(isNotNull(schema.accounts.closedAt), lt(schema.accounts.closedAt, ago(now, RETENTION.closedAccountDays * DAY)))).returning({ id: schema.accounts.id }),
-  );
+  // Zrušené účty: 30 dnů na export, pak smazání (kaskáda: tržby, zařízení, jednotky, personál…).
+  // Účet s produkčními tržbami bez POK se nesmaže bez samostatného rozhodnutí provozovatele (R5.8).
+  const expired = and(isNotNull(schema.accounts.closedAt), lt(schema.accounts.closedAt, ago(now, RETENTION.closedAccountDays * DAY)));
+  const unsentProduction = db
+    .select({ x: sql`1` })
+    .from(schema.sales)
+    .where(and(eq(schema.sales.accountId, schema.accounts.id), eq(schema.sales.mode, "production"), notInArray(schema.sales.status, ["confirmed", "not_required"])));
+  await count("accounts", db.delete(schema.accounts).where(and(expired, notExists(unsentProduction))).returning({ id: schema.accounts.id }));
+  const held = await db.select({ id: schema.accounts.id }).from(schema.accounts).where(and(expired, exists(unsentProduction)));
+  out.accountsHeld = held.length;
+  if (held.length) {
+    const { enqueueEmail } = await import("./mail");
+    const { SITE } = await import("@/lib/site");
+    await enqueueEmail({
+      to: SITE.email,
+      template: "notice",
+      dedupeKey: `retention-held:${now.toISOString().slice(0, 10)}`,
+      payload: {
+        subject: `Zrušené účty s neodeslanými produkčními tržbami (${held.length})`,
+        text: `Retention tyto zrušené účty nesmazala, protože mají produkční tržby bez POK: ${held.map((h) => h.id).join(", ")}. Rozhodněte o nich samostatně (vlastník je může potřebovat pro ruční evidenci).`,
+      },
+    });
+  }
 
   // Předregistrace bez souhlasu a bez účtu: do spuštění pokladny + 12 měsíců (od pozdější registrace)
   const launchPlus = addMonths(new Date(`${RETENTION.launch}T00:00:00+01:00`), RETENTION.preregistrationMonths);
