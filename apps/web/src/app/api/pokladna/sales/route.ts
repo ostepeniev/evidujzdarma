@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { HttpError, authenticateDevice, errorResponse } from "@/lib/server/auth";
 import { accountMode, processSale, salesStatus } from "@/lib/server/fiscal";
-import { quarantineSale } from "@/lib/server/quarantine";
+import { quarantineSale, quarantineStatuses } from "@/lib/server/quarantine";
 import { DeviceSaleSchema, ingestSales, type IngestResult } from "@/lib/server/sales";
 
 const Body = z.object({ sales: z.array(z.unknown()).min(1).max(100) });
@@ -57,7 +57,11 @@ export async function GET(req: Request) {
   try {
     const ctx = await authenticateDevice(req);
     const ids = (new URL(req.url).searchParams.get("ids") ?? "").split(",").filter((x) => /^[0-9a-f-]{36}$/i.test(x)).slice(0, 200);
-    return Response.json({ statuses: await salesStatus(ids, ctx.account.id), accountMode: accountMode(ctx.account) });
+    const statuses = await salesStatus(ids, ctx.account.id);
+    // tržby mimo evidenci: stav karantény (čeká na vlastníka / vyřízeno), ať je pokladna znovu neposílá (R5.7)
+    const known = new Set(statuses.map((s) => s.id));
+    const quarantined = await quarantineStatuses(ctx.account.id, ids.filter((id) => !known.has(id)));
+    return Response.json({ statuses: [...statuses, ...quarantined], accountMode: accountMode(ctx.account) });
   } catch (e) {
     return errorResponse(e);
   }

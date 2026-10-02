@@ -5,7 +5,7 @@ import { getDb, schema } from "@ez/db";
 import { PAYMENT_METHODS, SaleValidationError, buildSale, deadlineFor, evidencedAmounts } from "@ez/fiscal-core";
 import type { DeviceContext } from "./auth";
 import { accountMode, type EetMode } from "./fiscal";
-import { markIngested, quarantineSale } from "./quarantine";
+import { ingestedFromQuarantine, markIngested, quarantineSale } from "./quarantine";
 import { verifyApproval } from "./staff-pin";
 
 /** Tržba tak, jak ji posílá pokladna (částky v haléřích). */
@@ -240,6 +240,11 @@ export async function ingestSales(ctx: DeviceContext, inputs: DeviceSale[]): Pro
       results.push({ id: sale.id, ok: true, inserted: inserted.length > 0 });
     } catch (e) {
       if (e instanceof IngestRejection) {
+        // původní verze tržby, kterou vlastník z karantény už přijal (např. s časem přijetí) → známá, ne nová karanténa (R5.7)
+        if (await ingestedFromQuarantine(account.id, input.id).catch(() => false)) {
+          results.push({ id: input.id, ok: true, inserted: false });
+          continue;
+        }
         try {
           await quarantineSale(ctx, input, e.code, e.message);
           results.push({ id: input.id, ok: false, retryable: false, quarantined: true, code: e.code, error: e.message, httpStatus: e.httpStatus });

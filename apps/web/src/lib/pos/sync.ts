@@ -4,8 +4,8 @@
  * Synchronizace pokladny se serverem: odeslání offline fronty, načtení stavů (POK)
  * a konfigurace. Server je idempotentní, takže opakované odeslání stejné tržby je bezpečné.
  */
-import { getDevice, getMeta, markCashSynced, setMeta, unsettledSales, unsyncedCash, updateSale } from "./db";
-import { CONFIG_REFRESH_MS, accountModeChanged, applyPolledStatuses, applyServerResult, clockOffsetFrom, planSync, type ServerSaleResult, type ServerSaleStatus } from "./sync-result";
+import { getDevice, getMeta, markCashSynced, rejectedSales, setMeta, unsettledSales, unsyncedCash, updateSale } from "./db";
+import { CONFIG_REFRESH_MS, REJECTED_POLL_MS, accountModeChanged, applyPolledStatuses, applyServerResult, clockOffsetFrom, planSync, type ServerSaleResult, type ServerSaleStatus } from "./sync-result";
 import type { PosConfig } from "./types";
 
 type Listener = () => void;
@@ -39,6 +39,7 @@ export class DeviceRevokedError extends Error {}
 let configStale = false;
 let configVer = 0;
 let lastConfigAt = 0;
+let lastRejectedPollAt = 0;
 
 /** Server hlásí jiný režim účtu, než má pokladna – do načtení nového nastavení se neprodává. */
 export function isConfigStale(): boolean {
@@ -113,7 +114,10 @@ async function syncCash(): Promise<void> {
 async function doSync(): Promise<SyncReport> {
   // kiosk s trvale viditelnou kartou: konfigurace se jinak obnovuje jen při startu a návratu (R5.1)
   if (Date.now() - lastConfigAt > CONFIG_REFRESH_MS) await refreshConfig();
-  const pending = await unsettledSales();
+  // odmítnuté tržby mohl vlastník mezitím vyřešit – zeptáme se na ně jednou za 5 min (R5.7)
+  const pollRejected = Date.now() - lastRejectedPollAt > REJECTED_POLL_MS;
+  const rejected = pollRejected ? await rejectedSales() : [];
+  const pending = [...(await unsettledSales()), ...rejected];
   if (!pending.length) {
     try {
       await syncCash();
@@ -125,7 +129,8 @@ async function doSync(): Promise<SyncReport> {
     return lastReport;
   }
   let sent = 0;
-  const plan = planSync(pending);
+  const plan = planSync(pending, { pollRejected });
+  const rejectedIds = new Set(rejected.map((r) => r.id));
   const toPost = pending.filter((p) => plan.post.includes(p.id));
   try {
     for (let i = 0; i < toPost.length; i += 50) {
@@ -163,10 +168,11 @@ async function doSync(): Promise<SyncReport> {
       const res = await api(`/api/pokladna/sales?ids=${ids.join(",")}`);
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? `Server odpověděl ${res.status}`);
       const { statuses, accountMode } = (await res.json()) as { statuses: ServerSaleStatus[]; accountMode?: string };
-      for (const [id, patch] of applyPolledStatuses(ids, statuses)) await updateSale(id, patch);
+      for (const [id, patch] of applyPolledStatuses(ids, statuses, new Date(), { rejected: rejectedIds })) await updateSale(id, patch);
       await checkAccountMode(accountMode);
     }
     await syncCash();
+    if (pollRejected) lastRejectedPollAt = Date.now();
     lastReport = { at: new Date().toISOString(), online: true, sent, error: null };
   } catch (e) {
     if (e instanceof DeviceRevokedError) throw e;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { accountModeChanged, applyPolledStatuses, applyServerResult, clockOffsetFrom, correctedNow, planSync } from "@/lib/pos/sync-result";
+import { accountModeChanged, applyPolledStatuses, applyServerResult, clockOffsetFrom, correctedNow, planSync, unresolvedRejected } from "@/lib/pos/sync-result";
 
 describe("POS handling of server results (R1.1)", () => {
   it("keeps a sale in the queue on a temporary server error", () => {
@@ -51,5 +51,48 @@ describe("R5.1 – POS notices the account switched mode", () => {
     // starší server bez pole nebo chybějící konfigurace nevyvolá falešný poplach
     expect(accountModeChanged(undefined, "mock")).toBe(false);
     expect(accountModeChanged("mock", undefined)).toBe(true);
+  });
+});
+
+describe("R5.7 – POS sees resolved 'Odmítnuto' (A В-2)", () => {
+  it("rejected sales are polled too, but only when it is time for it (~5 min)", () => {
+    const sales = [
+      { id: "r", status: "rejected" as const, syncedAt: "2027-01-01T00:00:00.000Z" },
+      { id: "q", status: "rejected" as const, quarantined: true },
+      { id: "done", status: "rejected" as const, resolution: "dismissed" as const },
+    ];
+    expect(planSync(sales).poll).toEqual([]);
+    expect(planSync(sales, { pollRejected: true }).poll).toEqual(["r", "q"]);
+  });
+
+  it("a rejected sale the server now confirms becomes confirmed; quarantine states are kept, never re-posted", () => {
+    const out = new Map(
+      applyPolledStatuses(
+        ["r", "open", "dismissed", "gone"],
+        [
+          { id: "r", status: "confirmed", confirmationCode: "POK", lastError: null },
+          { id: "open", status: "rejected", confirmationCode: null, lastError: "Datum v budoucnosti", quarantine: "open" },
+          { id: "dismissed", status: "rejected", confirmationCode: null, lastError: "Evidováno ručně", quarantine: "dismissed" },
+        ],
+        new Date("2027-01-01T00:00:00Z"),
+        { rejected: new Set(["r", "open", "dismissed", "gone"]) },
+      ),
+    );
+    expect(out.get("r")).toMatchObject({ status: "confirmed", confirmationCode: "POK" });
+    expect(out.get("open")).toMatchObject({ status: "rejected", quarantined: true });
+    expect(out.get("dismissed")).toMatchObject({ status: "rejected", resolution: "dismissed" });
+    expect(out.get("dismissed")!.error).toMatch(/Evidováno ručně/);
+    // odmítnutá tržba, kterou server nezná, se sama znovu neposílá
+    expect(out.has("gone")).toBe(false);
+  });
+
+  it("the red counter counts only unresolved rejected sales", () => {
+    expect(
+      unresolvedRejected([
+        { id: "a", status: "rejected" },
+        { id: "b", status: "rejected", resolution: "dismissed" },
+        { id: "c", status: "confirmed" },
+      ]).map((s) => s.id),
+    ).toEqual(["a"]);
   });
 });

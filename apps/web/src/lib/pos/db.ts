@@ -5,6 +5,7 @@
  * výpadek sítě ani zavření aplikace o ně nepřipraví.
  */
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
+import { unresolvedRejected } from "./sync-result";
 import type { DeviceCredentials, LocalCashMovement, LocalClosing, LocalSale, PosConfig } from "./types";
 
 interface PosDB extends DBSchema {
@@ -110,9 +111,9 @@ export async function refundFor(saleId: string): Promise<LocalSale | undefined> 
   return (await (await posDb()).getAll("sales")).find((s) => s.refundOf === saleId);
 }
 
-/** Tržby, které server nebo FS odmítly – pokladna není „čistá“, dokud je někdo nevyřeší (Р2). */
+/** Tržby, které server nebo FS odmítly a nikdo je zatím nevyřešil – pokladna není „čistá“ (Р2, R5.7). */
 export async function rejectedSales(): Promise<LocalSale[]> {
-  return (await posDb()).getAllFromIndex("sales", "byStatus", "rejected");
+  return unresolvedRejected(await (await posDb()).getAllFromIndex("sales", "byStatus", "rejected"));
 }
 
 /** Smaže z IndexedDB potvrzené tržby starší než `days` (data zůstávají na serveru). */

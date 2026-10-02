@@ -65,6 +65,8 @@ export interface LocalSale {
   error: string | null;
   /** server tržbu uložil do karantény (čeká na vlastníka) */
   quarantined?: boolean;
+  /** vlastník tržbu z karantény vyřídil ručně (např. evidence v MOJE eet, zkouška) – už není „k vyřízení“ (R5.7) */
+  resolution?: "dismissed";
   syncedAt: string | null;
   createdAt: string;
 }

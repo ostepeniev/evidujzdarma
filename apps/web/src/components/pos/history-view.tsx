@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { PAYMENT_LABEL, PAYMENT_METHODS, decimalString, type PaymentMethod } from "@ez/fiscal-core";
 import { salesSince } from "@/lib/pos/db";
+import { unresolvedRejected } from "@/lib/pos/sync-result";
 import { onSyncChange } from "@/lib/pos/sync";
 import type { LocalSale, PosConfig } from "@/lib/pos/types";
 import { CashPanel } from "./cash-panel";
@@ -93,14 +94,15 @@ export function SummaryView({ config, staff }: { config: PosConfig; staff: { id:
   const sales = useSales(0);
   // R1.13: odmítnuté tržby se nesmí ztratit z přehledu – peníze se přijaly, jen nejsou v EET
   const today = sales.filter((s) => new Date(s.soldAt) >= startOfDay());
-  const todayRejected = today.filter((s) => s.status === "rejected");
+  // vyřízené vlastníkem (R5.7) už nejsou „k vyřízení“, ale v přehledu zůstávají
+  const todayRejected = unresolvedRejected(today);
   const byMethod = Object.fromEntries(PAYMENT_METHODS.map((m) => [m, 0])) as Record<PaymentMethod, number>;
   for (const s of today) for (const p of s.payments) byMethod[p.method] += p.amount;
   const total = today.reduce((a, s) => a + s.total, 0);
   const tips = today.reduce((a, s) => a + s.tip, 0);
   const refunds = today.filter((s) => s.refundOf);
   const pending = sales.filter((s) => ["local", "queued", "sending", "failed"].includes(s.status));
-  const rejected = sales.filter((s) => s.status === "rejected");
+  const rejected = unresolvedRejected(sales);
 
   function exportCsv() {
     const head = ["Čas", "Pořadové číslo", "Položky", "Celkem", "Způsob platby", "Spropitné", "Sleva", "POK", "Stav", "Důvod odmítnutí", "Pokladní"];
@@ -114,7 +116,7 @@ export function SummaryView({ config, staff }: { config: PosConfig; staff: { id:
         decimalString(s.tip),
         decimalString(s.discount),
         s.confirmationCode ?? "",
-        STATUS_CSV[s.status] ?? s.status,
+        s.resolution === "dismissed" ? "vyřízeno vlastníkem" : (STATUS_CSV[s.status] ?? s.status),
         s.status === "rejected" ? (s.error ?? "") : "",
         s.staffName ?? "",
       ]

@@ -1,6 +1,6 @@
 import "server-only";
 import { getDb, schema } from "@ez/db";
-import { and, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { absoluteUrl } from "@/lib/site";
 import type { DeviceContext } from "./auth";
 import { HttpError } from "./auth";
@@ -63,6 +63,35 @@ export async function quarantineSale(ctx: DeviceContext, payload: unknown, reaso
       },
     });
   }
+}
+
+/**
+ * Tržbu z karantény už vlastník přijal (resolution 'ingested') a je v evidenci → opakované odeslání původní
+ * verze z pokladny (např. s budoucím časem) nesmí karanténu otevřít znovu ani poslat e-mail (R5.7).
+ */
+export async function ingestedFromQuarantine(accountId: string, id: string): Promise<boolean> {
+  const db = getDb();
+  const q = await db.query.saleQuarantine.findFirst({ where: and(eq(schema.saleQuarantine.id, id), eq(schema.saleQuarantine.accountId, accountId)), columns: { resolution: true } });
+  if (q?.resolution !== "ingested") return false;
+  return !!(await db.query.sales.findFirst({ where: and(eq(schema.sales.id, id), eq(schema.sales.accountId, accountId)), columns: { id: true } }));
+}
+
+/** Stav tržeb, které nejsou v evidenci, ale jsou v karanténě (pro dotaz pokladny na stavy, R5.7). */
+export async function quarantineStatuses(accountId: string, ids: string[]) {
+  if (!ids.length) return [];
+  const rows = await getDb()
+    .select()
+    .from(schema.saleQuarantine)
+    .where(and(eq(schema.saleQuarantine.accountId, accountId), inArray(schema.saleQuarantine.id, ids)));
+  return rows
+    .filter((q) => q.resolution !== "ingested")
+    .map((q) => ({
+      id: q.id,
+      status: "rejected" as const,
+      confirmationCode: null,
+      lastError: q.resolution === "dismissed" ? (q.note ?? "Vyřízeno vlastníkem") : (QUARANTINE_REASON_TEXT[q.reasonCode] ?? q.reason),
+      quarantine: q.resolution === "dismissed" ? ("dismissed" as const) : ("open" as const),
+    }));
 }
 
 export async function markIngested(accountId: string, id: string): Promise<void> {

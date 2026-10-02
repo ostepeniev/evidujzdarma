@@ -108,7 +108,9 @@ export function ReceiptView({
           {sale.status === "rejected" && (
             <div className="space-y-2">
               {sale.error && <p className="text-sm text-danger-600">{sale.error}</p>}
-              {sale.syncedAt && !sale.quarantined ? (
+              {sale.resolution === "dismissed" ? (
+                <p className="text-sm text-ink-soft">Vlastník tržbu vyřídil – nic dalšího dělat nemusíte.</p>
+              ) : sale.syncedAt && !sale.quarantined ? (
                 // tržbu má server; znovu ji do FS pošle vlastník v nastavení (Neodeslané tržby)
                 <p className="text-sm text-ink-soft">Tržba je uložená na serveru. Znovu ji odešle vlastník v nastavení pokladny.</p>
               ) : (
