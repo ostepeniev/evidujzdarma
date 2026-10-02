@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { COOKIE_API, guardApiRequest } from "@/lib/server/request-guard";
 
 /**
  * Přísná CSP s nonce pro citlivé stránky (R3.9): pokladna, účtenky, přihlášení, kabinet a pozvánky.
@@ -28,7 +29,18 @@ export function strictCsp(nonce: string): string {
   ].join("; ");
 }
 
+/** API: limit těla, původ a formát u session API (Н2-2, B Дрібне 1); účetní data se nekešují (B Дрібне 13). */
+function apiProxy(request: NextRequest) {
+  const path = request.nextUrl.pathname;
+  const refused = guardApiRequest(request, path);
+  if (refused) return refused;
+  const response = NextResponse.next();
+  if (COOKIE_API.test(path)) response.headers.set("Cache-Control", "no-store, private");
+  return response;
+}
+
 export function proxy(request: NextRequest) {
+  if (request.nextUrl.pathname.startsWith("/api/")) return apiProxy(request);
   if (!isStrict(request.nextUrl.pathname)) return NextResponse.next();
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
   const policy = strictCsp(nonce);
@@ -44,6 +56,7 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/api/:path*",
     {
       source: "/(pokladna|u|prihlaseni|kabinet|pozvanka)/:path*",
       missing: [

@@ -27,7 +27,7 @@ export function clientIpFromHeaders(h: Headers): string {
 }
 
 /**
- * IP klienta pro limity (R3.11): jen z X-Real-IP, kterou nastavuje Caddy ({remote_host}) a kterou klient
+ * IP klienta pro limity (R3.11): jen z X-Real-IP, kterou nastavuje reverse proxy (nginx: $remote_addr, Caddy: {remote_host}) a kterou klient
  * nemůže podvrhnout. X-Forwarded-For ignorujeme – její první položku si klient napíše sám.
  * IPv6 klíčujeme po /64: jedna přípojka má celý blok adres.
  */

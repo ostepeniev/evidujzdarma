@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { parseIcoList } from "@ez/cz/ico";
 import type { Verdict } from "@/lib/eet-assessment";
+import { csvCell } from "@/lib/csv";
 import {
   BULK_MAX_BATCH,
   BULK_MAX_TOTAL,
@@ -84,12 +85,6 @@ function extractIcosFromCsv(text: string): string[] {
     .slice(start)
     .map((l) => (splitCsvLine(l, delim)[col] ?? "").replace(/\s+/g, ""))
     .filter(Boolean);
-}
-
-function csvCell(v: string | number | null | undefined): string {
-  let s = v === null || v === undefined ? "" : String(v);
-  if (/^[=+\-@]/.test(s)) s = `'${s}`; // ochrana proti vzorcům v tabulkovém procesoru
-  return /[;"\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
 function downloadCsv(rows: readonly BulkRow[]) {

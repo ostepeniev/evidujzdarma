@@ -26,7 +26,8 @@ export const PATCH = ownerRoute<{ id: string }>(async ({ req, accountId, params 
       ...(input.active !== undefined ? { active: input.active } : {}),
       ...(input.pin !== undefined ? { pinHash: input.pin ? await hashPin(input.pin) : null } : {}),
     })
-    .where(eq(schema.staff.id, params.id))
+    // příslušnost k účtu ověřil dotaz výše; UPDATE se na účet omezí i tak (obrana do hloubky, B Дрібне 5)
+    .where(and(eq(schema.staff.id, params.id), eq(schema.staff.accountId, accountId)))
     .returning({ id: schema.staff.id, name: schema.staff.name, role: schema.staff.role, active: schema.staff.active, pinHash: schema.staff.pinHash });
   return Response.json({ staff: { id: row!.id, name: row!.name, role: row!.role, active: row!.active, hasPin: !!row!.pinHash } });
 });

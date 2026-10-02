@@ -5,12 +5,9 @@ import { decimalString } from "@ez/fiscal-core";
 /** Český Excel očekává desetinnou čárku. */
 const num = (h: number) => decimalString(h).replace(".", ",");
 import { DAY_RE, pragueDayRange, pragueToday } from "@/lib/prague-time";
+import { csvCell } from "@/lib/csv";
 import { ownerRoute } from "@/lib/server/route-helpers";
 
-function csvCell(v: unknown): string {
-  const s = v === null || v === undefined ? "" : String(v);
-  return /[;"\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-}
 
 const METHODS = ["cash", "card", "qr", "voucher", "transfer"] as const;
 

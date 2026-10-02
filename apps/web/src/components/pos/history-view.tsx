@@ -8,6 +8,7 @@ import { onSyncChange } from "@/lib/pos/sync";
 import type { LocalSale, PosConfig } from "@/lib/pos/types";
 import { CashPanel } from "./cash-panel";
 import { StatusChip, kc } from "./ui";
+import { csvCell } from "@/lib/csv";
 
 const time = new Intl.DateTimeFormat("cs-CZ", { hour: "2-digit", minute: "2-digit" });
 const day = new Intl.DateTimeFormat("cs-CZ", { weekday: "short", day: "numeric", month: "numeric" });
@@ -84,11 +85,6 @@ const STATUS_CSV: Record<string, string> = {
   rejected: "odmítnuto",
   not_required: "neeviduje se",
 };
-
-function csvCell(v: unknown): string {
-  const s = v === null || v === undefined ? "" : String(v);
-  return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-}
 
 export function SummaryView({ config, staff }: { config: PosConfig; staff: { id: string; name: string } | null }) {
   const sales = useSales(0);
