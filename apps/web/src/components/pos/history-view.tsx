@@ -137,7 +137,8 @@ export function SummaryView({ config, staff }: { config: PosConfig; staff: { id:
         <p className="text-sm text-muted">Dnešní tržby ({today.length})</p>
         <p className="text-4xl font-extrabold tabular-nums">{kc(total)}</p>
         <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {PAYMENT_METHODS.map((m) => (
+          {/* hotovost, karta a QR vždy; ostatní způsoby (poukazy, převod, starší „voucher“) jen když dnes jsou */}
+          {PAYMENT_METHODS.filter((m) => m === "cash" || m === "card" || m === "qr" || byMethod[m] !== 0).map((m) => (
             <div key={m} className="rounded-2xl bg-surface p-3">
               <dt className="text-sm text-muted">{PAYMENT_LABEL[m]}</dt>
               <dd className="text-lg font-semibold tabular-nums">{kc(byMethod[m])}</dd>

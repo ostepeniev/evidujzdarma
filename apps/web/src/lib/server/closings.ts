@@ -25,7 +25,8 @@ const TotalsSchema = z.object({
   refundsCount: z.number().int().min(0),
   gross: signedAmount,
   refundsTotal: signedAmount,
-  byMethod: z.object(Object.fromEntries(PAYMENT_METHODS.map((m) => [m, signedAmount])) as Record<(typeof PAYMENT_METHODS)[number], typeof signedAmount>),
+  // chybějící způsob = 0: pokladna se starší verzí nové způsoby platby (R5.10) nezná a uzávěrka se nesmí odmítnout
+  byMethod: z.object(Object.fromEntries(PAYMENT_METHODS.map((m) => [m, signedAmount.default(0)]))) as unknown as z.ZodType<Record<(typeof PAYMENT_METHODS)[number], number>>,
   tips: signedAmount,
   discounts: signedAmount,
   evidencedTotal: signedAmount,

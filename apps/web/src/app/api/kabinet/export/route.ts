@@ -40,11 +40,12 @@ export async function GET(req: Request) {
           .orderBy(asc(schema.sales.accountId), asc(schema.sales.soldAt))
       : [];
     const fmt = new Intl.DateTimeFormat("cs-CZ", { dateStyle: "short", timeStyle: "medium", timeZone: "Europe/Prague" });
-    const head = ["IČO klienta", "Klient", "Datum a čas", "Pokladna", "Pořadové číslo", "Celkem", "Hotovost", "Karta", "QR", "Poukaz", "Převod", "Evidovaná částka", "POK", "Stav"];
+    // nové sloupce poukazů (R5.10) až na konec, ať stávající importy účetních nesednou vedle
+    const head = ["IČO klienta", "Klient", "Datum a čas", "Pokladna", "Pořadové číslo", "Celkem", "Hotovost", "Karta", "QR", "Poukaz", "Převod", "Evidovaná částka", "POK", "Stav", "Stravenka", "Kredit", "Dárkový poukaz"];
     const lines = rows.map((s) => {
       const c = byAccount.get(s.accountId);
       const sum = (m: string) => s.payments.filter((p) => p.method === m).reduce((a, p) => a + p.amount, 0);
-      return [c?.ico, c?.label, fmt.format(s.soldAt), s.registerId, s.sequence, num(s.total), num(sum("cash")), num(sum("card")), num(sum("qr")), num(sum("voucher")), num(sum("transfer")), num(s.evidencedTotal), s.confirmationCode, s.status]
+      return [c?.ico, c?.label, fmt.format(s.soldAt), s.registerId, s.sequence, num(s.total), num(sum("cash")), num(sum("card")), num(sum("qr")), num(sum("voucher")), num(sum("transfer")), num(s.evidencedTotal), s.confirmationCode, s.status, num(sum("meal_voucher")), num(sum("credit")), num(sum("gift_voucher"))]
         .map(cell)
         .join(";");
     });

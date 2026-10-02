@@ -13,7 +13,8 @@ export interface PaymentResult {
   cashReceived: number | null;
 }
 
-const METHODS: PaymentMethod[] = ["cash", "card", "qr", "voucher"];
+// poukazy rozdělené podle semináře FS (R5.10); starší „voucher“ zůstává jen u uložených tržeb
+const METHODS: PaymentMethod[] = ["cash", "card", "qr", "meal_voucher", "credit", "gift_voucher"];
 
 export function PaymentSheet({
   total,
@@ -138,8 +139,16 @@ export function PaymentSheet({
         </div>
       )}
 
-      {method === "voucher" && (
-        <p className="mt-5 rounded-xl bg-surface p-4 text-[15px] text-ink-soft">Úhrada dříve prodaným poukazem nebo zálohou. Eviduje se jako čerpání.</p>
+      {method === "meal_voucher" && (
+        <p className="mt-5 rounded-xl bg-surface p-4 text-[15px] text-ink-soft">Stravenka nebo poukázka vydaná jinou firmou. Eviduje se jako běžná platba.</p>
+      )}
+      {method === "credit" && (
+        <p className="mt-5 rounded-xl bg-surface p-4 text-[15px] text-ink-soft">Úhrada z dříve nabitého kreditu, čipu nebo předplacené karty. Eviduje se jako čerpání.</p>
+      )}
+      {method === "gift_voucher" && (
+        <p className="mt-5 rounded-xl bg-surface p-4 text-[15px] text-ink-soft">
+          Dárkový poukaz na konkrétní zboží nebo službu, který jste dříve prodali. Jeho uplatnění se neeviduje – evidoval se už prodej poukazu.
+        </p>
       )}
 
       {error && (

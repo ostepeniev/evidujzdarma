@@ -102,6 +102,9 @@ describe("cash book", () => {
   it("rejects internally inconsistent closings from devices", () => {
     const base = { id: "3f2a8c1e-6b7d-4c2a-9e1f-0a1b2c3d4e5f", number: 1, periodFrom: null, closedAt: "2027-01-15T17:00:00Z", mode: "production" as const };
     expect(DeviceClosingSchema.safeParse({ ...base, totals: totals() }).success).toBe(true);
+    // pokladna se starší verzí neposílá nové způsoby platby (R5.10) → doplní se nulou
+    const legacy = DeviceClosingSchema.safeParse({ ...base, totals: totals() });
+    expect(legacy.success && legacy.data.totals.byMethod).toMatchObject({ meal_voucher: 0, credit: 0, gift_voucher: 0 });
     expect(DeviceClosingSchema.safeParse({ ...base, totals: totals({ difference: 0 }) }).success).toBe(false);
     expect(DeviceClosingSchema.safeParse({ ...base, totals: totals({ closingCash: 1 }) }).success).toBe(false);
   });

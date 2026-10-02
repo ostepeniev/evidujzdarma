@@ -104,7 +104,11 @@ export function renderReceiptText(r: ReceiptData, width = 42): string {
     L.push(pad("Spropitné", formatCzk(r.sale.tip), width));
   }
   L.push(pad("CELKEM", formatCzk(r.sale.total), width));
-  for (const p of r.sale.payments) L.push(pad(`  ${PAYMENT_LABEL[p.method]}`, formatCzk(p.amount), width));
+  for (const p of r.sale.payments) {
+    L.push(pad(`  ${PAYMENT_LABEL[p.method]}`, formatCzk(p.amount), width));
+    // uplatnění dárkového poukazu na konkrétní zboží či službu se neeviduje (R5.10)
+    if (p.method === "gift_voucher") L.push("    (uhrazeno poukazem, neeviduje se)");
+  }
   if (r.cashReceived && r.cashReceived > r.sale.total) {
     L.push(pad("  Přijato", formatCzk(r.cashReceived), width));
     L.push(pad("  Vráceno", formatCzk(r.cashReceived - r.sale.total), width));

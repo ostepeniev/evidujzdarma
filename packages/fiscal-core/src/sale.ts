@@ -4,7 +4,14 @@
  */
 import { type Halere, lineTotal, vatBreakdown } from "./money.ts";
 
-export const PAYMENT_METHODS = ["cash", "card", "qr", "transfer", "voucher"] as const;
+/**
+ * Způsoby platby. Poukazy podle semináře FS pro vývojáře, „Specifické případy“ (R5.10):
+ *  - meal_voucher – stravenka / poukázka třetí strany: běžná platba v celk_trzba, bez cerp_zuct;
+ *  - credit – kredit, čip, předplacená karta: celk_trzba + cerp_zuct (nabití = položka „prepayment“);
+ *  - gift_voucher – dárkový poukaz na konkrétní zboží či službu: uplatnění se neeviduje;
+ *  - voucher – jen pro tržby uložené před R5.10 (význam jako credit), pokladna ho už nenabízí.
+ */
+export const PAYMENT_METHODS = ["cash", "card", "qr", "transfer", "meal_voucher", "credit", "gift_voucher", "voucher"] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
 export const PAYMENT_LABEL: Record<PaymentMethod, string> = {
@@ -12,15 +19,21 @@ export const PAYMENT_LABEL: Record<PaymentMethod, string> = {
   card: "Karta",
   qr: "QR platba",
   transfer: "Převod na účet",
+  meal_voucher: "Stravenka / poukázka",
+  credit: "Kredit / předplacená karta",
+  gift_voucher: "Dárkový poukaz",
   voucher: "Poukaz / záloha",
 };
 
 /**
  * Evidují se platby přijaté při osobním kontaktu nebo v provozovně (hotovost, karta,
  * QR kód, poukázka…). Vzdálený převod na účet (faktura, platební brána) se neeviduje.
- * Zdroj: eet.gov.cz – Kdo musí evidovat tržby.
+ * Zdroj: eet.gov.cz – Kdo musí evidovat tržby. Uplatnění dárkového poukazu na konkrétní
+ * zboží či službu se neeviduje (eviduje se jeho prodej) – seminář FS pro vývojáře (R5.10).
  */
-export const EVIDENCED_METHODS: readonly PaymentMethod[] = ["cash", "card", "qr", "voucher"];
+export const EVIDENCED_METHODS: readonly PaymentMethod[] = ["cash", "card", "qr", "meal_voucher", "credit", "voucher"];
+/** Úhrada dříve zaplaceným kreditem / zálohou → cerp_zuct. */
+export const REDEEMED_METHODS: readonly PaymentMethod[] = ["credit", "voucher"];
 
 export interface SaleLine {
   name: string;
@@ -157,7 +170,7 @@ export interface EvidencedAmounts {
  */
 export function evidencedAmounts(sale: Pick<Sale, "payments" | "lines">): EvidencedAmounts {
   const total = sale.payments.filter((p) => EVIDENCED_METHODS.includes(p.method)).reduce((s, p) => s + p.amount, 0);
-  const redeemed = sale.payments.filter((p) => p.method === "voucher").reduce((s, p) => s + p.amount, 0);
+  const redeemed = sale.payments.filter((p) => REDEEMED_METHODS.includes(p.method)).reduce((s, p) => s + p.amount, 0);
   const prepaymentLines = sale.lines.filter((l) => l.kind === "prepayment").reduce((s, l) => s + lineTotal(l), 0);
   const prepayment = Math.sign(prepaymentLines) === Math.sign(total) ? Math.min(Math.abs(prepaymentLines), Math.abs(total)) * Math.sign(total) : 0;
   return { total, prepayment, redeemed };

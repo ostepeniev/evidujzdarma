@@ -55,6 +55,10 @@ export const GET = ownerRoute(async ({ req, accountId }) => {
     "Režim",
     "Vratka k",
     "Pokladní",
+    // poukazy rozdělené v R5.10 – na konci, ať se stávající sloupce neposunou
+    "Stravenka/poukázka",
+    "Kredit/předplacená karta",
+    "Dárkový poukaz (neeviduje se)",
   ];
   const fmt = new Intl.DateTimeFormat("cs-CZ", { dateStyle: "short", timeStyle: "medium", timeZone: "Europe/Prague" });
   const lines = rows.map(({ sale: s, unit, staff }) => {
@@ -82,6 +86,7 @@ export const GET = ownerRoute(async ({ req, accountId }) => {
       s.mode,
       s.refundOf ?? "",
       staff ?? "",
+      ...(["meal_voucher", "credit", "gift_voucher"] as const).map((m) => num(s.payments.filter((p) => p.method === m).reduce((a, p) => a + p.amount, 0))),
     ]
       .map(csvCell)
       .join(";");

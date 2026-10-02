@@ -46,7 +46,7 @@ describe("closing", () => {
     expect(t.salesCount).toBe(4);
     expect(t.refundsCount).toBe(1);
     expect(t.refundsTotal).toBe(-10000);
-    expect(t.byMethod).toEqual({ cash: 25000, card: 120000, qr: 20000, transfer: 50000, voucher: 0 });
+    expect(t.byMethod).toEqual({ cash: 25000, card: 120000, qr: 20000, transfer: 50000, voucher: 0, meal_voucher: 0, credit: 0, gift_voucher: 0 });
     expect(t.gross).toBe(215000);
     expect(t.evidencedTotal).toBe(165000);
     expect(t.notEvidencedTotal).toBe(50000);
