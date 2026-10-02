@@ -545,7 +545,9 @@ export const accountantClients = pgTable(
     ico: varchar("ico", { length: 8 }).notNull(),
     label: text("label"),
     clientAccountId: uuid("client_account_id").references(() => accounts.id, { onDelete: "set null" }),
-    inviteToken: varchar("invite_token", { length: 64 }),
+    /** pozvánka: v DB jen SHA-256 tokenu a platnost (R3.4) */
+    inviteTokenHash: varchar("invite_token_hash", { length: 64 }),
+    inviteExpiresAt: timestamp("invite_expires_at", { withTimezone: true }),
     invitedAt: timestamp("invited_at", { withTimezone: true }),
     /** ruční stav připravenosti, pokud klient nepoužívá naši pokladnu */
     manualStatus: jsonb("manual_status").$type<{

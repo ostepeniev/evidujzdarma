@@ -17,7 +17,7 @@ interface Client {
   label: string | null;
   linked: boolean;
   invited: boolean;
-  inviteUrl: string | null;
+  inviteExpiresAt: string | null;
   readiness: Readiness;
   lastSaleAt: string | null;
   mode: string | null;
@@ -151,10 +151,6 @@ export function CabinetApp({ initial }: { initial: CabinetState }) {
                   <td className="px-4 py-3 text-sm">
                     {c.linked ? (
                       <span className="chip bg-brand-100 text-brand-700">Propojeno{c.mode === "production" ? " · ostrý provoz" : ""}</span>
-                    ) : c.inviteUrl ? (
-                      <button type="button" className="font-medium text-brand-700 underline" onClick={() => act(async () => (await navigator.clipboard.writeText(c.inviteUrl!), setInfo("Odkaz zkopírován – pošlete ho klientovi.")))}>
-                        Kopírovat pozvánku
-                      </button>
                     ) : (
                       <button
                         type="button"
@@ -168,8 +164,11 @@ export function CabinetApp({ initial }: { initial: CabinetState }) {
                           })
                         }
                       >
-                        Pozvat do pokladny
+                        {c.invited ? "Nová pozvánka" : "Pozvat do pokladny"}
                       </button>
+                    )}
+                    {!c.linked && c.invited && c.inviteExpiresAt && (
+                      <span className="block text-xs text-muted">Pozvánka platí do {new Date(c.inviteExpiresAt).toLocaleDateString("cs-CZ")}</span>
                     )}
                   </td>
                   <td className="px-4 py-3 text-right">

@@ -1,0 +1,1 @@
+ALTER TABLE "accountant_clients" DROP COLUMN "invite_token";

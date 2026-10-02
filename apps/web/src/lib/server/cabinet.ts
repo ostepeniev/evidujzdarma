@@ -3,7 +3,10 @@ import { TERMS_VERSION } from "@/lib/legal";
 import { and, eq, gt, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 import { getDb, schema } from "@ez/db";
 import { HttpError, type CurrentUser } from "./auth";
-import { randomToken } from "./tokens";
+import { absoluteUrl } from "@/lib/site";
+import { enqueueEmail } from "./mail";
+import { ownerEmails } from "./owners";
+import { randomToken, sha256 } from "./tokens";
 
 /** Účet účetní kanceláře přihlášeného uživatele (nebo null). */
 export function accountantMembership(user: CurrentUser) {
@@ -44,14 +47,15 @@ export interface CabinetClient {
   label: string | null;
   linked: boolean;
   invited: boolean;
-  inviteUrl: string | null;
+  /** platnost poslední pozvánky; samotný odkaz je jen v odpovědi na jeho vytvoření (v DB je hash) */
+  inviteExpiresAt: string | null;
   readiness: ClientReadiness;
   lastSaleAt: string | null;
   mode: string | null;
 }
 
 /** Klienti účetní a stav jejich připravenosti na EET. U propojených klientů se stav počítá z pokladny. */
-export async function cabinetClients(accountantAccountId: string, siteUrl: string): Promise<CabinetClient[]> {
+export async function cabinetClients(accountantAccountId: string, _siteUrl?: string): Promise<CabinetClient[]> {
   const db = getDb();
   const rows = await db.select().from(schema.accountantClients).where(eq(schema.accountantClients.accountantAccountId, accountantAccountId)).orderBy(schema.accountantClients.createdAt);
   const linkedIds = rows.map((r) => r.clientAccountId).filter((x): x is string => !!x);
@@ -106,8 +110,8 @@ export async function cabinetClients(accountantAccountId: string, siteUrl: strin
       ico: r.ico,
       label: r.label,
       linked,
-      invited: !!r.inviteToken,
-      inviteUrl: r.inviteToken && !linked ? `${siteUrl}/pozvanka/${r.inviteToken}` : null,
+      invited: !linked && !!r.inviteTokenHash && !!r.inviteExpiresAt && r.inviteExpiresAt > new Date(),
+      inviteExpiresAt: !linked && r.inviteExpiresAt ? r.inviteExpiresAt.toISOString() : null,
       readiness,
       lastSaleAt: last ? new Date(last).toISOString() : null,
       mode: linked ? (modeBy.get(r.clientAccountId!) ?? null) : null,
@@ -125,11 +129,16 @@ export async function addClients(accountantAccountId: string, items: { ico: stri
   return inserted.length;
 }
 
+/** Platnost pozvánky do pokladny. */
+export const INVITE_TTL_DAYS = 14;
+
 export async function createInvite(accountantAccountId: string, clientId: string): Promise<string> {
   const token = randomToken(24);
+  const now = new Date();
   const [row] = await getDb()
     .update(schema.accountantClients)
-    .set({ inviteToken: token, invitedAt: new Date() })
+    // v DB jen otisk tokenu – únik databáze neprozradí platné pozvánky (R3.4)
+    .set({ inviteTokenHash: sha256(token), invitedAt: now, inviteExpiresAt: new Date(now.getTime() + INVITE_TTL_DAYS * 86_400_000) })
     .where(and(eq(schema.accountantClients.id, clientId), eq(schema.accountantClients.accountantAccountId, accountantAccountId)))
     .returning({ id: schema.accountantClients.id });
   if (!row) throw new HttpError(404, "Klient nenalezen");
@@ -141,23 +150,54 @@ export async function acceptInvite(user: CurrentUser, token: string): Promise<{ 
   const db = getDb();
   const owner = user.memberships.find((m) => m.role === "owner" && m.accountKind === "business");
   if (!owner) throw new HttpError(400, "Nejdřív si nastavte pokladnu (údaje o firmě), pak pozvánku otevřete znovu.");
-  const invite = await db.query.accountantClients.findFirst({ where: eq(schema.accountantClients.inviteToken, token) });
-  if (!invite) throw new HttpError(404, "Pozvánka je neplatná nebo už byla použita.");
+  const invite = await validInvite(token);
+  if (!invite) throw new HttpError(404, "Pozvánka je neplatná, vypršela nebo už byla použita.");
+  // pozvánku přijme jen firma, pro kterou ji účetní vystavila (R3.4)
+  const client = await db.query.accounts.findFirst({ where: eq(schema.accounts.id, owner.accountId) });
+  if (!client?.ico || client.ico !== invite.ico) {
+    throw new HttpError(403, `Pozvánka je pro IČO ${invite.ico}, ale vaše firma má ${client?.ico ? `IČO ${client.ico}` : "IČO nevyplněné"}. Požádejte účetní o správnou pozvánku.`);
+  }
   const accountant = await db.query.accounts.findFirst({ where: eq(schema.accounts.id, invite.accountantAccountId) });
   await db.transaction(async (tx) => {
-    await tx.update(schema.accountantClients).set({ clientAccountId: owner.accountId, inviteToken: null }).where(eq(schema.accountantClients.id, invite.id));
+    await tx
+      .update(schema.accountantClients)
+      .set({ clientAccountId: owner.accountId, inviteTokenHash: null, inviteExpiresAt: null })
+      .where(eq(schema.accountantClients.id, invite.id));
     await tx
       .update(schema.accounts)
       .set({ referredByAccountantId: invite.accountantAccountId })
       .where(and(eq(schema.accounts.id, owner.accountId), isNull(schema.accounts.referredByAccountantId)));
   });
-  return { accountantName: accountant?.name ?? "účetní" };
+  const accountantName = accountant?.name ?? "účetní";
+  // klient se o novém přístupu dozví e-mailem – i kdyby pozvánku přijal někdo jiný z jeho účtu
+  for (const to of await ownerEmails(owner.accountId)) {
+    await enqueueEmail({
+      to,
+      template: "notice",
+      dedupeKey: `accountant-link:${invite.id}:${to}`,
+      payload: {
+        subject: `Účetní ${accountantName} má nyní přístup k vaší pokladně`,
+        text: `Váš účet v EvidujZdarma byl propojen s účetní ${accountantName}. Účetní vidí stav vaší připravenosti na EET a může si stáhnout export tržeb. Pokud jste propojení nepovolili, zrušte ho v nastavení pokladny.`,
+        url: absoluteUrl("/pokladna/nastaveni#ucetni"),
+        buttonLabel: "Zobrazit propojení",
+      },
+    });
+  }
+  return { accountantName };
+}
+
+async function validInvite(token: string) {
+  if (!/^[A-Za-z0-9_-]{20,64}$/.test(token)) return null;
+  return (
+    (await getDb().query.accountantClients.findFirst({
+      where: and(eq(schema.accountantClients.inviteTokenHash, sha256(token)), gt(schema.accountantClients.inviteExpiresAt, new Date())),
+    })) ?? null
+  );
 }
 
 export async function inviteInfo(token: string): Promise<{ accountantName: string; ico: string } | null> {
-  if (!/^[A-Za-z0-9_-]{20,64}$/.test(token)) return null;
   const db = getDb();
-  const invite = await db.query.accountantClients.findFirst({ where: eq(schema.accountantClients.inviteToken, token) });
+  const invite = await validInvite(token);
   if (!invite) return null;
   const accountant = await db.query.accounts.findFirst({ where: eq(schema.accounts.id, invite.accountantAccountId) });
   return { accountantName: accountant?.name ?? "Vaše účetní", ico: invite.ico };

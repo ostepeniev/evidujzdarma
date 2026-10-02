@@ -25,7 +25,7 @@ export async function removeCertificate(accountId: string, certificateId: string
 export async function unlinkAccountant(clientAccountId: string, linkId: string): Promise<void> {
   const rows = await getDb()
     .update(schema.accountantClients)
-    .set({ clientAccountId: null, inviteToken: null })
+    .set({ clientAccountId: null, inviteTokenHash: null, inviteExpiresAt: null })
     .where(and(eq(schema.accountantClients.id, linkId), eq(schema.accountantClients.clientAccountId, clientAccountId)))
     .returning({ id: schema.accountantClients.id });
   if (!rows.length) throw new HttpError(404, "Propojení nenalezeno");

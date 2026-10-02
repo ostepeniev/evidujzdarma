@@ -85,6 +85,20 @@
       "when": 1790904403181,
       "tag": "0011_terms_and_closing",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1790906498098,
+      "tag": "0012_invite_token_hash",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1790906499079,
+      "tag": "0013_drop_invite_token",
+      "breakpoints": true
     }
   ]
 }
