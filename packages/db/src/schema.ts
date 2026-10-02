@@ -354,14 +354,16 @@ export const sales = pgTable(
     prepaymentAmount: bigint("prepayment_amount", { mode: "number" }).notNull().default(0),
     redeemedAmount: bigint("redeemed_amount", { mode: "number" }).notNull().default(0),
     status: saleStatus("status").notNull().default("queued"),
-    mode: varchar("mode", { length: 16 }).notNull().default("test"),
+    /** mock | playground | production – bez výchozí hodnoty: režim vždy určuje pokladna (Д-9) */
+    mode: varchar("mode", { length: 16 }).notNull(),
     /** potvrzovací kód Finanční správy (POK) */
     confirmationCode: varchar("confirmation_code", { length: 39 }),
     /** uuid_zpravy posledního pokusu (každý pokus má nové) */
     lastMessageUuid: uuid("last_message_uuid"),
     firstSentAt: timestamp("first_sent_at", { withTimezone: true }),
     warnings: jsonb("warnings").$type<{ code: number; text: string }[]>(),
-    attempts: smallint("attempts").notNull().default(0),
+    /** integer: smallint by přetekl po ~341 dnech opakování po 15 min (A Дрібне 9) */
+    attempts: integer("attempts").notNull().default(0),
     lastError: text("last_error"),
     sentAt: timestamp("sent_at", { withTimezone: true }),
     /** kdy nejdřív zkusit další odeslání (backoff) */
@@ -393,13 +395,13 @@ export const saleAttempts = pgTable(
     saleId: uuid("sale_id")
       .notNull()
       .references(() => sales.id, { onDelete: "cascade" }),
-    attempt: smallint("attempt").notNull(),
+    attempt: integer("attempt").notNull(),
     environment: varchar("environment", { length: 16 }).notNull(),
     messageUuid: uuid("message_uuid"),
     firstAttempt: boolean("first_attempt").notNull(),
     startedAt: timestamp("started_at", { withTimezone: true }).notNull(),
     finishedAt: timestamp("finished_at", { withTimezone: true }).notNull().defaultNow(),
-    /** confirmed | rejected | retry | blocked | invalid | stale */
+    /** confirmed | rejected | retry | blocked | invalid | stale | rebuilt | in_flight (před POST, Д-2) */
     result: varchar("result", { length: 16 }).notNull(),
     code: varchar("code", { length: 32 }),
     message: text("message"),

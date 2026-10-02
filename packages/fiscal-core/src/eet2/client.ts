@@ -100,6 +100,7 @@ export class Eet2Transport implements Transport {
     }
     await this.opts.onPrepared?.(prepared);
     const { messageUuid } = prepared;
+    await ctx.onPrepared?.({ messageUuid, sha256: prepared.sha256 });
 
     let res: Response;
     try {

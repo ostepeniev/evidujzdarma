@@ -19,6 +19,11 @@ export interface SendContext {
   messageUuid?: string;
   /** uložený snímek dat zprávy (Р4) – pokud je, zpráva se sestaví z něj, ne z tržby */
   snapshot?: import("./eet2/message.ts").EetData;
+  /**
+   * Audit před odesláním (Д-2): zavolá se s uuid a otiskem podepsané zprávy těsně PŘED HTTP POST.
+   * Když selže (zápis auditu), zpráva se neodešle.
+   */
+  onPrepared?: (p: { messageUuid: string; sha256: string }) => Promise<void> | void;
 }
 
 /** Pro audit: co přesně odešlo a co přišlo zpět. */

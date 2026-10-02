@@ -1,7 +1,8 @@
 import "server-only";
-import { and, asc, eq, gt, gte, inArray, isNull, like, lte, desc, notInArray, or, sql } from "drizzle-orm";
+import { and, asc, eq, gt, gte, inArray, isNull, like, lte, desc, ne, notInArray, or, sql } from "drizzle-orm";
 import { getDb, schema } from "@ez/db";
 import { createHash, randomUUID } from "node:crypto";
+import { safeError } from "./log";
 import { EetMessageError, MockTransport, buildSale, chybaHint, eetSnapshot, retryDelaySeconds, type EetData, type Sale, type SendResult, type Transport } from "@ez/fiscal-core";
 import {
   Eet2Transport,
@@ -19,6 +20,18 @@ export type EetMode = "mock" | "playground" | "production";
 
 export function accountMode(a: Pick<AccountRow, "eetMode">): EetMode {
   return a.eetMode === "playground" || a.eetMode === "production" ? a.eetMode : "mock";
+}
+
+/** Režim tržby – přesně, bez náhradního „mock“: neznámý (starý „test“) se neodesílá (Д-9). */
+function saleMode(mode: string): EetMode | null {
+  return mode === "mock" || mode === "playground" || mode === "production" ? mode : null;
+}
+
+/** Časový limit jednoho odeslání do FS: 1–30 s, jinak 10 s (Д-3). Musí být kratší než STALE_CLAIM_MS. */
+export function eetTimeoutMs(): number {
+  const n = Number(process.env.EET_TIMEOUT_MS);
+  if (!process.env.EET_TIMEOUT_MS || !Number.isFinite(n) || n <= 0) return 10_000;
+  return Math.min(Math.max(Math.round(n), 1_000), 30_000);
 }
 
 /* ───────────── certifikáty ───────────── */
@@ -122,7 +135,7 @@ export function transportFor(account: AccountRow, modeOverride?: string): Transp
   return new Eet2Transport({
     environment: mode,
     credential: () => loadCredential(account.id, mode),
-    timeoutMs: Number(process.env.EET_TIMEOUT_MS ?? 10_000),
+    timeoutMs: eetTimeoutMs(),
   });
 }
 
@@ -174,6 +187,8 @@ export const BLOCK_TEXT: Record<string, string> = {
   ACCOUNT_MISSING: "Účet neexistuje.",
   EIC_CERT_MISMATCH: "EIČ účtu neodpovídá pokladnímu certifikátu – opravte EIČ v nastavení (musí být stejné jako v certifikátu).",
   INVALID_RESPONSE: "Odpověď Finanční správy opakovaně nešla ověřit – tržbu zkoušíme dál s delším odstupem a řešíme to.",
+  MODE_UNKNOWN: "Tržba nemá platný režim (ukázkový / Playground / ostrý) – neodesílá se. Ozvěte se nám, vyřešíme to.",
+  SALE_INVALID: "Uloženou tržbu teď nejde zpracovat (chyba na naší straně) – je uložená, řešíme to a odešle se sama.",
 };
 
 type Outcome = { result: "confirmed" | "rejected" | "retry" | "blocked" | "invalid"; send?: SendResult; code?: string; message?: string; retryInMs?: number };
@@ -186,22 +201,30 @@ async function applyOutcome(row: SaleRow, token: string, o: Outcome, now: Date):
   const db = getDb();
   const mine = and(eq(schema.sales.id, row.id), eq(schema.sales.claimToken, token), eq(schema.sales.status, "sending"));
   const sent = o.send && o.result !== "blocked";
-  const common = { claimToken: null, sentAt: now, ...(sent ? { firstSentAt: row.firstSentAt ?? now } : {}) };
+  // first_sent_at mohl nastavit už audit před POST (Д-2) – nepřepisovat
+  const firstSentAt = sql`coalesce(${schema.sales.firstSentAt}, ${now.toISOString()}::timestamptz)`;
+  const common = { claimToken: null, sentAt: now, ...(sent ? { firstSentAt } : {}) };
   let updated: { id: string }[];
   if (o.result === "confirmed" && o.send?.ok) {
-    updated = await db
-      .update(schema.sales)
-      .set({
-        ...common,
-        status: "confirmed",
-        confirmationCode: o.send.confirmationCode,
-        lastMessageUuid: o.send.messageUuid,
-        warnings: o.send.warnings,
-        lastError: null,
-        blockedReason: null,
-      })
-      .where(mine)
-      .returning({ id: schema.sales.id });
+    const confirmed = {
+      ...common,
+      status: "confirmed" as const,
+      confirmationCode: o.send.confirmationCode,
+      lastMessageUuid: o.send.messageUuid,
+      warnings: o.send.warnings,
+      lastError: null,
+      blockedReason: null,
+    };
+    updated = await db.update(schema.sales).set(confirmed).where(mine).returning({ id: schema.sales.id });
+    // Pozdní ověřený POK (claim mezitím propadl): FS tržbu přijala – použijeme ho, jinak by šla do FS znovu (Д-3).
+    // Potvrzenou tržbu nepřepisuje; případný souběžný pokus pak skončí jako „stale“.
+    if (!updated.length) {
+      updated = await db
+        .update(schema.sales)
+        .set({ ...confirmed, firstSentAt })
+        .where(and(eq(schema.sales.id, row.id), ne(schema.sales.status, "confirmed")))
+        .returning({ id: schema.sales.id });
+    }
   } else if (o.result === "blocked") {
     updated = await db
       .update(schema.sales)
@@ -232,26 +255,37 @@ async function applyOutcome(row: SaleRow, token: string, o: Outcome, now: Date):
   return updated.length > 0;
 }
 
-async function recordAttempt(row: SaleRow, o: Outcome, startedAt: Date, applied: boolean, firstAttempt: boolean) {
+/** Zapíše výsledek pokusu; byl-li před odesláním založen řádek `in_flight` (Д-2), aktualizuje ho. */
+async function recordAttempt(row: SaleRow, o: Outcome, startedAt: Date, applied: boolean, firstAttempt: boolean, inFlightId: number | null) {
   const s = o.send;
-  await getDb()
-    .insert(schema.saleAttempts)
-    .values({
-      saleId: row.id,
-      attempt: row.attempts,
-      environment: row.mode,
-      messageUuid: s?.messageUuid ?? null,
-      firstAttempt,
-      startedAt,
-      result: applied ? o.result : "stale",
-      code: o.code ?? (s && !s.ok ? s.code : null),
-      message: (o.message ?? (s && !s.ok ? s.message : null))?.slice(0, 1000) ?? null,
-      pok: s?.ok ? s.confirmationCode : null,
-      receivedAt: s?.ok && s.receivedAt ? new Date(s.receivedAt) : null,
-      httpStatus: s?.audit?.httpStatus ?? null,
-      requestSha256: s?.audit?.requestSha256 ?? null,
-      responseBody: s?.audit?.responseBody ?? null,
-    });
+  const values = {
+    saleId: row.id,
+    attempt: row.attempts,
+    environment: row.mode,
+    messageUuid: s?.messageUuid ?? null,
+    firstAttempt,
+    startedAt,
+    finishedAt: new Date(),
+    result: applied ? o.result : "stale",
+    code: (o.code ?? (s && !s.ok ? s.code : null))?.slice(0, 32) ?? null,
+    message: (o.message ?? (s && !s.ok ? s.message : null))?.slice(0, 1000) ?? null,
+    pok: s?.ok ? s.confirmationCode : null,
+    receivedAt: s?.ok && s.receivedAt ? new Date(s.receivedAt) : null,
+    httpStatus: s?.audit?.httpStatus ?? null,
+    requestSha256: s?.audit?.requestSha256 ?? null,
+    responseBody: s?.audit?.responseBody ?? null,
+  };
+  const db = getDb();
+  if (inFlightId !== null) {
+    const { messageUuid, requestSha256, ...rest } = values;
+    const done = await db
+      .update(schema.saleAttempts)
+      .set({ ...rest, ...(messageUuid ? { messageUuid } : {}), ...(requestSha256 ? { requestSha256 } : {}) })
+      .where(eq(schema.saleAttempts.id, inFlightId))
+      .returning({ id: schema.saleAttempts.id });
+    if (done.length) return;
+  }
+  await db.insert(schema.saleAttempts).values(values);
 }
 
 /** Aktivní certifikát prostředí. */
@@ -293,18 +327,33 @@ export async function processSale(saleId: string, account?: AccountRow): Promise
   if (!claimed) return (await db.query.sales.findFirst({ where: eq(schema.sales.id, saleId) })) ?? null;
 
   const acc = account?.id === claimed.accountId ? account : await db.query.accounts.findFirst({ where: eq(schema.accounts.id, claimed.accountId) });
-  const mode = accountMode({ eetMode: claimed.mode });
+  const mode = saleMode(claimed.mode);
   // prvni_zaslani = tržba ještě nikdy neodešla (zablokované pokusy se nepočítají)
   const firstAttempt = !claimed.firstSentAt;
+  // Д-2: těsně před POST se založí audit `in_flight` s uuid zprávy a nastaví first_sent_at –
+  // pád procesu mezi odesláním a zápisem výsledku tak uuid neztratí a další pokus půjde s prvni_zaslani=false
+  let inFlightId: number | null = null;
+  const onPrepared = async (p: { messageUuid: string; sha256: string }) => {
+    const [a] = await db
+      .insert(schema.saleAttempts)
+      .values({ saleId: claimed.id, attempt: claimed.attempts, environment: claimed.mode, messageUuid: p.messageUuid, requestSha256: p.sha256, firstAttempt, startedAt, result: "in_flight" })
+      .returning({ id: schema.saleAttempts.id });
+    inFlightId = a!.id;
+    await db
+      .update(schema.sales)
+      .set({ firstSentAt: sql`coalesce(${schema.sales.firstSentAt}, now())` })
+      .where(and(eq(schema.sales.id, claimed.id), eq(schema.sales.claimToken, token)));
+  };
   let outcome: Outcome;
   try {
-    outcome = await attempt(claimed, acc, mode, firstAttempt, token);
+    outcome = mode ? await attempt(claimed, acc, mode, firstAttempt, token, onPrepared) : { result: "blocked", code: "MODE_UNKNOWN", message: `režim „${claimed.mode}“` };
   } catch (e) {
-    outcome = { result: "retry", code: "INTERNAL", message: e instanceof Error ? e.message : String(e) };
+    // do last_error (vidí ho vlastník) jen bezpečný popis – bez SQL a jeho parametrů
+    outcome = { result: "retry", code: "INTERNAL", message: safeError(e).message };
   }
   const now = new Date();
   const applied = await applyOutcome(claimed, token, outcome, now);
-  await recordAttempt(claimed, outcome, startedAt, applied, firstAttempt);
+  await recordAttempt(claimed, outcome, startedAt, applied, firstAttempt, inFlightId);
   if (applied && outcome.result === "invalid") {
     await checkInvalidStreak(claimed);
     await maybeTripBreaker(claimed.mode);
@@ -314,7 +363,14 @@ export async function processSale(saleId: string, account?: AccountRow): Promise
   return (await db.query.sales.findFirst({ where: eq(schema.sales.id, saleId) })) ?? null;
 }
 
-async function attempt(row: SaleRow, acc: AccountRow | undefined, mode: EetMode, firstAttempt: boolean, token: string): Promise<Outcome> {
+async function attempt(
+  row: SaleRow,
+  acc: AccountRow | undefined,
+  mode: EetMode,
+  firstAttempt: boolean,
+  token: string,
+  onPrepared: (p: { messageUuid: string; sha256: string }) => Promise<void>,
+): Promise<Outcome> {
   if (!acc) return { result: "blocked", code: "ACCOUNT_MISSING" };
   const now = new Date();
   let certEic: string | null = null;
@@ -322,6 +378,14 @@ async function attempt(row: SaleRow, acc: AccountRow | undefined, mode: EetMode,
     const cert = await certificateBlock(acc.id, mode, now);
     if (cert.block) return { result: "blocked", code: cert.block };
     certEic = cert.eic;
+  }
+  // Řádek, ze kterého nová verze aplikace už tržbu nesestaví, musí být vidět, ne tichý INTERNAL (Д-11).
+  let sale: Sale;
+  try {
+    sale = rowToSale(row);
+  } catch (e) {
+    await alertSaleInvalid(row, e);
+    return { result: "blocked", code: "SALE_INVALID", message: e instanceof EetMessageError ? e.issues.join(", ") : safeError(e).message };
   }
   // Snímek dat zprávy vzniká jednou, před prvním odesláním; opakování ho jen převezmou (Р4).
   let snapshot = (row.eetData as EetData | null) ?? undefined;
@@ -334,7 +398,7 @@ async function attempt(row: SaleRow, acc: AccountRow | undefined, mode: EetMode,
       return { result: "blocked", code: "EIC_CERT_MISMATCH", message: `EIČ účtu ${eic}, certifikát ${certEic}` };
     } else {
       try {
-        snapshot = eetSnapshot(rowToSale(row), { eic });
+        snapshot = eetSnapshot(sale, { eic });
       } catch (e) {
         if (mode !== "mock") return { result: "blocked", code: "MESSAGE_INVALID", message: e instanceof EetMessageError ? e.issues.join(", ") : String(e) };
       }
@@ -344,7 +408,7 @@ async function attempt(row: SaleRow, acc: AccountRow | undefined, mode: EetMode,
   const transport = transportFor(acc, mode);
   // Р3: tržba z Playgroundu nebo ostrého provozu nikdy neskončí v simulaci
   if (mode !== "mock" && transport.name === "mock") throw new Error(`Invariant: tržba v režimu ${mode} nesmí jít přes mock`);
-  const result = await transport.send(rowToSale(row), { firstAttempt, verifyOnly: false, eic: snapshot?.eic_popl ?? acc.eic ?? acc.dic ?? "CZ00000000", snapshot });
+  const result = await transport.send(sale, { firstAttempt, verifyOnly: false, eic: snapshot?.eic_popl ?? acc.eic ?? acc.dic ?? "CZ00000000", snapshot, onPrepared });
   if (result.ok) return { result: "confirmed", send: result };
   if (result.blocked) return { result: "blocked", send: result, code: result.blocked, message: result.message };
   if (result.code === "INVALID_RESPONSE") return { result: "invalid", send: result, retryInMs: invalidDelayMs((await invalidStreak(row.id)) + 1) };
@@ -361,7 +425,7 @@ async function chybaOutcome(row: SaleRow, result: Extract<SendResult, { ok: fals
       const recent = await getDb()
         .select({ code: schema.saleAttempts.code, result: schema.saleAttempts.result })
         .from(schema.saleAttempts)
-        .where(eq(schema.saleAttempts.saleId, row.id))
+        .where(and(eq(schema.saleAttempts.saleId, row.id), ne(schema.saleAttempts.result, "in_flight")))
         .orderBy(desc(schema.saleAttempts.startedAt))
         .limit(AMBIGUOUS_MAX_ATTEMPTS);
       let prior = 0;
@@ -397,12 +461,28 @@ async function alertUnexpectedChyba(row: SaleRow, result: Extract<SendResult, { 
   });
 }
 
+/** Uložená tržba neprošla buildSale (přísnější validace v novém deployi): provozovatel to musí vědět. */
+async function alertSaleInvalid(row: SaleRow, e: unknown) {
+  const { enqueueEmail } = await import("./mail");
+  const { SITE } = await import("@/lib/site");
+  const detail = e instanceof EetMessageError ? e.issues.join(", ") : safeError(e).message;
+  await enqueueEmail({
+    to: SITE.email,
+    template: "notice",
+    dedupeKey: `sale-invalid:${new Date().toISOString().slice(0, 13)}`,
+    payload: {
+      subject: `⚠️ Uloženou tržbu nejde sestavit (${row.mode})`,
+      text: `Tržba ${row.id} je ve frontě, ale buildSale ji odmítá: ${detail}. Je zablokovaná (SALE_INVALID), vlastník ji vidí v „Tržby k vyřízení“ a fronta ji zkouší jednou za hodinu. Pravděpodobně přísnější validace v novém deployi – opravte kód, tržba se pak odešle se svým snímkem.`,
+    },
+  });
+}
+
 /** Počet neověřitelných odpovědí po sobě u tržby (bez právě probíhajícího pokusu). */
 async function invalidStreak(saleId: string): Promise<number> {
   const last = await getDb()
     .select({ result: schema.saleAttempts.result })
     .from(schema.saleAttempts)
-    .where(eq(schema.saleAttempts.saleId, saleId))
+    .where(and(eq(schema.saleAttempts.saleId, saleId), ne(schema.saleAttempts.result, "in_flight")))
     .orderBy(desc(schema.saleAttempts.startedAt))
     .limit(10);
   let n = 0;
@@ -665,7 +745,12 @@ export async function processPending(limit = 50, concurrency = 4): Promise<{ pro
     Array.from({ length: Math.min(concurrency, due.length) }, async () => {
       while (next < due.length) {
         const { id } = due[next++]!;
-        await processSale(id);
+        // neočekávaná chyba jedné tržby nesmí zastavit zbytek fronty (A Дрібне 9)
+        try {
+          await processSale(id);
+        } catch (e) {
+          console.error("[fiscal] tržbu se nepodařilo zpracovat", { saleId: id, error: safeError(e) });
+        }
         processed++;
       }
     }),

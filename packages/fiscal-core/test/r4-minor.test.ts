@@ -97,6 +97,46 @@ describe("Д-1 – reading the response body fails after the POST", () => {
   });
 });
 
+describe("Д-2 – the audit hook runs before the POST", () => {
+  const cred = parseP12(createTestP12({ commonName: "CZ00000019", password: "x" }), "x");
+  const sale = buildSale({
+    id: "4f2a8c1e-6b7d-4c2a-9e1f-0a1b2c3d4e5f",
+    deviceId: "dev1",
+    registerId: "P1",
+    unitId: "303",
+    sequence: "P1-000003",
+    soldAt: "2027-01-15T10:30:00.123Z",
+    lines: [{ name: "Střih", qty: 1, unitPrice: 50000, vatRate: 21 }],
+    payments: [{ method: "card", amount: 50000 }],
+    vatPayer: false,
+    mode: "test",
+  });
+
+  it("onPrepared gets the uuid and the request hash before fetch; a failing hook means no POST", async () => {
+    const order: string[] = [];
+    const t = new Eet2Transport({
+      environment: "playground",
+      credential: async () => cred,
+      fetch: (async () => (order.push("fetch"), new Response("x", { status: 503 }))) as typeof fetch,
+    });
+    const r = await t.send(sale, { firstAttempt: true, verifyOnly: false, eic: "CZ00000019", onPrepared: (p) => void order.push(`audit:${p.messageUuid}:${p.sha256.length}`) });
+    expect(order).toEqual([`audit:${r.messageUuid}:64`, "fetch"]);
+
+    order.length = 0;
+    await expect(
+      t.send(sale, {
+        firstAttempt: true,
+        verifyOnly: false,
+        eic: "CZ00000019",
+        onPrepared: () => {
+          throw new Error("DB down");
+        },
+      }),
+    ).rejects.toThrow("DB down");
+    expect(order).toEqual([]);
+  });
+});
+
 describe("A Дрібне 3 – AES-GCM tag length is enforced", () => {
   const key = randomBytes(32).toString("base64");
   const enc = new LocalKeyEncryptor({ v1: key }, "v1");
