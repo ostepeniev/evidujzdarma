@@ -105,6 +105,11 @@ export async function unsettledSales(): Promise<LocalSale[]> {
   return out.sort((a, b) => a.soldAt.localeCompare(b.soldAt));
 }
 
+/** Vratka k dané tržbě, pokud už v zařízení je (na jednu tržbu nejvýš jedna – R1.7). */
+export async function refundFor(saleId: string): Promise<LocalSale | undefined> {
+  return (await (await posDb()).getAll("sales")).find((s) => s.refundOf === saleId);
+}
+
 /** Tržby, které server nebo FS odmítly – pokladna není „čistá“, dokud je někdo nevyřeší (Р2). */
 export async function rejectedSales(): Promise<LocalSale[]> {
   return (await posDb()).getAllFromIndex("sales", "byStatus", "rejected");

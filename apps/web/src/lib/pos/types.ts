@@ -57,6 +57,8 @@ export interface LocalSale {
   vat: Record<string, { base: number; vat: number }> | null;
   cashReceived: number | null;
   mode: PosMode;
+  /** vlastník, který vratku schválil PINem (R1.7) */
+  approvedBy?: string | null;
   status: LocalStatus;
   confirmationCode: string | null;
   error: string | null;

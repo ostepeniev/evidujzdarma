@@ -332,6 +332,8 @@ export const sales = pgTable(
     items: jsonb("items").$type<{ name: string; qty: number; unitPrice: number; vatRate: number }[]>(),
     vatBreakdown: jsonb("vat_breakdown").$type<Record<string, { base: number; vat: number }>>(),
     refundOf: uuid("refund_of"),
+    /** vlastník, který vratku schválil PINem na pokladně (R1.7) */
+    approvedBy: uuid("approved_by").references(() => staff.id, { onDelete: "set null" }),
     /** částky datové zprávy (haléře): celk_trzba, urceno_cerp_zuct, cerp_zuct */
     evidencedTotal: bigint("evidenced_total", { mode: "number" }).notNull(),
     prepaymentAmount: bigint("prepayment_amount", { mode: "number" }).notNull().default(0),
@@ -362,6 +364,8 @@ export const sales = pgTable(
     uniqueIndex("sales_device_seq_uq").on(t.deviceId, t.sequence),
     index("sales_account_sold_idx").on(t.accountId, t.soldAt),
     index("sales_pending_idx").on(t.status, t.nextAttemptAt),
+    /** na jednu tržbu nejvýš jedna vratka – drží i při souběhu (R1.7) */
+    uniqueIndex("sales_refund_of_uq").on(t.refundOf).where(sql`${t.refundOf} is not null`),
   ],
 );
 

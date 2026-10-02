@@ -3,7 +3,7 @@
 import QRCode from "qrcode";
 import { useEffect, useMemo, useState } from "react";
 import { PAYMENT_LABEL, deadlineFor, formatRemaining, renderReceiptText, urgency } from "@ez/fiscal-core";
-import { getSale } from "@/lib/pos/db";
+import { getSale, refundFor } from "@/lib/pos/db";
 import { bluetoothSupported, printEscPos } from "@/lib/pos/escpos";
 import { emailReceipt, onSyncChange, resendSale, syncNow } from "@/lib/pos/sync";
 import type { LocalSale, PosConfig } from "@/lib/pos/types";
@@ -68,9 +68,13 @@ export function ReceiptView({
   const [emailOpen, setEmailOpen] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [refunded, setRefunded] = useState(false);
 
   useEffect(() => {
-    const load = () => void getSale(saleId).then((s) => setSale(s ?? null));
+    const load = () => {
+      void getSale(saleId).then((s) => setSale(s ?? null));
+      void refundFor(saleId).then((r) => setRefunded(!!r));
+    };
     load();
     return onSyncChange(load);
   }, [saleId]);
@@ -159,7 +163,7 @@ export function ReceiptView({
             ← Zpět
           </button>
         )}
-        {onRefund && !sale.refundOf && sale.total > 0 && sale.status !== "rejected" && (
+        {onRefund && !sale.refundOf && !refunded && sale.total > 0 && sale.status !== "rejected" && (
           <button type="button" className="btn-secondary flex-1" onClick={() => onRefund(sale)}>
             Vratka
           </button>

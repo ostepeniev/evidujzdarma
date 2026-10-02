@@ -1,5 +1,5 @@
 import "server-only";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, ne } from "drizzle-orm";
 import { z } from "zod";
 import { getDb, schema } from "@ez/db";
 import { PAYMENT_METHODS, SaleValidationError, buildSale, deadlineFor, evidencedAmounts } from "@ez/fiscal-core";
@@ -32,6 +32,8 @@ export const DeviceSaleSchema = z.object({
   discount: z.number().int().min(0).optional(),
   tip: z.number().int().min(0).optional(),
   refundOf: z.string().uuid().nullable().optional(),
+  /** vlastník, který vratku schválil PINem na pokladně */
+  approvedBy: z.string().uuid().nullable().optional(),
   /** režim v okamžiku prodeje – tržba se odesílá jen v něm (Р3), nikdy podle aktuálního režimu účtu */
   mode: z.enum(["mock", "playground", "production"]),
 });
@@ -75,6 +77,29 @@ function stable(v: unknown): string {
       .map((k) => `${JSON.stringify(k)}:${stable((v as Record<string, unknown>)[k])}`)
       .join(",")}}`;
   return JSON.stringify(v);
+}
+
+/**
+ * Pokladní a vratka musí patřit k účtu; vratku dělá vlastník nebo ji vlastník schválí PINem.
+ * Vratka nesmí přesáhnout původní tržbu a na jednu tržbu je nejvýš jedna (R1.7).
+ */
+async function checkStaffAndRefund(accountId: string, input: DeviceSale, total: number) {
+  const db = getDb();
+  const staffRow = (id: string) => db.query.staff.findFirst({ where: and(eq(schema.staff.id, id), eq(schema.staff.accountId, accountId)) });
+  const cashier = input.staffId ? await staffRow(input.staffId) : undefined;
+  if (input.staffId && !cashier) throw new IngestRejection("UNKNOWN_STAFF", "Pokladní nepatří k tomuto účtu");
+  if (input.approvedBy && !input.refundOf) throw new IngestRejection("INVALID_SALE", "Schválení vlastníkem patří jen k vratce");
+  if (!input.refundOf) return;
+
+  const approver = input.approvedBy ? await staffRow(input.approvedBy) : undefined;
+  if (cashier?.role !== "owner" && approver?.role !== "owner") throw new IngestRejection("REFUND_NOT_AUTHORIZED", "Vratku musí udělat nebo schválit vlastník", 403);
+  if (total >= 0) throw new IngestRejection("INVALID_SALE", "Vratka musí mít zápornou částku");
+  const original = await db.query.sales.findFirst({ where: and(eq(schema.sales.id, input.refundOf), eq(schema.sales.accountId, accountId)) });
+  if (!original) throw new IngestRejection("REFUND_UNKNOWN_ORIGINAL", "Původní tržba k vratce není na serveru");
+  if (original.refundOf) throw new IngestRejection("INVALID_SALE", "Vratku nelze vrátit");
+  if (-total > original.total) throw new IngestRejection("REFUND_EXCEEDS", "Vratka je vyšší než původní tržba");
+  const other = await db.query.sales.findFirst({ where: and(eq(schema.sales.refundOf, input.refundOf), ne(schema.sales.id, input.id)), columns: { id: true } });
+  if (other) throw new IngestRejection("REFUND_DUPLICATE", "Tato tržba už byla vrácena", 409);
 }
 
 /**
@@ -127,6 +152,7 @@ export async function ingestSales(ctx: DeviceContext, inputs: DeviceSale[]): Pro
         if (e instanceof SaleValidationError) throw new IngestRejection("INVALID_SALE", e.issues.join("; "));
         throw e;
       }
+      await checkStaffAndRefund(account.id, input, sale.total);
       const amounts = evidencedAmounts(sale);
 
       let inserted: { id: string }[];
@@ -150,6 +176,7 @@ export async function ingestSales(ctx: DeviceContext, inputs: DeviceSale[]): Pro
             items: sale.lines,
             vatBreakdown: sale.vat,
             refundOf: sale.refundOf,
+            approvedBy: input.approvedBy ?? null,
             evidencedTotal: amounts.total,
             prepaymentAmount: amounts.prepayment,
             redeemedAmount: amounts.redeemed,
@@ -162,6 +189,7 @@ export async function ingestSales(ctx: DeviceContext, inputs: DeviceSale[]): Pro
       } catch (e) {
         // unikátní (zařízení, pořadové číslo) → jiná tržba už má toto číslo: trvalý konflikt
         if (/sales_device_seq_uq/.test(errorText(e))) throw new IngestRejection("SEQUENCE_CONFLICT", "Pořadové číslo už bylo použito jinou tržbou", 409);
+        if (/sales_refund_of_uq/.test(errorText(e))) throw new IngestRejection("REFUND_DUPLICATE", "Tato tržba už byla vrácena", 409);
         throw e;
       }
 

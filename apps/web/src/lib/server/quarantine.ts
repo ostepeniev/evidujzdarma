@@ -21,10 +21,11 @@ export const QUARANTINE_REASON_TEXT: Record<string, string> = {
   SEQUENCE_CONFLICT: "Pořadové číslo už má jiná tržba.",
   CONTENT_CONFLICT: "Tržba se stejným identifikátorem už existuje s jiným obsahem.",
   ID_CONFLICT: "Identifikátor tržby už patří jiné pokladně.",
-  REFUND_INVALID: "Vratka neodpovídá původní tržbě.",
+  REFUND_EXCEEDS: "Vratka je vyšší než původní tržba.",
+  REFUND_UNKNOWN_ORIGINAL: "Původní tržba k vratce není na serveru.",
   REFUND_DUPLICATE: "K této tržbě už vratka existuje.",
-  REFUND_NOT_ALLOWED: "Vratku smí udělat jen vlastník nebo s jeho schválením.",
-  STAFF_UNKNOWN: "Pokladní nepatří k tomuto účtu.",
+  REFUND_NOT_AUTHORIZED: "Vratku smí udělat jen vlastník nebo s jeho schválením.",
+  UNKNOWN_STAFF: "Pokladní nepatří k tomuto účtu.",
 };
 
 export async function quarantineSale(ctx: DeviceContext, payload: unknown, reasonCode: string, reason: string): Promise<void> {

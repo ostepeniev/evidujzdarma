@@ -8,6 +8,7 @@ import { DeviceRevokedError, refreshConfig, startAutoSync, syncNow } from "@/lib
 import type { DeviceCredentials, LocalSale, PosConfig } from "@/lib/pos/types";
 import { HistoryView, SummaryView } from "./history-view";
 import { PaymentSheet, type PaymentResult } from "./payment-sheet";
+import { OwnerApproval } from "./owner-approval";
 import { PinLock } from "./pin-lock";
 import { ReceiptView } from "./receipt-view";
 import { RegisterScreen, type CartLine } from "./register-screen";
@@ -32,7 +33,8 @@ export function PosApp() {
   const [unitId, setUnitId] = useState<string>("");
   const [cart, setCart] = useState<CartLine[]>([]);
   const [discount, setDiscount] = useState(0);
-  const [paying, setPaying] = useState<null | { refundOf: LocalSale | null }>(null);
+  const [paying, setPaying] = useState<null | { refundOf: LocalSale | null; approvedBy?: string | null }>(null);
+  const [approval, setApproval] = useState<LocalSale | null>(null);
   const [busy, setBusy] = useState(false);
   const [payError, setPayError] = useState<string | null>(null);
   const [receiptId, setReceiptId] = useState<string | null>(null);
@@ -127,6 +129,7 @@ export function PosApp() {
           tip: 0,
           cashReceived: null,
           refundOf: refund.id,
+          approvedBy: paying?.approvedBy ?? null,
           unitId: refund.unitId,
           staff,
         });
@@ -244,7 +247,11 @@ export function PosApp() {
               setView("register");
             }}
             onBack={receiptFrom === "history" ? () => setReceiptId(null) : undefined}
-            onRefund={(s) => setPaying({ refundOf: s })}
+            onRefund={(s) => {
+              // vratku dělá vlastník; pokladní jen se schválením vlastníka (PIN) – R1.7
+              if (config.staff.find((x) => x.id === staff?.id)?.role === "owner") setPaying({ refundOf: s });
+              else setApproval(s);
+            }}
           />
         ) : view === "history" ? (
           <HistoryView
@@ -269,6 +276,16 @@ export function PosApp() {
           error={payError}
           onClose={() => setPaying(null)}
           onPay={pay}
+        />
+      )}
+      {approval && (
+        <OwnerApproval
+          config={config}
+          onClose={() => setApproval(null)}
+          onApprove={(ownerId) => {
+            setPaying({ refundOf: approval, approvedBy: ownerId });
+            setApproval(null);
+          }}
         />
       )}
       {paying?.refundOf && (
