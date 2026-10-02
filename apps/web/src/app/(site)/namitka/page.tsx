@@ -38,7 +38,7 @@ export default async function ObjectionPage({ searchParams }: PageProps<"/namitk
         <aside className="prose-ez text-base">
           <h2 className="!mt-0 !text-xl">Jak žádost vyřizujeme</h2>
           <ul>
-            <li>Po odeslání stránku subjektu ihned vyřadíme z indexace vyhledávačů, dokud žádost neposoudíme.</li>
+            <li>Pošleme vám e-mail s odkazem k potvrzení žádosti. U podnikajících fyzických osob stránku vyřadíme z indexace vyhledávačů hned po odeslání, u firem po potvrzení e-mailu – dokud žádost neposoudíme.</li>
             <li>Odpovíme na váš e-mail nejpozději do 30 dnů (čl. 12 odst. 3 GDPR).</li>
             <li>
               U námitky podle čl. 21 GDPR posoudíme vaši konkrétní situaci; vyhovíme-li, údaje z katalogu odstraníme nebo stránku trvale skryjeme.

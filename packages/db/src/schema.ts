@@ -523,6 +523,11 @@ export const objections = pgTable("objections", {
   message: text("message").notNull(),
   status: varchar("status", { length: 16 }).notNull().default("new"),
   resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  /** potvrzení e-mailem (DOI) – u právnických osob teprve pak noindex (R3.5); v DB jen hash tokenu */
+  confirmTokenHash: varchar("confirm_token_hash", { length: 64 }),
+  confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
+  /** zahrnuto do denního přehledu provozovateli */
+  digestedAt: timestamp("digested_at", { withTimezone: true }),
   createdAt: createdAt(),
 });
 

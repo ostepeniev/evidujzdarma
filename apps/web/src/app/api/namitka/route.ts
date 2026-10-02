@@ -1,18 +1,16 @@
 import { after } from "next/server";
-import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { enqueueEmail, processOutbox } from "@/lib/server/mail";
-import { SITE } from "@/lib/site";
+import { processOutbox } from "@/lib/server/mail";
+import { createObjection } from "@/lib/server/objections";
 import { isValidIco, normalizeIco } from "@ez/cz";
 import { getDb, hasDatabase, schema } from "@ez/db";
-import { establishmentPath, firmPath } from "@/components/catalog/paths";
 import { clientIp, rateLimit } from "@/lib/server/rate-limit";
 
 /**
  * Námitka dle čl. 21 GDPR / žádost o opravu údajů v katalogu.
- * Uloží se do `objections` a firma se OKAMŽITĚ vyřadí z indexace (`firms.noindex = true`)
- * až do posouzení. Odpověď do 30 dnů (čl. 12 odst. 3 GDPR).
+ * Uloží se do `objections`. Stránka fyzické osoby se vyřadí z indexace hned, právnické osoby až po
+ * potvrzení e-mailu (R3.5). Odpověď do 30 dnů (čl. 12 odst. 3 GDPR).
  */
 const Body = z
   .object({
@@ -45,15 +43,6 @@ const FIELD_MESSAGES: Record<string, string> = {
   message: "Napište zprávu (alespoň 10 znaků).",
 };
 
-/** Přegenerovat ISR stránku; selhání revalidace nesmí shodit uložení námitky. */
-function revalidate(path: string): void {
-  try {
-    revalidatePath(path);
-  } catch (e) {
-    console.error("revalidatePath selhalo", path, e);
-  }
-}
-
 export async function POST(req: Request) {
   const ip = clientIp(req);
   if (!rateLimit(`namitka:${ip}`, 5, 3600)) {
@@ -74,7 +63,7 @@ export async function POST(req: Request) {
   const db = getDb();
 
   let ico = body.ico;
-  let est: { icp: string; slug: string } | null = null;
+  let est: { icp: string; slug: string; ico: string } | null = null;
   if (body.icp) {
     const [row] = await db
       .select({ icp: schema.firmEstablishments.icp, slug: schema.firmEstablishments.slug, ico: schema.firmEstablishments.ico })
@@ -88,36 +77,9 @@ export async function POST(req: Request) {
   }
 
   const kind = body.kind === "correction" ? "correction" : "objection";
-  await db.insert(schema.objections).values({ kind, ico, icp: body.icp, name: body.name, email: body.email, message: body.message });
-  // Provozovatel musí odpovědět do 30 dnů → upozornění do schránky
-  await enqueueEmail({
-    to: SITE.email,
-    template: "notice",
-    payload: {
-      subject: `${kind === "correction" ? "Oprava údajů" : "Námitka čl. 21 GDPR"}: ${ico ?? body.icp ?? "bez IČO"}`,
-      text: `Od: ${body.name} <${body.email}>\nIČO: ${ico ?? "—"} · IČP: ${body.icp ?? "—"}\n\n${body.message}\n\nStránka byla automaticky vyřazena z indexace. Odpovězte do 30 dnů.`,
-    },
-  });
+  // noindex hned jen u fyzických osob, u právnických až po potvrzení e-mailu; provozovatel dostane denní přehled (R3.5)
+  await createObjection({ kind, ico: ico ?? est?.ico ?? null, icp: body.icp, name: body.name, email: body.email, message: body.message });
   after(() => processOutbox(5));
-
-  if (ico) {
-    const [firm] = await db
-      .update(schema.firms)
-      .set({ noindex: true })
-      .where(eq(schema.firms.ico, ico))
-      .returning({ ico: schema.firms.ico, slug: schema.firms.slug });
-    // ISR cache: stránky hned přegenerovat s noindex
-    if (firm) {
-      revalidate(firmPath(firm));
-      const ests = await db
-        .select({ icp: schema.firmEstablishments.icp, slug: schema.firmEstablishments.slug })
-        .from(schema.firmEstablishments)
-        .where(eq(schema.firmEstablishments.ico, firm.ico))
-        .limit(200);
-      for (const x of ests) revalidate(establishmentPath(x));
-    }
-  }
-  if (est) revalidate(establishmentPath(est));
 
   return Response.json({ ok: true });
 }
