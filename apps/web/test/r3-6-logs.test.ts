@@ -2,7 +2,8 @@
  * R3.6 / Р6 – v logu nejsou tokeny ani parametry SQL; produkce bez SMTP_URL, MASTER_KEY, CRON_SECRET
  * nenastartuje; docker logy mají limit.
  */
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { errorResponse } from "@/lib/server/auth";
@@ -36,20 +37,27 @@ describe("R3.6 – no secrets in logs", () => {
 });
 
 describe("Р6 – production refuses to start without its configuration", () => {
+  // MASTER_KEY je od R3.12 jen soubor (docker secret 0400)
+  const keyDir = mkdtempSync(join(tmpdir(), "ez-r36-"));
+  const keyFile = (name: string, value: string) => {
+    const p = join(keyDir, name);
+    writeFileSync(p, value, { mode: 0o400 });
+    return p;
+  };
   const ok = {
     NODE_ENV: "production",
     DATABASE_URL: "postgres://u:p@db/x",
     SMTP_URL: "smtp://u:p@smtp.example.cz:587",
-    MASTER_KEY: Buffer.alloc(32, 1).toString("base64"),
+    MASTER_KEY_FILE: keyFile("ok", Buffer.alloc(32, 1).toString("base64")),
     CRON_SECRET: "x".repeat(32),
     APP_SECRET: "y".repeat(32),
   };
   it("lists every missing variable", () => {
-    expect(checkProductionEnv({ NODE_ENV: "production" })).toEqual(expect.arrayContaining(["DATABASE_URL", "SMTP_URL", "MASTER_KEY", "CRON_SECRET", "APP_SECRET"]));
+    expect(checkProductionEnv({ NODE_ENV: "production" })).toEqual(expect.arrayContaining(["DATABASE_URL", "SMTP_URL", "MASTER_KEY_FILE", "CRON_SECRET", "APP_SECRET"]));
   });
   it("accepts a complete configuration and rejects a malformed MASTER_KEY or a short CRON_SECRET", () => {
     expect(checkProductionEnv(ok)).toEqual([]);
-    expect(checkProductionEnv({ ...ok, MASTER_KEY: "abc" })).toEqual(["MASTER_KEY"]);
+    expect(checkProductionEnv({ ...ok, MASTER_KEY_FILE: keyFile("bad", "abc") })).toEqual([expect.stringMatching(/^MASTER_KEY_FILE /)]);
     expect(checkProductionEnv({ ...ok, CRON_SECRET: "short" })).toEqual(["CRON_SECRET"]);
   });
   it("instrumentation runs the check at server start", () => {

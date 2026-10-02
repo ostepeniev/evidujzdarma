@@ -4,11 +4,13 @@
  *   data  --AES-256-GCM(DEK)-->  ciphertext            (uloženo v DB)
  *   DEK   --KeyEncryptor------>  encryptedDek          (uloženo v DB)
  *
- * KeyEncryptor je v MVP lokální master klíč (MASTER_KEY v prostředí, mimo DB i zálohy).
+ * KeyEncryptor je v MVP lokální master klíč (MASTER_KEY, mimo DB i zálohy). V produkci se čte ze souboru
+ * MASTER_KEY_FILE (docker secret), ne ze sdíleného .env (R3.12).
  * Pro produkci lze zaměnit za KMS v EU (např. Scaleway Key Manager, OVHcloud KMS,
  * HashiCorp Vault Transit na vlastním serveru) bez změny datového formátu.
  */
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
+import { readFileSync } from "node:fs";
 
 export interface KeyEncryptor {
   readonly version: string;
@@ -37,7 +39,17 @@ function open(key: Buffer, sealed: Buffer, aad?: Buffer): Buffer {
   return Buffer.concat([decipher.update(data), decipher.final()]);
 }
 
-/** Master klíč z prostředí (base64, 32 bajtů). Více verzí: MASTER_KEY_v2 atd. pro rotaci. */
+/**
+ * Hodnota tajemství: obsah souboru z `<name>_FILE` (docker secret), jinak proměnná `<name>`.
+ * Chyba čtení nese jen cestu, nikdy obsah.
+ */
+export function secretFromEnv(env: Record<string, string | undefined>, name: string): string | undefined {
+  const file = env[`${name}_FILE`];
+  if (file) return readFileSync(file, "utf8").trim();
+  return env[name];
+}
+
+/** Master klíč (base64, 32 bajtů) z MASTER_KEY_FILE nebo MASTER_KEY. Více verzí: MASTER_KEY_v2(_FILE) atd. pro rotaci. */
 export class LocalKeyEncryptor implements KeyEncryptor {
   private readonly keys: Map<string, Buffer>;
 
@@ -56,11 +68,12 @@ export class LocalKeyEncryptor implements KeyEncryptor {
   }
 
   static fromEnv(env: Record<string, string | undefined> = process.env): LocalKeyEncryptor {
-    const main = env.MASTER_KEY;
+    const main = secretFromEnv(env, "MASTER_KEY");
     if (!main) throw new Error("MASTER_KEY není nastaven");
     const keys: Record<string, string> = { v1: main };
-    for (const [k, v] of Object.entries(env)) {
-      const m = k.match(/^MASTER_KEY_(v\d+)$/);
+    for (const k of Object.keys(env)) {
+      const m = k.match(/^MASTER_KEY_(v\d+)(?:_FILE)?$/);
+      const v = m && secretFromEnv(env, `MASTER_KEY_${m[1]}`);
       if (m && v) keys[m[1]!] = v;
     }
     const current = env.MASTER_KEY_CURRENT ?? "v1";

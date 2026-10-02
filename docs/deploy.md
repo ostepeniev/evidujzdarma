@@ -62,18 +62,42 @@ dig +short evidujzdarma.cz TXT
 
 ## 3. Застосунок
 
+**На своєму комп'ютері (не на сервері)** створіть ключ для бекапів. Знадобиться програма [age](https://github.com/FiloSottile/age) (`brew install age`, `apt install age`):
+
+```bash
+age-keygen -o evidujzdarma-backup.key
+# виведе "Public key: age1…" — це значення для BACKUP_AGE_RECIPIENT
+```
+
+Файл `evidujzdarma-backup.key` — це **приватний** ключ. На сервер його не копіюйте. Збережіть у менеджері паролів і ще в одному місці офлайн: без нього бекап не відновити.
+
+**На сервері:**
+
 ```bash
 su - deploy
 git clone https://github.com/ostepeniev/evidujzdarma.git && cd evidujzdarma/infra
 cp .env.production.example .env
-# згенеруйте секрети:
-for k in POSTGRES_PASSWORD APP_SECRET CRON_SECRET MASTER_KEY; do echo "$k=$(openssl rand -base64 32)"; done
-nano .env          # вставте секрети, DOMAIN, SMTP_URL, ALERT_EMAIL (дані оператора — у коді, lib/site.ts)
-docker compose up -d --build
-docker compose logs -f web worker
+# паролі БД стоять у DATABASE_URL, тому лише hex (у base64 буває «/», і URL ламається):
+for k in POSTGRES_PASSWORD APP_DB_PASSWORD; do echo "$k=$(openssl rand -hex 32)"; done
+for k in APP_SECRET CRON_SECRET; do echo "$k=$(openssl rand -base64 32)"; done
+nano .env          # вставте секрети, DOMAIN, SMTP_URL, ALERT_EMAIL, BACKUP_AGE_RECIPIENT=age1…
+exit               # назад до root
 ```
 
-> **MASTER_KEY** збережіть окремо, у менеджері паролів. Ним зашифровані приватні ключі касових сертифікатів. Без нього їх не відновити, і в бекапах його немає (так задумано).
+`MASTER_KEY` лежить не в `.env`, а в окремому файлі. Його може прочитати лише користувач застосунку в контейнері (uid 1001). Від root:
+
+```bash
+cd /home/deploy/evidujzdarma/infra
+mkdir -p secrets && chmod 700 secrets
+openssl rand -base64 32 > secrets/master_key   # або вставте наявний MASTER_KEY
+chown 1001:1001 secrets/master_key && chmod 0400 secrets/master_key
+cat secrets/master_key                          # перепишіть у менеджер паролів
+su - deploy -c 'cd evidujzdarma/infra && docker compose up -d --build && docker compose logs -f web worker'
+```
+
+> **MASTER_KEY** збережіть окремо, у менеджері паролів. Ним зашифровані приватні ключі касових сертифікатів. Без нього їх не відновити, і в бекапах його немає (так задумано). Якщо `MASTER_KEY` лишиться в `.env` або файл буде з правами ширшими за 0400, сервер не стартує й напише причину.
+>
+> `web` і `worker` підключаються до БД роллю `evidujzdarma_app`. Вона може читати й писати рядки, але не може змінювати схему. Роль створює сервіс `migrate` з `APP_DB_PASSWORD`.
 
 Перевірка:
 
@@ -96,9 +120,27 @@ cd ~/evidujzdarma && git pull && cd infra && docker compose up -d --build
 
 Міграції БД застосовуються автоматично: сервіс `migrate` запускається перед `web`.
 
+**Оновлення зі старішої версії, де `MASTER_KEY` був у `.env` (R3.12).** Без цих кроків `docker compose up` не стартує й напише, чого бракує:
+
+1. Згенеруйте ключ для бекапів на своєму комп'ютері (розділ 3) і впишіть `BACKUP_AGE_RECIPIENT=age1…` у `.env`.
+2. Допишіть у `.env` рядок `APP_DB_PASSWORD=` зі значенням з `openssl rand -hex 32`.
+3. Перенесіть `MASTER_KEY` з `.env` у файл (від root; ключ той самий, сертифікати розшифровуються, як і раніше):
+
+```bash
+cd /home/deploy/evidujzdarma/infra && mkdir -p secrets && chmod 700 secrets
+grep '^MASTER_KEY=' .env | cut -d= -f2- > secrets/master_key
+chown 1001:1001 secrets/master_key && chmod 0400 secrets/master_key
+sed -i '/^MASTER_KEY=/d' .env
+```
+
+4. `docker compose up -d --build`, потім `docker compose logs migrate web backup`. У логах мають бути рядки `runtime role evidujzdarma_app` і `[backup] OK …dump.age`.
+
 ## 6. Бекапи
 
-- Сервіс `backup` щодня робить `pg_dump` у `infra/backups/` і зберігає копії за 14 днів.
+- Сервіс `backup` щодня робить `pg_dump`, одразу шифрує його програмою `age` **публічним** ключем із `BACKUP_AGE_RECIPIENT` і пише в `infra/backups/evidujzdarma-ДАТА-ЧАС.dump.age` (права 0600). Незашифрований дамп на диск не потрапляє. Без `BACKUP_AGE_RECIPIENT` сервіс не стартує.
+- Приватний ключ є лише у вас, тому ні сервер, ні офсайт-копія без нього бекап не прочитають. Можна вказати кілька публічних ключів через кому, наприклад ваш і резервний.
+- Старі копії видаляються через `BACKUP_KEEP_DAYS` (14) днів, але лише після успішного нового бекапу. Якщо бекапи кілька днів поспіль падають, старі копії лишаються.
+- Ручний бекап: `docker compose run --rm -e BACKUP_ONCE=1 backup`.
 - Офсайт: синхронізуйте `infra/backups/` у Hetzner Storage Box, наприклад так:
 
 ```bash
@@ -106,11 +148,19 @@ cd ~/evidujzdarma && git pull && cd infra && docker compose up -d --build
 restic -r sftp:uXXXX@uXXXX.your-storagebox.de:/evidujzdarma backup ~/evidujzdarma/infra/backups
 ```
 
-- Відновлення:
+- Відновлення. Розшифровуйте на своєму комп'ютері з приватним ключем, приватний ключ на сервер не копіюйте:
 
 ```bash
-docker compose exec -T postgres pg_restore -U evidujzdarma -d evidujzdarma --clean < backups/evidujzdarma-YYYYMMDD-HHMM.dump
+# на своєму комп'ютері: розшифрувати
+age -d -i evidujzdarma-backup.key evidujzdarma-YYYYMMDD-HHMMSS.dump.age > restore.dump
+# перенести restore.dump на сервер (scp) і відновити
+docker compose exec -T postgres pg_restore -U evidujzdarma -d evidujzdarma --clean --if-exists < restore.dump
+shred -u restore.dump   # розшифрований дамп не залишайте ні на сервері, ні в себе
+docker compose run --rm migrate   # відновить права ролі evidujzdarma_app
 ```
+
+- **Перевірка раз на квартал:** розшифруйте свіжий бекап і відновіть його в тестову БД (`createdb restore_check`, потім `pg_restore -d restore_check --no-owner`). Бекап, який ніхто не відновлював, — не бекап.
+- **Старі нешифровані бекапи** (`*.dump`, зроблені до R3.12) видаляються за тим самим строком. Поки вони є, сервіс пише попередження в лог. Щойно ви успішно відновите шифрований бекап, видаліть їх одразу (`rm infra/backups/*.dump`) і так само в офсайт-сховищі.
 
 ## 7. Після запуску (SEO / GEO)
 

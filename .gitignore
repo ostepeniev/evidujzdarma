@@ -16,3 +16,6 @@ next-env.d.ts
 *.p12
 *.pfx
 /data/
+# R3.12: tajemství a zálohy na serveru nikdy do gitu
+infra/secrets/
+infra/backups/

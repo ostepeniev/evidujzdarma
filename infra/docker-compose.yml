@@ -1,5 +1,6 @@
 # Produkční nasazení na jeden server (Hetzner Cloud / Proxmox / jakékoli VPS v EU).
 #   cp .env.production.example .env  &&  nano .env
+#   MASTER_KEY do secrets/master_key (0400, vlastník 1001) – viz docs/deploy.md
 #   docker compose up -d --build
 name: evidujzdarma
 
@@ -10,11 +11,12 @@ x-logging: &logging
     max-size: "10m"
     max-file: "5"
 
+# web a worker jedou pod rolí evidujzdarma_app bez DDL (R3.12); zakládá ji služba migrate.
+# MASTER_KEY tu není: dostává ho jen web jako docker secret (soubor), worker ho nepotřebuje.
 x-app-env: &app-env
-  DATABASE_URL: postgres://evidujzdarma:${POSTGRES_PASSWORD}@postgres:5432/evidujzdarma
+  DATABASE_URL: "postgres://evidujzdarma_app:${APP_DB_PASSWORD:?doplňte APP_DB_PASSWORD do .env}@postgres:5432/evidujzdarma"
   NEXT_PUBLIC_SITE_URL: https://${DOMAIN}
   APP_SECRET: ${APP_SECRET}
-  MASTER_KEY: ${MASTER_KEY}
   CRON_SECRET: ${CRON_SECRET}
   SMTP_URL: ${SMTP_URL}
   MAIL_FROM: ${MAIL_FROM}
@@ -47,8 +49,11 @@ services:
   migrate:
     logging: *logging
     build: { context: .., target: migrate }
+    # jediná služba s vlastníkem schématu: migrace + runtime role evidujzdarma_app
     environment:
       DATABASE_URL: postgres://evidujzdarma:${POSTGRES_PASSWORD}@postgres:5432/evidujzdarma
+      APP_DB_USER: evidujzdarma_app
+      APP_DB_PASSWORD: "${APP_DB_PASSWORD:?doplňte APP_DB_PASSWORD do .env}"
     depends_on:
       postgres: { condition: service_healthy }
     restart: "no"
@@ -63,6 +68,8 @@ services:
     restart: unless-stopped
     environment:
       <<: *app-env
+      MASTER_KEY_FILE: /run/secrets/master_key
+    secrets: [master_key]
     depends_on:
       migrate: { condition: service_completed_successfully }
 
@@ -96,9 +103,10 @@ services:
     depends_on:
       - web
 
+  # pg_dump | age: na disk jde jen šifrovaná záloha, soukromý klíč je u provozovatele offline (R3.12)
   backup:
     logging: *logging
-    image: postgres:16-alpine
+    build: { context: ., dockerfile: backup.Dockerfile }
     restart: unless-stopped
     environment:
       PGHOST: postgres
@@ -106,10 +114,9 @@ services:
       PGPASSWORD: ${POSTGRES_PASSWORD}
       PGDATABASE: evidujzdarma
       BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+      BACKUP_AGE_RECIPIENT: "${BACKUP_AGE_RECIPIENT:?doplňte veřejný klíč age do BACKUP_AGE_RECIPIENT v .env}"
     volumes:
-      - ./backup.sh:/backup.sh:ro
       - ${BACKUP_DIR:-./backups}:/backups
-    entrypoint: ["/bin/sh", "/backup.sh"]
     depends_on:
       postgres: { condition: service_healthy }
 
@@ -117,3 +124,8 @@ volumes:
   pgdata:
   caddy_data:
   caddy_config:
+
+# MASTER_KEY mimo sdílený .env: soubor s právy 0400, vlastník uid 1001 (uživatel app v obrazu web)
+secrets:
+  master_key:
+    file: ./secrets/master_key
