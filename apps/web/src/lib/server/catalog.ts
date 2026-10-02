@@ -212,9 +212,22 @@ function establishmentSlug(name: string | null, firmName: string, city: string |
   return slugify([name ?? firmName, name ? null : city].filter(Boolean).join(" "), 80) || "provozovna";
 }
 
+/** ARES (živý zdroj pro firmy mimo DB) neodpověděl: stránka ukáže dočasnou nedostupnost místo chyby 500. */
+export class AresUnavailableError extends Error {
+  constructor(readonly ico: string) {
+    super("ARES je dočasně nedostupný");
+  }
+}
+
 /** Živý záznam z ARES (firma ještě není v DB) — vždy noindex. */
 async function liveFirmView(ico: string): Promise<FirmView | null> {
-  const live = await lookupCompany(ico, { pool: "catalog" });
+  let live: Awaited<ReturnType<typeof lookupCompany>>;
+  try {
+    live = await lookupCompany(ico, { pool: "catalog" });
+  } catch {
+    // síť, 403/5xx, vyčerpaný limit (AresBusyError) – IČO v ARES neexistuje je null, ne výjimka
+    throw new AresUnavailableError(ico);
+  }
   if (!live) return null;
   const s = live.subject;
   const natural = isNaturalPerson(s.legalForm);

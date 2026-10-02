@@ -22,8 +22,12 @@ describe("R3.3 – no unbounded ISR keys", () => {
       const s = read(f);
       expect(s, f).toContain('export const dynamic = "force-dynamic"');
       expect(s, f).not.toMatch(/export const revalidate/);
-      expect(s, f).toContain("slugDecision(");
     }
-    expect(read("src/app/(site)/firma/[slug]/page.tsx")).toMatch(/rateLimit\(`firm-live:/);
+    expect(read("src/app/(site)/provozovna/[slug]/page.tsx")).toContain("slugDecision(");
+    // logika stránky firmy je v lib/server/firm-page.ts (R4: výpadek ARES → stav „unavailable“)
+    expect(read("src/app/(site)/firma/[slug]/page.tsx")).toContain("loadFirmPage(");
+    const loader = read("src/lib/server/firm-page.ts");
+    expect(loader).toContain("slugDecision(");
+    expect(loader).toMatch(/rateLimit\(`firm-live:/);
   });
 });

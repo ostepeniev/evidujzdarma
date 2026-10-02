@@ -1,44 +1,34 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { headers } from "next/headers";
-import { notFound, permanentRedirect } from "next/navigation";
 import { classifyNaceList, krajByCode, legalFormName, legalFormShort } from "@ez/cz";
 import { Facts } from "@/components/catalog/facts";
 import { CATALOG_INDUSTRIES } from "@/components/catalog/industry";
 import { firmLd } from "@/components/catalog/jsonld";
 import { naceDivisionLabel } from "@/components/catalog/nace-labels";
 import { OwnerCta } from "@/components/catalog/owner-cta";
-import { aresUrl, dateCs, establishmentPath, firmPath, krajPath, oborKrajPath, parseFirmSlug, slugDecision } from "@/components/catalog/paths";
+import { AresUnavailable } from "@/components/catalog/ares-unavailable";
+import { aresUrl, dateCs, establishmentPath, firmPath, krajPath, oborKrajPath } from "@/components/catalog/paths";
 import { RelevanceChip, RelevanceExplainer } from "@/components/catalog/relevance";
 import { SourceNote } from "@/components/catalog/source-note";
 import { PageHeader } from "@/components/page-header";
 import { JsonLd } from "@/lib/jsonld";
-import { getFirmView, isFirmInCatalog, type FirmView } from "@/lib/server/catalog";
-import { clientIpFromHeaders, rateLimit } from "@/lib/server/rate-limit";
+import { loadFirmPage } from "@/lib/server/firm-page";
+import { clientIpFromHeaders } from "@/lib/server/rate-limit";
 
 // Stránky firem se renderují pro každý požadavek a neukládají se do ISR cache na disk: miliony
 // platných IČO by ji jinak mohly zaplnit (R3.3). Data z DB jsou levná, živé dotazy do ARES mají limit na IP.
 export const dynamic = "force-dynamic";
 
-async function loadFirm(slugParam: string): Promise<FirmView> {
-  const parsed = parseFirmSlug(slugParam);
-  if (!parsed) notFound();
-  // Firmy mimo naši DB (živě z ARES) se renderují dynamicky, bez ISR cache, a s limitem na IP (R3.3)
-  if (!(await isFirmInCatalog(parsed.ico))) {
-    const ip = clientIpFromHeaders(await headers());
-    if (!rateLimit(`firm-live:${ip}`, 30, 3600)) notFound();
-  }
-  const firm = await getFirmView(parsed.ico);
-  if (!firm) notFound();
-  const decision = slugDecision(parsed.suffix, firm.slug);
-  if (decision === "notfound") notFound();
-  if (decision === "redirect") permanentRedirect(firmPath(firm));
-  return firm;
+async function loadFirm(slug: string) {
+  return loadFirmPage(slug, clientIpFromHeaders(await headers()));
 }
 
 export async function generateMetadata({ params }: PageProps<"/firma/[slug]">): Promise<Metadata> {
   const { slug } = await params;
-  const firm = await loadFirm(slug);
+  const state = await loadFirm(slug);
+  if (state.kind === "unavailable") return { title: `IČO ${state.ico} – údaje z ARES nejsou k dispozici`, robots: { index: false, follow: false } };
+  const firm = state.firm;
   const kraj = krajByCode(firm.regionCode);
   const firstNace = firm.nace.map(naceDivisionLabel).find(Boolean);
   const parts = [
@@ -57,7 +47,9 @@ export async function generateMetadata({ params }: PageProps<"/firma/[slug]">): 
 
 export default async function FirmPage({ params }: PageProps<"/firma/[slug]">) {
   const { slug } = await params;
-  const firm = await loadFirm(slug);
+  const state = await loadFirm(slug);
+  if (state.kind === "unavailable") return <AresUnavailable ico={state.ico} />;
+  const firm = state.firm;
   const kraj = krajByCode(firm.regionCode);
   const path = firmPath(firm);
   const { matched } = classifyNaceList(firm.nace);
