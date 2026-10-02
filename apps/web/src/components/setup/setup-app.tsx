@@ -749,7 +749,7 @@ function ExportSection({ salesCount }: { salesCount: number }) {
   const [from, setFrom] = useState(monthStart);
   const [to, setTo] = useState(today);
   return (
-    <Section id="export" step={9} title="Export pro účetní" lead={`CSV pro Excel i účetní software (zatím ${salesCount} tržeb). Export do Pohody / Money bude v Premium.`}>
+    <Section id="export" step={9} title="Export pro účetní" lead={`CSV pro Excel i účetní software (zatím ${salesCount} tržeb). Export do Pohody / Money připravujeme (Premium).`}>
       <div className="flex flex-wrap items-end gap-3">
         <div>
           <label htmlFor="ex-od" className="label">

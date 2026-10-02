@@ -26,7 +26,7 @@ const BENEFITS = [
   { title: "Prodej na 3 dotyky", text: "Částka nebo tlačítko zboží → způsob platby → hotovo. Účtenka s kódem od Finanční správy." },
   { title: "Funguje i bez signálu", text: "Tržby se uloží v zařízení a odešlou se samy, jakmile je připojení. Hlídáme lhůtu pro dodatečné odeslání." },
   { title: "Až 5 uživatelů zdarma", text: "Každá pokladní má vlastní PIN, vy vidíte všechny tržby a denní přehled." },
-  { title: "Účtenka papírově i digitálně", text: "Tisk na Bluetooth tiskárnu, e-mail, SMS odkaz nebo QR kód na displeji." },
+  { title: "Účtenka papírově i digitálně", text: "Tisk na Bluetooth tiskárnu, e-mail nebo QR kód na displeji. Odkaz v SMS připravujeme." },
   { title: "Pro účetní", text: "Export CSV zdarma, hromadná kontrola IČO a přehled připravenosti všech klientů." },
   { title: "Bezpečně v EU", text: "Data na serverech v Evropské unii, klíče certifikátů šifrovaně, heslo k certifikátu neukládáme." },
 ];

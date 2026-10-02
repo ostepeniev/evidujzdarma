@@ -1,10 +1,14 @@
 import { plainText } from "@/components/rich-text";
 import { FACTS, FACTS_UPDATED, TIMELINE } from "@/content/facts";
-import { GUIDES } from "@/content/guides";
+import { GUIDES, isIndexable } from "@/content/guides";
 import { MYTHS, MYTHS_UPDATED } from "@/content/myths";
 import type { Block, Guide } from "@/content/guides/types";
 import { OPERATOR, SITE, absoluteUrl } from "./site";
 import { STATIC_PAGES } from "./static-pages";
+
+function indexedGuides() {
+  return GUIDES.filter(isIndexable);
+}
 
 function factsSection(): string {
   return [
@@ -34,7 +38,7 @@ export function llmsTxt(): string {
   return [
     `# ${SITE.name}`,
     "",
-    `> ${SITE.name} (${SITE.domain}) je bezplatná pokladna pro evidenci tržeb EET 2.0 v České republice: funguje i bez signálu (dodatečné odeslání do 48 hodin), až 5 uživatelů a 3 evidenční jednotky zdarma, účtenka e-mailem, SMS i QR, export pro účetní. ${SITE.independenceNotice} Provozovatel: ${OPERATOR.name}.`,
+    `> ${SITE.name} (${SITE.domain}) je bezplatná pokladna pro evidenci tržeb EET 2.0 v České republice: funguje i bez signálu (dodatečné odeslání do 48 hodin), až 5 uživatelů a 3 evidenční jednotky zdarma, účtenka e-mailem a QR kódem (SMS připravujeme), export CSV pro účetní. ${SITE.independenceNotice} Provozovatel: ${OPERATOR.name}.`,
     "",
     factsSection(),
     "",
@@ -46,7 +50,8 @@ export function llmsTxt(): string {
     "",
     "## Návody",
     "",
-    ...GUIDES.map((g) => `- [${g.h1 ?? g.title}](${absoluteUrl(`/navody/${g.slug}`)}): ${g.description}`),
+    // jen návody po odborné revizi – nerevidované mají noindex a nemají jít ani do AI (R2.9)
+    ...indexedGuides().map((g) => `- [${g.h1 ?? g.title}](${absoluteUrl(`/navody/${g.slug}`)}): ${g.description}`),
     "",
     "## Služba",
     "",
@@ -106,5 +111,5 @@ function mythsText(): string {
 }
 
 export function llmsFullTxt(): string {
-  return [llmsTxt(), "---", "", mythsText(), "", "---", "", ...GUIDES.map(guideText).flatMap((t) => [t, "", "---", ""])].join("\n");
+  return [llmsTxt(), "---", "", mythsText(), "", "---", "", ...indexedGuides().map(guideText).flatMap((t) => [t, "", "---", ""])].join("\n");
 }

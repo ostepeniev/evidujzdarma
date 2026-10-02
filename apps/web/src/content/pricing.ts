@@ -55,7 +55,7 @@ export const PLANS: readonly Plan[] = [
       "Funguje i bez signálu, tržby odešle sama do 48 hodin",
       "Až 5 uživatelů s vlastním PINem",
       "Až 3 evidenční jednotky",
-      "Doklad v PDF a e-mailem",
+      "Doklad e-mailem, odkazem a QR kódem",
       "Denní přehled tržeb",
       "Export do CSV pro účetní",
       "QR platba na přesnou částku",
@@ -147,7 +147,7 @@ export const PARTNER_PLAN = {
   text: "Pro účetní a daňové kanceláře: bezplatný Účetní kabinet pro všechny klienty a podíl z jejich plateb.",
   bullets: [
     "Účetní kabinet zdarma: hromadná kontrola IČO a stav připravenosti klientů",
-    "Export tržeb klientů – CSV zdarma, Pohoda / Money S3 / ABRA v partnerském tarifu",
+    "Export tržeb klientů – CSV zdarma, Pohoda / Money S3 / ABRA připravujeme v partnerském tarifu",
     "20 % z plateb vašich klientů za placené tarify po celou dobu, kdy je platí – nebo místo toho sleva pro klienty",
     "Šablony dopisů klientům a webináře EET 2.0 pro účetní",
   ],
@@ -160,7 +160,7 @@ export const FEATURE_MATRIX: readonly { feature: string; free: boolean | string;
   { feature: "Práce bez signálu, odeslání do 48 h", free: true, premium: true },
   { feature: "Uživatelé", free: "až 5", premium: "bez limitu" },
   { feature: "Evidenční jednotky", free: "až 3", premium: "bez limitu" },
-  { feature: "Doklad PDF a e-mailem", free: true, premium: true },
+  { feature: "Doklad e-mailem, odkazem a QR", free: true, premium: true },
   { feature: "QR platba", free: true, premium: true },
   { feature: "Denní přehled a export CSV", free: true, premium: true },
   { feature: "Účtenky SMS", free: false, premium: true },
@@ -173,11 +173,11 @@ export const FEATURE_MATRIX: readonly { feature: string; free: boolean | string;
 export const PRICING_FAQ = [
   {
     q: "Je bezplatný tarif opravdu zdarma navždy?",
-    a: "Ano. Evidence tržeb, práce bez signálu, až 5 uživatelů, 3 evidenční jednotky, doklad v PDF a e-mailem, denní přehled, export CSV a QR platba zůstanou zdarma. Nejde o zkušební verzi a nevyžadujeme platební kartu.",
+    a: "Ano. Evidence tržeb, práce bez signálu, až 5 uživatelů, 3 evidenční jednotky, doklad e-mailem a QR kódem, denní přehled, export CSV a QR platba zůstanou zdarma. Nejde o zkušební verzi a nevyžadujeme platební kartu.",
   },
   {
     q: "Jak na bezplatné pokladně vyděláváte?",
-    a: "Na placených doplňcích, které nás stojí peníze nebo vám šetří hodiny práce – například SMS účtenky, export do účetních programů, platba kartou v telefonu nebo nastavení na klíč. Vaše data neprodáváme.",
+    a: "Na placených doplňcích (připravujeme je), které nás stojí peníze nebo vám šetří hodiny práce – například SMS účtenky, export do účetních programů, platba kartou v telefonu nebo nastavení na klíč. Vaše data neprodáváme.",
   },
   {
     q: "Proč jsou ceny označené jako předběžné?",

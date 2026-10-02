@@ -11,7 +11,7 @@ import { SITE_URL, absoluteUrl } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Ceník – pokladna EET 2.0 zdarma navždy",
   description:
-    "Pokladna pro EET 2.0 zdarma navždy: offline režim, 5 uživatelů, 3 evidenční jednotky, doklad e-mailem i CSV. Premium za 149 Kč/měsíc přidá SMS účtenky a exporty",
+    "Pokladna pro EET 2.0 zdarma navždy: offline režim, 5 uživatelů, 3 evidenční jednotky, doklad e-mailem i CSV. Premium za 149 Kč/měsíc (připravujeme) přidá SMS účtenky a exporty",
   alternates: { canonical: "/cenik" },
 };
 

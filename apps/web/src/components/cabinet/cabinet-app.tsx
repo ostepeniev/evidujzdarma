@@ -297,7 +297,7 @@ function ExportBox() {
     <div className="card flex flex-wrap items-end gap-3">
       <div className="mr-auto">
         <h2 className="text-lg font-bold">Export tržeb propojených klientů</h2>
-        <p className="text-sm text-muted">CSV pro Excel a účetní software. Pohoda / Money S3 / ABRA v partnerském tarifu.</p>
+        <p className="text-sm text-muted">CSV pro Excel a účetní software. Pohoda / Money S3 / ABRA připravujeme v partnerském tarifu.</p>
       </div>
       <input aria-label="Od" type="date" className="input w-auto" value={from} onChange={(e) => setFrom(e.target.value)} />
       <input aria-label="Do" type="date" className="input w-auto" value={to} onChange={(e) => setTo(e.target.value)} />

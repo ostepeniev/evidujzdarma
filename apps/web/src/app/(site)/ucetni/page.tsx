@@ -44,7 +44,7 @@ const CABINET: readonly { title: string; text: string; status: "now" | "launch";
   },
   {
     title: "Export tržeb klientů",
-    text: "CSV zdarma. Export pro Pohodu, Money S3 a ABRA v partnerském tarifu.",
+    text: "CSV zdarma. Export pro Pohodu, Money S3 a ABRA připravujeme v partnerském tarifu.",
     status: "now", href: "/kabinet", linkLabel: "Otevřít kabinet",
   },
   {

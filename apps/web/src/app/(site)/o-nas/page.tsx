@@ -94,7 +94,7 @@ export default function AboutPage() {
               vás evidence týká, a když ano, evidovat v pokladně, která je zdarma navždy a funguje i bez signálu.
             </p>
             <p>
-              Vyděláváme na placených doplňcích, které si každý může, ale nemusí zapnout – například SMS účtenky, export do
+              Vydělávat budeme na placených doplňcích, které si každý může, ale nemusí zapnout (připravujeme je) – například SMS účtenky, export do
               účetních programů nebo platba kartou v telefonu. Podrobnosti najdete v <Link href="/cenik">ceníku</Link>. Data
               uživatelů neprodáváme.
             </p>

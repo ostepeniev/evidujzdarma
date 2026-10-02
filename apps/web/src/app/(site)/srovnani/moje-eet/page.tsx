@@ -23,7 +23,7 @@ const PUBLISHED = "2026-10-01";
 const CHOOSE_STATE = [
   "Máte jednu nebo dvě provozovny a nejvýš dva zaměstnance u pokladny.",
   "Prodáváte tam, kde je vždy spolehlivý internet (kamenná prodejna s Wi-Fi, kancelář).",
-  "Stačí vám PDF doklad a nepotřebujete tiskárnu účtenek ani čtečku kódů.",
+  "Stačí vám PDF doklad a nepotřebujete tiskárnu účtenek.",
   "Chcete aplikaci přímo od Finanční správy a nevadí vám dvoufázové ověření při každém přihlášení.",
 ];
 

@@ -2,7 +2,7 @@ import type { Source } from "../facts";
 
 /**
  * Obsahový model návodu. Texty podporují jen bezpečnou inline syntaxi:
- *   **tučně**, [odkaz](/cesta nebo https://…)
+ *   **tučně**, [odkaz](/navody nebo https://…)
  * Žádné HTML. Každé tvrzení o zákoně musí mít zdroj v `sources`.
  */
 export type Block =
