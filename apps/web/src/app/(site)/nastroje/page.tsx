@@ -52,6 +52,13 @@ const TOOLS = [
     time: "5 vteřin",
   },
   {
+    href: "/mcp",
+    title: "EET 2.0 pro AI asistenty",
+    text: "Připojte Claude, ChatGPT nebo Cursor k našim nástrojům přes MCP: kontrola IČO, EET OFF, fakta se zdroji a stav EET přímo v chatu.",
+    tag: "Novinka",
+    time: "2 minuty",
+  },
+  {
     href: "/ucetni/hromadna-kontrola",
     title: "Hromadná kontrola IČO pro účetní",
     text: "Vložte seznam IČO nebo nahrajte CSV a během chvíle uvidíte, kterých klientů se EET 2.0 pravděpodobně týká. Výsledek stáhnete jako CSV.",

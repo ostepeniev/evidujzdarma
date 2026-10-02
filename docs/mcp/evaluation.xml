@@ -1,0 +1,47 @@
+<!--
+  Evaluace veřejného MCP serveru EvidujZdarma (evidujzdarma-mcp-server).
+  Otázky musí jít zodpovědět jen nástroji serveru; odpovědi jsou stabilní
+  (opírají se o facts.ts stav k 1. 10. 2026). Při změně faktů evaluaci aktualizujte.
+-->
+<evaluation>
+  <qa_pair>
+    <question>A hairdresser in the flat-rate tax band 1 with an expected income of 600,000 CZK starts her business in July 2027. How many CZK of EET OFF surcharge would she pay for 2027? Answer with the number only.</question>
+    <answer>8400</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>What is the provisional monthly flat-rate tax payment for band 1 in 2027 including the EET OFF surcharge, in CZK? Answer with the number only.</question>
+    <answer>11062</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Until which date (D. M. YYYY, Czech format) must a taxpayer notify the EET OFF regime for the year 2027?</question>
+    <answer>11. 1. 2027</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>How many hours after the sale may a business send the sales data at the latest when the connection fails? Answer with the number only.</question>
+    <answer>48</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>A guest pays the remaining price for accommodation by card at the reception desk. According to the payment classifier, is the payment evidenced? Answer yes, no or uncertain.</question>
+    <answer>yes</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>A customer pays an invoice by a bank transfer from a mobile phone while standing in the shop. What does the payment classifier return for "evidenced"? Answer yes, no or uncertain.</question>
+    <answer>uncertain</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>What is the maximum fine in CZK for not sending the sales data under EET 2.0? Answer with the number only.</question>
+    <answer>500000</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Find the EvidujZdarma guide that explains how to activate DIS+ and obtain the cash register certificate. What is its slug?</question>
+    <answer>jak-aktivovat-dis-a-certifikat</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>Among the listed misconceptions about EET 2.0, find the one about fines in January 2027. What is its id?</question>
+    <answer>leden-bez-pokut</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>According to the law history, on which date (D. M. YYYY) did the Chamber of Deputies override the Senate and approve the original wording of the EET 2.0 law?</question>
+    <answer>9. 9. 2026</answer>
+  </qa_pair>
+</evaluation>
