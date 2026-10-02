@@ -30,10 +30,12 @@ function seal(key: Buffer, plaintext: Buffer, aad?: Buffer): Buffer {
 }
 
 function open(key: Buffer, sealed: Buffer, aad?: Buffer): Buffer {
+  // plný 128bitový tag: Node bez authTagLength přijme i zkrácený (A Дрібне 3)
+  if (sealed.length < IV_LEN + TAG_LEN) throw new Error("Poškozený šifrovaný záznam");
   const iv = sealed.subarray(0, IV_LEN);
   const tag = sealed.subarray(IV_LEN, IV_LEN + TAG_LEN);
   const data = sealed.subarray(IV_LEN + TAG_LEN);
-  const decipher = createDecipheriv("aes-256-gcm", key, iv);
+  const decipher = createDecipheriv("aes-256-gcm", key, iv, { authTagLength: TAG_LEN });
   if (aad) decipher.setAAD(aad);
   decipher.setAuthTag(tag);
   return Buffer.concat([decipher.update(data), decipher.final()]);

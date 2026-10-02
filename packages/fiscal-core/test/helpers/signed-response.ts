@@ -57,22 +57,25 @@ export function signerCert(ca: ReturnType<typeof testCa>, subject: forge.pki.Cer
 }
 
 /** Odpověď FS s Potvrzeni, podepsaná daným certifikátem (WS-Security nad Body). */
-export function signedResponse(signer: { privatePem: string; derB64: string }, o: { uuid: string; pok: string; test: boolean }) {
+export function signedResponse(
+  signer: { privatePem: string; derB64: string },
+  o: { uuid: string; pok: string; test: boolean; odpoved?: string; digestAlgorithm?: string; canonicalizationAlgorithm?: string; transforms?: string[] },
+) {
   const bodyId = `Body-${randomUUID()}`;
   const xml =
     `<soapenv:Envelope xmlns:soapenv="${EET_NS.soapenv}" xmlns:eet="${EET_NS.v4}" xmlns:wsu="${EET_NS.wsu}" xmlns:wsse="${EET_NS.wsse}">` +
     `<soapenv:Header><wsse:Security soapenv:mustUnderstand="1">` +
     `<wsse:BinarySecurityToken EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary" ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3" wsu:Id="SecurityToken-1">${signer.derB64}</wsse:BinarySecurityToken>` +
     `</wsse:Security></soapenv:Header>` +
-    `<soapenv:Body wsu:Id="${bodyId}"><eet:Odpoved><eet:Hlavicka uuid_zpravy="${o.uuid}" dat_prij="2026-10-02T12:00:00+02:00"/><eet:Potvrzeni pok="${o.pok}"${o.test ? ' test="true"' : ""}/></eet:Odpoved></soapenv:Body>` +
+    `<soapenv:Body wsu:Id="${bodyId}">${o.odpoved ?? `<eet:Odpoved><eet:Hlavicka uuid_zpravy="${o.uuid}" dat_prij="2026-10-02T12:00:00+02:00"/><eet:Potvrzeni pok="${o.pok}"${o.test ? ' test="true"' : ""}/></eet:Odpoved>`}</soapenv:Body>` +
     `</soapenv:Envelope>`;
   const sig = new SignedXml({
     privateKey: signer.privatePem,
-    canonicalizationAlgorithm: "http://www.w3.org/2001/10/xml-exc-c14n#",
+    canonicalizationAlgorithm: o.canonicalizationAlgorithm ?? "http://www.w3.org/2001/10/xml-exc-c14n#",
     signatureAlgorithm: "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",
     idMode: "wssecurity",
   });
-  sig.addReference({ xpath: "//*[local-name(.)='Body']", digestAlgorithm: "http://www.w3.org/2001/04/xmlenc#sha256", transforms: ["http://www.w3.org/2001/10/xml-exc-c14n#"] });
+  sig.addReference({ xpath: "//*[local-name(.)='Body']", digestAlgorithm: o.digestAlgorithm ?? "http://www.w3.org/2001/04/xmlenc#sha256", transforms: o.transforms ?? ["http://www.w3.org/2001/10/xml-exc-c14n#"] });
   sig.computeSignature(xml, { location: { reference: "//*[local-name(.)='Security']", action: "append" } });
   return sig.getSignedXml();
 }

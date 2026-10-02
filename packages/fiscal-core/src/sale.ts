@@ -109,6 +109,8 @@ export function buildSale(input: SaleInput): Sale {
   const isRefund = gross < 0;
   if (isRefund && !input.refundOf) issues.push("vratka musí odkazovat na původní tržbu");
   if (isRefund && discount) issues.push("u vratky nelze uplatnit slevu");
+  // kladné spropitné k záporné tržbě by snížilo vracenou částku (A Дрібне 17)
+  if (isRefund && tip) issues.push("u vratky nelze přidat spropitné");
   if (!isRefund && discount > gross) issues.push("sleva je vyšší než cena");
 
   // Slevu rozpočítáme do položek poměrně, aby rozpad DPH odpovídal skutečně zaplacené částce.

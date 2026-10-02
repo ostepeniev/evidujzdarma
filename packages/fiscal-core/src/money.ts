@@ -8,10 +8,21 @@ export type Halere = number;
 export const VAT_RATES = [21, 12, 0] as const;
 export type VatRate = (typeof VAT_RATES)[number];
 
+/**
+ * Koruny → haléře desetinným rozborem zápisu, ne násobením float (1.005 × 100 = 100.4999…; A Дрібне 5).
+ * Třetí a další desetinné místo se zaokrouhlí na haléře půl nahoru (od nuly).
+ */
 export function toHalere(czk: number | string): Halere {
-  const n = typeof czk === "string" ? Number(czk.replace(/\s+/g, "").replace(",", ".")) : czk;
-  if (!Number.isFinite(n)) throw new RangeError(`Neplatná částka: ${czk}`);
-  return Math.round(n * 100);
+  if (typeof czk === "number" && !Number.isFinite(czk)) throw new RangeError(`Neplatná částka: ${czk}`);
+  // číslo bereme v nejkratším zápisu, který ho přesně určuje (String(1.005) = "1.005")
+  const text = typeof czk === "number" ? (/e/i.test(String(czk)) ? czk.toFixed(20) : String(czk)) : czk.replace(/\s+/g, "").replace(",", ".");
+  const m = /^([+-])?(\d+)(?:\.(\d*))?$/.exec(text) ?? /^([+-])?()\.(\d+)$/.exec(text);
+  if (!m) throw new RangeError(`Neplatná částka: ${czk}`);
+  const frac = (m[3] ?? "").padEnd(3, "0");
+  let h = Number(m[2] || "0") * 100 + Number(frac.slice(0, 2));
+  if (Number(frac[2]) >= 5) h += 1;
+  if (!Number.isSafeInteger(h)) throw new RangeError(`Neplatná částka: ${czk}`);
+  return m[1] === "-" && h !== 0 ? -h : h;
 }
 
 export function fromHalere(h: Halere): number {

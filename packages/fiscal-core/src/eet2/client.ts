@@ -115,7 +115,14 @@ export class Eet2Transport implements Transport {
       return { ok: false, retryable: true, code: "NETWORK", message: e instanceof Error ? e.message : String(e), messageUuid, audit: { requestSha256: prepared.sha256 } };
     }
 
-    const text = await res.text();
+    let text: string;
+    try {
+      text = await res.text();
+    } catch (e) {
+      // Tělo odpovědi se nedočetlo (timeout, reset): FS zprávu nejspíš dostala → jako síťová chyba,
+      // s uuid zprávy v auditu a příště prvni_zaslani=false (Д-1).
+      return { ok: false, retryable: true, code: "NETWORK", message: e instanceof Error ? e.message : String(e), messageUuid, audit: { requestSha256: prepared.sha256, httpStatus: res.status } };
+    }
     const audit = { requestSha256: prepared.sha256, httpStatus: res.status, responseBody: text.slice(0, 65_536) };
     if (!text.includes("Odpoved")) {
       // Bez odpovědi EET (výpadek, proxy, WAF, SOAP Fault) nevíme, že by FS zprávu odmítla →

@@ -7,6 +7,8 @@
  *     (organizationIdentifier NTRCZ-72080043, keyUsage digitalSignature + nonRepudiation),
  *  3. sedí uuid_zpravy a příznaky prostředí (Playground: test=true a POK končí "-ff").
  * Údaje (POK) čteme z PODEPSANÉHO obsahu, ne z původního dokumentu (ochrana proti XML wrapping).
+ * Odpoved hledáme jen v Envelope/Body, nikdy jinde v dokumentu; platný podepsaný Body má přednost
+ * před nepodepsanou Chybou (R4, A Дрібне 1–2 / Д-5).
  */
 import { X509Certificate } from "node:crypto";
 import { DOMParser } from "@xmldom/xmldom";
@@ -53,10 +55,17 @@ function parseXml(xml: string): Document {
   return doc as unknown as Document;
 }
 
-/** Najde eet:Odpoved v elementu Body a přečte ji. */
-export function parseOdpoved(bodyOrDoc: El | Document): ParsedOdpoved {
-  const root = "documentElement" in bodyOrDoc ? bodyOrDoc.documentElement! : bodyOrDoc;
-  const odpoved = root.getElementsByTagNameNS(EET_NS.v4, "Odpoved")[0];
+/** Envelope/Body – jediný přímý potomek kořenového soapenv:Envelope. */
+function envelopeBody(doc: Document): El | null {
+  const env = doc.documentElement;
+  if (!env || env.namespaceURI !== EET_NS.soapenv || env.localName !== "Envelope") return null;
+  const bodies = children(env as El, EET_NS.soapenv, "Body");
+  return bodies.length === 1 ? bodies[0]! : null;
+}
+
+/** Přečte eet:Odpoved, přímého potomka elementu Body. */
+export function parseOdpoved(body: El): ParsedOdpoved {
+  const odpoved = children(body, EET_NS.v4, "Odpoved")[0];
   if (!odpoved) throw new Error("Odpověď neobsahuje element Odpoved");
   const h = children(odpoved, EET_NS.v4, "Hlavicka")[0];
   const pot = children(odpoved, EET_NS.v4, "Potvrzeni")[0];
@@ -131,9 +140,66 @@ export type VerifiedResponse =
   | { kind: "error"; parsed: ParsedOdpoved }
   | { kind: "invalid"; reason: string };
 
+const ALG = {
+  c14n: "http://www.w3.org/2001/10/xml-exc-c14n#",
+  rsaSha256: "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",
+  sha256: "http://www.w3.org/2001/04/xmlenc#sha256",
+} as const;
+
+type Signed = { ok: true; parsed: ParsedOdpoved; signer: string } | { ok: false; reason: string };
+
+/** Ověří podpis Envelope/Body a vrátí obsah PODEPSANÉHO Body. */
+function verifySignedBody(xml: string, doc: Document, body: El, opts: { policy: TrustPolicy; now?: Date }): Signed {
+  const signatures = doc.getElementsByTagNameNS(EET_NS.ds, "Signature");
+  const tokens = doc.getElementsByTagNameNS(EET_NS.wsse, "BinarySecurityToken");
+  if (signatures.length !== 1 || tokens.length !== 1) return { ok: false, reason: "odpověď nemá právě jeden podpis" };
+
+  let leaf: X509Certificate;
+  try {
+    leaf = new X509Certificate(Buffer.from((tokens[0]!.textContent ?? "").replace(/\s+/g, ""), "base64"));
+  } catch {
+    return { ok: false, reason: "nečitelný podpisový certifikát" };
+  }
+  const chainError = verifyChain(leaf, opts.policy, opts.now ?? new Date());
+  if (chainError) return { ok: false, reason: chainError };
+  const signerError = verifySigner(tokens[0]!.textContent ?? "");
+  if (signerError) return { ok: false, reason: signerError };
+
+  const bodyId = body.getAttributeNS(EET_NS.wsu, "Id");
+  if (!bodyId) return { ok: false, reason: "Body nemá wsu:Id" };
+
+  const sig = new SignedXml({ publicCert: derToPem(tokens[0]!.textContent ?? ""), idMode: "wssecurity", getCertFromKeyInfo: () => null });
+  try {
+    sig.loadSignature(signatures[0]! as unknown as Node);
+    if (!sig.checkSignature(xml)) return { ok: false, reason: "neplatný XML podpis odpovědi" };
+  } catch (e) {
+    return { ok: false, reason: `neplatný XML podpis odpovědi: ${e instanceof Error ? e.message : e}` };
+  }
+  const refs = sig.getSignedReferences();
+  if (refs.length !== 1) return { ok: false, reason: "podpis musí pokrývat právě jeden element" };
+  const references = sig.getReferences();
+  if (references.length !== 1 || references[0]!.uri !== `#${bodyId}`) return { ok: false, reason: "podpis nepokrývá Body" };
+  // algoritmy jsou pevné (exc-c14n, RSA-SHA256, SHA-256), ne „cokoli, co xml-crypto umí“
+  if (sig.signatureAlgorithm !== ALG.rsaSha256) return { ok: false, reason: "neočekávaný podpisový algoritmus" };
+  if (sig.canonicalizationAlgorithm !== ALG.c14n) return { ok: false, reason: "neočekávaný algoritmus kanonizace" };
+  const ref = references[0]!;
+  if (ref.digestAlgorithm !== ALG.sha256) return { ok: false, reason: "neočekávaný algoritmus otisku (DigestMethod)" };
+  if (ref.transforms.length !== 1 || ref.transforms[0] !== ALG.c14n) return { ok: false, reason: "neočekávaný algoritmus transformace" };
+
+  // Data čteme výhradně z podepsaného (kanonizovaného) Body.
+  try {
+    const signedBody = parseXml(refs[0]!).documentElement! as El;
+    if (signedBody.namespaceURI !== EET_NS.soapenv || signedBody.localName !== "Body") return { ok: false, reason: "podepsaný element není Body" };
+    return { ok: true, parsed: parseOdpoved(signedBody), signer: leaf.subject.replace(/\n/g, ", ") };
+  } catch (e) {
+    return { ok: false, reason: e instanceof Error ? e.message : String(e) };
+  }
+}
+
 /**
  * Ověří odpověď. Chybové odpovědi (Chyba) FS nepodepisuje — vrátíme je jako "error",
- * nikdy však nepovažujeme jejich obsah za potvrzení tržby.
+ * nikdy však nepovažujeme jejich obsah za potvrzení tržby. Má-li odpověď platně podepsaný Body,
+ * rozhoduje jen ten (nepodepsaná Chyba vložená vedle něj tržbu neodmítne).
  */
 export function verifyResponse(xml: string, opts: { expectedUuid: string; policy: TrustPolicy; now?: Date }): VerifiedResponse {
   let doc: Document;
@@ -142,65 +208,31 @@ export function verifyResponse(xml: string, opts: { expectedUuid: string; policy
   } catch (e) {
     return { kind: "invalid", reason: e instanceof Error ? e.message : String(e) };
   }
+  const body = envelopeBody(doc);
+  if (!body) return { kind: "invalid", reason: "odpověď nemá právě jeden soapenv:Body v soapenv:Envelope" };
 
+  const hasSignature = doc.getElementsByTagNameNS(EET_NS.ds, "Signature").length > 0;
+  const signed: Signed = hasSignature ? verifySignedBody(xml, doc, body, opts) : { ok: false, reason: "odpověď není podepsaná" };
+
+  if (signed.ok) {
+    const parsed = signed.parsed;
+    if (parsed.uuid !== opts.expectedUuid) return { kind: "invalid", reason: "UUID odpovědi nesouhlasí s odeslanou zprávou" };
+    if (parsed.error) return { kind: "error", parsed };
+    if (!parsed.pok || !isPok(parsed.pok)) return { kind: "invalid", reason: "odpověď neobsahuje platný POK" };
+    const playground = opts.policy.environment === "playground";
+    if (playground && (!parsed.test || !parsed.pok.toLowerCase().endsWith("-ff"))) return { kind: "invalid", reason: "odpověď Playgroundu nemá testovací příznaky" };
+    if (!playground && (parsed.test || parsed.pok.toLowerCase().endsWith("-ff"))) return { kind: "invalid", reason: "produkční odpověď má testovací příznaky" };
+    return { kind: "confirmed", parsed, signer: signed.signer };
+  }
+
+  // Bez platného podpisu: jen nepodepsaná Chyba v Envelope/Body (FS chyby nepodepisuje); POK nikdy.
   let unsigned: ParsedOdpoved;
   try {
-    unsigned = parseOdpoved(doc);
+    unsigned = parseOdpoved(body);
   } catch (e) {
     return { kind: "invalid", reason: e instanceof Error ? e.message : String(e) };
   }
-  if (unsigned.error) {
-    if (unsigned.uuid && unsigned.uuid !== opts.expectedUuid) return { kind: "invalid", reason: "UUID chybové odpovědi nesouhlasí" };
-    return { kind: "error", parsed: unsigned };
-  }
-
-  const signatures = doc.getElementsByTagNameNS(EET_NS.ds, "Signature");
-  const tokens = doc.getElementsByTagNameNS(EET_NS.wsse, "BinarySecurityToken");
-  if (signatures.length !== 1 || tokens.length !== 1) return { kind: "invalid", reason: "odpověď nemá právě jeden podpis" };
-
-  let leaf: X509Certificate;
-  try {
-    leaf = new X509Certificate(Buffer.from((tokens[0]!.textContent ?? "").replace(/\s+/g, ""), "base64"));
-  } catch {
-    return { kind: "invalid", reason: "nečitelný podpisový certifikát" };
-  }
-  const chainError = verifyChain(leaf, opts.policy, opts.now ?? new Date());
-  if (chainError) return { kind: "invalid", reason: chainError };
-  const signerError = verifySigner(tokens[0]!.textContent ?? "");
-  if (signerError) return { kind: "invalid", reason: signerError };
-
-  const body = doc.getElementsByTagNameNS(EET_NS.soapenv, "Body")[0];
-  const bodyId = body?.getAttributeNS(EET_NS.wsu, "Id");
-  if (!body || !bodyId) return { kind: "invalid", reason: "Body nemá wsu:Id" };
-
-  const sig = new SignedXml({ publicCert: derToPem(tokens[0]!.textContent ?? ""), idMode: "wssecurity", getCertFromKeyInfo: () => null });
-  try {
-    sig.loadSignature(signatures[0]! as unknown as Node);
-    if (!sig.checkSignature(xml)) return { kind: "invalid", reason: "neplatný XML podpis odpovědi" };
-  } catch (e) {
-    return { kind: "invalid", reason: `neplatný XML podpis odpovědi: ${e instanceof Error ? e.message : e}` };
-  }
-  const refs = sig.getSignedReferences();
-  if (refs.length !== 1) return { kind: "invalid", reason: "podpis musí pokrývat právě jeden element" };
-  const references = sig.getReferences();
-  if (references.length !== 1 || references[0]!.uri !== `#${bodyId}`) return { kind: "invalid", reason: "podpis nepokrývá Body" };
-  if (sig.signatureAlgorithm !== "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256") return { kind: "invalid", reason: "neočekávaný podpisový algoritmus" };
-
-  // Data čteme výhradně z podepsaného (kanonizovaného) Body.
-  let parsed: ParsedOdpoved;
-  try {
-    const signedBody = parseXml(refs[0]!).documentElement!;
-    if (signedBody.namespaceURI !== EET_NS.soapenv || signedBody.localName !== "Body") return { kind: "invalid", reason: "podepsaný element není Body" };
-    parsed = parseOdpoved(signedBody);
-  } catch (e) {
-    return { kind: "invalid", reason: e instanceof Error ? e.message : String(e) };
-  }
-
-  if (parsed.uuid !== opts.expectedUuid) return { kind: "invalid", reason: "UUID odpovědi nesouhlasí s odeslanou zprávou" };
-  if (!parsed.pok || !isPok(parsed.pok)) return { kind: "invalid", reason: "odpověď neobsahuje platný POK" };
-  const playground = opts.policy.environment === "playground";
-  if (playground && (!parsed.test || !parsed.pok.toLowerCase().endsWith("-ff"))) return { kind: "invalid", reason: "odpověď Playgroundu nemá testovací příznaky" };
-  if (!playground && (parsed.test || parsed.pok.toLowerCase().endsWith("-ff"))) return { kind: "invalid", reason: "produkční odpověď má testovací příznaky" };
-
-  return { kind: "confirmed", parsed, signer: leaf.subject.replace(/\n/g, ", ") };
+  if (!unsigned.error) return { kind: "invalid", reason: signed.reason };
+  if (unsigned.uuid && unsigned.uuid !== opts.expectedUuid) return { kind: "invalid", reason: "UUID chybové odpovědi nesouhlasí" };
+  return { kind: "error", parsed: unsigned };
 }

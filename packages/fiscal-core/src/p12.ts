@@ -85,12 +85,13 @@ function certificatePolicies(cert: forge.pki.Certificate): string[] {
 function assemble(key: forge.pki.rsa.PrivateKey | undefined, certs: forge.pki.Certificate[]): LoadedCertificate {
   if (!key) throw new CertificateError("V souboru chybí privátní klíč.");
   // Vybereme certifikát, jehož veřejný klíč odpovídá privátnímu klíči (soubor může obsahovat i CA řetězec).
-  const cert =
-    certs.find((c) => {
-      const pub = c.publicKey as forge.pki.rsa.PublicKey;
-      return pub.n && key.n && pub.n.equals(key.n);
-    }) ?? certs[0];
-  if (!cert) throw new CertificateError("V souboru chybí certifikát.");
+  if (!certs.length) throw new CertificateError("V souboru chybí certifikát.");
+  const cert = certs.find((c) => {
+    const pub = c.publicKey as forge.pki.rsa.PublicKey;
+    return pub.n && key.n && pub.n.equals(key.n);
+  });
+  // klíč a certifikát, které k sobě nepatří, by podepisovaly zprávy, které FS odmítne (A Дрібне 4)
+  if (!cert) throw new CertificateError("Certifikát v souboru neodpovídá privátnímu klíči. Stáhněte z DIS+ znovu celý soubor .p12.");
 
   const cn = cert.subject.getField("CN")?.value ?? null;
   const serialAttr = cert.subject.getField({ name: "serialNumber" })?.value ?? null;
