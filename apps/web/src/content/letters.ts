@@ -4,7 +4,7 @@
  * Všechna fakta (termíny, částky, podmínky) se skládají z `facts.ts` — žádná nová právní
  * tvrzení. Při změně faktů se šablony aktualizují samy.
  */
-import { FACTS, TIMELINE, formatKc } from "./facts";
+import { DIS_OPENS, FACTS, TIMELINE, formatKc, timelineAt } from "./facts";
 
 export const PLACEHOLDER_CLIENT = "[Jméno klienta]";
 export const PLACEHOLDER_OFFICE = "[Vaše kancelář]";
@@ -68,7 +68,7 @@ export const LETTERS: readonly LetterTemplate[] = [
     subject: "EET 2.0: prosíme o podklady k evidenčním jednotkám",
     body: [
       greeting,
-      `od ${TIMELINE[0]!.dateLabel} je v DIS+ (MOJE daně) možné přihlásit se k evidenci tržeb, oznámit evidenční jednotky a vygenerovat pokladní certifikát.`,
+      `od ${timelineAt(DIS_OPENS).dateLabel} je v DIS+ (MOJE daně) možné přihlásit se k evidenci tržeb, oznámit evidenční jednotky a vygenerovat pokladní certifikát.`,
       `Co je evidenční jednotka: ${FACTS.units.summary} ${FACTS.units.allUnits} ${FACTS.units.change}`,
       "Abychom vám mohli pomoci, pošlete nám prosím:\n• seznam všech míst, kde přijímáte platby (provozovna, stánek, automat, vozidlo, internetová stránka či aplikace),\n• informaci, zda prodáváte i mimo provozovnu (trhy, akce, u zákazníka),\n• kolik zařízení (pokladen, telefonů, tabletů) budete k evidenci používat.",
       `Pokladní certifikát: ${FACTS.certificate.summary}`,

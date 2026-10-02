@@ -5,7 +5,7 @@ import { WebinarForm } from "@/components/accountant/webinar-form";
 import { WEBINARS } from "@/components/accountant/webinars";
 import { Faq, type FaqItem } from "@/components/faq";
 import { PageHeader } from "@/components/page-header";
-import { FACTS, TIMELINE } from "@/content/facts";
+import { DIS_OPENS, FACTS, TIMELINE, timelineAt } from "@/content/facts";
 import { PARTNER_PLAN } from "@/content/pricing";
 import { JsonLd, faqLd } from "@/lib/jsonld";
 import { SITE_URL, absoluteUrl } from "@/lib/site";
@@ -138,8 +138,8 @@ export default function AccountantsPage() {
           </ol>
           <p className="mt-3 text-sm text-muted">
             Zdroj:{" "}
-            <a href={TIMELINE[0]!.source.url} className="underline underline-offset-2" rel="noopener">
-              {TIMELINE[0]!.source.label}
+            <a href={timelineAt(DIS_OPENS).source.url} className="underline underline-offset-2" rel="noopener">
+              {timelineAt(DIS_OPENS).source.label}
             </a>
           </p>
         </section>

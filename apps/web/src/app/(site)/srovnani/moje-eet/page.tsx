@@ -205,7 +205,7 @@ export default function CompareMojeEetPage() {
               {FACTS.confirmation.summary} {FACTS.confirmation.onReceipt}
             </li>
             <li>
-              {FACTS.pilot.short} Obě aplikace si proto vyzkoušejte nanečisto ještě v prosinci 2026 (MOJE eet je dostupná od
+              {FACTS.pilot.short} Obě aplikace si proto vyzkoušejte ještě v prosinci 2026 (MOJE eet je dostupná od
               1. 12.) a vyberte tu, která vám sedne.
             </li>
           </ul>

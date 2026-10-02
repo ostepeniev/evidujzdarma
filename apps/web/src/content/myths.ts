@@ -44,8 +44,8 @@ export const MYTHS: readonly Myth[] = [
   },
   {
     id: "leden-bez-pokut",
-    question: "Bude se v lednu 2027 pokutovat, nebo je to jen zkušební provoz?",
-    claim: "Leden 2027 je zkušební (dobrovolný) provoz, evidovat se naostro začne až v únoru a do té doby nehrozí pokuty.",
+    question: "Platí povinnost evidovat už pro leden 2027, nebo až od února?",
+    claim: "V lednu 2027 se ještě evidovat nemusí, naostro se začne až v únoru a do té doby nic nehrozí.",
     seenIn: "Rané materiály MF a řada komerčních webů.",
     truth: FACTS.pilot.summary,
     comment:

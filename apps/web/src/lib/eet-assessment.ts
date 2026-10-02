@@ -5,7 +5,7 @@
  * platby osobně ani zda je v paušálním režimu. Proto 2–3 doplňující otázky.
  */
 import { classifyNaceList, isNaturalPerson, legalFormName, type EetRelevance, type RzpRecord, type Subject } from "@ez/cz";
-import { FACTS, TIMELINE, formatKc } from "@/content/facts";
+import { DIS_OPENS, EFFECTIVE_DATE, FACTS, formatKc, timelineAt } from "@/content/facts";
 
 export type Answer = "yes" | "no" | "unknown";
 export type PausalAnswer = "band1" | "band2" | "band3" | "no" | "unknown";
@@ -112,7 +112,7 @@ export function assess(subject: Subject, rzp: RzpRecord | null, answers: Answers
   const today = now.toISOString().slice(0, 10);
   const checklist: ChecklistItem[] = [];
   if (verdict !== "dissolved" && verdict !== "unlikely") {
-    const dis = TIMELINE[0]!;
+    const dis = timelineAt(DIS_OPENS);
     checklist.push({
       date: dis.date >= today ? dis.dateLabel : undefined,
       title: "Přihlášení k evidenci v DIS+",
@@ -146,9 +146,9 @@ export function assess(subject: Subject, rzp: RzpRecord | null, answers: Answers
       href: "/#registrace",
     });
     checklist.push({
-      date: TIMELINE[2]!.dateLabel,
+      date: timelineAt(EFFECTIVE_DATE).dateLabel,
       title: "Evidence tržeb",
-      text: "Od 1. 1. 2027 musí být každá evidovaná tržba odeslána. „Pilotní“ leden není zákonná výjimka.",
+      text: "Od 1. 1. 2027 musí být každá evidovaná tržba odeslána. Platí to i v lednu.",
     });
   }
 

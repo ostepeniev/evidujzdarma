@@ -177,7 +177,7 @@ export const jakAktivovatDisACertifikat: Guide = {
     { date: "2026-10-01", text: "První verze návodu. Snímky obrazovek doplníme po spuštění funkcí v DIS+ 1. 11. 2026." },
     {
       date: "2026-10-01",
-      text: "Opraveno podle schváleného znění zákona: leden 2027 není zákonný pilotní provoz a evidovat se musí od 1. 1. 2027. Zkoušku nanečisto doporučujeme v prosinci 2026.",
+      text: "Opraveno podle schváleného znění zákona: evidovat se musí od 1. 1. 2027, a to i v lednu. Vyzkoušet pokladnu doporučujeme v prosinci 2026.",
     },
   ],
   reviewedBy: null,

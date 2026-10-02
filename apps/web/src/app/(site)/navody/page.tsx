@@ -30,7 +30,7 @@ export default function GuidesIndex() {
           <span>
             <span className="block text-lg font-bold text-ink">Co se o EET 2.0 píše špatně</span>
             <span className="mt-1 block text-[15px] text-ink-soft">
-              Výjimka do 50 000 Kč, leden bez pokut, sleva 5 000 Kč pro každého – tvrzení, která neodpovídají schválenému zákonu.
+              Výjimka do 50 000 Kč, evidence až od února, sleva 5 000 Kč pro každého – tvrzení, která neodpovídají schválenému zákonu.
             </span>
           </span>
           <span className="shrink-0 font-semibold text-brand-700">Přečíst →</span>

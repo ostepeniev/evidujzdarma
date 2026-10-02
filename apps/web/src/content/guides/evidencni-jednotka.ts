@@ -146,7 +146,7 @@ export const evidencniJednotka: Guide = {
     },
     {
       q: "Do kdy musím jednotky oznámit?",
-      a: "Před první evidovanou tržbou. Evidovat se musí od 1. 1. 2027, DIS+ umožní jednotky zakládat od 1. 11. 2026. Doporučujeme to stihnout v listopadu, abyste si mohli v prosinci pokladnu vyzkoušet nanečisto – „pilotní“ leden není zákonná výjimka.",
+      a: "Před první evidovanou tržbou. Evidovat se musí od 1. 1. 2027, DIS+ umožní jednotky zakládat od 1. 11. 2026. Doporučujeme to stihnout v listopadu, abyste si mohli v prosinci pokladnu vyzkoušet – evidovat se musí už od 1. 1. 2027.",
     },
     {
       q: "Musím oznámit i provozovnu, kde evidované tržby nepřijímám?",
@@ -172,7 +172,7 @@ export const evidencniJednotka: Guide = {
   changelog: [
     {
       date: "2026-10-01",
-      text: "Opraveno podle schváleného znění zákona: evidovat se musí od 1. 1. 2027, leden není pilotní provoz nanečisto. Doplněno, že se oznamují všechny jednotky včetně těch bez evidovaných tržeb.",
+      text: "Opraveno podle schváleného znění zákona: evidovat se musí od 1. 1. 2027, a to i v lednu. Doplněno, že se oznamují všechny jednotky včetně těch bez evidovaných tržeb.",
     },
   ],
   reviewedBy: null,

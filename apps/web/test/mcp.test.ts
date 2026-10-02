@@ -101,7 +101,8 @@ describe("EET MCP server", () => {
     const r = await call(c, "eet_get_facts", { topics: ["january_pilot", "exemptions"], response_format: "json" });
     const facts = r.structuredContent!.facts as { topic: string; text: string; sources: unknown[] }[];
     expect(facts.map((f) => f.topic)).toEqual(["january_pilot", "exemptions"]);
-    expect(facts[0]!.text).toContain("pilotní ani dobrovolný režim neobsahuje");
+    expect(facts[0]!.text).toContain("povinnost evidovat ale platí od prvního dne");
+    expect(facts[0]!.text).not.toMatch(/dobrovoln|nanečisto|zkušebn/);
     expect(facts[1]!.text).toContain("50 000 Kč");
     expect(facts.every((f) => f.sources.length > 0)).toBe(true);
     const all = await call(c, "eet_get_facts", {});

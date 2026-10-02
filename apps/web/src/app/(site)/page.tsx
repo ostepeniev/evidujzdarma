@@ -200,7 +200,7 @@ export default function HomePage() {
               <p className="text-sm font-semibold uppercase tracking-wide text-muted">Pozor na omyly</p>
               <p className="mt-1 text-xl font-bold text-ink">Co se o EET 2.0 píše špatně</p>
               <p className="mt-2 text-[15px] text-ink-soft">
-                Výjimka do 50 000 Kč, leden bez pokut nebo sleva 5 000 Kč pro každého – porovnali jsme to se schváleným zákonem.
+                Výjimka do 50 000 Kč, evidence až od února nebo sleva 5 000 Kč pro každého – porovnali jsme to se schváleným zákonem.
               </p>
             </Link>
             <Link href="/stav-eet" className="card block transition-colors hover:border-brand-200">

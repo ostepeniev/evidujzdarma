@@ -9,7 +9,7 @@ import { JsonLd, articleLd, faqLd } from "@/lib/jsonld";
 const PATH = "/co-se-o-eet-pise-spatne";
 const TITLE = "Co se o EET 2.0 píše špatně";
 const DESCRIPTION =
-  "Výjimka do 50 000 Kč, leden bez pokut, sleva 5 000 Kč pro každého, offline 5 dní: tvrzení o EET 2.0, která neodpovídají schválenému zákonu. Ke každému zdroj, stav k datu a co dělat.";
+  "Výjimka do 50 000 Kč, evidence až od února, sleva 5 000 Kč pro každého, offline 5 dní: tvrzení o EET 2.0, která neodpovídají schválenému zákonu. Ke každému zdroj, stav k datu a co dělat.";
 
 export const metadata: Metadata = {
   title: `${TITLE} – omyly a fakta`,

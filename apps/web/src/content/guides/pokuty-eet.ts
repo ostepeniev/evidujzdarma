@@ -8,7 +8,7 @@ export const pokutyEet: Guide = {
   h1: "Pokuty za EET 2.0: co hrozí a jak se jim vyhnout",
   description:
     "Za neodeslání tržby nebo maření evidence hrozí v EET 2.0 pokuta až 500 000 Kč. Uzavření provozovny už nehrozí. Co se pokutuje, kdo kontroluje a jak se chránit.",
-  lead: `Za neodeslání datové zprávy o tržbě nebo za závažné maření evidence hrozí v EET 2.0 pokuta až **${formatKc(FACTS.penalties.max)}**. Na rozdíl od staré EET už úřady nemohou zavřít provozovnu. Pokuta platí od účinnosti zákona **1. 1. 2027** – zákon pilotní ani dobrovolný režim nezná.`,
+  lead: `Za neodeslání datové zprávy o tržbě nebo za závažné maření evidence hrozí v EET 2.0 pokuta až **${formatKc(FACTS.penalties.max)}**. Na rozdíl od staré EET už úřady nemohou zavřít provozovnu. Pokuta platí od účinnosti zákona **1. 1. 2027** – zákon žádnou výjimku pro leden nestanoví.`,
   summary: [
     `Maximální pokuta za neodeslání tržby nebo závažné maření evidence: ${formatKc(FACTS.penalties.max)}.`,
     "Uzavření provozovny ani pozastavení činnosti jako sankce v EET 2.0 není.",
@@ -137,7 +137,7 @@ export const pokutyEet: Guide = {
     },
     {
       q: "Dostanu pokutu v lednu 2027?",
-      a: `Může. Zákon je účinný od 1. 1. 2027 a pilotní ani dobrovolný režim nezná, pokuta až ${formatKc(FACTS.penalties.max)} tedy platí od prvního dne. Finanční správa leden označuje jako pilotní měsíc a chce se v něm zaměřit na metodickou podporu; zda bude v lednu pokutovat, oficiálně stanoveno není. Evidujte od 1. 1. 2027 a pokladnu si odlaďte už v prosinci.`,
+      a: `Může. Zákon je účinný od 1. 1. 2027 a výjimku pro leden nestanoví, pokuta až ${formatKc(FACTS.penalties.max)} tedy platí od prvního dne. Finanční správa v lednu počítá s pilotním režimem a chce se zaměřit na metodickou podporu; jak bude postupovat při kontrolách, oficiálně stanoveno není. Evidujte od 1. 1. 2027 a pokladnu si odlaďte už v prosinci.`,
     },
   ],
   sources: [SOURCES.pokuty, SOURCES.psp, SOURCES.podnikatelPrehled, SOURCES.harmonogram, SOURCES.prakticke, SOURCES.fsPlayground, SOURCES.srovnani],
@@ -147,7 +147,7 @@ export const pokutyEet: Guide = {
   changelog: [
     {
       date: "2026-10-01",
-      text: "Opraveno podle schváleného znění zákona: leden 2027 není zákonný pilotní provoz bez sankcí. Povinnost evidovat i pokuta až 500 000 Kč platí od 1. 1. 2027; test pokladny doporučujeme v prosinci 2026.",
+      text: "Opraveno podle schváleného znění zákona: povinnost evidovat i pokuta až 500 000 Kč platí od 1. 1. 2027, tedy i v lednu; test pokladny doporučujeme v prosinci 2026.",
     },
   ],
   reviewedBy: null,

@@ -4,7 +4,7 @@ import { count, lt, sql } from "drizzle-orm";
 import { isValidIco, normalizeIco } from "@ez/cz";
 import { getDb, hasDatabase, schema } from "@ez/db";
 import { INDUSTRY_SLUGS } from "@/content/industries";
-import { TIMELINE } from "@/content/facts";
+import { DIS_OPENS, TIMELINE, timelineAt } from "@/content/facts";
 import { enqueueEmail, processOutbox } from "@/lib/server/mail";
 import { clientIp, rateLimit } from "@/lib/server/rate-limit";
 import { randomToken, sha256, shortCode } from "@/lib/server/tokens";
@@ -68,7 +68,7 @@ export async function POST(req: Request) {
       // Osobní EET plán podle IČO (provozovny z RŽP, EET OFF jen pro OSVČ…)
       if (found) {
         const a = assess(found.subject, found.rzp);
-        const disOpens = TIMELINE[0]!;
+        const disOpens = timelineAt(DIS_OPENS);
         const fallback = new Date() < new Date(`${disOpens.date}T00:00:00+01:00`) ? `od ${disOpens.dateLabel}` : "co nejdříve";
         if (a.checklist.length) plan = a.checklist.map((c) => ({ date: c.date ?? fallback, text: `${c.title} – ${c.text}` }));
       }

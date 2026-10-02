@@ -231,7 +231,7 @@ export const glosarEet: Guide = {
   changelog: [
     {
       date: "2026-10-01",
-      text: "Opraveno podle schváleného znění zákona: leden 2027 není zákonný pilotní ani dobrovolný provoz, evidovat se musí od 1. 1. 2027. Doplněny pojmy účinnost zákona a ojedinělá tržba a dobrovolnost POK na dokladu.",
+      text: "Opraveno podle schváleného znění zákona: evidovat se musí od 1. 1. 2027, a to i v lednu. Doplněny pojmy účinnost zákona a ojedinělá tržba a to, že POK na dokladu není povinný.",
     },
   ],
   reviewedBy: null,

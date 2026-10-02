@@ -100,6 +100,10 @@ export const SOURCES = {
     label: "Podnikatel.cz: Jak bude vypadat EET 2.0 a doprovodné daňové změny – detailní přehled",
     url: "https://www.podnikatel.cz/clanky/jak-bude-vypadat-eet-2-0-a-doprovodne-danove-zmeny-pripravili-jsme-detailni-prehled/",
   },
+  fsDotazPilot: {
+    label: "Finanční správa: Od kdy podnikatelům vzniká povinnost evidovat tržby a co znamená tzv. pilotní provoz (dotaz veřejnosti č. 4968, 3. 8. 2026)",
+    url: "https://app.fs.gov.cz/dotazy-verejnosti/dotaz/od-kdy-podnikatelum-vznika-povinnost-evidovat-trzby-pocita-se-s-postupnym-nabehem-tak-jako-v-pripade-eet-10-a-co-znamena-tzv-pilotni-provoz-4968",
+  },
   podnikatelPilot: {
     label: "Podnikatel.cz: EET 2.0 odstartuje v lednu 2027, první měsíc ale půjde jen o pilotní provoz",
     url: "https://www.podnikatel.cz/clanky/eet-sice-odstartuje-v-lednu-2027-prvni-mesic-ale-pujde-jen-o-pilotni-provoz/",
@@ -161,8 +165,8 @@ export const TIMELINE: readonly TimelineItem[] = [
     dateLabel: "1. 1. 2027",
     title: "Účinnost zákona – evidujte",
     action:
-      "Zákon nabývá účinnosti a evidovat se musí od prvního dne. Zákon pilotní ani dobrovolný režim nezná; Finanční správa se v lednu zaměří na metodickou podporu.",
-    source: SOURCES.harmonogram,
+      "Zákon nabývá účinnosti a evidovat se musí od prvního dne – žádnou výjimku pro leden nestanoví. Finanční správa v lednu počítá s pilotním režimem projektu a zaměří se na metodickou podporu podnikatelů.",
+    source: SOURCES.fsDotazPilot,
   },
   {
     date: "2027-01-11",
@@ -174,11 +178,21 @@ export const TIMELINE: readonly TimelineItem[] = [
   {
     date: "2027-02-01",
     dateLabel: "1. 2. 2027",
-    title: "Plný provoz podle harmonogramu",
-    action: "Finanční správa končí s lednovým pilotním měsícem. Povinnost evidovat ale platí už od 1. 1. 2027.",
-    source: SOURCES.harmonogram,
+    title: "Ostrý provoz podle Finanční správy",
+    action: "Ostrý provoz podle Finanční správy – povinnost evidovat ale platí už od 1. 1. 2027.",
+    source: SOURCES.fsDotazPilot,
   },
 ];
+
+/** Otevření EET v DIS+ (přihlášení, jednotky, certifikát). */
+export const DIS_OPENS = "2026-11-01";
+
+/** Položka harmonogramu podle data – nikdy podle pořadí v poli (pořadí se mění). */
+export function timelineAt(date: string): TimelineItem {
+  const item = TIMELINE.find((t) => t.date === date);
+  if (!item) throw new Error(`V harmonogramu chybí ${date}`);
+  return item;
+}
 
 /** Den, od kterého je evidence povinná (účinnost zákona). */
 export const EFFECTIVE_DATE = "2027-01-01";
@@ -221,9 +235,9 @@ export const FACTS = {
   /** Leden 2027 */
   pilot: {
     summary:
-      "Zákon je účinný od 1. 1. 2027 a pilotní ani dobrovolný režim neobsahuje. Finanční správa leden ve svém harmonogramu označuje jako pilotní měsíc, kdy se zaměří na metodickou podporu – jde ale už o standardní evidenci. Zda bude v lednu pokutovat, oficiálně stanoveno není. Evidujte proto od 1. 1. 2027.",
+      "Zákon je účinný od 1. 1. 2027 a s žádným fázováním nepočítá. Finanční správa v lednu počítá s tzv. pilotním režimem projektu, kdy se zaměří na metodickou podporu – povinnost evidovat ale platí od prvního dne. Zda bude v lednu pokutovat, oficiálně stanoveno není. Evidujte proto od 1. 1. 2027.",
     short: "Evidovat se musí od 1. 1. 2027 – „pilotní“ leden není zákonná výjimka.",
-    sources: [SOURCES.harmonogram, SOURCES.psp],
+    sources: [SOURCES.fsDotazPilot, SOURCES.harmonogram, SOURCES.psp],
   },
   /** Co se eviduje */
   evidenced: {

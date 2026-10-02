@@ -152,7 +152,7 @@ export const eet20VsEet10: Guide = {
       a: `Potvrzovací kód, který Finanční správa vrátí na každou přijatou datovou zprávu. Nahrazuje FIK ze staré EET. Podle technické dokumentace jde o jedinečný řetězec, který potvrzuje, že tržba byla zaevidována. ${FACTS.confirmation.onReceipt}`,
     },
     {
-      q: "Má EET 2.0 zkušební nebo pilotní období?",
+      q: "Platí v EET 2.0 povinnost evidovat hned od ledna 2027?",
       a: FACTS.pilot.summary,
     },
     {
@@ -179,7 +179,7 @@ export const eet20VsEet10: Guide = {
   changelog: [
     {
       date: "2026-10-01",
-      text: "Opraveno podle schváleného znění zákona: EET 2.0 se eviduje naostro od 1. 1. 2027, zákonné pilotní období není. Doplněno, že POK na dokladu je dobrovolný.",
+      text: "Opraveno podle schváleného znění zákona: EET 2.0 se eviduje naostro od 1. 1. 2027, zákon výjimku pro leden nestanoví. Doplněno, že uvádět POK na dokladu není povinné.",
     },
   ],
   reviewedBy: null,
