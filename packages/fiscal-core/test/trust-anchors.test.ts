@@ -4,10 +4,8 @@ import { describe, expect, it } from "vitest";
 import * as anchors from "../src/eet2/trust-anchors.ts";
 
 const files: Record<keyof typeof anchors, string> = {
-  playgroundIntermediate: "official/response-trust/playground/ica-public-rsa-06-2022.pem",
-  playgroundRoot: "official/response-trust/playground/ica-root-rsa-05-2022.pem",
-  productionIntermediate: "official/response-trust/production/nca-subca2-rsa-12-2023.der",
-  productionRoot: "official/response-trust/production/nca-root-rsa-10-2023.der",
+  icaIntermediate: "official/response-trust/ica/ica-public-rsa-06-2022.pem",
+  icaRoot: "official/response-trust/ica/ica-root-rsa-05-2022.pem",
 };
 
 describe("embedded trust anchors", () => {

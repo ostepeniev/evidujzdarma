@@ -81,10 +81,12 @@ export interface TrustPolicy {
   chain: X509Certificate[];
 }
 
+/**
+ * Obě prostředí: I.CA Root CA/RSA 05/2022 → I.CA Public CA/RSA 06/2022 (produkce v1.1, kap. 3.3; R5.2).
+ * Prostředí se od sebe liší testovacími příznaky odpovědi (`test`, POK `-ff`), ne kotvami.
+ */
 export function defaultTrustPolicy(environment: EetEnvironment): TrustPolicy {
-  return environment === "playground"
-    ? { environment, chain: [new X509Certificate(anchors.playgroundIntermediate), new X509Certificate(anchors.playgroundRoot)] }
-    : { environment, chain: [new X509Certificate(anchors.productionIntermediate), new X509Certificate(anchors.productionRoot)] };
+  return { environment, chain: [new X509Certificate(anchors.icaIntermediate), new X509Certificate(anchors.icaRoot)] };
 }
 
 function verifyChain(leaf: X509Certificate, policy: TrustPolicy, at: Date): string | null {
@@ -98,7 +100,12 @@ function verifyChain(leaf: X509Certificate, policy: TrustPolicy, at: Date): stri
   return null;
 }
 
-/** Odpovědi podepisuje Generální finanční ředitelství (IČO 72080043). Jiný certifikát od stejné CA nestačí. */
+/**
+ * Odpovědi podepisuje Generální finanční ředitelství (IČO 72080043). Jiný certifikát od stejné CA nestačí.
+ * Ověřeno na odpovědích Playgroundu. Pro produkci NEPOTVRZENO (ověřovací mód vrací nepodepsanou Chyba 0):
+ * zkontrolovat na první ostré odpovědi; pokud by pin nesedl, odpovědi skončí jako INVALID a pozastaví je
+ * pojistka prostředí (R5.4), ne 365denní stop.
+ */
 export const FS_SIGNER_ORGANIZATION_ID = "NTRCZ-72080043";
 
 function verifySigner(derB64: string): string | null {

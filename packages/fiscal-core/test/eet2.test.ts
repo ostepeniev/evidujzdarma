@@ -174,8 +174,18 @@ describe("response verification", () => {
     expect(verifyResponse(accepted, { expectedUuid: "123e4567-e89b-42d3-a456-426614174000", policy, now: at }).kind).toBe("invalid");
   });
 
-  it("rejects the response under the production trust policy", () => {
-    expect(verifyResponse(accepted, { expectedUuid: uuid, policy: defaultTrustPolicy("production"), now: at }).kind).toBe("invalid");
+  it("R5.2: production trusts I.CA (Root CA/RSA 05/2022 -> Public CA/RSA 06/2022), as Playground does", () => {
+    // Přístupové a provozní informace – produkční prostředí v1.1 (10. 7. 2026), kap. 3.3
+    const [intermediate, root] = defaultTrustPolicy("production").chain;
+    expect(intermediate!.subject).toMatch(/CN=I\.CA Public CA\/RSA 06\/2022/);
+    expect(root!.subject).toMatch(/CN=I\.CA Root CA\/RSA 05\/2022/);
+    expect(intermediate!.fingerprint256).toBe(defaultTrustPolicy("playground").chain[0]!.fingerprint256);
+    expect(root!.fingerprint256).toBe(defaultTrustPolicy("playground").chain[1]!.fingerprint256);
+  });
+
+  it("R5.2: a real Playground signature passes the production chain step and is rejected only for its test flags", () => {
+    const v = verifyResponse(accepted, { expectedUuid: uuid, policy: defaultTrustPolicy("production"), now: at });
+    expect(v).toEqual({ kind: "invalid", reason: "produkční odpověď má testovací příznaky" });
   });
 
   it("treats unsigned errors as errors, never as confirmation", () => {

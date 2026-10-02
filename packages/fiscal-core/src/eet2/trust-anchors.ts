@@ -1,10 +1,14 @@
 /**
  * Kotvy důvěry pro ověření podpisu odpovědí EET (vložené jako konstanty, aby fungovaly i po bundlování).
- * Vygenerováno z official/response-trust/* — shodu hlídá test trust-anchors.test.ts.
+ * Vygenerováno z official/response-trust/ica/* — shodu hlídá test trust-anchors.test.ts.
+ *
+ * Odpovědi Playgroundu i produkce podepisuje systémový certifikát vydaný I.CA Public CA/RSA 06/2022
+ * (Přístupové a provozní informace – produkční prostředí v1.1, 10. 7. 2026, kap. 3.3; Playground
+ * obdobně). Jedna sada kotev pro obě prostředí (R5.2, DECISIONS Т8).
  */
 
-/** CN=I.CA Public CA/RSA 06/2022 (zdroj official/response-trust/playground/ica-public-rsa-06-2022.pem) */
-export const playgroundIntermediate = `-----BEGIN CERTIFICATE-----
+/** CN=I.CA Public CA/RSA 06/2022 (zdroj official/response-trust/ica/ica-public-rsa-06-2022.pem) */
+export const icaIntermediate = `-----BEGIN CERTIFICATE-----
 MIIHGDCCBQCgAwIBAgIEBfXlJzANBgkqhkiG9w0BAQsFADB4MSEwHwYDVQQDDBhJ
 LkNBIFJvb3QgQ0EvUlNBIDA1LzIwMjIxLTArBgNVBAoMJFBydm7DrSBjZXJ0aWZp
 a2HEjW7DrSBhdXRvcml0YSwgYS5zLjEXMBUGA1UEYQwOTlRSQ1otMjY0MzkzOTUx
@@ -45,8 +49,8 @@ H4qvROE989jpSUK6AVKWvjbOtEWbgTgfL9yqDiCkt+MBxcoHExK1fJ4MOzQq7s33
 FOt458gmfPbWVxeB3LWtyIaNnG8N+4rkcOqG9wgw7R9oTlTVHzkD7JPr9pY=
 -----END CERTIFICATE-----`;
 
-/** CN=I.CA Root CA/RSA 05/2022 (zdroj official/response-trust/playground/ica-root-rsa-05-2022.pem) */
-export const playgroundRoot = `-----BEGIN CERTIFICATE-----
+/** CN=I.CA Root CA/RSA 05/2022 (zdroj official/response-trust/ica/ica-root-rsa-05-2022.pem) */
+export const icaRoot = `-----BEGIN CERTIFICATE-----
 MIIFwzCCA6ugAwIBAgIEBfXhAjANBgkqhkiG9w0BAQ0FADB4MSEwHwYDVQQDDBhJ
 LkNBIFJvb3QgQ0EvUlNBIDA1LzIwMjIxLTArBgNVBAoMJFBydm7DrSBjZXJ0aWZp
 a2HEjW7DrSBhdXRvcml0YSwgYS5zLjEXMBUGA1UEYQwOTlRSQ1otMjY0MzkzOTUx
@@ -79,73 +83,3 @@ EAh9GFnp8WpTnqogZiYouakkwjUnkpD77nSF0vaUHbiXOPDN6IujHRlT3bTlJu5u
 iRYfEo7YmOYWH/KH6n2FJkrZV2L2lxpwrVZz/DCjK6qklzSHBTDguFZ6JcNaPPlu
 O21Zr2CPXwm5JhBwqzyAcF4/c7+vXjOtwYGxiLmIq1RZUjtQ1iJz
 -----END CERTIFICATE-----`;
-
-/** CN=NCA SubCA2/RSA 12/2023 (zdroj official/response-trust/production/nca-subca2-rsa-12-2023.der) */
-export const productionIntermediate = `-----BEGIN CERTIFICATE-----
-MIIGODCCBKCgAwIBAgICBAMwDQYJKoZIhvcNAQELBQAwgYgxIDAeBgNVBAMMF05D
-QSBSb290IENBL1JTQSAxMC8yMDIzMT4wPAYDVQQKDDVTcHLDoXZhIHN0w6F0bsOt
-Y2ggc2x1xb5lYiB2eXR2w6HFmWVqw61jw61jaCBkxa92xJtydTEXMBUGA1UEYQwO
-TlRSQ1otMTkxMjIwNjMxCzAJBgNVBAYTAkNaMB4XDTIzMTIwNzA5NTU0M1oXDTMz
-MTIwNDA5NTU0M1owgYcxHzAdBgNVBAMMFk5DQSBTdWJDQTIvUlNBIDEyLzIwMjMx
-PjA8BgNVBAoMNVNwcsOhdmEgc3TDoXRuw61jaCBzbHXFvmViIHZ5dHbDocWZZWrD
-rWPDrWNoIGTFr3bEm3J1MRcwFQYDVQRhDA5OVFJDWi0xOTEyMjA2MzELMAkGA1UE
-BhMCQ1owggGiMA0GCSqGSIb3DQEBAQUAA4IBjwAwggGKAoIBgQDmap5TV01htDId
-nV5SqVkI+7l0KEgzmsrncUsZAyCgIhVoUDe/ZSPGfas+XRfd8KJ2+mys9rS/60TK
-STUs7ibqtP5IxG90zHZ0duoDdB6dWj+MW2PNudLIGFWB7+c7HuYcpuQUMIiju09C
-rj4RDbR9iyee+SfM5oefbeDv7utdgRW5OnCAl2waVGWbnm1R/hZ8YYvMcJKhH5+/
-i5lZmV5Iyqub99C4/DdjEkYJpUANQmPHowDOhjduXt2ISJMZukeHtV9g15AA3kca
-xAsLBrhRNWxC/P0CYMsAKYlTBmC5Ll6FM8xLh02wZGiSoOXE6ByKauOp4YEfL2MO
-fcYnjhubrsCvYMPpF8kPRgne9KlXjsHegh3fG3F+iAlrH73dYKPgwZEI+1uqz4il
-bxFajeg9mz2mozE52Llc4TT1g1jJLIIvNBfUkFR0qS7FbuHJqrDes5rgLCsBk0WP
-baEHJgBiOw2zkdy0hgEv925tFnLoeZsT4nGCV2m4sBjTlj4FCC8CAwEAAaOCAakw
-ggGlMBEGA1UdIAQKMAgwBgYEVR0gADCBqgYDVR0fBIGiMIGfMDOgMaAvhi1odHRw
-Oi8vY3JsZHAxLm5hcm9kbmktY2EuZ292LmN6L3JjYTIzX3JzYS5jcmwwM6AxoC+G
-LWh0dHA6Ly9jcmxkcDIubmFyb2RuaS1jYS5nb3YuY3ovcmNhMjNfcnNhLmNybDAz
-oDGgL4YtaHR0cDovL2NybGRwMy5uYXJvZG5pLWNhLmdvdi5jei9yY2EyM19yc2Eu
-Y3JsMH8GCCsGAQUFBwEBBHMwcTA6BggrBgEFBQcwAoYuaHR0cDovL2NhY2VydHMu
-bmFyb2RuaS1jYS5nb3YuY3ovcmNhMjNfcnNhLmNlcjAzBggrBgEFBQcwAYYnaHR0
-cDovL29jc3AubmFyb2RuaS1jYS5nb3YuY3ovcmNhMjNfcnNhMBIGA1UdEwEB/wQI
-MAYBAf8CAQAwDgYDVR0PAQH/BAQDAgEGMB0GA1UdDgQWBBQcjPYGconkde2VImt1
-sWN+aB8L3zAfBgNVHSMEGDAWgBQmQlVVKRuY0oTMFPi0b1YKIUvajzANBgkqhkiG
-9w0BAQsFAAOCAYEAhiZA7HgN9AmsaSS6CA4tC1N9wxrDCK+Y/ZMoyGz57yt+2snb
-BC/LSqXin5e7FXDzUWAG8tM3gTNoZy9126YgQYw5HGa/1OMd9oM3YDNnY8rG2Flq
-KLf4cG/tfGWQqYmkIA/SpWpFxMJyjphSOHwmYLhbjtxlRMlweNp5DVD7eIHfBdtq
-w2r/wcqzBlBjypChXfp27W5WWuV9QaiCSPzLdeT/9ZqPxvhIQOewO4OfM/a3n6uM
-YJIkCP3Q911yTTbJNqUWIPhTkiEnHQe6OP5GmIttCQH8Gkau0JtGKVc79sMk+VJS
-k7JMWWDAXac14KuC19Te/F0YI+pObo4YHoLtDtUZ6m95bP+PsaN7oVcXCh+fPd9r
-74wHvDu/XVm4EP4MDN+fXvqCTtgKD6u69pT+rqlHLLrL307otl1PDKdQJC3kLdbU
-XfoXrpQXRNuhe3gX0JiPB+2pf/Fsbe19H0RfZ2kY7PlBf1gni33ZWGoDJ77/TZb9
-8tMIy4FTogIWk7Nl
------END CERTIFICATE-----`;
-
-/** CN=NCA Root CA/RSA 10/2023 (zdroj official/response-trust/production/nca-root-rsa-10-2023.der) */
-export const productionRoot = `-----BEGIN CERTIFICATE-----
-MIIE4jCCA0qgAwIBAgIBBDANBgkqhkiG9w0BAQsFADCBiDEgMB4GA1UEAwwXTkNB
-IFJvb3QgQ0EvUlNBIDEwLzIwMjMxPjA8BgNVBAoMNVNwcsOhdmEgc3TDoXRuw61j
-aCBzbHXFvmViIHZ5dHbDocWZZWrDrWPDrWNoIGTFr3bEm3J1MRcwFQYDVQRhDA5O
-VFJDWi0xOTEyMjA2MzELMAkGA1UEBhMCQ1owHhcNMjMxMDE5MDAwMDAwWhcNNDgx
-MDE5MDAwMDAwWjCBiDEgMB4GA1UEAwwXTkNBIFJvb3QgQ0EvUlNBIDEwLzIwMjMx
-PjA8BgNVBAoMNVNwcsOhdmEgc3TDoXRuw61jaCBzbHXFvmViIHZ5dHbDocWZZWrD
-rWPDrWNoIGTFr3bEm3J1MRcwFQYDVQRhDA5OVFJDWi0xOTEyMjA2MzELMAkGA1UE
-BhMCQ1owggGiMA0GCSqGSIb3DQEBAQUAA4IBjwAwggGKAoIBgQCSEA2GK+TM77Gw
-sjVZUNw0uh5n4/odwZtfc4/HH2MjGQjAObibRXHdXQixvQqCKJaCh7FZ/YRU3ow8
-d2WWyqLljLKTsiU53ZwicZ0Hfqh4yIxB8J8WGBm7ekLC5ErvVxpOdqq6xBPvop9I
-pv6PlyXHT7lMxZwRLsg6/8YBf2Y8i+USv96P6gk94zt4fGpwUcqedjq0CI/UdZwU
-KiAGqChLOlK67vh2A3FlF/VJFlZyuPMUXwkgYs41U7ZRUudeWmQeOBCXBDvxkttY
-7hsARVKi4ajBjxTO1pf4PQXEwUnnyh570YWC+A3WjZpB+bJOISXSh/C/wpJiH6lT
-iUbdJZZGG9KnSQpJWNUdSWiUUjBnUeCqKB3EHgh2omM8OWdsnVMUKCYaipCV9+wG
-qyW8yh0sxYKI3i9zaE02T/4Fr0+Wx8uUE56qxz57I2QELtsBBcagCAjk6SJOm8J3
-RnKxNkLNkjq6SyEuWXweWHub7DN67If3fmCig/LGytthdHYWPHcCAwEAAaNVMFMw
-EQYDVR0gBAowCDAGBgRVHSAAMA8GA1UdEwEB/wQFMAMBAf8wDgYDVR0PAQH/BAQD
-AgEGMB0GA1UdDgQWBBQmQlVVKRuY0oTMFPi0b1YKIUvajzANBgkqhkiG9w0BAQsF
-AAOCAYEAblppOUrwisNlFZFcNtqBboFgagDNlekvumAs2gACFJk03S3CRy8W+N9g
-lIeZ4LARgc1ZQq3xyHjS3HZyhAxyc76YjqleNOIJU6ZGEh5+UP/UizcQCrNLtynY
-4t6qUj/DyDNH59oTqIYDcM7K+53p8yKsJzYg9L6lgnovAGKcNQZe/Lj+k1qYhYP9
-sfbP5NEL1P6/hvyQH8GmGE+QBX2Rern9tu6xwrpVDue3pnYQIvgKnmugyzV8eFco
-5zaNQ8asfDtlCurDpLNiuJW3aaFSOBKr0mIB8zcr3GFspaJCuIbJHybI0VHi08bO
-qPVoJ3L6jnhpdOxpSjD9N7eHRVEZbMzJv/DhVjRyYfGeZLvXPUytZgX3RYyHHAOw
-gs6GkeliwPSeYITq7zD0DgUsEmTdwGX2eeL8WFa3Zc53aL726CuSrRc/FdkRUrcX
-SBBA/d40FmV+Z74MlVqQtOrs0n5pa7xu3smOZ0VZWbXdn5yiFpdoi/uN5i0jAAD+
-mCrqQ0ME
------END CERTIFICATE-----`;
-
