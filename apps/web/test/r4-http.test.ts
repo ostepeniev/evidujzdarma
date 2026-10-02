@@ -37,6 +37,19 @@ describe("Дрібне 1 – cookie APIs accept changes only from our origin, as
     expect(post("/api/ucet/katalog", { "sec-fetch-site": "cross-site", "content-type": "application/json" }).status).toBe(403);
   });
 
+  it("behind nginx the public Host counts, not the internal URL; Origin 'null' is refused", () => {
+    const behindProxy = (origin: string) =>
+      proxy(
+        new NextRequest("http://127.0.0.1:3100/api/ucet/katalog", {
+          method: "POST",
+          headers: { "content-length": "20", "content-type": "application/json", host: "staging.evidujzdarma.cz", "x-forwarded-host": "staging.evidujzdarma.cz", origin },
+        }),
+      );
+    expect(behindProxy("https://staging.evidujzdarma.cz").status).toBe(200);
+    expect(behindProxy("https://evil.example").status).toBe(403);
+    expect(behindProxy("null").status).toBe(403);
+  });
+
   it("gate: text/plain with a JSON body is refused (no simple-request CSRF)", () => {
     expect(post("/api/ucet/katalog", { origin: "http://localhost", "content-type": "text/plain" }).status).toBe(415);
   });

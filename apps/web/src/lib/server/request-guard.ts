@@ -25,10 +25,30 @@ function siteOrigin(): string | null {
   }
 }
 
+/** Host, na který se klient obrátil – za nginx z X-Forwarded-Host / Host (req.url v proxy je interní adresa). */
+function requestHosts(req: Request): Set<string> {
+  const hosts = new Set<string>();
+  for (const h of [req.headers.get("x-forwarded-host"), req.headers.get("host")]) if (h) hosts.add(h.split(",")[0]!.trim().toLowerCase());
+  try {
+    hosts.add(new URL(req.url).host.toLowerCase());
+  } catch {
+    /* bez URL jen hlavičky */
+  }
+  return hosts;
+}
+
 /** Požadavek z našeho původu? Bez hlaviček Origin i Sec-Fetch-Site jde o neprohlížečového klienta (cookie nenese sám). */
 export function sameOrigin(req: Request): boolean {
   const origin = req.headers.get("origin");
-  if (origin) return origin === new URL(req.url).origin || origin === siteOrigin();
+  if (origin) {
+    if (origin === siteOrigin()) return true;
+    try {
+      // schéma se nesrovnává: TLS končí na nginx; Origin podvrhnout prohlížeč nedovolí
+      return requestHosts(req).has(new URL(origin).host.toLowerCase());
+    } catch {
+      return false; // „null“ a jiné nesmysly
+    }
+  }
   const site = req.headers.get("sec-fetch-site");
   if (site) return site === "same-origin" || site === "none";
   return true;
