@@ -2,6 +2,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { and, eq, gt, isNull, sql } from "drizzle-orm";
 import { getDb, schema } from "@ez/db";
+import { safeError } from "./log";
 import { randomToken, sha256 } from "./tokens";
 
 export const SESSION_COOKIE = "ez_session";
@@ -133,6 +134,7 @@ export async function authenticateDevice(req: Request): Promise<DeviceContext> {
 
 export function errorResponse(e: unknown): Response {
   if (e instanceof HttpError) return Response.json({ error: e.message, ...(e.details ?? {}) }, { status: e.status });
-  console.error(e);
+  // do logu jen typ a kód chyby – nikdy SQL parametry, tokeny ani obsah požadavku (R3.6)
+  console.error("[api] chyba", safeError(e));
   return Response.json({ error: "Interní chyba serveru" }, { status: 500 });
 }

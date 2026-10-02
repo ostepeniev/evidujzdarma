@@ -3,6 +3,13 @@
 #   docker compose up -d --build
 name: evidujzdarma
 
+# Logy kontejnerů jsou omezené velikostí (R3.6): nanejvýš 5 × 10 MB na službu, pak se přepisují.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 x-app-env: &app-env
   DATABASE_URL: postgres://evidujzdarma:${POSTGRES_PASSWORD}@postgres:5432/evidujzdarma
   NEXT_PUBLIC_SITE_URL: https://${DOMAIN}
@@ -21,6 +28,7 @@ x-app-env: &app-env
 
 services:
   postgres:
+    logging: *logging
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
@@ -37,6 +45,7 @@ services:
     shm_size: 256mb
 
   migrate:
+    logging: *logging
     build: { context: .., target: migrate }
     environment:
       DATABASE_URL: postgres://evidujzdarma:${POSTGRES_PASSWORD}@postgres:5432/evidujzdarma
@@ -45,6 +54,7 @@ services:
     restart: "no"
 
   web:
+    logging: *logging
     build:
       context: ..
       target: web
@@ -57,6 +67,7 @@ services:
       migrate: { condition: service_completed_successfully }
 
   worker:
+    logging: *logging
     build: { context: .., target: worker }
     restart: unless-stopped
     environment:
@@ -67,6 +78,7 @@ services:
       web: { condition: service_healthy }
 
   caddy:
+    logging: *logging
     image: caddy:2-alpine
     restart: unless-stopped
     ports:
@@ -85,6 +97,7 @@ services:
       - web
 
   backup:
+    logging: *logging
     image: postgres:16-alpine
     restart: unless-stopped
     environment:

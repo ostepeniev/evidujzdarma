@@ -2,6 +2,7 @@ import "server-only";
 import { and, eq, inArray, lte, sql } from "drizzle-orm";
 import { getDb, hasDatabase, schema } from "@ez/db";
 import { renderEmail, type EmailTemplate } from "@/lib/emails";
+import { safeError } from "./log";
 
 /** Obchodní sdělení – odejde jen s potvrzeným e-mailem (DOI), souhlasem a bez odhlášení v okamžiku odeslání (Р5). */
 export const MARKETING_TEMPLATES: ReadonlySet<EmailTemplate> = new Set<EmailTemplate>(["dis-launch"]);
@@ -100,6 +101,9 @@ export async function processOutbox(limit = 20): Promise<{ sent: number; failed:
             ? { "List-Unsubscribe": `<${mail.unsubscribeUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" }
             : undefined,
         });
+      } else if (process.env.NODE_ENV === "production") {
+        // produkce bez SMTP: e-mail se neoznačí jako odeslaný a obsah (odkazy s tokeny) se nezaloguje (R3.6)
+        throw new Error("SMTP_URL není nastaven");
       } else {
         console.info(`[mail:dev] → ${row.to}: ${mail.subject}\n${mail.text}`);
       }
@@ -112,7 +116,7 @@ export async function processOutbox(limit = 20): Promise<{ sent: number; failed:
         .update(schema.emailOutbox)
         .set({
           status: retry ? "queued" : "failed",
-          lastError: e instanceof Error ? e.message : String(e),
+          lastError: safeError(e).message,
           sendAfter: new Date(Date.now() + 2 ** row.attempts * 60_000),
         })
         .where(eq(schema.emailOutbox.id, row.id));

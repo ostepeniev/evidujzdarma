@@ -5,6 +5,7 @@ import { lookupCompany } from "@/lib/server/ares";
 import { statusSummary } from "@/lib/server/fs-monitor";
 import { clientIp, rateLimit } from "@/lib/server/rate-limit";
 import { absoluteUrl } from "@/lib/site";
+import { safeError } from "@/lib/server/log";
 
 export const dynamic = "force-dynamic";
 
@@ -45,7 +46,7 @@ export async function POST(req: Request) {
     await server.connect(transport);
     return withCors(await transport.handleRequest(req));
   } catch (e) {
-    console.error("[mcp]", e);
+    console.error("[mcp]", safeError(e));
     return jsonRpcError(500, -32603, "Internal server error");
   } finally {
     // JSON režim: odpověď je hotová, spojení lze uvolnit
