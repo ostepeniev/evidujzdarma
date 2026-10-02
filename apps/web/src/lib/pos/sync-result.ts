@@ -35,6 +35,37 @@ export function applyServerResult(r: ServerSaleResult, now = new Date()): Partia
   };
 }
 
+/**
+ * Co se při synchronizaci s tržbou udělá (R1.8): POST jen pro tržby, které server ještě nemá;
+ * u přijatých tržeb se jen ptáme na stav – odesílání do FS řídí server podle backoffu.
+ */
+export function planSync(sales: Pick<LocalSale, "id" | "status">[]): { post: string[]; poll: string[] } {
+  const post: string[] = [];
+  const poll: string[] = [];
+  for (const s of sales) {
+    if (s.status === "local") post.push(s.id);
+    else if (s.status === "queued" || s.status === "sending" || s.status === "failed") poll.push(s.id);
+  }
+  return { post, poll };
+}
+
+export interface ServerSaleStatus {
+  id: string;
+  status: LocalStatus;
+  confirmationCode: string | null;
+  lastError: string | null;
+}
+
+/** Výsledek dotazu na stavy: tržbu, kterou server nezná (např. obnova ze zálohy), pošleme znovu. */
+export function applyPolledStatuses(ids: string[], statuses: ServerSaleStatus[], now = new Date()): [string, Partial<LocalSale>][] {
+  const byId = new Map(statuses.map((s) => [s.id, s]));
+  return ids.map((id) => {
+    const s = byId.get(id);
+    if (!s) return [id, { status: "local" as const }];
+    return [id, applyServerResult({ id, ok: true, status: s.status, confirmationCode: s.confirmationCode, lastError: s.lastError }, now)];
+  });
+}
+
 /** Hodiny zařízení vs. server: posun z hlavičky Date (přesnost ~1 s). */
 export function clockOffsetFrom(dateHeader: string | null, sentAt: number, receivedAt: number): number | null {
   if (!dateHeader) return null;

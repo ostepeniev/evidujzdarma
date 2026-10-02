@@ -5,7 +5,7 @@
  * a konfigurace. Server je idempotentní, takže opakované odeslání stejné tržby je bezpečné.
  */
 import { getDevice, markCashSynced, setMeta, unsettledSales, unsyncedCash, updateSale } from "./db";
-import { applyServerResult, clockOffsetFrom, type ServerSaleResult } from "./sync-result";
+import { applyPolledStatuses, applyServerResult, clockOffsetFrom, planSync, type ServerSaleResult, type ServerSaleStatus } from "./sync-result";
 import type { PosConfig } from "./types";
 
 type Listener = () => void;
@@ -94,9 +94,11 @@ async function doSync(): Promise<SyncReport> {
     return lastReport;
   }
   let sent = 0;
+  const plan = planSync(pending);
+  const toPost = pending.filter((p) => plan.post.includes(p.id));
   try {
-    for (let i = 0; i < pending.length; i += 50) {
-      const batch = pending.slice(i, i + 50);
+    for (let i = 0; i < toPost.length; i += 50) {
+      const batch = toPost.slice(i, i + 50);
       const res = await api("/api/pokladna/sales", {
         method: "POST",
         body: JSON.stringify({
@@ -121,6 +123,14 @@ async function doSync(): Promise<SyncReport> {
         if (r.ok) sent++;
         await updateSale(r.id, applyServerResult(r));
       }
+    }
+    // přijaté tržby: jen stav (POK doplní server/cron), nikdy znovu odeslání
+    for (let i = 0; i < plan.poll.length; i += 200) {
+      const ids = plan.poll.slice(i, i + 200);
+      const res = await api(`/api/pokladna/sales?ids=${ids.join(",")}`);
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? `Server odpověděl ${res.status}`);
+      const { statuses } = (await res.json()) as { statuses: ServerSaleStatus[] };
+      for (const [id, patch] of applyPolledStatuses(ids, statuses)) await updateSale(id, patch);
     }
     await syncCash();
     lastReport = { at: new Date().toISOString(), online: true, sent, error: null };

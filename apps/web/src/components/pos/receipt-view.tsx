@@ -104,9 +104,14 @@ export function ReceiptView({
           {sale.status === "rejected" && (
             <div className="space-y-2">
               {sale.error && <p className="text-sm text-danger-600">{sale.error}</p>}
-              <button type="button" className="btn-secondary py-2 text-[15px]" onClick={() => void resendSale(sale.id)}>
-                Odeslat znovu
-              </button>
+              {sale.syncedAt && !sale.quarantined ? (
+                // tržbu má server; znovu ji do FS pošle vlastník v nastavení (Neodeslané tržby)
+                <p className="text-sm text-ink-soft">Tržba je uložená na serveru. Znovu ji odešle vlastník v nastavení pokladny.</p>
+              ) : (
+                <button type="button" className="btn-secondary py-2 text-[15px]" onClick={() => void resendSale(sale.id)}>
+                  Odeslat znovu
+                </button>
+              )}
             </div>
           )}
           {sale.mode === "mock" && <p className="text-xs text-muted">Ukázkový režim – tržba se Finanční správě neodesílá.</p>}

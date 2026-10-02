@@ -253,7 +253,8 @@ export async function processSale(saleId: string, account?: AccountRow): Promise
   const [claimed] = await db
     .update(schema.sales)
     .set({ status: "sending", attempts: sql`${schema.sales.attempts} + 1`, sentAt: startedAt, claimToken: token })
-    .where(and(eq(schema.sales.id, saleId), eq(schema.sales.status, "queued")))
+    // jen tržba, jejíž backoff už uplynul – žádné volání nemůže frontu předběhnout (R1.8)
+    .where(and(eq(schema.sales.id, saleId), eq(schema.sales.status, "queued"), lte(schema.sales.nextAttemptAt, startedAt)))
     .returning();
   if (!claimed) return (await db.query.sales.findFirst({ where: eq(schema.sales.id, saleId) })) ?? null;
 

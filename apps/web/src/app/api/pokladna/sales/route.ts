@@ -29,9 +29,11 @@ export async function POST(req: Request) {
     }
     const results = [...(await ingestSales(ctx, valid)), ...invalid];
 
+    // Odeslat hned jen tržby, které přišly poprvé. Opakovaná synchronizace (další karta, tik
+    // po 20 s) nesmí obejít backoff – frontu dál řídí cron (R1.8).
     const started = Date.now();
     for (const r of results) {
-      if (!r.ok) continue;
+      if (!r.ok || !r.inserted) continue;
       if (Date.now() - started > SEND_BUDGET_MS) break;
       await processSale(r.id, ctx.account);
     }

@@ -38,7 +38,7 @@ export const DeviceSaleSchema = z.object({
 export type DeviceSale = z.infer<typeof DeviceSaleSchema>;
 
 export type IngestResult =
-  | { id: string; ok: true }
+  | { id: string; ok: true; /** true = tržba přišla poprvé (ne opakovaná synchronizace) */ inserted: boolean }
   | {
       id: string;
       ok: false;
@@ -185,7 +185,7 @@ export async function ingestSales(ctx: DeviceContext, inputs: DeviceSale[]): Pro
         if (!same) throw new IngestRejection("CONTENT_CONFLICT", "Tržba se stejným identifikátorem už existuje s jiným obsahem", 409);
       }
       await markIngested(account.id, sale.id);
-      results.push({ id: sale.id, ok: true });
+      results.push({ id: sale.id, ok: true, inserted: inserted.length > 0 });
     } catch (e) {
       if (e instanceof IngestRejection) {
         try {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyServerResult, clockOffsetFrom, correctedNow } from "@/lib/pos/sync-result";
+import { applyPolledStatuses, applyServerResult, clockOffsetFrom, correctedNow, planSync } from "@/lib/pos/sync-result";
 
 describe("POS handling of server results (R1.1)", () => {
   it("keeps a sale in the queue on a temporary server error", () => {
@@ -22,5 +22,24 @@ describe("POS handling of server results (R1.1)", () => {
     expect(correctedNow({ ms: off, at: now }, now) - now).toBeCloseTo(off, -2);
     expect(correctedNow({ ms: 10_000, at: now }, now)).toBe(now);
     expect(correctedNow({ ms: off, at: now - 2 * 86_400_000 }, now)).toBe(now);
+  });
+});
+
+describe("POS sync plan (R1.8)", () => {
+  it("posts only sales the server does not have yet and polls the accepted ones", () => {
+    const plan = planSync([
+      { id: "l", status: "local" },
+      { id: "q", status: "queued" },
+      { id: "s", status: "sending" },
+      { id: "f", status: "failed" },
+      { id: "c", status: "confirmed" },
+      { id: "r", status: "rejected" },
+    ]);
+    expect(plan).toEqual({ post: ["l"], poll: ["q", "s", "f"] });
+  });
+  it("applies polled statuses and re-posts a sale the server does not know", () => {
+    const out = new Map(applyPolledStatuses(["a", "b"], [{ id: "a", status: "confirmed", confirmationCode: "POK", lastError: null }]));
+    expect(out.get("a")).toMatchObject({ status: "confirmed", confirmationCode: "POK" });
+    expect(out.get("b")).toEqual({ status: "local" });
   });
 });
