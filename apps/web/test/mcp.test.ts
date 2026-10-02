@@ -115,12 +115,18 @@ describe("EET MCP server", () => {
     expect((m.structuredContent!.items as { id: string }[]).map((i) => i.id)).toContain("leden-bez-pokut");
     expect((await call(c, "eet_list_misconceptions", { query: "xyzxyz" })).isError).toBe(true);
 
-    const s = await call(c, "eet_search_guides", { query: "certifikát DIS+", response_format: "json" });
-    const results = s.structuredContent!.results as { slug: string }[];
-    expect(results[0]!.slug).toBe("jak-aktivovat-dis-a-certifikat");
-    const g = await call(c, "eet_get_guide", { slug: results[0]!.slug });
-    expect(g.content[0]!.text).toContain("# ");
-    expect((await call(c, "eet_get_guide", { slug: "neexistuje" })).content[0]!.text).toContain("Dostupné slugy");
+    // návody vydává MCP až po revizi (Ф9) – tady jako po revizi přes příznak
+    process.env.GUIDES_INDEX_UNREVIEWED = "1";
+    try {
+      const s = await call(c, "eet_search_guides", { query: "certifikát DIS+", response_format: "json" });
+      const results = s.structuredContent!.results as { slug: string }[];
+      expect(results[0]!.slug).toBe("jak-aktivovat-dis-a-certifikat");
+      const g = await call(c, "eet_get_guide", { slug: results[0]!.slug });
+      expect(g.content[0]!.text).toContain("# ");
+      expect((await call(c, "eet_get_guide", { slug: "neexistuje" })).content[0]!.text).toContain("Dostupné slugy");
+    } finally {
+      delete process.env.GUIDES_INDEX_UNREVIEWED;
+    }
   });
 
   it("reports FS status and degrades without monitoring", async () => {

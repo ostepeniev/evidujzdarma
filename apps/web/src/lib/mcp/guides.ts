@@ -1,6 +1,6 @@
 /** Vyhledávání v návodech pro MCP (jednoduché skórování bez externího indexu – návodů jsou desítky). */
 import { plainText } from "@/components/rich-text";
-import { GUIDES } from "@/content/guides";
+import { GUIDES, getGuide, isIndexable } from "@/content/guides";
 import type { Block, Guide } from "@/content/guides/types";
 
 const fold = (s: string) =>
@@ -42,12 +42,31 @@ function count(hay: string, needle: string): number {
   return n;
 }
 
+/**
+ * Návody, které smí strojové kanály vydat (Ф9): jen po revizi daňovým poradcem (isIndexable, stejně jako
+ * llms.txt). Rozhoduje se při každém dotazu, takže po revizi se návod objeví bez restartu.
+ */
+export function publicGuides(): Guide[] {
+  return GUIDES.filter(isIndexable);
+}
+
+export function publicGuide(slug: string): Guide | undefined {
+  const g = getGuide(slug);
+  return g && isIndexable(g) ? g : undefined;
+}
+
+/** Odkaz na návod jen tehdy, smí-li ho MCP vydat. */
+export function publicGuidePath(slug: string): string | null {
+  return publicGuide(slug) ? `/navody/${slug}` : null;
+}
+
 export function searchGuides(query: string, limit: number): GuideHit[] {
   const terms = fold(query)
     .split(/[^a-z0-9]+/)
     .filter((t) => t.length >= 2);
   if (!terms.length) return [];
   return index
+    .filter((x) => isIndexable(x.guide))
     .map((x) => ({
       x,
       score: terms.reduce((s, t) => s + 6 * count(x.title, t) + 3 * count(x.description, t) + 2 * count(x.lead, t) + Math.min(5, count(x.body, t)), 0),

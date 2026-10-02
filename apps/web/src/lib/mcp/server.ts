@@ -6,7 +6,6 @@ import { isValidIco, legalFormName, isNaturalPerson, normalizeIco } from "@ez/cz
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { FACTS, FACTS_UPDATED, formatKc } from "@/content/facts";
-import { getGuide, GUIDES } from "@/content/guides";
 import { MYTHS, MYTHS_UPDATED } from "@/content/myths";
 import { assess, type Answers } from "@/lib/eet-assessment";
 import { calculateEetOff, DEFAULT_INPUT, type Band } from "@/lib/eet-off";
@@ -15,7 +14,7 @@ import { guideText } from "@/lib/llms";
 import { SITE, absoluteUrl } from "@/lib/site";
 import { factItem, FACT_TOPICS, type FactTopic } from "./facts";
 import { bulletList, respond, sourcesMd, toolError, type ResponseFormat, type ToolResult } from "./format";
-import { searchGuides, toHit } from "./guides";
+import { publicGuide, publicGuidePath, publicGuides, searchGuides, toHit } from "./guides";
 import { classifyPayment, PAYMENT_KINDS, PAYMENT_KIND_LABEL } from "./payments";
 
 export const MCP_SERVER_NAME = "evidujzdarma-mcp-server";
@@ -236,18 +235,21 @@ Returns: evidenced ('yes'|'no'|'uncertain'), explanation, note, sources, guide u
     },
     async (args): Promise<ToolResult> => {
       const c = classifyPayment(args.payment, args.in_person);
-      const url = absoluteUrl(c.guide_url_path);
+      // odkaz na návod jen po revizi daňovým poradcem (Ф9)
+      const guidePath = publicGuidePath(c.guide_url_path.replace(/^\/navody\//, ""));
+      const url = guidePath ? absoluteUrl(guidePath) : null;
       const label = c.evidenced === "yes" ? "Eviduje se" : c.evidenced === "no" ? "Neeviduje se" : "Nejisté – ověřte";
       const md = [
         `# ${label}: ${PAYMENT_KIND_LABEL[c.payment]}${c.in_person ? " (osobně / v provozovně)" : " (na dálku)"}`,
         c.explanation,
         c.note ?? "",
         sourcesMd(c.sources),
-        `Návod: ${url}`,
+        url ? `Návod: ${url}` : "",
       ]
         .filter(Boolean)
         .join("\n\n");
-      return respond({ ...c, guide_url: url }, md, args.response_format as ResponseFormat);
+      const { guide_url_path: _path, ...rest } = c;
+      return respond({ ...rest, guide_url: url }, md, args.response_format as ResponseFormat);
     },
   );
 
@@ -279,7 +281,8 @@ Returns: facts [{topic, title, text, sources[{label,url}]}], facts_updated.`,
       const topics = (args.topics ?? FACT_TOPICS) as readonly FactTopic[];
       const facts = [...new Set(topics)].map(factItem);
       const md = [`# EET 2.0 – fakta (stav k ${FACTS_UPDATED})`, ...facts.map((f) => `## ${f.title}\n\n${f.text}\n\n${sourcesMd(f.sources)}`)].join("\n\n");
-      return respond({ facts, url: absoluteUrl("/navody/eet-2-0-kompletni-pruvodce") }, md, args.response_format as ResponseFormat);
+      const guide = publicGuidePath("eet-2-0-kompletni-pruvodce");
+      return respond({ facts, url: guide ? absoluteUrl(guide) : null }, md, args.response_format as ResponseFormat);
     },
   );
 
@@ -351,8 +354,12 @@ Returns: results [{slug, title, description, updated, reviewed, url}]. Use eet_g
     async (args): Promise<ToolResult> => {
       const hits = searchGuides(args.query, args.limit).map((h) => ({ ...h, url: absoluteUrl(`/navody/${h.slug}`) }));
       if (!hits.length) {
-        const all = GUIDES.map((g) => g.slug).join(", ");
-        return toolError(`Pro „${args.query}“ jsme nic nenašli. Zkuste jiná slova (česky), nebo rovnou eet_get_guide s jedním ze slugů: ${all}.`);
+        const available = publicGuides().map((g) => g.slug);
+        return toolError(
+          available.length
+            ? `Pro „${args.query}“ jsme nic nenašli. Zkuste jiná slova (česky), nebo rovnou eet_get_guide s jedním ze slugů: ${available.join(", ")}.`
+            : `Návody zatím čekají na odbornou revizi daňovým poradcem a strojově je nevydáváme. Ověřená fakta s prameny vrací eet_get_facts.`,
+        );
       }
       const md = [`# Návody k EET 2.0: „${args.query}“`, ...hits.map((h) => `- **${h.title}** (slug: \`${h.slug}\`) – ${h.description} ${h.url}`)].join("\n\n");
       return respond({ query: args.query, count: hits.length, results: hits }, md, args.response_format as ResponseFormat);
@@ -366,21 +373,27 @@ Returns: results [{slug, title, description, updated, reviewed, url}]. Use eet_g
       description: `Return the full text of one EvidujZdarma guide (Czech, Markdown) including FAQ and sources, by slug from eet_search_guides.
 
 Args:
-  - slug (string): e.g. "eet-2-0-kompletni-pruvodce", "kontaktni-platba", "eet-off".
+  - slug (string): a slug returned by eet_search_guides. Only guides reviewed by a tax adviser are available.
   - response_format ('markdown'|'json').
 
 Returns: slug, title, url, updated, reviewed, text (truncated at 25,000 characters).`,
       inputSchema: z
         .object({
-          slug: z.string().regex(/^[a-z0-9-]{2,80}$/).describe('Guide slug, e.g. "kontaktni-platba"'),
+          slug: z.string().regex(/^[a-z0-9-]{2,80}$/).describe("Guide slug from eet_search_guides"),
           response_format: responseFormat,
         })
         .strict(),
       annotations: { ...READ_ONLY, openWorldHint: false },
     },
     async (args): Promise<ToolResult> => {
-      const g = getGuide(args.slug);
-      if (!g) return toolError(`Návod „${args.slug}“ neexistuje. Dostupné slugy: ${GUIDES.map((x) => x.slug).join(", ")}.`);
+      const g = publicGuide(args.slug);
+      if (!g) {
+        const available = publicGuides().map((x) => x.slug);
+        return toolError(
+          // požadovaný slug neopakujeme – u nerevidovaného návodu by to byl odkaz na něj (Ф9)
+          `Takový návod není k dispozici: neexistuje, nebo ještě čeká na odbornou revizi daňovým poradcem. ${available.length ? `Dostupné slugy: ${available.join(", ")}.` : "Ověřená fakta s prameny vrací eet_get_facts."}`,
+        );
+      }
       const text = guideText(g);
       const hit = toHit(g);
       const note = hit.reviewed ? "" : "\n\n_Návod zatím čeká na odbornou revizi daňovým poradcem._";
