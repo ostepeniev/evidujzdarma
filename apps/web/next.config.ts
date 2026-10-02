@@ -17,7 +17,6 @@ const csp = [
 ].join("; ");
 
 const securityHeaders = [
-  ...(process.env.NODE_ENV === "production" ? [{ key: "Content-Security-Policy", value: csp }] : []),
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "X-Frame-Options", value: "SAMEORIGIN" },
@@ -39,6 +38,10 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },
+      // globální CSP; citlivé stránky mají přísnou CSP s nonce z src/proxy.ts (R3.9)
+      ...(process.env.NODE_ENV === "production"
+        ? [{ source: "/((?!pokladna|u/|prihlaseni|kabinet|pozvanka/).*)", headers: [{ key: "Content-Security-Policy", value: csp }] }]
+        : []),
       {
         source: "/sw.js",
         headers: [
