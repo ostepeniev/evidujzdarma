@@ -1,9 +1,10 @@
 import "server-only";
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { getDb, schema } from "@ez/db";
 import { verifyPin } from "@/lib/pos/pin";
 import { HttpError, type DeviceContext } from "./auth";
+import { safeEqual } from "./tokens";
 
 /**
  * PIN vlastníka se ověřuje jen na serveru (R3.10): jeho otisk do pokladny nejde, takže ho nelze
@@ -46,9 +47,9 @@ export function verifyApproval(token: string | null | undefined, o: { accountId:
   if (!token || token.length > 1000) return null;
   const [body, mac] = token.split(".");
   if (!body || !mac) return null;
-  const expected = createHmac("sha256", secret()).update(body).digest();
-  const given = Buffer.from(mac, "base64url");
-  if (given.length !== expected.length || !timingSafeEqual(given, expected)) return null;
+  // porovnává se kanonický text MAC, ne dekódované bajty: base64url s jinými výplňovými bity
+  // by se dekódoval na stejný podpis a token by šel pozměnit
+  if (!safeEqual(mac, createHmac("sha256", secret()).update(body).digest("base64url"))) return null;
   let p: Approval;
   try {
     p = JSON.parse(Buffer.from(body, "base64url").toString("utf8")) as Approval;

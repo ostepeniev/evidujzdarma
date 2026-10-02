@@ -12,7 +12,7 @@ import { POST as pinRoute } from "@/app/api/pokladna/pin/route";
 import { hashPin } from "@/lib/pos/pin";
 import { HttpError } from "@/lib/server/auth";
 import { ingestSales } from "@/lib/server/sales";
-import { resetPinAttempts, validatePinForRole } from "@/lib/server/staff-pin";
+import { resetPinAttempts, validatePinForRole, verifyApproval } from "@/lib/server/staff-pin";
 import { sha256 } from "@/lib/server/tokens";
 import { deviceContext, deviceSale, seedAccount } from "../helpers/fixtures";
 import { createTestDb, type TestDb } from "../helpers/test-db";
@@ -80,12 +80,28 @@ describe("R3.10 – PIN", () => {
     const res = await pin(s.owner.id, "246813");
     expect(res.status).toBe(200);
     const { approval } = (await res.json()) as { approval: string };
-    const forged = approval.replace(/.$/, (c) => (c === "A" ? "B" : "A"));
+    // první znak MAC nese plných 6 bitů – změna je skutečný padělek (poslední znak má jen 4 platné bity)
+    const [body, mac] = approval.split(".");
+    const forged = `${body}.${mac![0] === "A" ? "B" : "A"}${mac!.slice(1)}`;
     const [bad] = await ingestSales(ctx, [refund({ staffId: s.cashier.id, approval: forged }) as never]);
     expect(bad).toMatchObject({ ok: false, code: "REFUND_NOT_AUTHORIZED" });
     const ok = refund({ staffId: s.cashier.id, approval });
     const [good] = await ingestSales(ctx, [ok as never]);
     expect(good!.ok).toBe(true);
     expect((await getDb().query.sales.findFirst({ where: eq(schema.sales.id, ok.id) }))!.approvedBy).toBe(s.owner.id);
+  });
+
+  it("an approval is accepted only in its canonical encoding (no malleable MAC)", async () => {
+    const { s, pin } = await setup();
+    const { approval } = (await (await pin(s.owner.id, "246813")).json()) as { approval: string };
+    const where = { accountId: s.account.id, deviceId: s.device.id, soldAt: new Date().toISOString() };
+    expect(verifyApproval(approval, where)).toBe(s.owner.id);
+    // poslední znak 43znakového base64url nese 4 bity + 2 výplňové; změna výplně dává stejné bajty
+    const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+    const [body, mac] = approval.split(".");
+    const last = ALPHABET.indexOf(mac!.at(-1)!);
+    const variant = `${body}.${mac!.slice(0, -1)}${ALPHABET[last | 1]}`;
+    expect(Buffer.from(variant.split(".")[1]!, "base64url").equals(Buffer.from(mac!, "base64url"))).toBe(true);
+    expect(verifyApproval(variant, where)).toBeNull();
   });
 });
