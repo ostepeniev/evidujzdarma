@@ -100,12 +100,67 @@ export function applyPolledStatuses(
 }
 
 /** Hodiny zařízení vs. server: posun z hlavičky Date (přesnost ~1 s). */
+/**
+ * Nejvyšší posun hodin, který bereme vážně (Д-10): víc než 45 dní server stejně nepřijme (tržba půjde do karantény
+ * s vysvětlením) a takový údaj je spíš nesmyslná hlavička Date (proxy, chybová stránka) než skutečný čas.
+ */
+export const MAX_CLOCK_OFFSET_MS = 45 * 86_400_000;
+
 export function clockOffsetFrom(dateHeader: string | null, sentAt: number, receivedAt: number): number | null {
   if (!dateHeader) return null;
   const server = Date.parse(dateHeader);
   if (Number.isNaN(server)) return null;
   // server odpověděl někdy mezi odesláním a přijetím – vezmeme střed
-  return server + 500 - (sentAt + receivedAt) / 2;
+  const offset = server + 500 - (sentAt + receivedAt) / 2;
+  return Math.abs(offset) > MAX_CLOCK_OFFSET_MS ? null : offset;
+}
+
+/** Limity jedné dávky tržeb: reverse proxy přijme tělo do 1 MB – dávka má nejvýš čtvrtinu (Д-10). */
+export const SALES_BATCH = { maxItems: 50, maxBytes: 256 * 1024 } as const;
+
+/** Rozdělí položky do dávek podle počtu i velikosti (jedna příliš velká položka jde sama). */
+export function batchByBytes<T>(items: T[], size: (t: T) => number, opts: { maxItems: number; maxBytes: number } = SALES_BATCH): T[][] {
+  const out: T[][] = [];
+  let cur: T[] = [];
+  let bytes = 0;
+  for (const it of items) {
+    const b = size(it);
+    if (cur.length && (cur.length >= opts.maxItems || bytes + b > opts.maxBytes)) {
+      out.push(cur);
+      cur = [];
+      bytes = 0;
+    }
+    cur.push(it);
+    bytes += b;
+  }
+  if (cur.length) out.push(cur);
+  return out;
+}
+
+export type BatchResponse<R> = { ok: true; value: R } | { ok: false; status: number; error: string };
+
+/**
+ * Odešle dávky postupně. 413 (tělo moc velké) dávku rozpůlí; jiná chyba jedné dávky nezastaví ostatní (Д-10).
+ * Vrací první chybu (nebo null). Výjimka (síť, odpojené zařízení) běh přeruší – to řeší volající.
+ */
+export async function postBatches<T, R>(batches: T[][], post: (batch: T[]) => Promise<BatchResponse<R>>, onOk: (batch: T[], value: R) => Promise<void>): Promise<string | null> {
+  const queue = [...batches];
+  let firstError: string | null = null;
+  while (queue.length) {
+    const batch = queue.shift()!;
+    const r = await post(batch);
+    if (r.ok) {
+      await onOk(batch, r.value);
+      continue;
+    }
+    if (r.status === 413 && batch.length > 1) {
+      const mid = Math.ceil(batch.length / 2);
+      queue.unshift(batch.slice(0, mid), batch.slice(mid));
+      continue;
+    }
+    firstError ??= r.error;
+  }
+  return firstError;
 }
 
 /** Čas prodeje opravený o známý posun hodin (jen při posunu nad 30 s z posledních 24 h). */

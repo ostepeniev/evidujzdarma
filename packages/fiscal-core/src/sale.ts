@@ -51,6 +51,9 @@ export interface Payment {
 
 export type FiscalMode = "test" | "production";
 
+/** Nejvyšší částka v datové zprávě EET (haléře): CastkaType v XSD v4.1 má nejvýš 8 číslic před čárkou. */
+export const MAX_EET_AMOUNT = 9_999_999_999;
+
 export interface SaleInput {
   id: string;
   deviceId: string;
@@ -119,6 +122,8 @@ export function buildSale(input: SaleInput): Sale {
   const total = subtotal + tip;
   const paid = input.payments.reduce((s, p) => s + p.amount, 0);
   if (paid !== total) issues.push(`platby (${paid}) nesouhlasí s částkou (${total})`);
+  // XSD EET v4.1 (CastkaType): nejvýš 99 999 999,99 Kč – vyšší tržbu FS nepřijme (A Дрібне 6)
+  if (Math.abs(total) > MAX_EET_AMOUNT) issues.push("částka tržby přesahuje limit EET 99 999 999,99 Kč");
   for (const p of input.payments) {
     if (!(PAYMENT_METHODS as readonly string[]).includes(p.method)) issues.push(`neznámý způsob platby ${p.method}`);
   }

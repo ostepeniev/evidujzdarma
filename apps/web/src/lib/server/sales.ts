@@ -2,7 +2,7 @@ import "server-only";
 import { and, eq, inArray, ne } from "drizzle-orm";
 import { z } from "zod";
 import { getDb, schema } from "@ez/db";
-import { EET_PRODUCTION_ACCEPTS_FROM, PAYMENT_METHODS, SaleValidationError, buildSale, deadlineFor, evidencedAmounts } from "@ez/fiscal-core";
+import { EET_PRODUCTION_ACCEPTS_FROM, MAX_EET_AMOUNT, PAYMENT_METHODS, SaleValidationError, buildSale, deadlineFor, evidencedAmounts } from "@ez/fiscal-core";
 import type { DeviceContext } from "./auth";
 import { accountMode, type EetMode } from "./fiscal";
 import { ingestedFromQuarantine, markIngested, quarantineSale } from "./quarantine";
@@ -184,6 +184,10 @@ export async function ingestSales(ctx: DeviceContext, inputs: DeviceSale[]): Pro
       }
       const approved = await checkStaffAndRefund(account.id, device.id, input, sale.total);
       const amounts = evidencedAmounts(sale);
+      // i dílčí částky zprávy (urceno_cerp_zuct, cerp_zuct) musí projít XSD – jinak by tržba visela jako MESSAGE_INVALID (A Дрібне 6)
+      if ([amounts.total, amounts.prepayment, amounts.redeemed].some((a) => Math.abs(a) > MAX_EET_AMOUNT)) {
+        throw new IngestRejection("INVALID_SALE", "Částka tržby přesahuje limit EET 99 999 999,99 Kč.");
+      }
 
       let inserted: { id: string }[];
       try {

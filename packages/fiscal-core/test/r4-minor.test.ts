@@ -220,3 +220,23 @@ describe("A Дрібне 17 – no tip on a refund", () => {
     expect(buildSale({ ...refund, tip: 0, payments: [{ method: "cash", amount: -50000 }] }).total).toBe(-50000);
   });
 });
+
+describe("A Дрібне 6 – the EET amount limit is checked when the sale is built", () => {
+  const base: SaleInput = {
+    id: "5f2a8c1e-6b7d-4c2a-9e1f-0a1b2c3d4e5f",
+    deviceId: "dev1",
+    registerId: "P1",
+    unitId: "303",
+    sequence: "P1-000004",
+    soldAt: "2027-01-15T10:30:00.123Z",
+    lines: [{ name: "Dům", qty: 1, unitPrice: 9_999_999_999, vatRate: 0 }],
+    payments: [{ method: "card", amount: 9_999_999_999 }],
+    vatPayer: false,
+    mode: "test",
+  };
+
+  it("99 999 999,99 Kč passes, 100 000 000 Kč does not (XSD CastkaType)", () => {
+    expect(buildSale(base).total).toBe(9_999_999_999);
+    expect(() => buildSale({ ...base, lines: [{ name: "Dům", qty: 1, unitPrice: 10_000_000_000, vatRate: 0 }], payments: [{ method: "card", amount: 10_000_000_000 }] })).toThrow(/limit EET/);
+  });
+});

@@ -5,8 +5,21 @@
  * a konfigurace. Server je idempotentní, takže opakované odeslání stejné tržby je bezpečné.
  */
 import { getDevice, getMeta, markCashSynced, rejectedSales, setMeta, unsettledSales, unsyncedCash, updateSale } from "./db";
-import { CONFIG_REFRESH_MS, REJECTED_POLL_MS, accountModeChanged, applyPolledStatuses, applyServerResult, clockOffsetFrom, planSync, type ServerSaleResult, type ServerSaleStatus } from "./sync-result";
-import type { PosConfig } from "./types";
+import {
+  CONFIG_REFRESH_MS,
+  REJECTED_POLL_MS,
+  accountModeChanged,
+  applyPolledStatuses,
+  applyServerResult,
+  batchByBytes,
+  clockOffsetFrom,
+  planSync,
+  postBatches,
+  type BatchResponse,
+  type ServerSaleResult,
+  type ServerSaleStatus,
+} from "./sync-result";
+import type { LocalSale, PosConfig } from "./types";
 
 type Listener = () => void;
 const listeners = new Set<Listener>();
@@ -70,8 +83,9 @@ async function api(path: string, init: RequestInit = {}): Promise<Response> {
     headers: { ...(init.headers ?? {}), authorization: `Bearer ${device.token}`, "content-type": "application/json" },
     cache: "no-store",
   });
-  // posun hodin zařízení proti serveru – pokladna podle něj opraví čas prodeje (R1.1)
-  const offset = clockOffsetFrom(res.headers.get("date"), sentAt, Date.now());
+  // posun hodin zařízení proti serveru – pokladna podle něj opraví čas prodeje (R1.1);
+  // jen z úspěšné odpovědi našeho API, ne z chybové stránky proxy (Д-10)
+  const offset = res.ok ? clockOffsetFrom(res.headers.get("date"), sentAt, Date.now()) : null;
   if (offset !== null) void setMeta("clockOffset", { ms: Math.round(offset), at: Date.now() });
   if (res.status === 401) throw new DeviceRevokedError((await res.json().catch(() => ({}))).error ?? "Zařízení bylo odpojeno");
   return res;
@@ -131,55 +145,72 @@ async function doSync(): Promise<SyncReport> {
   let sent = 0;
   const plan = planSync(pending, { pollRejected });
   const rejectedIds = new Set(rejected.map((r) => r.id));
-  const toPost = pending.filter((p) => plan.post.includes(p.id));
+  const toPost = pending.filter((p) => plan.post.includes(p.id)).map(toWire);
+  const failure = async (res: Response): Promise<BatchResponse<never>> => ({ ok: false, status: res.status, error: (await res.json().catch(() => ({}))).error ?? `Server odpověděl ${res.status}` });
   try {
-    for (let i = 0; i < toPost.length; i += 50) {
-      const batch = toPost.slice(i, i + 50);
-      const res = await api("/api/pokladna/sales", {
-        method: "POST",
-        body: JSON.stringify({
-          sales: batch.map((s) => ({
-            id: s.id,
-            sequence: s.sequence,
-            soldAt: s.soldAt,
-            unitId: s.unitId,
-            staffId: s.staffId,
-            lines: s.lines,
-            payments: s.payments,
-            discount: s.discount,
-            tip: s.tip,
-            refundOf: s.refundOf,
-            approval: s.approval ?? null,
-            mode: s.mode,
-          })),
-        }),
-      });
-      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? `Server odpověděl ${res.status}`);
-      const { results, accountMode } = (await res.json()) as { results: ServerSaleResult[]; accountMode?: string };
-      for (const r of results) {
-        if (r.ok) sent++;
-        await updateSale(r.id, applyServerResult(r));
-      }
-      await checkAccountMode(accountMode);
-    }
+    // dávky omezené i velikostí těla; neúspěšná dávka nezastaví ostatní ani dotaz na stavy (Д-10)
+    const encoder = new TextEncoder();
+    let error = await postBatches(
+      batchByBytes(toPost, (s) => encoder.encode(JSON.stringify(s)).length),
+      async (batch): Promise<BatchResponse<{ results: ServerSaleResult[]; accountMode?: string }>> => {
+        const res = await api("/api/pokladna/sales", { method: "POST", body: JSON.stringify({ sales: batch }) });
+        return res.ok ? { ok: true, value: await res.json() } : failure(res);
+      },
+      async (_batch, { results, accountMode }) => {
+        for (const r of results) {
+          if (r.ok) sent++;
+          await updateSale(r.id, applyServerResult(r));
+        }
+        await checkAccountMode(accountMode);
+      },
+    );
     // přijaté tržby: jen stav (POK doplní server/cron), nikdy znovu odeslání
-    for (let i = 0; i < plan.poll.length; i += 200) {
-      const ids = plan.poll.slice(i, i + 200);
-      const res = await api(`/api/pokladna/sales?ids=${ids.join(",")}`);
-      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? `Server odpověděl ${res.status}`);
-      const { statuses, accountMode } = (await res.json()) as { statuses: ServerSaleStatus[]; accountMode?: string };
-      for (const [id, patch] of applyPolledStatuses(ids, statuses, new Date(), { rejected: rejectedIds })) await updateSale(id, patch);
-      await checkAccountMode(accountMode);
+    const pollBatches: string[][] = [];
+    for (let i = 0; i < plan.poll.length; i += 200) pollBatches.push(plan.poll.slice(i, i + 200));
+    const pollError = await postBatches(
+      pollBatches,
+      async (ids): Promise<BatchResponse<{ statuses: ServerSaleStatus[]; accountMode?: string }>> => {
+        const res = await api(`/api/pokladna/sales?ids=${ids.join(",")}`);
+        return res.ok ? { ok: true, value: await res.json() } : failure(res);
+      },
+      async (ids, { statuses, accountMode }) => {
+        for (const [id, patch] of applyPolledStatuses(ids, statuses, new Date(), { rejected: rejectedIds })) await updateSale(id, patch);
+        await checkAccountMode(accountMode);
+      },
+    );
+    error ??= pollError;
+    try {
+      await syncCash();
+    } catch (e) {
+      if (e instanceof DeviceRevokedError || e instanceof TypeError) throw e;
+      error ??= e instanceof Error ? e.message : String(e);
     }
-    await syncCash();
-    if (pollRejected) lastRejectedPollAt = Date.now();
-    lastReport = { at: new Date().toISOString(), online: true, sent, error: null };
+    if (pollRejected && !pollError) lastRejectedPollAt = Date.now();
+    lastReport = { at: new Date().toISOString(), online: true, sent, error };
   } catch (e) {
     if (e instanceof DeviceRevokedError) throw e;
     const offline = typeof navigator !== "undefined" && !navigator.onLine;
     lastReport = { at: new Date().toISOString(), online: !offline && !(e instanceof TypeError), sent, error: e instanceof Error ? e.message : String(e) };
   }
   return lastReport;
+}
+
+/** Tržba tak, jak ji přijímá POST /api/pokladna/sales. */
+function toWire(s: LocalSale) {
+  return {
+    id: s.id,
+    sequence: s.sequence,
+    soldAt: s.soldAt,
+    unitId: s.unitId,
+    staffId: s.staffId,
+    lines: s.lines,
+    payments: s.payments,
+    discount: s.discount,
+    tip: s.tip,
+    refundOf: s.refundOf,
+    approval: s.approval ?? null,
+    mode: s.mode,
+  };
 }
 
 /** Spustí synchronizaci (souběžná volání sdílí jeden běh). */
