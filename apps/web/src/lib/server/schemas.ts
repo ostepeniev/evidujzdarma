@@ -17,6 +17,9 @@ export const StaffInput = z.object({
     .string()
     .regex(/^\d{4,8}$/, "PIN musí mít 4–8 číslic")
     .optional(),
+}).superRefine((v, ctx) => {
+  // vlastník: PIN 6–8 číslic (R3.10)
+  if (v.role === "owner" && v.pin && !/^\d{6,8}$/.test(v.pin)) ctx.addIssue({ code: "custom", path: ["pin"], message: "PIN vlastníka musí mít 6–8 číslic." });
 });
 export const StaffPatch = z.object({
   name: z.string().trim().min(1).max(80).optional(),

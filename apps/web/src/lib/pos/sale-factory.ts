@@ -12,8 +12,8 @@ export interface NewSaleInput {
   tip: number;
   cashReceived: number | null;
   refundOf?: string | null;
-  /** vlastník, který vratku schválil PINem */
-  approvedBy?: string | null;
+  /** schválení vratky vlastníkem (podepsané serverem) */
+  approval?: string | null;
   unitId: string;
   staff: { id: string; name: string } | null;
 }
@@ -59,7 +59,7 @@ export async function createLocalSale(device: DeviceCredentials, config: PosConf
     discount: input.discount,
     tip: input.tip,
     refundOf: input.refundOf ?? null,
-    approvedBy: input.approvedBy ?? null,
+    approval: input.approval ?? null,
     subtotal: probe.subtotal,
     total: probe.total,
     vat: probe.vat,

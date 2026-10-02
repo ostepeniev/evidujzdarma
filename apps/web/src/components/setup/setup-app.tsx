@@ -700,9 +700,13 @@ function StaffRow({ s, reload }: { s: NonNullable<State["staff"]>[number]; reloa
     <li className="flex flex-wrap items-center gap-2 p-3">
       <span className="min-w-0 flex-1">
         <strong>{s.name}</strong> <span className="text-sm text-muted">{s.role === "owner" ? "vlastník" : "pokladní"} · {s.hasPin ? "PIN nastaven" : "bez PINu"}</span>
+        {s.role === "owner" && !s.hasPin && (
+          <span className="block text-sm text-danger-600">Nastavte vlastníkovi PIN (6–8 číslic) – bez něj nejde schválit vratku.</span>
+        )}
+        {s.role === "owner" && <span className="block text-xs text-muted">PIN vlastníka se ověřuje online. Pro prodej bez signálu použijte profil pokladní.</span>}
       </span>
-      <input aria-label={`Nový PIN pro ${s.name}`} className="input w-28 py-2" inputMode="numeric" placeholder="nový PIN" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 8))} />
-      <button type="button" className="btn-secondary px-3 py-2" disabled={busy || pin.length < 4} onClick={() => void run(async () => (await call(`/api/ucet/personal/${s.id}`, { method: "PATCH", json: { pin } }), setPin(""), await reload()))}>
+      <input aria-label={`Nový PIN pro ${s.name}`} className="input w-28 py-2" inputMode="numeric" placeholder={s.role === "owner" ? "PIN 6–8 číslic" : "nový PIN"} value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 8))} />
+      <button type="button" className="btn-secondary px-3 py-2" disabled={busy || pin.length < (s.role === "owner" ? 6 : 4)} onClick={() => void run(async () => (await call(`/api/ucet/personal/${s.id}`, { method: "PATCH", json: { pin } }), setPin(""), await reload()))}>
         Nastavit
       </button>
       {s.role !== "owner" && (

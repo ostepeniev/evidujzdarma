@@ -113,7 +113,7 @@ async function doSync(): Promise<SyncReport> {
             discount: s.discount,
             tip: s.tip,
             refundOf: s.refundOf,
-            approvedBy: s.approvedBy ?? null,
+            approval: s.approval ?? null,
             mode: s.mode,
           })),
         }),
@@ -180,6 +180,24 @@ export async function emailReceipt(saleId: string, email: string): Promise<{ ok:
     return { ok: false, error: (await res.json().catch(() => ({}))).error ?? "Nepodařilo se odeslat" };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Nepodařilo se odeslat" };
+  }
+}
+
+/** Ověří PIN na serveru (vlastník; R3.10). Vrací schválení vratky, nebo důvod odmítnutí. */
+export async function verifyStaffPin(
+  staffId: string,
+  pin: string,
+  purpose: "unlock" | "refund",
+): Promise<{ ok: true; approval: string | null } | { ok: false; error: string }> {
+  try {
+    const res = await api("/api/pokladna/pin", { method: "POST", body: JSON.stringify({ staffId, pin, purpose }) });
+    const data = (await res.json().catch(() => ({}))) as { approval?: string | null; error?: string; retryAfter?: number };
+    if (res.ok) return { ok: true, approval: data.approval ?? null };
+    if (res.status === 429 && data.retryAfter) return { ok: false, error: `Příliš mnoho chybných pokusů. Zkuste to za ${Math.ceil(data.retryAfter / 60)} min.` };
+    return { ok: false, error: data.error ?? "Nesprávný PIN" };
+  } catch (e) {
+    if (e instanceof DeviceRevokedError) throw e;
+    return { ok: false, error: "PIN vlastníka se ověřuje online – zkontrolujte připojení k internetu." };
   }
 }
 

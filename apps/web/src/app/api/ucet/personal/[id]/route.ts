@@ -2,6 +2,7 @@ import { and, eq, ne } from "drizzle-orm";
 import { getDb, schema } from "@ez/db";
 import { HttpError } from "@/lib/server/auth";
 import { hashPin } from "@/lib/pos/pin";
+import { validatePinForRole } from "@/lib/server/staff-pin";
 import { ownerRoute, parseJson } from "@/lib/server/route-helpers";
 import { StaffPatch } from "@/lib/server/schemas";
 
@@ -10,6 +11,8 @@ export const PATCH = ownerRoute<{ id: string }>(async ({ req, accountId, params 
   const db = getDb();
   const current = await db.query.staff.findFirst({ where: and(eq(schema.staff.id, params.id), eq(schema.staff.accountId, accountId)) });
   if (!current) throw new HttpError(404, "Uživatel nenalezen");
+  if (input.pin) validatePinForRole(current.role, input.pin);
+  if (input.pin === null && current.role === "owner") throw new HttpError(400, "Vlastník musí mít PIN (6–8 číslic).");
   if (input.active === false && current.role === "owner") {
     const others = await db.query.staff.findFirst({
       where: and(eq(schema.staff.accountId, accountId), eq(schema.staff.role, "owner"), eq(schema.staff.active, true), ne(schema.staff.id, params.id)),

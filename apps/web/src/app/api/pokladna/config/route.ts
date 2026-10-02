@@ -4,7 +4,10 @@ import { authenticateDevice, errorResponse } from "@/lib/server/auth";
 import { lastClosingFor } from "@/lib/server/closings";
 import { accountMode } from "@/lib/server/fiscal";
 
-/** Konfigurace pro pokladnu (uloží se offline v zařízení). Obsahuje hashe PINů pro offline přihlášení. */
+/**
+ * Konfigurace pro pokladnu (uloží se offline v zařízení). Obsahuje otisky PINů pokladních pro offline
+ * přihlášení – otisk PINu vlastníka nikdy (ověřuje se na serveru, R3.10).
+ */
 export async function GET(req: Request) {
   try {
     const { device, account } = await authenticateDevice(req);
@@ -41,7 +44,7 @@ export async function GET(req: Request) {
           plan: account.plan,
         },
         units: units.map((u) => ({ id: u.id, label: u.label, type: u.type, fsUnitId: u.fsUnitId, active: u.active, address: u.address })),
-        staff,
+        staff: staff.map((x) => (x.role === "owner" ? { ...x, pinHash: null, onlinePin: true } : x)),
         catalog: catalog.map((c) => ({ id: c.id, name: c.name, price: c.price, vatRate: c.vatRate, color: c.color })),
         lastClosing,
       },

@@ -33,14 +33,14 @@ export function PosApp() {
   const [unitId, setUnitId] = useState<string>("");
   const [cart, setCart] = useState<CartLine[]>([]);
   const [discount, setDiscount] = useState(0);
-  const [paying, setPaying] = useState<null | { refundOf: LocalSale | null; approvedBy?: string | null }>(null);
+  const [paying, setPaying] = useState<null | { refundOf: LocalSale | null; approval?: string | null }>(null);
   const [approval, setApproval] = useState<LocalSale | null>(null);
   const [busy, setBusy] = useState(false);
   const [payError, setPayError] = useState<string | null>(null);
   const [receiptId, setReceiptId] = useState<string | null>(null);
   const [receiptFrom, setReceiptFrom] = useState<View>("register");
 
-  const needsLock = (cfg: PosConfig) => cfg.staff.length > 1 || cfg.staff.some((s) => s.pinHash);
+  const needsLock = (cfg: PosConfig) => cfg.staff.length > 1 || cfg.staff.some((s) => s.pinHash || s.onlinePin);
 
   const applyConfig = useCallback((cfg: PosConfig, dev: DeviceCredentials) => {
     setConfig(cfg);
@@ -78,7 +78,8 @@ export function PosApp() {
       if (!needsLock(cfg)) {
         setStaff(cfg.staff[0] ? { id: cfg.staff[0].id, name: cfg.staff[0].name } : null);
         setPhase("ready");
-      } else if (saved && Date.now() - saved.at < AUTO_LOCK_MS && cfg.staff.some((s) => s.id === saved.staff.id)) {
+      } else if (saved && Date.now() - saved.at < AUTO_LOCK_MS && cfg.staff.some((s) => s.id === saved.staff.id && s.role !== "owner")) {
+        // uložené přihlášení obnovíme jen pokladní; vlastník se po načtení ověří znovu (R3.10)
         setStaff(saved.staff);
         setPhase("ready");
       } else setPhase("locked");
@@ -129,7 +130,7 @@ export function PosApp() {
           tip: 0,
           cashReceived: null,
           refundOf: refund.id,
-          approvedBy: paying?.approvedBy ?? null,
+          approval: paying?.approval ?? null,
           unitId: refund.unitId,
           staff,
         });
@@ -248,9 +249,8 @@ export function PosApp() {
             }}
             onBack={receiptFrom === "history" ? () => setReceiptId(null) : undefined}
             onRefund={(s) => {
-              // vratku dělá vlastník; pokladní jen se schválením vlastníka (PIN) – R1.7
-              if (config.staff.find((x) => x.id === staff?.id)?.role === "owner") setPaying({ refundOf: s });
-              else setApproval(s);
+              // vratku vždy schvaluje vlastník PINem ověřeným na serveru (R1.7, R3.10)
+              setApproval(s);
             }}
           />
         ) : view === "history" ? (
@@ -282,8 +282,8 @@ export function PosApp() {
         <OwnerApproval
           config={config}
           onClose={() => setApproval(null)}
-          onApprove={(ownerId) => {
-            setPaying({ refundOf: approval, approvedBy: ownerId });
+          onApprove={(token) => {
+            setPaying({ refundOf: approval, approval: token });
             setApproval(null);
           }}
         />

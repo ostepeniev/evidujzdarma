@@ -29,7 +29,8 @@ export interface PosConfig {
     plan: string;
   };
   units: { id: string; label: string; type: string; fsUnitId: number | null; active: boolean; address: string | null }[];
-  staff: { id: string; name: string; role: string; pinHash: string | null }[];
+  /** pinHash jen u pokladních; PIN vlastníka se ověřuje online (onlinePin) – R3.10 */
+  staff: { id: string; name: string; role: string; pinHash: string | null; onlinePin?: boolean }[];
   catalog: { id: string; name: string; price: number; vatRate: number; color: string | null }[];
   /** poslední uzávěrka tohoto zařízení na serveru (záloha pro případ smazaných dat v prohlížeči) */
   lastClosing?: { id: string; number: number; closedAt: string; closingCash: number } | null;
@@ -57,8 +58,8 @@ export interface LocalSale {
   vat: Record<string, { base: number; vat: number }> | null;
   cashReceived: number | null;
   mode: PosMode;
-  /** vlastník, který vratku schválil PINem (R1.7) */
-  approvedBy?: string | null;
+  /** schválení vratky vlastníkem vydané serverem po ověření jeho PINu (R3.10) */
+  approval?: string | null;
   status: LocalStatus;
   confirmationCode: string | null;
   error: string | null;

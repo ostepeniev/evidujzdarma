@@ -1,22 +1,29 @@
 "use client";
 
 import { useState } from "react";
-import { verifyPin } from "@/lib/pos/pin";
+import { verifyStaffPin } from "@/lib/pos/sync";
 import type { PosConfig } from "@/lib/pos/types";
 import { Keypad, Sheet } from "./ui";
 
-/** Vratku pokladní dělá jen se schválením vlastníka – PIN se ověří přímo v zařízení (i offline). */
-export function OwnerApproval({ config, onApprove, onClose }: { config: PosConfig; onApprove: (ownerId: string) => void; onClose: () => void }) {
-  const owners = config.staff.filter((s) => s.role === "owner" && s.pinHash);
+/**
+ * Vratku schvaluje vlastník PINem, který ověří server (R3.10) – otisk PINu vlastníka v zařízení není.
+ * Server vrátí schválení podepsané pro toto zařízení; bez něj vratku nepřijme.
+ */
+export function OwnerApproval({ config, onApprove, onClose }: { config: PosConfig; onApprove: (approval: string) => void; onClose: () => void }) {
+  const owners = config.staff.filter((s) => s.role === "owner");
   const [selected, setSelected] = useState(owners.length === 1 ? owners[0]! : null);
   const [pin, setPin] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   async function tryPin(value: string) {
-    if (!selected) return;
-    if (await verifyPin(value, selected.pinHash)) onApprove(selected.id);
+    if (!selected || busy) return;
+    setBusy(true);
+    const r = await verifyStaffPin(selected.id, value, "refund");
+    setBusy(false);
+    if (r.ok && r.approval) onApprove(r.approval);
     else {
-      setError("Nesprávný PIN");
+      setError(r.ok ? "Vratku může schválit jen vlastník." : r.error);
       setPin("");
     }
   }
@@ -24,7 +31,7 @@ export function OwnerApproval({ config, onApprove, onClose }: { config: PosConfi
   return (
     <Sheet title="Vratku schvaluje vlastník" onClose={onClose}>
       {owners.length === 0 ? (
-        <p className="text-[15px] text-ink-soft">Vratku může udělat jen vlastník. Aby ji mohl schválit i na pokladně pokladní, nastavte vlastníkovi PIN v nastavení pokladny (Personál).</p>
+        <p className="text-[15px] text-ink-soft">Účet nemá aktivního vlastníka. Vratku nelze schválit.</p>
       ) : !selected ? (
         <ul className="grid gap-2">
           {owners.map((o) => (
@@ -37,9 +44,9 @@ export function OwnerApproval({ config, onApprove, onClose }: { config: PosConfi
         </ul>
       ) : (
         <div>
-          <p className="mb-3 text-center text-[15px] text-ink-soft">PIN vlastníka ({selected.name})</p>
+          <p className="mb-3 text-center text-[15px] text-ink-soft">PIN vlastníka ({selected.name}) – ověří se online</p>
           <div className="mb-4 flex justify-center gap-3" aria-label="Zadaný PIN" aria-live="polite">
-            {Array.from({ length: Math.max(4, pin.length) }).map((_, i) => (
+            {Array.from({ length: Math.max(6, pin.length) }).map((_, i) => (
               <span key={i} className={`h-4 w-4 rounded-full ${i < pin.length ? "bg-brand-600" : "bg-surface-2"}`} />
             ))}
           </div>
