@@ -11,6 +11,7 @@ import { JsonLd, faqLd } from "@/lib/jsonld";
 import { headers } from "next/headers";
 import { lookupCompany, type CompanyLookup } from "@/lib/server/ares";
 import { clientIpFromHeaders, rateLimit } from "@/lib/server/rate-limit";
+import { FactsVerified } from "@/components/facts-verified";
 
 export async function generateMetadata({ searchParams }: PageProps<"/kontrola-ico">): Promise<Metadata> {
   const { ico } = await searchParams;
@@ -27,7 +28,7 @@ export async function generateMetadata({ searchParams }: PageProps<"/kontrola-ic
 const FAQ = [
   {
     q: "Odkud berete údaje o firmě?",
-    a: "Z veřejného registru ARES Ministerstva financí: základní údaje, obory činnosti CZ-NACE a živnostenský rejstřík včetně provozoven. Údaje neukládáme k žádnému profilu, slouží jen k vyhodnocení.",
+    a: "Z veřejného registru ARES Ministerstva financí: základní údaje, obory činnosti CZ-NACE a živnostenský rejstřík včetně provozoven. Odpověď z ARES krátce (24 hodin) ukládáme do mezipaměti; k žádnému profilu ji nepřiřazujeme.",
   },
   {
     q: "Proč je výsledek jen „pravděpodobný“?",
@@ -97,6 +98,7 @@ export default async function IcoCheckPage({ searchParams }: PageProps<"/kontrol
           <section className="mt-14">
             <h2 className="mb-6 text-2xl font-bold">Časté otázky</h2>
             <Faq items={FAQ} />
+            <FactsVerified className="mt-4 text-sm text-muted" />
           </section>
           <ToolCta />
         </div>

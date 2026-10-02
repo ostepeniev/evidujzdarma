@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 export const revalidate = 3600;
 
 const BENEFITS = [
-  { title: "Prodej na 3 dotyky", text: "Částka nebo tlačítko zboží → způsob platby → hotovo. Účtenka s kódem od Finanční správy." },
+  { title: "Prodej na 3 dotyky", text: "Částka nebo tlačítko zboží → způsob platby → hotovo. Na účtence může být i kód POK od Finanční správy (není povinný)." },
   { title: "Funguje i bez signálu", text: "Tržby se uloží v zařízení a odešlou se samy, jakmile je připojení. Hlídáme lhůtu pro dodatečné odeslání." },
   { title: "Až 5 uživatelů zdarma", text: "Každá pokladní má vlastní PIN, vy vidíte všechny tržby a denní přehled." },
   { title: "Účtenka papírově i digitálně", text: "Tisk na Bluetooth tiskárnu, e-mail nebo QR kód na displeji. Odkaz v SMS připravujeme." },
@@ -82,7 +82,7 @@ export default function HomePage() {
           <a href="https://eet.gov.cz" className="underline" rel="noopener">
             eet.gov.cz
           </a>{" "}
-          a tiskové zprávy Finanční správy.
+          a tiskové zprávy Finanční správy a Ministerstva financí.
         </p>
       </section>
 
@@ -163,7 +163,7 @@ export default function HomePage() {
             <p className="mt-3 text-lg text-ink-soft">Pošleme vám osobní EET plán podle vašeho IČO a termínů a dáme vědět, jakmile bude pokladna připravená.</p>
             <ul className="mt-6 space-y-3 text-[17px]">
               {[
-                "Osobní checklist: co udělat do 1. 11., 1. 12. a 1. 1.",
+                "Osobní checklist: co udělat od 1. 11., do 1. 12. a do 1. 1.",
                 "Návod k DIS+ a certifikátu se snímky obrazovky",
                 "Včasný přístup k pokladně podle pořadí",
                 "Za pozvaného kolegu Premium na 3 měsíce pro oba",

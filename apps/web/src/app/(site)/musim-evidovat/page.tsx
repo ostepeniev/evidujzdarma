@@ -5,6 +5,7 @@ import { ToolCta } from "@/components/tool-cta";
 import { Quiz } from "@/components/tools/quiz";
 import { FACTS } from "@/content/facts";
 import { JsonLd, faqLd } from "@/lib/jsonld";
+import { FactsVerified } from "@/components/facts-verified";
 
 export const metadata: Metadata = {
   title: "Musím evidovat tržby? Kvíz k EET 2.0 (6 otázek)",
@@ -17,7 +18,7 @@ const FAQ = [
   { q: "Kdo musí od roku 2027 evidovat tržby?", a: FACTS.whoMust.summary },
   { q: "Které platby se evidují?", a: `${FACTS.evidenced.summary} ${FACTS.evidenced.notEvidenced}` },
   { q: "Kdo má výjimku?", a: `${FACTS.whoMust.exemptions} ${FACTS.whoMust.occasional}` },
-  { q: "Můžu se evidenci vyhnout přirážkou?", a: FACTS.eetOff.summary },
+  { q: "Můžu místo evidence platit přirážku?", a: FACTS.eetOff.summary },
 ];
 
 export default function QuizPage() {
@@ -37,6 +38,7 @@ export default function QuizPage() {
         <section className="mx-auto mt-14 max-w-3xl">
           <h2 className="mb-6 text-2xl font-bold">Časté otázky</h2>
           <Faq items={FAQ} />
+          <FactsVerified className="mt-4 text-sm text-muted" />
         </section>
         <ToolCta />
       </div>

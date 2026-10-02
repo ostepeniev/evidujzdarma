@@ -11,7 +11,7 @@ export const COMPARISON_ROWS: readonly { feature: string; state: string; ours: s
   { feature: "Tiskárna účtenek, čtečka kódů", state: "Nezveřejněno", ours: "Bluetooth tiskárna ano; USB a čtečka kódů – připravujeme", oursHighlight: true },
   { feature: "Účtenka e-mailem / SMS / QR", state: "Nezveřejněno (PDF doklad ano)", ours: "E-mail a QR ano, SMS připravujeme", oursHighlight: true },
   { feature: "Přehledy a export pro účetní", state: "Nezveřejněno", ours: "CSV zdarma; Pohoda / Money připravujeme (Premium)", oursHighlight: true },
-  { feature: "Přihlášení", state: "Dvoufázové ověření při každém přihlášení", ours: "Klíč v zařízení + PIN pokladní" },
+  { feature: "Přihlášení", state: "Dvoufázové ověření při každém přihlášení", ours: "Klíč uložený v zařízení + PIN pro každou pokladní" },
 ];
 
 export const COMPARISON_SOURCES = [SOURCES.mojeEet, SOURCES.mojeEet2fa, SOURCES.harmonogram];

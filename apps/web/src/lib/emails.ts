@@ -111,12 +111,13 @@ ${button(confirmUrl, "Potvrdit e-mail")}`
       const u = unsubscribe(p.unsubscribeToken);
       const url = `${SITE_URL}/navody/jak-aktivovat-dis-a-certifikat`;
       return {
-        subject: "DIS+ je spuštěné – tady je návod krok za krokem",
+        // DIS+ existuje od roku 2021 – nová je v něm evidence tržeb (C Дрібне 3)
+        subject: "Evidence tržeb v DIS+ je spuštěná – návod krok za krokem",
         unsubscribeUrl: u.url,
-        text: `Dobrý den,\n\nFinanční správa spustila přípravu pro EET 2.0 v DIS+. Připravili jsme návod se snímky obrazovky: ${url}\n\nTým EvidujZdarma\n\n${COMMERCIAL_NOTICE}\n${u.text}`,
+        text: `Dobrý den,\n\nFinanční správa zpřístupnila v DIS+ přihlášení k evidenci tržeb. Připravili jsme návod se snímky obrazovky: ${url}\n\nTým EvidujZdarma\n\n${COMMERCIAL_NOTICE}\n${u.text}`,
         html: layout(
-          "DIS+ je spuštěné",
-          `<p>Dobrý den,</p><p>Finanční správa spustila přípravu pro EET 2.0 v DIS+. Připravili jsme návod se snímky obrazovky – aktivace a stažení certifikátu zabere pár minut.</p>${button(url, "Otevřít návod")}`,
+          "Evidence tržeb v DIS+ je spuštěná",
+          `<p>Dobrý den,</p><p>Finanční správa zpřístupnila v DIS+ přihlášení k evidenci tržeb. Připravili jsme návod se snímky obrazovky – aktivace a stažení certifikátu zabere pár minut.</p>${button(url, "Otevřít návod")}`,
           `${esc(COMMERCIAL_NOTICE)} ${u.html}`,
         ),
       };

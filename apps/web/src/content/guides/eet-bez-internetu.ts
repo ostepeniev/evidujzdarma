@@ -38,7 +38,7 @@ export const eetBezInternetu: Guide = {
             "Prodávejte dál – přijetí platby výpadek neblokuje.",
             "Pokladna tržbu uloží v zařízení a zařadí ji do fronty k odeslání.",
             "Jakmile je spojení zpět, pokladna tržbu odešle znovu – s příznakem, že nejde o první zaslání.",
-            "Hlídejte lhůtu: nejpozději **48 hodin** od přijetí platby musí být tržba odeslána a potvrzená.",
+            "Hlídejte lhůtu: nejpozději **48 hodin** od přijetí platby musí být tržba odeslána.",
           ],
         },
         {
@@ -52,7 +52,7 @@ export const eetBezInternetu: Guide = {
       blocks: [
         {
           ul: [
-            "**Zařízení nevypínejte a nemažte data prohlížeče**, dokud fronta neodeslaných tržeb není prázdná – tržby čekají v paměti zařízení.",
+            "**Nemažte data prohlížeče ani neodinstalujte aplikaci, dokud fronta neodeslaných tržeb není prázdná** – tržby čekají v paměti zařízení.",
             "**Dlouhý výpadek** (například na horách nebo na trhu bez signálu): po návratu na místo se signálem otevřete pokladnu, aby frontu odeslala.",
             "**Opakované odeslání nevytváří novou tržbu** – pokladna posílá stejnou tržbu (stejné pořadové číslo, datum a částku), dokud nedostane POK. Tržby, ke kterým POK už přišel, se znovu neposílají.",
           ],
@@ -82,7 +82,7 @@ export const eetBezInternetu: Guide = {
   sources: [SOURCES.prakticke, SOURCES.fsFaq, SOURCES.prezident, SOURCES.pokuty, SOURCES.mojeEet],
   related: ["eet-2-0-kompletni-pruvodce", "evidencni-jednotka", "pokuty-eet"],
   published: "2026-10-01",
-  updated: "2026-10-01",
+  updated: "2026-10-02",
   changelog: [
     {
       date: "2026-10-01",

@@ -7,6 +7,18 @@
 import { classifyNaceList, isNaturalPerson, legalFormName, type EetRelevance, type RzpRecord, type Subject } from "@ez/cz";
 import { DIS_OPENS, EFFECTIVE_DATE, FACTS, formatKc, timelineAt } from "@/content/facts";
 
+/** „je 1 provozovna“ / „jsou 3 provozovny“ / „je 7 provozoven“ (C Дрібне 1). */
+export function establishmentsIs(n: number): string {
+  if (n === 1) return "je 1 provozovna";
+  return n >= 2 && n <= 4 ? `jsou ${n} provozovny` : `je ${n} provozoven`;
+}
+
+/** „máte 1 provozovnu“ / „3 provozovny“ / „7 provozoven“ (C Дрібне 2). */
+export function establishmentsHave(n: number): string {
+  if (n === 1) return "1 provozovnu";
+  return n >= 2 && n <= 4 ? `${n} provozovny` : `${n} provozoven`;
+}
+
 export type Answer = "yes" | "no" | "unknown";
 export type PausalAnswer = "band1" | "band2" | "band3" | "no" | "unknown";
 
@@ -63,7 +75,7 @@ export function assess(subject: Subject, rzp: RzpRecord | null, answers: Answers
   reasons.push(`Právní forma: ${legalFormName(subject.legalForm)}.`);
   if (nace.matched.length) reasons.push(`Obory podle CZ-NACE: ${nace.matched.map((m) => m.label.toLowerCase()).join(", ")}.`);
   if (rzp?.trades.length) reasons.push(`Živnosti: ${rzp.trades.slice(0, 3).map((t) => t.subject).join("; ")}${rzp.trades.length > 3 ? " a další" : ""}.`);
-  if (activeEstablishments) reasons.push(`V živnostenském rejstříku ${activeEstablishments === 1 ? "je 1 provozovna" : `je ${activeEstablishments} provozoven`}.`);
+  if (activeEstablishments) reasons.push(`V živnostenském rejstříku ${establishmentsIs(activeEstablishments)}.`);
 
   // 1) Verdikt
   let verdict: Verdict;
@@ -122,7 +134,7 @@ export function assess(subject: Subject, rzp: RzpRecord | null, answers: Answers
     checklist.push({
       title: "Oznámení evidenčních jednotek",
       text: activeEstablishments
-        ? `Podle RŽP máte ${activeEstablishments === 1 ? "1 provozovnu" : `${activeEstablishments} provozovny`}. Každé místo, kde přijímáte tržby, oznamte jako evidenční jednotku – číslo jednotky přidělí Finanční správa (není to IČP z RŽP).`
+        ? `Podle RŽP máte ${establishmentsHave(activeEstablishments)}. Každé místo, kde přijímáte tržby, oznamte jako evidenční jednotku – číslo jednotky přidělí Finanční správa (není to IČP z RŽP).`
         : "Oznamte každé místo, kde přijímáte tržby (provozovna, stánek, vozidlo, web). Bez provozovny uvedete jako jednotku sebe.",
       href: "/evidencni-jednotky",
     });

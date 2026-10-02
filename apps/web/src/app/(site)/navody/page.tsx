@@ -20,7 +20,7 @@ export default function GuidesIndex() {
       <PageHeader
         title="Návody k EET 2.0"
         crumbs={[{ name: "Návody", path: "/navody" }]}
-        lead="Vše, co potřebujete vědět o evidenci tržeb od roku 2027 – stručně, s odkazy na zákon a Finanční správu a s datem poslední aktualizace."
+        lead="Vše, co potřebujete vědět o evidenci tržeb od roku 2027 – stručně, s odkazy na Finanční správu a zdroje a s datem poslední aktualizace."
       />
       <div className="container-page py-10">
         <Link

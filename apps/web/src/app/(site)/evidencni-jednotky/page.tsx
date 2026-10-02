@@ -5,6 +5,7 @@ import { ToolCta } from "@/components/tool-cta";
 import { UnitsWizard } from "@/components/tools/units-wizard";
 import { FACTS, SOURCES } from "@/content/facts";
 import { JsonLd, faqLd } from "@/lib/jsonld";
+import { FactsVerified } from "@/components/facts-verified";
 
 export const metadata: Metadata = {
   title: "Průvodce evidenčními jednotkami EET 2.0",
@@ -47,6 +48,7 @@ export default function UnitsPage() {
             </a>
             . Orientační průvodce, nejde o daňové poradenství.
           </p>
+          <FactsVerified />
         </section>
         <ToolCta />
       </div>

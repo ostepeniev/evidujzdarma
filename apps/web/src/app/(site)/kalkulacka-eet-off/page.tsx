@@ -5,11 +5,12 @@ import { ToolCta } from "@/components/tool-cta";
 import { EetOffCalculator } from "@/components/tools/eet-off-calculator";
 import { FACTS, SOURCES, formatKc } from "@/content/facts";
 import { JsonLd, faqLd } from "@/lib/jsonld";
+import { FactsVerified } from "@/components/facts-verified";
 
 export const metadata: Metadata = {
   title: "Kalkulačka EET OFF 2027 – vyplatí se přirážka?",
   description:
-    "Spočítejte, zda se vám vyplatí EET OFF: přirážka 1 400 Kč měsíčně (16 800 Kč ročně) k paušální dani místo evidence tržeb. Pro OSVČ v 1. pásmu s příjmy do 1 mil. Kč, i když začínáte v průběhu roku. Přihláška do 11. 1. 2027.",
+    "Spočítejte, zda se vám vyplatí EET OFF: přirážka 1 400 Kč měsíčně (16 800 Kč ročně) k paušální dani místo evidence tržeb. Pro OSVČ v 1. pásmu s příjmy do 1 mil. Kč, i když začínáte v průběhu roku. Oznámení do 11. 1. 2027.",
   alternates: { canonical: "/kalkulacka-eet-off" },
 };
 
@@ -75,6 +76,7 @@ export default function EetOffPage() {
             ))}
             . Výpočet je orientační, nejde o daňové poradenství.
           </p>
+          <FactsVerified />
         </section>
         <ToolCta text="Rozhodli jste se evidovat? Pokladna EvidujZdarma je zdarma navždy, funguje i bez signálu a zvládne ji každý za 15 minut." />
       </div>

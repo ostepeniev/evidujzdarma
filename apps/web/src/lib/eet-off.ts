@@ -51,7 +51,7 @@ export type EetOffResult =
 
 export function calculateEetOff(i: EetOffInput): EetOffResult {
   const { surchargeMonthly, incomeLimit } = FACTS.eetOff;
-  if (i.band === 0) return { eligible: false, reason: "EET OFF je jen pro poplatníky v paušálním režimu." };
+  if (i.band === 0) return { eligible: false, reason: "EET OFF je jen pro fyzické osoby v 1. pásmu paušálního režimu." };
   if (i.band !== 1) return { eligible: false, reason: "EET OFF je jen pro 1. pásmo paušálního režimu. Ve 2. a 3. pásmu musíte tržby evidovat." };
   if (i.income > incomeLimit)
     return { eligible: false, reason: `EET OFF lze zvolit jen s příjmy ze samostatné činnosti do ${incomeLimit.toLocaleString("cs-CZ")} Kč ročně.` };

@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   },
   description: SITE.description,
   applicationName: SITE.name,
-  alternates: { canonical: "/" },
+  // canonical si nastavuje každá indexovaná stránka sama – v kořeni by ho zdědila i stránka bez vlastního (C Дрібне 18)
   openGraph: {
     type: "website",
     locale: "cs_CZ",
