@@ -3,6 +3,21 @@ import { and, eq, inArray, lte, sql } from "drizzle-orm";
 import { getDb, hasDatabase, schema } from "@ez/db";
 import { renderEmail, type EmailTemplate } from "@/lib/emails";
 
+/** Obchodní sdělení – odejde jen s potvrzeným e-mailem (DOI), souhlasem a bez odhlášení v okamžiku odeslání (Р5). */
+export const MARKETING_TEMPLATES: ReadonlySet<EmailTemplate> = new Set<EmailTemplate>(["dis-launch"]);
+/** E-maily k čekací listině (včasný přístup) – jen potvrzeným a neodhlášeným adresám. */
+const WAITLIST_TEMPLATES: ReadonlySet<EmailTemplate> = new Set<EmailTemplate>(["app-ready"]);
+
+/** Smí se e-mail odeslat právě teď? null = ano, jinak důvod. Kontroluje se při odeslání, ne při zařazení. */
+async function blockedReason(template: EmailTemplate, to: string): Promise<string | null> {
+  if (!MARKETING_TEMPLATES.has(template) && !WAITLIST_TEMPLATES.has(template)) return null;
+  const p = await getDb().query.preregistrations.findFirst({ where: sql`lower(${schema.preregistrations.email}) = lower(${to})` });
+  if (!p?.confirmedAt) return "UNCONFIRMED";
+  if (p.unsubscribedAt) return "UNSUBSCRIBED";
+  if (MARKETING_TEMPLATES.has(template) && !p.marketingConsent) return "NO_CONSENT";
+  return null;
+}
+
 /**
  * E-maily jdou přes outbox v Postgresu: zápis je součástí stejné operace jako registrace,
  * odeslání proběhne hned po odpovědi (after) a případné chyby dořeší worker.
@@ -68,6 +83,11 @@ export async function processOutbox(limit = 20): Promise<{ sent: number; failed:
   let failed = 0;
   for (const row of claimed) {
     try {
+      const blocked = await blockedReason(row.template as EmailTemplate, row.to);
+      if (blocked) {
+        await db.update(schema.emailOutbox).set({ status: "cancelled", lastError: blocked }).where(eq(schema.emailOutbox.id, row.id));
+        continue;
+      }
       const mail = renderEmail(row.template as EmailTemplate, row.payload);
       if (tx) {
         await tx.sendMail({

@@ -141,19 +141,7 @@ export async function POST(req: Request) {
     payload: emailPayload({ companyName, confirmToken, referralCode, unsubscribeToken }, plan),
     dedupeKey: `prereg-confirm:${row.id}`,
   });
-  // Plánované informační e-maily k termínům (jen se souhlasem s marketingem).
-  if (body.marketingConsent) {
-    const dis = TIMELINE.find((t) => t.date === "2026-11-01");
-    if (dis && new Date(`${dis.date}T08:00:00+01:00`) > now) {
-      await enqueueEmail({
-        to: body.email,
-        template: "dis-launch",
-        payload: { unsubscribeToken },
-        dedupeKey: `dis-launch:${row.id}`,
-        sendAfter: new Date(`${dis.date}T08:00:00+01:00`),
-      });
-    }
-  }
+  // Marketingové e-maily se plánují až po potvrzení e-mailu (POST /api/registrace/potvrdit) – Р5.
   after(() => processOutbox(5));
 
   return Response.json({ ok: true, position: before + 1, referralCode });

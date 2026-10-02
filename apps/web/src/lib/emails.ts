@@ -40,6 +40,10 @@ function unsubscribe(token: unknown): { url: string; html: string; text: string 
   };
 }
 
+/** Označení obchodního sdělení (zákon č. 480/2004 Sb., § 7) – odesílatel je v patičce každého e-mailu. */
+const COMMERCIAL_NOTICE =
+  "Toto je obchodní sdělení. Posíláme ho, protože jste potvrdili e-mail a souhlasili se zasíláním novinek o EvidujZdarma. Odhlásit se můžete jedním kliknutím.";
+
 interface PlanStep {
   date: string;
   text: string;
@@ -55,7 +59,6 @@ function renderBody(template: EmailTemplate, p: Record<string, unknown>): Render
   switch (template) {
     case "prereg-confirm": {
       const confirmUrl = `${SITE_URL}/registrace/potvrzeni?token=${encodeURIComponent(String(p.confirmToken))}`;
-      const referralUrl = `${SITE_URL}/?ref=${encodeURIComponent(String(p.referralCode))}`;
       const plan = (p.plan as PlanStep[] | undefined) ?? TIMELINE.map((t) => ({ date: t.dateLabel, text: t.action }));
       const u = unsubscribe(p.unsubscribeToken);
       const company = p.companyName ? ` pro ${esc(p.companyName)}` : "";
@@ -69,8 +72,6 @@ function renderBody(template: EmailTemplate, p: Record<string, unknown>): Render
           "",
           `Váš EET plán${p.companyName ? ` pro ${p.companyName}` : ""}:`,
           ...plan.map((s) => `• ${s.date}: ${s.text}`),
-          "",
-          `Pozvěte kolegu a oba získáte Premium na 3 měsíce zdarma: ${referralUrl}`,
           "",
           "Tým EvidujZdarma",
           "",
@@ -87,8 +88,7 @@ ${button(confirmUrl, "Potvrdit e-mail")}
               (s) =>
                 `<tr><td style="padding:6px 12px 6px 0;white-space:nowrap;vertical-align:top;font-weight:600">${esc(s.date)}</td><td style="padding:6px 0">${esc(s.text)}</td></tr>`,
             )
-            .join("")}</table>
-<p style="margin-top:24px;padding:14px;background:#fff4cc;border-radius:10px">Pozvěte kolegu a <strong>oba získáte Premium na 3 měsíce zdarma</strong>:<br><a href="${esc(referralUrl)}">${esc(referralUrl)}</a></p>`,
+            .join("")}</table>`,
           u.html,
         ),
       };
@@ -99,11 +99,11 @@ ${button(confirmUrl, "Potvrdit e-mail")}
       return {
         subject: "DIS+ je spuštěné – tady je návod krok za krokem",
         unsubscribeUrl: u.url,
-        text: `Dobrý den,\n\nFinanční správa spustila přípravu pro EET 2.0 v DIS+. Připravili jsme návod se snímky obrazovky: ${url}\n\nTým EvidujZdarma\n\n${u.text}`,
+        text: `Dobrý den,\n\nFinanční správa spustila přípravu pro EET 2.0 v DIS+. Připravili jsme návod se snímky obrazovky: ${url}\n\nTým EvidujZdarma\n\n${COMMERCIAL_NOTICE}\n${u.text}`,
         html: layout(
           "DIS+ je spuštěné",
           `<p>Dobrý den,</p><p>Finanční správa spustila přípravu pro EET 2.0 v DIS+. Připravili jsme návod se snímky obrazovky – aktivace a stažení certifikátu zabere pár minut.</p>${button(url, "Otevřít návod")}`,
-          u.html,
+          `${esc(COMMERCIAL_NOTICE)} ${u.html}`,
         ),
       };
     }

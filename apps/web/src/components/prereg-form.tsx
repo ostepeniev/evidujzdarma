@@ -172,7 +172,7 @@ export function PreregForm({ defaultIco = "" }: { defaultIco?: string }) {
         {state.kind === "sending" ? "Odesílám…" : "Chci EET pokladnu zdarma"}
       </button>
       <p className="text-xs leading-relaxed text-muted">
-        Odesláním souhlasíte se zpracováním e-mailu a IČO za účelem předregistrace a zaslání EET plánu. Více v{" "}
+        E-mail a IČO použijeme k předregistraci a k zaslání vašeho EET plánu. Novinky posíláme jen se souhlasem výše a po potvrzení e-mailu. Více v{" "}
         <a href="/ochrana-osobnich-udaju" className="underline">
           zásadách ochrany osobních údajů
         </a>
