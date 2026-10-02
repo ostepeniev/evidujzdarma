@@ -16,6 +16,16 @@ export interface SendContext {
   delegatingEic?: string | null;
   /** UUID datové zprávy; každý pokus má nové */
   messageUuid?: string;
+  /** uložený snímek dat zprávy (Р4) – pokud je, zpráva se sestaví z něj, ne z tržby */
+  snapshot?: import("./eet2/message.ts").EetData;
+}
+
+/** Pro audit: co přesně odešlo a co přišlo zpět. */
+export interface SendAudit {
+  requestSha256?: string;
+  httpStatus?: number;
+  /** syrová (podepsaná) odpověď FS, zkrácená na 64 kB */
+  responseBody?: string;
 }
 
 export interface EetWarning {
@@ -33,6 +43,7 @@ export type SendResult =
       receivedAt: string;
       messageUuid: string;
       warnings: EetWarning[];
+      audit?: SendAudit;
     }
   | {
       ok: false;
@@ -43,6 +54,9 @@ export type SendResult =
       status?: number;
       messageUuid?: string;
       warnings?: EetWarning[];
+      /** tržbu nelze odeslat, dokud se nezmění nastavení (certifikát, EIČ, klíč) – fronta ji drží */
+      blocked?: string;
+      audit?: SendAudit;
     };
 
 export interface Transport {

@@ -113,6 +113,25 @@ export function buildEetMessage(sale: Pick<Sale, "unitId" | "registerId" | "sequ
   return msg;
 }
 
+/**
+ * Zpráva z uloženého snímku dat (Р4): opakované odeslání nese přesně stejná data jako první
+ * pokus – mění se jen hlavička (nové uuid_zpravy, čas odeslání, prvni_zaslani).
+ */
+export function buildEetMessageFromSnapshot(data: EetData, o: Pick<BuildOptions, "messageUuid" | "sentAt" | "firstAttempt" | "verifyOnly">): EetMessage {
+  const msg: EetMessage = {
+    header: { uuid_zpravy: o.messageUuid, dat_odesl: formatEetDateTime(o.sentAt), prvni_zaslani: o.firstAttempt, overeni: o.verifyOnly },
+    data: { ...data },
+  };
+  const issues = validateEetMessage(msg);
+  if (issues.length) throw new EetMessageError(issues);
+  return msg;
+}
+
+/** Snímek dat zprávy pro tržbu – uloží se před prvním odesláním a opakování ho jen převezme. */
+export function eetSnapshot(sale: Pick<Sale, "unitId" | "registerId" | "sequence" | "soldAt" | "payments" | "lines">, o: Pick<BuildOptions, "eic" | "delegatingEic" | "multiDelegation">): EetData {
+  return buildEetMessage(sale, { ...o, messageUuid: "00000000-0000-4000-8000-000000000000", sentAt: new Date(sale.soldAt), firstAttempt: true, verifyOnly: false }).data;
+}
+
 export function validateEetMessage(m: EetMessage): string[] {
   const issues: string[] = [];
   const h = m.header;

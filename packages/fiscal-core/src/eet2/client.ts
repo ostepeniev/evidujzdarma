@@ -12,6 +12,7 @@ import {
   EET_ENDPOINTS,
   SOAP_ACTION,
   buildEetMessage,
+  buildEetMessageFromSnapshot,
   buildEnvelope,
   canonicalBody,
   canonicalSignedInfo,
@@ -41,14 +42,16 @@ function newId(prefix: string): string {
 /** Sestaví a podepíše zprávu (bez síťové komunikace). */
 export function prepareRequest(sale: Sale, ctx: SendContext, credential: Eet2Credential, now = new Date()): PreparedRequest {
   const messageUuid = ctx.messageUuid ?? randomUUID();
-  const message = buildEetMessage(sale, {
-    eic: ctx.eic,
-    delegatingEic: ctx.delegatingEic,
-    messageUuid,
-    sentAt: now,
-    firstAttempt: ctx.firstAttempt,
-    verifyOnly: ctx.verifyOnly,
-  });
+  const message = ctx.snapshot
+    ? buildEetMessageFromSnapshot(ctx.snapshot, { messageUuid, sentAt: now, firstAttempt: ctx.firstAttempt, verifyOnly: ctx.verifyOnly })
+    : buildEetMessage(sale, {
+        eic: ctx.eic,
+        delegatingEic: ctx.delegatingEic,
+        messageUuid,
+        sentAt: now,
+        firstAttempt: ctx.firstAttempt,
+        verifyOnly: ctx.verifyOnly,
+      });
   const ids = { body: newId("id"), token: newId("X509"), signature: newId("SIG"), keyInfo: newId("KI"), str: newId("STR") };
   const digestB64 = createHash("sha256").update(canonicalBody(message, ids.body), "utf8").digest("base64");
   const signer = new PemSigner(credential.privateKeyPem, credential.certificatePem);
@@ -90,7 +93,9 @@ export class Eet2Transport implements Transport {
     try {
       prepared = prepareRequest(sale, ctx, await this.opts.credential(ctx.eic));
     } catch (e) {
-      return { ok: false, retryable: false, code: "PREPARE", message: e instanceof Error ? e.message : String(e) };
+      // Bez certifikátu/klíče nebo s neplatnými daty zprávu nelze sestavit. Tržba se NEZAHAZUJE:
+      // fronta ji drží zablokovanou, dokud vlastník nenahraje certifikát nebo neopraví údaje (R1.3).
+      return { ok: false, retryable: true, blocked: "PREPARE", code: "PREPARE", message: e instanceof Error ? e.message : String(e) };
     }
     await this.opts.onPrepared?.(prepared);
     const { messageUuid } = prepared;
@@ -106,10 +111,11 @@ export class Eet2Transport implements Transport {
       });
     } catch (e) {
       // Zpráva mohla, ale nemusela dorazit → opakovat s prvni_zaslani=false.
-      return { ok: false, retryable: true, code: "NETWORK", message: e instanceof Error ? e.message : String(e), messageUuid };
+      return { ok: false, retryable: true, code: "NETWORK", message: e instanceof Error ? e.message : String(e), messageUuid, audit: { requestSha256: prepared.sha256 } };
     }
 
     const text = await res.text();
+    const audit = { requestSha256: prepared.sha256, httpStatus: res.status, responseBody: text.slice(0, 65_536) };
     if (!text.includes("Odpoved")) {
       // Bez odpovědi EET (výpadek, proxy, WAF, SOAP Fault) nevíme, že by FS zprávu odmítla →
       // tržbu zkoušíme dál v rámci 48h lhůty; o zaseknutých tržbách upozorní připomínky.
@@ -120,20 +126,21 @@ export class Eet2Transport implements Transport {
         code: `HTTP_${res.status}`,
         message: res.status >= 500 ? "Služba EET je dočasně nedostupná" : text.slice(0, 300) || `HTTP ${res.status}`,
         messageUuid,
+        audit,
       };
     }
 
     const v = verifyResponse(text, { expectedUuid: messageUuid, policy: this.trust });
     if (v.kind === "invalid") {
       // Neověřitelná odpověď: POK nepřijímáme, tržbu zkusíme odeslat znovu.
-      return { ok: false, retryable: true, status: res.status, code: "INVALID_RESPONSE", message: v.reason, messageUuid };
+      return { ok: false, retryable: true, status: res.status, code: "INVALID_RESPONSE", message: v.reason, messageUuid, audit };
     }
     if (v.kind === "error") {
       const { code, text: msg } = v.parsed.error!;
       if (code === 0 && ctx.verifyOnly) {
-        return { ok: true, confirmationCode: null, test: v.parsed.test, receivedAt: new Date().toISOString(), messageUuid, warnings: v.parsed.warnings };
+        return { ok: true, confirmationCode: null, test: v.parsed.test, receivedAt: new Date().toISOString(), messageUuid, warnings: v.parsed.warnings, audit };
       }
-      return { ok: false, retryable: code < 0, status: res.status, code: `EET_${code}`, message: msg, messageUuid, warnings: v.parsed.warnings };
+      return { ok: false, retryable: code < 0, status: res.status, code: `EET_${code}`, message: msg, messageUuid, warnings: v.parsed.warnings, audit };
     }
     return {
       ok: true,
@@ -142,6 +149,7 @@ export class Eet2Transport implements Transport {
       receivedAt: v.parsed.receivedAt ?? new Date().toISOString(),
       messageUuid,
       warnings: v.parsed.warnings,
+      audit,
     };
   }
 }

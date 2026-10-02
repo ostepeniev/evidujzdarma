@@ -92,16 +92,16 @@ export function daysUntilExpiry(info: CertificateInfo, now = new Date()): number
 }
 
 /** Vytvoří self-signed .p12 — jen pro testy a demo režim. */
-export function createTestP12(opts: { commonName: string; password: string; days?: number }): Buffer {
+export function createTestP12(opts: { commonName: string; password: string; days?: number; issuerCommonName?: string; notBefore?: Date; notAfter?: Date }): Buffer {
   const keys = forge.pki.rsa.generateKeyPair(2048);
   const cert = forge.pki.createCertificate();
   cert.publicKey = keys.publicKey;
   cert.serialNumber = "01" + forge.util.bytesToHex(forge.random.getBytesSync(8));
-  cert.validity.notBefore = new Date();
-  cert.validity.notAfter = new Date(Date.now() + (opts.days ?? 365) * 86_400_000);
+  cert.validity.notBefore = opts.notBefore ?? new Date();
+  cert.validity.notAfter = opts.notAfter ?? new Date(Date.now() + (opts.days ?? 365) * 86_400_000);
   const attrs = [{ name: "commonName", value: opts.commonName }, { name: "countryName", value: "CZ" }];
   cert.setSubject(attrs);
-  cert.setIssuer([{ name: "commonName", value: "EvidujZdarma TEST CA" }]);
+  cert.setIssuer([{ name: "commonName", value: opts.issuerCommonName ?? "EvidujZdarma TEST CA" }]);
   cert.sign(keys.privateKey, forge.md.sha256.create());
   const p12 = forge.pkcs12.toPkcs12Asn1(keys.privateKey, [cert], opts.password, { algorithm: "3des" });
   return Buffer.from(forge.asn1.toDer(p12).getBytes(), "binary");

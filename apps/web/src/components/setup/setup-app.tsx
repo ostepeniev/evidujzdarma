@@ -116,6 +116,7 @@ export function SetupApp({ initial }: { initial: State }) {
           <ExportSection salesCount={state.salesCount ?? 0} />
           <ClosingsSection />
           <ProblemSalesSection />
+          <FailedSalesSection />
         </>
       )}
       <p className="pt-4 text-center text-xs text-muted">
@@ -818,6 +819,69 @@ function ClosingsSection() {
         </div>
       )}
     </Section>
+  );
+}
+
+/* ───────────── Odmítnuté a zablokované tržby ───────────── */
+
+interface AttentionDto {
+  id: string;
+  status: string;
+  blockedReason: string | null;
+  reason: string;
+  detail: string | null;
+  sequence: string;
+  registerId: string;
+  soldAt: string;
+  total: number;
+  mode: string;
+  deadlineAt: string;
+}
+
+function FailedSalesSection() {
+  const [items, setItems] = useState<AttentionDto[] | null>(null);
+  const [result, setResult] = useState<string | null>(null);
+  const { busy, error, run } = useAction();
+  const load = () => call<{ items: AttentionDto[] }>("/api/ucet/trzby-k-vyrizeni").then((d) => setItems(d.items));
+  useEffect(() => {
+    void load().catch(() => setItems([]));
+  }, []);
+  if (!items || items.length === 0) return null;
+  const resend = (ids: string[]) =>
+    void run(async () => {
+      const r = await call<{ requeued: number; confirmed: number }>("/api/ucet/trzby-k-vyrizeni", { method: "POST", json: { ids } });
+      setResult(`Znovu ve frontě: ${r.requeued}, potvrzeno hned: ${r.confirmed}.`);
+      await load();
+    });
+  const fmt = new Intl.DateTimeFormat("cs-CZ", { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Prague" });
+  return (
+    <section id="odmitnute-trzby" className="scroll-mt-24 rounded-3xl border-2 border-danger-600 bg-white p-6">
+      <h2 className="text-xl font-bold text-danger-600">Neodeslané tržby ({items.length})</h2>
+      <p className="mt-1 text-[15px] text-ink-soft">
+        Tržby jsou uložené. Finanční správa je odmítla, nebo je nemůžeme odeslat (certifikát, EIČ). Po opravě je odešlete znovu – lhůta je 48 hodin od prodeje.
+      </p>
+      <button type="button" className="btn-primary mt-3 py-2 text-sm" disabled={busy} onClick={() => resend(items.map((i) => i.id))}>
+        Odeslat znovu vše
+      </button>
+      {result && <p className="mt-2 text-sm text-muted">{result}</p>}
+      <ul className="mt-4 divide-y divide-line">
+        {items.map((q) => (
+          <li key={q.id} className="py-3">
+            <p className="font-semibold">
+              {fmt.format(new Date(q.soldAt))} · {formatCzk(q.total)} · {q.registerId}/{q.sequence}
+              {q.mode !== "production" && <span className="chip ml-2 bg-surface-2 text-ink-soft">{MODE_LABEL[q.mode] ?? q.mode}</span>}
+            </p>
+            <p className="text-[15px] text-danger-600">{q.reason}</p>
+            {q.detail && <p className="text-sm text-muted">{q.detail}</p>}
+            <p className="text-sm text-muted">Lhůta do {fmt.format(new Date(q.deadlineAt))}</p>
+            <button type="button" className="btn-secondary mt-2 py-1.5 text-sm" disabled={busy} onClick={() => resend([q.id])}>
+              Odeslat znovu
+            </button>
+          </li>
+        ))}
+      </ul>
+      <ErrorText error={error} />
+    </section>
   );
 }
 

@@ -1,9 +1,10 @@
 import "server-only";
-import { and, eq, gt, isNull, lte, sql } from "drizzle-orm";
+import { and, eq, gt, isNotNull, isNull, lte, or, sql } from "drizzle-orm";
 import { getDb, schema } from "@ez/db";
 import { enqueueEmail } from "./mail";
 import { ownerEmails } from "./owners";
 import { absoluteUrl } from "@/lib/site";
+import { BLOCK_TEXT } from "./fiscal";
 
 const dateCs = (d: Date) => d.toLocaleDateString("cs-CZ", { timeZone: "Europe/Prague" });
 
@@ -83,6 +84,38 @@ export async function runReminders(now = new Date()): Promise<number> {
           text: `Upravili jste evidenční jednotku „${u.label}“. Pokud se změnily údaje oznámené Finanční správě, oznamte změnu v DIS+ nejpozději do ${dateCs(until)} (do 15 dnů).`,
           url: absoluteUrl("/navody/evidencni-jednotka"),
           buttonLabel: "Jak oznámit změnu",
+        },
+      });
+      queued++;
+    }
+  }
+  // 4) Odmítnuté nebo zablokované tržby (certifikát, EIČ…) – čekají na vlastníka, jednou denně (R1.3)
+  const attention = await db
+    .select({
+      accountId: schema.sales.accountId,
+      rejected: sql<number>`count(*) filter (where ${schema.sales.status} = 'rejected')::int`,
+      blocked: sql<number>`count(*) filter (where ${schema.sales.blockedReason} is not null)::int`,
+      reasons: sql<string[]>`array_remove(array_agg(distinct ${schema.sales.blockedReason}), null)`,
+    })
+    .from(schema.sales)
+    .where(or(eq(schema.sales.status, "rejected"), and(eq(schema.sales.status, "queued"), isNotNull(schema.sales.blockedReason))))
+    .groupBy(schema.sales.accountId);
+  for (const a of attention) {
+    const reasons = (a.reasons ?? []).map((r) => BLOCK_TEXT[r] ?? r);
+    const parts = [
+      a.rejected ? `Finanční správa odmítla ${a.rejected} ${a.rejected === 1 ? "tržbu" : "tržeb"}.` : "",
+      a.blocked ? `${a.blocked} ${a.blocked === 1 ? "tržba se nemůže odeslat" : "tržeb se nemůže odeslat"}: ${reasons.join(" ")}` : "",
+    ].filter(Boolean);
+    for (const to of await ownerEmails(a.accountId)) {
+      await enqueueEmail({
+        to,
+        template: "notice",
+        dedupeKey: `attention:${a.accountId}:${now.toISOString().slice(0, 10)}:${to}`,
+        payload: {
+          subject: "Některé tržby čekají na vaše rozhodnutí",
+          text: `${parts.join(" ")} Tržby jsou uložené. Po opravě je odešlete znovu v nastavení pokladny – lhůta pro odeslání je 48 hodin od prodeje.`,
+          url: absoluteUrl("/pokladna/nastaveni#odmitnute-trzby"),
+          buttonLabel: "Zobrazit tržby",
         },
       });
       queued++;

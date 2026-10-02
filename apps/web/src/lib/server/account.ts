@@ -4,6 +4,7 @@ import { z } from "zod";
 import { isValidIco, normalizeIco, toIban } from "@ez/cz";
 import { getDb, schema } from "@ez/db";
 import { HttpError, type CurrentUser } from "./auth";
+import { ACCOUNT_BLOCKS, requeueBlocked } from "./fiscal";
 import { randomToken, sha256 } from "./tokens";
 
 export const FREE_LIMITS = { staff: 5, units: 3, devices: 10 } as const;
@@ -115,7 +116,12 @@ export async function upsertAccount(user: CurrentUser, input: z.infer<typeof Acc
     ...(input.receiptShowPok !== undefined ? { receiptShowPok: input.receiptShowPok } : {}),
   };
   if (owner) {
+    const before = await db.query.accounts.findFirst({ where: eq(schema.accounts.id, owner.accountId), columns: { eic: true, dic: true } });
     await db.update(schema.accounts).set(values).where(eq(schema.accounts.id, owner.accountId));
+    // Opravené EIČ uvolní tržby zablokované kvůli údajům účtu. Už odeslané tržby si drží svůj snímek (Р4).
+    if ((before?.eic ?? before?.dic) !== (values.eic ?? values.dic)) {
+      await requeueBlocked(owner.accountId, ACCOUNT_BLOCKS);
+    }
     return owner.accountId;
   }
   return db.transaction(async (tx) => {

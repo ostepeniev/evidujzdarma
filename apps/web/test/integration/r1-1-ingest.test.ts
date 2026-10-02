@@ -5,9 +5,10 @@
 import { getDb, schema } from "@ez/db";
 import { eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { __setTransportFactoryForTests, processSale } from "@/lib/server/fiscal";
+import { __setTransportFactoryForTests, processSale, storeCertificate } from "@/lib/server/fiscal";
 import { resolveQuarantine } from "@/lib/server/quarantine";
 import { ingestSales } from "@/lib/server/sales";
+import { testCert } from "../helpers/certs";
 import { fakeTransports } from "../helpers/fake-transport";
 import { deviceContext, deviceSale, seedAccount } from "../helpers/fixtures";
 import { createTestDb, type TestDb } from "../helpers/test-db";
@@ -25,6 +26,7 @@ type R = { id: string; ok: boolean; retryable?: boolean; quarantined?: boolean; 
 describe("R1.1 – a sale is never silently dropped", () => {
   it("T10: a sale dated 11 min in the future is quarantined with its payload and can be released to FS", async () => {
     const s = await seedAccount({ mode: "playground" });
+    await storeCertificate(s.account.id, testCert().cert, "playground");
     const fake = fakeTransports();
     __setTransportFactoryForTests(fake.factory);
     const sale = deviceSale(s.unit.id, { mode: "playground", soldAt: new Date(Date.now() + 11 * 60_000).toISOString() });
@@ -47,6 +49,7 @@ describe("R1.1 – a sale is never silently dropped", () => {
 
   it("a temporary DB error on insert is retryable; after the fix the sale reaches FS", async () => {
     const s = await seedAccount({ mode: "playground" });
+    await storeCertificate(s.account.id, testCert().cert, "playground");
     const fake = fakeTransports();
     __setTransportFactoryForTests(fake.factory);
     await t.pg.exec(`

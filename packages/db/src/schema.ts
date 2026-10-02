@@ -350,6 +350,12 @@ export const sales = pgTable(
     /** kdy nejdřív zkusit další odeslání (backoff) */
     nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }).notNull().defaultNow(),
     deadlineAt: timestamp("deadline_at", { withTimezone: true }).notNull(),
+    /** token aktuálního „zabrání“ k odeslání – výsledek zapíše jen ten, kdo tržbu zabral (R1.4) */
+    claimToken: uuid("claim_token"),
+    /** proč tržbu teď nelze odeslat (certifikát, EIČ, klíč…) – zůstává ve frontě, nezahazuje se (R1.3) */
+    blockedReason: varchar("blocked_reason", { length: 32 }),
+    /** snímek dat zprávy z prvního pokusu – opakování posílá přesně tato data (Р4) */
+    eetData: jsonb("eet_data"),
     createdAt: createdAt(),
   },
   (t) => [
@@ -357,6 +363,35 @@ export const sales = pgTable(
     index("sales_account_sold_idx").on(t.accountId, t.soldAt),
     index("sales_pending_idx").on(t.status, t.nextAttemptAt),
   ],
+);
+
+/** Audit každého pokusu o odeslání tržby (Р4): co odešlo a co Finanční správa odpověděla. */
+export const saleAttempts = pgTable(
+  "sale_attempts",
+  {
+    id: bigint("id", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
+    saleId: uuid("sale_id")
+      .notNull()
+      .references(() => sales.id, { onDelete: "cascade" }),
+    attempt: smallint("attempt").notNull(),
+    environment: varchar("environment", { length: 16 }).notNull(),
+    messageUuid: uuid("message_uuid"),
+    firstAttempt: boolean("first_attempt").notNull(),
+    startedAt: timestamp("started_at", { withTimezone: true }).notNull(),
+    finishedAt: timestamp("finished_at", { withTimezone: true }).notNull().defaultNow(),
+    /** confirmed | rejected | retry | blocked | invalid | stale */
+    result: varchar("result", { length: 16 }).notNull(),
+    code: varchar("code", { length: 32 }),
+    message: text("message"),
+    pok: varchar("pok", { length: 39 }),
+    /** dat_prij z odpovědi FS */
+    receivedAt: timestamp("received_at", { withTimezone: true }),
+    httpStatus: smallint("http_status"),
+    requestSha256: varchar("request_sha256", { length: 64 }),
+    /** syrová podepsaná odpověď FS (max. 64 kB) */
+    responseBody: text("response_body"),
+  },
+  (t) => [index("sale_attempts_sale").on(t.saleId, t.attempt)],
 );
 
 /**

@@ -234,3 +234,40 @@ describe("Eet2Transport", () => {
     expect(r).toMatchObject({ ok: false, retryable: false, code: "EET_3" });
   });
 });
+
+describe("snapshot and blocked sends (R1.3, R1.5)", () => {
+  const cred = parseP12(createTestP12({ commonName: "CZ00000019", password: "x" }), "x");
+  const sale = buildSale(saleInput);
+
+  it("a retry built from the stored snapshot keeps the original data even if the EIČ changed", async () => {
+    const { eetSnapshot } = await import("../src/eet2/message.ts");
+    const snapshot = eetSnapshot(sale, { eic: "CZ00000019" });
+    const retry = prepareRequest(sale, { firstAttempt: false, verifyOnly: false, eic: "CZ99999999", snapshot }, cred);
+    expect(retry.message.data).toEqual(snapshot);
+    expect(retry.message.header.prvni_zaslani).toBe(false);
+    expect(retry.xml).toContain('eic_popl="CZ00000019"');
+  });
+
+  it("a missing certificate blocks the sale instead of rejecting it", async () => {
+    const t = new Eet2Transport({
+      environment: "playground",
+      credential: async () => {
+        throw new Error("Chybí platný certifikát");
+      },
+      fetch: (async () => new Response("", { status: 500 })) as typeof fetch,
+    });
+    const r = await t.send(sale, { firstAttempt: true, verifyOnly: false, eic: "CZ00000019" });
+    expect(r).toMatchObject({ ok: false, retryable: true, blocked: "PREPARE" });
+  });
+
+  it("returns the raw signed response for the audit", async () => {
+    const t = new Eet2Transport({
+      environment: "playground",
+      credential: async () => cred,
+      fetch: (async () => new Response(fixture("playground-accepted.xml"), { status: 200 })) as typeof fetch,
+    });
+    const r = await t.send(sale, { firstAttempt: true, verifyOnly: false, eic: "CZ00000019", messageUuid: "03965780-6457-4842-bd80-5f9195c0b8c8" });
+    expect(r.audit?.responseBody).toContain("Odpoved");
+    expect(r.audit?.requestSha256).toMatch(/^[0-9a-f]{64}$/);
+  });
+});

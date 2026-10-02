@@ -50,6 +50,13 @@
       "when": 1790900989075,
       "tag": "0006_sale_quarantine",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790901415682,
+      "tag": "0007_send_queue_audit",
+      "breakpoints": true
     }
   ]
 }
