@@ -10,7 +10,7 @@ import { emailReceipt, onSyncChange, resendSale, syncNow } from "@/lib/pos/sync"
 import type { LocalSale, PosConfig } from "@/lib/pos/types";
 import { Sheet, StatusChip, kc } from "./ui";
 
-export function receiptTextFor(sale: LocalSale, config: PosConfig, width = 42): string {
+export function receiptTextFor(sale: LocalSale, config: PosConfig, width = 42, origin = location.origin): string {
   const unit = config.units.find((u) => u.id === sale.unitId);
   // Položky na dokladu zobrazujeme před slevou, sleva je samostatný řádek.
   return renderReceiptText(
@@ -48,7 +48,7 @@ export function receiptTextFor(sale: LocalSale, config: PosConfig, width = 42): 
         showCode: config.account.receiptShowPok !== false,
       },
       cashReceived: sale.cashReceived ?? undefined,
-      url: `${location.origin}/u/${sale.id}`,
+      url: `${origin}/u/${sale.id}`,
     },
     width,
   );

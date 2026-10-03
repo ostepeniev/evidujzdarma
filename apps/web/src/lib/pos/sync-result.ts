@@ -3,7 +3,15 @@
  * Р2: dočasná chyba tržbu nechává ve frontě, trvalá ji ukáže jako „Odmítnuto" s možností
  * „Odeslat znovu" – nikdy ji nezahodí.
  */
-import type { LocalSale, LocalStatus } from "./types";
+import type { LocalSale, LocalStatus, PosMode } from "./types";
+
+const POS_MODES: readonly PosMode[] = ["mock", "playground", "production"];
+
+/**
+ * Režim tržby tak, jak ji přijal server (R8.6, Р3): po „Odeslat v aktuálním režimu“ server tržbu eviduje v jiném režimu,
+ * než v jakém ji pokladna prodala. Neznámá hodnota se ignoruje.
+ */
+const serverMode = (mode: unknown): { mode?: PosMode } => (POS_MODES.includes(mode as PosMode) ? { mode: mode as PosMode } : {});
 
 export interface ServerSaleResult {
   id: string;
@@ -15,6 +23,8 @@ export interface ServerSaleResult {
   status?: LocalStatus;
   confirmationCode?: string | null;
   lastError?: string | null;
+  /** režim, ve kterém tržbu eviduje server (odpověď POST obsahuje její stav) – R8.6 */
+  mode?: PosMode;
 }
 
 export function applyServerResult(r: ServerSaleResult, now = new Date()): Partial<LocalSale> {
@@ -27,6 +37,7 @@ export function applyServerResult(r: ServerSaleResult, now = new Date()): Partia
     };
   }
   return {
+    ...serverMode(r.mode),
     status: r.status ?? "queued",
     confirmationCode: r.confirmationCode ?? null,
     error: r.status === "rejected" ? (r.lastError ?? "Finanční správa tržbu odmítla") : (r.lastError ?? null),
@@ -64,6 +75,8 @@ export interface ServerSaleStatus {
   status: LocalStatus;
   confirmationCode: string | null;
   lastError: string | null;
+  /** režim, ve kterém tržbu eviduje server (R8.6) */
+  mode?: PosMode;
   /** tržba není v evidenci, je v karanténě: čeká na vlastníka, nebo ji vyřídil ručně (R5.7) */
   quarantine?: "open" | "dismissed";
 }
@@ -94,7 +107,7 @@ export function applyPolledStatuses(
       out.push([id, { status: "rejected", quarantined: true }]);
       continue;
     }
-    out.push([id, { ...applyServerResult({ id, ok: true, status: s.status, confirmationCode: s.confirmationCode, lastError: s.lastError }, now), resolution: undefined }]);
+    out.push([id, { ...applyServerResult({ id, ok: true, status: s.status, confirmationCode: s.confirmationCode, lastError: s.lastError, mode: s.mode }, now), resolution: undefined }]);
   }
   return out;
 }
