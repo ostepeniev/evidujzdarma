@@ -33,9 +33,11 @@ export default function ReferralRulesPage() {
           <p>
             a) se přes tento odkaz předregistruje a předregistraci potvrdí odkazem z e-mailu,
             <br />
-            b) má jiné IČO než doporučující a v EvidujZdarma dosud předregistrovaný nebyl a
+            b) má jiné IČO než doporučující a v EvidujZdarma dosud předregistrovaný nebyl,
             <br />
-            c) do 31. 3. 2027 začne v EvidujZdarma evidovat tržby v ostrém režimu, tedy odešle Finanční správě alespoň jednu tržbu.
+            c) do 31. 3. 2027 začne v EvidujZdarma evidovat tržby v ostrém režimu, tedy odešle Finanční správě alespoň jednu tržbu, a
+            <br />
+            d) předregistraci mezitím nezruší.
           </p>
           <p>
             <strong>4. Odměna.</strong> Každý z vás získá tarif Premium na 3 měsíce zdarma. Premium připravujeme; odměnu připíšeme ke dni

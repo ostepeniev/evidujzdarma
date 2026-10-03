@@ -218,6 +218,20 @@
       "when": 1791035379815,
       "tag": "0030_dis_launch_manual",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1791047072816,
+      "tag": "0031_prereg_consent_withdrawn",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1791047073924,
+      "tag": "0032_prereg_block_minimise",
+      "breakpoints": true
     }
   ]
 }

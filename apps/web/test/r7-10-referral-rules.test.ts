@@ -24,7 +24,9 @@ describe("R7.10 – referral promotion with rules", () => {
     const text = pageText(Rules);
     expect(text).toContain("Pravidla akce Doporučte kolegu");
     expect(text).toContain(`1. Pořadatel. Akci pořádá ${operatorLine()}, provozovatel služby EvidujZdarma.`);
-    expect(text).toContain("c) do 31. 3. 2027 začne v EvidujZdarma evidovat tržby v ostrém režimu, tedy odešle Finanční správě alespoň jednu tržbu.");
+    // R8.2 (рецензія №5): c) končí „, a“ a přibyla d)
+    expect(text).toContain("c) do 31. 3. 2027 začne v EvidujZdarma evidovat tržby v ostrém režimu, tedy odešle Finanční správě alespoň jednu tržbu, a");
+    expect(text).toContain("d) předregistraci mezitím nezruší.");
     expect(text).toContain(
       "4. Odměna. Každý z vás získá tarif Premium na 3 měsíce zdarma. Premium připravujeme; odměnu připíšeme ke dni jeho spuštění a o spuštění vás budeme informovat e-mailem. Po 3 měsících Premium samo nepřechází do placeného tarifu. Odměny za více doporučených se sčítají, nejvýše na 12 měsíců Premium pro jednoho doporučujícího. Odměnu nelze vyměnit za peníze ani převést na někoho jiného.",
     );

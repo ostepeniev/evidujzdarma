@@ -1,5 +1,5 @@
 import "server-only";
-import { and, count, eq, isNotNull, isNull, lt, sql } from "drizzle-orm";
+import { and, count, eq, isNotNull, isNull, lt, sql, type SQL } from "drizzle-orm";
 import { getDb, hasDatabase, schema } from "@ez/db";
 import { timelineAt } from "@/content/facts";
 import { isInterest, type Interest } from "@/lib/interests";
@@ -19,12 +19,24 @@ export function issueConfirmToken(): { token: string; hash: string } {
 /**
  * Odhlašovací token = id + podpis (HMAC s APP_SECRET) – v DB se nic neukládá a odkaz jde vytvořit pro každý
  * e-mail znovu. Starší odkazy (náhodný token) se ověřují podle uloženého hashe.
+ *
+ * Rozsah je v podepsaném odkazu (R8.2): tento (i starší odkazy) patří do služebních e-mailů – one-click z nich zruší
+ * předregistraci. Obchodní sdělení nesou `newsUnsubscribeTokenFor` – one-click z nich jen odvolá souhlas s novinkami.
  */
 export function unsubscribeTokenFor(id: string): string {
   return `${id}.${hmac(`unsubscribe:${id}`)}`;
 }
 
+/** Odhlašovací odkaz obchodního sdělení: one-click odvolá jen souhlas s novinkami, předregistrace zůstane (R8.2). */
+export function newsUnsubscribeTokenFor(id: string): string {
+  return `${id}.n.${hmac(`unsubscribe:news:${id}`)}`;
+}
+
+/** news = odvolat souhlas s novinkami; all = zrušit předregistraci (záznam-blokace, R7.3). */
+export type UnsubscribeScope = "news" | "all";
+
 const SIGNED_UNSUBSCRIBE_RE = /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.([A-Za-z0-9_-]{43})$/;
+const SIGNED_NEWS_RE = /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.n\.([A-Za-z0-9_-]{43})$/;
 
 /**
  * Odkaz na stránku stavu potvrzené předregistrace = id + podpis (R7.16, B M4). Připomenutí po opětovném vyplnění
@@ -35,15 +47,22 @@ export function statusTokenFor(id: string): string {
   return `${id}.${hmac(`status:${id}`)}`;
 }
 
+/** Řádek předregistrace a rozsah podle odhlašovacího tokenu (null = neplatný token). */
+export function parseUnsubscribe(token: string): { where: SQL; scope: UnsubscribeScope } | null {
+  const news = SIGNED_NEWS_RE.exec(token);
+  if (news) return safeEqual(token, newsUnsubscribeTokenFor(news[1]!)) ? { where: eq(schema.preregistrations.id, news[1]!), scope: "news" } : null;
+  const signed = SIGNED_UNSUBSCRIBE_RE.exec(token);
+  if (signed) return safeEqual(token, unsubscribeTokenFor(signed[1]!)) ? { where: eq(schema.preregistrations.id, signed[1]!), scope: "all" } : null;
+  return TOKEN_RE.test(token) ? { where: eq(schema.preregistrations.unsubscribeTokenHash, sha256(token)), scope: "all" } : null;
+}
+
 /** Podmínka na řádek předregistrace podle odhlašovacího tokenu (null = neplatný token). */
 export function unsubscribeWhere(token: string) {
-  const signed = SIGNED_UNSUBSCRIBE_RE.exec(token);
-  if (signed) return safeEqual(token, unsubscribeTokenFor(signed[1]!)) ? eq(schema.preregistrations.id, signed[1]!) : null;
-  return TOKEN_RE.test(token) ? eq(schema.preregistrations.unsubscribeTokenHash, sha256(token)) : null;
+  return parseUnsubscribe(token)?.where ?? null;
 }
 
 export function isUnsubscribeTokenShape(token: string): boolean {
-  return SIGNED_UNSUBSCRIBE_RE.test(token) || TOKEN_RE.test(token);
+  return SIGNED_NEWS_RE.test(token) || SIGNED_UNSUBSCRIBE_RE.test(token) || TOKEN_RE.test(token);
 }
 
 async function byToken(token: string) {
@@ -58,7 +77,7 @@ async function byToken(token: string) {
   const row = await getDb().query.preregistrations.findFirst({ where: eq(schema.preregistrations.confirmTokenHash, sha256(token)) });
   if (!row) return null;
   // nepotvrzený odkaz po 30 dnech neplatí (nový přijde po opětovném vyplnění formuláře)
-  if (!row.confirmedAt && Date.now() - row.confirmTokenIssuedAt.getTime() > CONFIRM_TOKEN_TTL_MS) return null;
+  if (!row.confirmedAt && (!row.confirmTokenIssuedAt || Date.now() - row.confirmTokenIssuedAt.getTime() > CONFIRM_TOKEN_TTL_MS)) return null;
   return row;
 }
 
@@ -171,7 +190,8 @@ export async function queueDisLaunch(): Promise<number> {
     .where(and(eq(schema.preregistrations.marketingConsent, true), isNotNull(schema.preregistrations.confirmedAt), isNull(schema.preregistrations.unsubscribedAt)));
   let queued = 0;
   for (const r of rows) {
-    if (await enqueueEmail({ to: r.email, template: "dis-launch", payload: { unsubscribeToken: unsubscribeTokenFor(r.id) }, dedupeKey: `dis-launch:${r.id}` })) queued++;
+    // obchodní sdělení: odhlášení z něj odvolá jen souhlas, předregistrace zůstane (R8.2)
+    if (await enqueueEmail({ to: r.email, template: "dis-launch", payload: { unsubscribeToken: newsUnsubscribeTokenFor(r.id) }, dedupeKey: `dis-launch:${r.id}` })) queued++;
   }
   return queued;
 }

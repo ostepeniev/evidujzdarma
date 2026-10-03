@@ -1,5 +1,5 @@
 import "server-only";
-import { and, eq, exists, inArray, isNotNull, isNull, lt, ne, not, notExists, notInArray, or, sql } from "drizzle-orm";
+import { and, eq, exists, gte, inArray, isNotNull, isNull, lt, ne, not, notExists, notInArray, or, sql } from "drizzle-orm";
 import { getDb, schema } from "@ez/db";
 import { RETENTION } from "@/lib/legal";
 import { HttpError } from "./auth";
@@ -316,20 +316,35 @@ export async function runRetention(now = new Date()): Promise<Record<string, num
   // Předregistrace bez souhlasu a bez účtu: do spuštění pokladny + 12 měsíců (od pozdější registrace)
   const launchPlus = addMonths(new Date(`${RETENTION.launch}T00:00:00+01:00`), RETENTION.preregistrationMonths);
   if (now >= launchPlus) {
-    await count(
-      "preregistrations",
-      db
-        .delete(schema.preregistrations)
-        .where(
-          and(
-            eq(schema.preregistrations.marketingConsent, false),
-            isNull(schema.preregistrations.unsubscribedAt),
-            lt(schema.preregistrations.createdAt, addMonths(now, -RETENTION.preregistrationMonths)),
-            notExists(db.select({ x: sql`1` }).from(schema.users).where(sql`lower(${schema.users.email}) = lower(${schema.preregistrations.email})`)),
-          ),
-        )
-        .returning({ id: schema.preregistrations.id }),
+    const termOver = and(
+      eq(schema.preregistrations.marketingConsent, false),
+      isNull(schema.preregistrations.unsubscribedAt),
+      lt(schema.preregistrations.createdAt, addMonths(now, -RETENTION.preregistrationMonths)),
+      notExists(db.select({ x: sql`1` }).from(schema.users).where(sql`lower(${schema.users.email}) = lower(${schema.preregistrations.email})`)),
     );
+    // odvolaný souhlas: doklad o souhlasu a odvolání zůstává ještě 3 roky po odvolání (zásady), předregistrace ne –
+    // záznam se zmenší na doklad (R8.2); smaže se, až uplynou 3 roky od odvolání
+    const proofDue = and(isNotNull(schema.preregistrations.marketingConsentWithdrawnAt), gte(schema.preregistrations.marketingConsentWithdrawnAt, addMonths(now, -12 * RETENTION.consentProofYears)));
+    const proofs = await db
+      .update(schema.preregistrations)
+      .set({
+        ico: null,
+        companyName: null,
+        industry: null,
+        establishmentsCount: null,
+        needs: [],
+        utm: null,
+        referredBy: null,
+        referralCode: sql`'p' || substr(md5(random()::text || ${schema.preregistrations.id}::text), 1, 11)`,
+        confirmTokenHash: sql`md5(random()::text || ${schema.preregistrations.id}::text) || md5(${schema.preregistrations.id}::text || random()::text)`,
+        confirmTokenIssuedAt: null,
+        locale: null,
+      })
+      .where(and(termOver, proofDue, isNotNull(schema.preregistrations.confirmTokenIssuedAt)))
+      .returning({ id: schema.preregistrations.id });
+    if (proofs.length) await db.delete(schema.preregistrationInterests).where(inArray(schema.preregistrationInterests.preregistrationId, proofs.map((p) => p.id)));
+    out.preregistrationsToConsentProof = proofs.length;
+    await count("preregistrations", db.delete(schema.preregistrations).where(and(termOver, not(proofDue!))).returning({ id: schema.preregistrations.id }));
   }
   // Doklad o odvolaném souhlasu: 3 roky po odhlášení
   await count(

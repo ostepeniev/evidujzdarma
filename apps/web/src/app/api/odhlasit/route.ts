@@ -1,30 +1,54 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import { getDb, hasDatabase, schema } from "@ez/db";
-import { isUnsubscribeTokenShape, unsubscribeWhere } from "@/lib/server/preregistration";
+import { MARKETING_TEMPLATES } from "@/lib/server/mail";
+import { isUnsubscribeTokenShape, parseUnsubscribe, type UnsubscribeScope } from "@/lib/server/preregistration";
 import { randomToken, sha256, shortCode } from "@/lib/server/tokens";
 import { SITE, operatorLine } from "@/lib/site";
 
 /**
- * Odhlášení z e-mailů. GET jen zobrazí stránku s tlačítkem (GET nesmí měnit stav – Р5),
- * POST odhlásí: tlačítko na stránce i RFC 8058 one-click z poštovního klienta (List-Unsubscribe-Post).
+ * Odhlášení z e-mailů (R8.2). GET jen zobrazí stránku s volbou (GET nesmí měnit stav – Р5), POST provede:
+ *  - „Odhlásit jen novinky“ (záznam se souhlasem) = odvolání souhlasu; předregistrace, pořadí, zájmy, app-ready a kód zůstávají;
+ *  - „Zrušit předregistraci“ = záznam-blokace (R7.3): zůstane e-mail, datum předregistrace a zrušení (a doklad souhlasu).
+ * One-click z poštovního klienta (RFC 8058, List-Unsubscribe-Post) dělá to, co říká rozsah podepsaného odkazu:
+ * z obchodního sdělení jen odvolání souhlasu, ze služebního e-mailu zrušení předregistrace.
+ * Opakované odhlášení nic neposouvá (Д-1).
  */
-async function unsubscribe(token: string | null): Promise<boolean> {
-  const where = token && hasDatabase() ? unsubscribeWhere(token) : null;
-  if (!where) return false;
+type Outcome = "news" | "cancelled";
+
+async function findRow(token: string | null) {
+  const parsed = token && hasDatabase() ? parseUnsubscribe(token) : null;
+  if (!parsed) return null;
+  const row = await getDb().query.preregistrations.findFirst({ where: parsed.where });
+  return row ? { row, scope: parsed.scope } : null;
+}
+
+type Row = NonNullable<Awaited<ReturnType<typeof findRow>>>["row"];
+
+/** Odvolání souhlasu s novinkami: zruší jen obchodní sdělení ve frontě; datum odvolání se při opakování nemění. */
+async function withdrawConsent(row: Row): Promise<void> {
   const db = getDb();
-  const rows = await db
-    .update(schema.preregistrations)
-    .set({ unsubscribedAt: new Date(), marketingConsent: false })
-    .where(where)
-    .returning({ id: schema.preregistrations.id, email: schema.preregistrations.email, consentAt: schema.preregistrations.marketingConsentAt });
-  const row = rows[0];
-  if (!row) return false;
-  const email = row.email;
-  // Odhlášení neprodlužuje uchování předregistrace (R7.3): zůstane jen adresa a datum odhlášení (abychom nic neposlali),
-  // u udělaného souhlasu navíc jeho doklad. Povinné sloupce dostanou náhodné hodnoty, které nikam nevedou.
   await db
     .update(schema.preregistrations)
+    .set({ marketingConsent: false, marketingConsentWithdrawnAt: new Date() })
+    .where(and(eq(schema.preregistrations.id, row.id), eq(schema.preregistrations.marketingConsent, true), isNull(schema.preregistrations.unsubscribedAt)));
+  await db
+    .update(schema.emailOutbox)
+    .set({ status: "cancelled", lastError: "CONSENT_WITHDRAWN" })
+    .where(and(eq(schema.emailOutbox.to, row.email), eq(schema.emailOutbox.status, "queued"), inArray(schema.emailOutbox.template, [...MARKETING_TEMPLATES])));
+}
+
+async function cancelPreregistration(row: Row): Promise<void> {
+  const db = getDb();
+  const now = new Date();
+  // Zrušení neprodlužuje uchování předregistrace (R7.3): zůstane jen adresa, datum předregistrace a zrušení (abychom nic
+  // neposlali), u udělaného souhlasu navíc jeho doklad a odvolání. Povinné sloupce dostanou náhodné hodnoty, které nikam
+  // nevedou; datum potvrzovacího odkazu a jazyk se mažou (Д-6). Už zrušený záznam se nemění (Д-1).
+  const rows = await db
+    .update(schema.preregistrations)
     .set({
+      unsubscribedAt: now,
+      marketingConsent: false,
+      ...(row.marketingConsentAt && !row.marketingConsentWithdrawnAt ? { marketingConsentWithdrawnAt: now } : {}),
       ico: null,
       companyName: null,
       industry: null,
@@ -34,17 +58,37 @@ async function unsubscribe(token: string | null): Promise<boolean> {
       referredBy: null,
       referralCode: shortCode(8),
       confirmTokenHash: sha256(randomToken()),
-      ...(row.consentAt ? {} : { confirmedAt: null, consentEvidence: null }),
+      confirmTokenIssuedAt: null,
+      locale: null,
+      ...(row.marketingConsentAt ? {} : { confirmedAt: null, consentEvidence: null }),
     })
-    .where(eq(schema.preregistrations.id, row.id));
+    .where(and(eq(schema.preregistrations.id, row.id), isNull(schema.preregistrations.unsubscribedAt)))
+    .returning({ id: schema.preregistrations.id });
+  if (!rows.length) return;
   // i zájem (webinář, kabinet) patří k údajům předregistrace (R7.4)
   await db.delete(schema.preregistrationInterests).where(eq(schema.preregistrationInterests.preregistrationId, row.id));
   await db
     .update(schema.emailOutbox)
     .set({ status: "cancelled", lastError: "UNSUBSCRIBED" })
-    .where(and(eq(schema.emailOutbox.to, email), eq(schema.emailOutbox.status, "queued"), inArray(schema.emailOutbox.template, ["dis-launch", "app-ready"])));
-  return true;
+    .where(and(eq(schema.emailOutbox.to, row.email), eq(schema.emailOutbox.status, "queued"), inArray(schema.emailOutbox.template, ["dis-launch", "app-ready"])));
 }
+
+async function unsubscribe(token: string | null, action: UnsubscribeScope | null): Promise<Outcome | null> {
+  const found = await findRow(token);
+  if (!found) return null;
+  if (found.row.unsubscribedAt) return "cancelled";
+  if ((action ?? found.scope) === "news") {
+    await withdrawConsent(found.row);
+    return "news";
+  }
+  await cancelPreregistration(found.row);
+  return "cancelled";
+}
+
+const RESULT: Record<Outcome, string> = {
+  news: "Odhlášeno z novinek. Předregistrace zůstává.",
+  cancelled: "Předregistrace je zrušená. Už vám nic nepošleme.",
+};
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
@@ -56,21 +100,43 @@ function page(title: string, body: string): Response {
   return new Response(html, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
 }
 
+const TITLE = "Odhlášení z e-mailů";
+const BUTTON = "background:#0b7a57;color:#fff;border:0;padding:12px 20px;border-radius:10px;font-weight:600;font-size:16px;cursor:pointer";
+const BUTTON_SECONDARY = "background:#fff;color:#14211c;border:1px solid #c9d3cd;padding:12px 20px;border-radius:10px;font-weight:600;font-size:16px;cursor:pointer";
+
+function choice(token: string, action: UnsubscribeScope, label: string, note: string, style: string): string {
+  return `<form method="post" action="/api/odhlasit?token=${esc(encodeURIComponent(token))}" style="margin:24px 0 0"><input type="hidden" name="action" value="${action}">
+<button type="submit" style="${style}">${esc(label)}</button></form><p style="font-size:15px;color:#3d4a44;margin:8px 0 0">${esc(note)}</p>`;
+}
+
 export async function GET(req: Request) {
   const token = new URL(req.url).searchParams.get("token") ?? "";
-  if (!isUnsubscribeTokenShape(token)) return page("Odkaz je neplatný", "<p>Odkaz pro odhlášení je neplatný nebo neúplný.</p>");
+  const found = isUnsubscribeTokenShape(token) ? await findRow(token) : null;
+  if (!found) return page("Odkaz je neplatný", "<p>Odkaz pro odhlášení je neplatný nebo neúplný.</p>");
+  const { row } = found;
+  if (row.unsubscribedAt) return page(TITLE, `<p>${esc(RESULT.cancelled)}</p>`);
+  if (row.marketingConsent) {
+    return page(
+      TITLE,
+      `<p>Můžete se odhlásit jen z novinek k EET, nebo zrušit celou předregistraci.</p>
+${choice(token, "news", "Odhlásit jen novinky", "Předregistrace zůstane: pošleme vám odkaz, až pokladnu spustíme.", BUTTON)}
+${choice(token, "all", "Zrušit předregistraci", "Přijdete o pořadí na včasný přístup, odkaz pro pozvání kolegů a přihlášky (webinář, kabinet). E-mail si ponecháme jen proto, abychom vám už nic neposílali.", BUTTON_SECONDARY)}`,
+    );
+  }
   return page(
-    "Odhlásit odběr?",
-    `<p>Po odhlášení vám už nebudeme posílat novinky ani upozornění k termínům EET.</p>
-<form method="post" action="/api/odhlasit?token=${esc(encodeURIComponent(token))}"><input type="hidden" name="confirm" value="1">
-<button type="submit" style="background:#0b7a57;color:#fff;border:0;padding:12px 20px;border-radius:10px;font-weight:600;font-size:16px;cursor:pointer">Odhlásit odběr</button></form>`,
+    TITLE,
+    `<p>Posíláme vám jen e-maily k vaší předregistraci. Odhlášením ji zrušíte: přijdete o pořadí na včasný přístup, odkaz pro pozvání kolegů a přihlášky (webinář, kabinet). E-mail si ponecháme jen proto, abychom vám už nic neposílali.</p>
+<form method="post" action="/api/odhlasit?token=${esc(encodeURIComponent(token))}"><input type="hidden" name="action" value="all">
+<button type="submit" style="${BUTTON}">Zrušit předregistraci</button></form>`,
   );
 }
 
 export async function POST(req: Request) {
-  const ok = await unsubscribe(new URL(req.url).searchParams.get("token"));
   const body = await req.text().catch(() => "");
-  // One-click z poštovního klienta čeká jen stavový kód
-  if (body.includes("List-Unsubscribe=One-Click")) return new Response(null, { status: ok ? 204 : 404 });
-  return ok ? page("Odhlášeno", "<p>Další e-maily vám už posílat nebudeme.</p>") : page("Odkaz je neplatný", "<p>Odkaz pro odhlášení je neplatný nebo už byl použit.</p>");
+  // One-click z poštovního klienta čeká jen stavový kód; rozsah určí podepsaný odkaz
+  const oneClick = body.includes("List-Unsubscribe=One-Click");
+  const action = new URLSearchParams(body).get("action");
+  const outcome = await unsubscribe(new URL(req.url).searchParams.get("token"), oneClick ? null : action === "news" || action === "all" ? action : null);
+  if (oneClick) return new Response(null, { status: outcome ? 204 : 404 });
+  return outcome ? page(TITLE, `<p>${esc(RESULT[outcome])}</p>`) : page("Odkaz je neplatný", "<p>Odkaz pro odhlášení je neplatný.</p>");
 }
