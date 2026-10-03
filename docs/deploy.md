@@ -221,11 +221,30 @@ ssh -t root@46.225.132.220 ez-secret ALERT_EMAIL  # будь-яка змінна
 
 **Відкат.** Після міграції `0022_prereg_drop_plain_tokens` web-образ старіший за `8cc613a` не стартує правильно. Тому перед кожним деплоєм з міграціями — `docker compose run --rm -e BACKUP_ONCE=1 backup`, а відкат робиться з бекапу, не старим образом.
 
-**Поки немає SMTP.** Production не стартує без `SMTP_URL` (Б2). До вибору провайдера в `.env` стоїть заглушка `smtp://127.0.0.1:25`: листи не відправляються, лишаються в черзі з повторами, у лог не потрапляють. Сайт до того закритий basic auth (відкритий лише `/api/health`), бо без пошти не працює вхід. Коли буде SMTP:
+**Пошта.** SMTP — Brevo (Т10), ключ кладеться командою `ez-secret brevo`. Без `SMTP_URL` production не стартує (Б2).
 
-1. Впишіть справжній `SMTP_URL` і `docker compose … up -d`.
-2. Додайте DKIM і SPF провайдера в DNS.
-3. Видаліть два рядки `auth_basic*` з vhost, `nginx -t`, reload.
+**Що публічне (з 3. 10. 2026, eet-open-site).** У vhost немає `auth_basic` на рівні `server`. Пароль стоїть лише на секціях з `apps/web/src/lib/launch.ts` (`CLOSED_SECTIONS`, `CLOSED_API`) і на exact-локації `= /api/ucet/certifikat` (exact перемагає regex). Відкриваєте секцію — приберіть її з `launch.ts` і з regex у vhost, `nginx -t`, reload. Інфра-тест `apps/web/test/infra.test.ts` перевіряє файл у репозиторії, тому правку на сервері завжди комітимо в `infra/nginx/evidujzdarma.conf`. У `location` не додавайте `proxy_set_header`: location тоді втратить серверні, зокрема `X-Real-IP`.
+
+**Лог nginx** — `/var/log/nginx/evidujzdarma.access.log` у форматі `ez_noquery`: без query string і Referer, бо в них токени підтвердження.
+
+**Лист «DIS+ je spuštěné» (`dis-launch`)** сам не йде (R7.6). У день, коли FS справді відкриє DIS+, на сервері:
+
+```bash
+cd /opt/evidujzdarma/infra && set -a && . ./.env && set +a
+curl -X POST http://127.0.0.1:3100/api/internal/dis-launch \
+  -H "authorization: Bearer $CRON_SECRET" -H "content-type: application/json" -d '{"confirm":true}'
+```
+
+Лист отримають лише підтверджені адреси зі згодою і без відписки; умови перевіряються ще раз при відправці.
+
+**Відписана адреса хоче повернутись.** Після відписки лишається запис-блокування (адреса й дата), і нова передреєстрація листа не отримає (R7.3). Якщо людина напише, що хоче знову, видаліть запис вручну:
+
+```bash
+cd /opt/evidujzdarma/infra && docker compose -f docker-compose.yml -f docker-compose.nginx.yml exec -T postgres \
+  psql -U evidujzdarma -d evidujzdarma -c "delete from preregistrations where lower(email) = lower('adresa@example.cz') and unsubscribed_at is not null"
+```
+
+Smoke-тест відписки — лише з одноразовою адресою.
 
 ## Локальна розробка
 
