@@ -188,6 +188,8 @@ const BLOCKED_RETRY_MS = 3_600_000;
 const AMBIGUOUS_MAX_ATTEMPTS = 3;
 const AMBIGUOUS_RETRY_MS = 20 * 60_000;
 const STALE_CLAIM_MS = 120_000;
+/** Kolik kandidátů na zkušební tržbu se za jeden běh fronty nejvýš zkusí (každý zablokovaný slot vrátí). */
+const PROBE_CANDIDATES = 20;
 
 export const BLOCK_TEXT: Record<string, string> = {
   CERT_MISSING: "Chybí pokladní certifikát pro tento režim.",
@@ -333,10 +335,9 @@ async function certificateChangedSince(accountId: string, environment: string, s
 export async function processSale(saleId: string, account?: AccountRow): Promise<SaleRow | null> {
   const db = getDb();
   // pojistka prostředí (R5.4): při pauze tržbu nezabíráme, nic se nezapočítá ani neodešle
-  const pre = await db.query.sales.findFirst({ where: eq(schema.sales.id, saleId), columns: { mode: true, status: true } });
+  const pre = await db.query.sales.findFirst({ where: eq(schema.sales.id, saleId), columns: { mode: true, status: true, sentAt: true } });
   if (!pre) return null;
-  const gate = pre.status === "queued" ? await breakerGate(pre.mode) : "open";
-  if (gate === "paused") return (await db.query.sales.findFirst({ where: eq(schema.sales.id, saleId) })) ?? null;
+  if (pre.status === "queued" && (await breakerPaused(pre.mode))) return (await db.query.sales.findFirst({ where: eq(schema.sales.id, saleId) })) ?? null;
   const token = randomUUID();
   const startedAt = new Date();
   const [claimed] = await db
@@ -346,6 +347,16 @@ export async function processSale(saleId: string, account?: AccountRow): Promise
     .where(and(eq(schema.sales.id, saleId), eq(schema.sales.status, "queued"), lte(schema.sales.nextAttemptAt, startedAt)))
     .returning();
   if (!claimed) return (await db.query.sales.findFirst({ where: eq(schema.sales.id, saleId) })) ?? null;
+  // slot zkušební tržby se bere až po zabrání tržby – neúspěšný claim ho nespotřebuje (R6.8)
+  const gate = await breakerGate(claimed.mode);
+  if (gate.state === "paused") {
+    // slot mezitím vzal jiný pokus → tržbu vrátíme do fronty, jako by se jí nikdo nedotkl
+    await db
+      .update(schema.sales)
+      .set({ status: "queued", claimToken: null, attempts: claimed.attempts - 1, sentAt: pre.sentAt })
+      .where(and(eq(schema.sales.id, claimed.id), eq(schema.sales.claimToken, token)));
+    return (await db.query.sales.findFirst({ where: eq(schema.sales.id, saleId) })) ?? null;
+  }
 
   const acc = account?.id === claimed.accountId ? account : await db.query.accounts.findFirst({ where: eq(schema.accounts.id, claimed.accountId) });
   const mode = saleMode(claimed.mode);
@@ -372,6 +383,8 @@ export async function processSale(saleId: string, account?: AccountRow): Promise
     // do last_error (vidí ho vlastník) jen bezpečný popis – bez SQL a jeho parametrů
     outcome = { result: "retry", code: "INTERNAL", message: safeError(e).message };
   }
+  // blokace vzniká vždy před voláním FS (certifikát, EIČ, data, podpis) → zkušební slot se vrací (R6.8)
+  const blockedBeforeFs = outcome.result === "blocked";
   // blok kvůli certifikátu, který se mezitím vyměnil (requeue nového certifikátu tržbu v „sending“ minul):
   // zkusit hned znovu, ne za hodinu (Д-4)
   if (outcome.result === "blocked" && mode && mode !== "mock" && (CERT_BLOCKS as readonly string[]).includes(outcome.code ?? "") && (await certificateChangedSince(claimed.accountId, mode, startedAt))) {
@@ -385,7 +398,14 @@ export async function processSale(saleId: string, account?: AccountRow): Promise
     await maybeTripBreaker(claimed.mode);
   }
   // potvrzená zkušební tržba = podpis FS jde zase ověřit → pojistka se ruší
-  if (gate === "probe" && applied && outcome.result === "confirmed") await db.delete(schema.fsBreaker).where(eq(schema.fsBreaker.environment, claimed.mode));
+  if (gate.state === "probe" && applied && outcome.result === "confirmed") await db.delete(schema.fsBreaker).where(eq(schema.fsBreaker.environment, claimed.mode));
+  // zkouška se k FS nedostala → slot hned uvolnit pro další tržbu, ne až za hodinu (R6.8)
+  if (gate.state === "probe" && blockedBeforeFs) {
+    await db
+      .update(schema.fsBreaker)
+      .set({ probeAt: now })
+      .where(and(eq(schema.fsBreaker.environment, claimed.mode), eq(schema.fsBreaker.probeAt, gate.until)));
+  }
   return (await db.query.sales.findFirst({ where: eq(schema.sales.id, saleId) })) ?? null;
 }
 
@@ -549,21 +569,30 @@ async function checkInvalidStreak(row: SaleRow) {
 
 /* ───────────── pojistka prostředí (R5.4) ───────────── */
 
+/** Je prostředí pozastavené a na zkušební tržbu ještě není čas? (jen čtení – slot nebere) */
+async function breakerPaused(environment: string, now = new Date()): Promise<boolean> {
+  if (environment !== "playground" && environment !== "production") return false;
+  const row = await getDb().query.fsBreaker.findFirst({ where: eq(schema.fsBreaker.environment, environment) });
+  return !!row && row.probeAt > now;
+}
+
+type BreakerGate = { state: "open" } | { state: "paused" } | { state: "probe"; until: Date };
+
 /**
  * Smí se teď odesílat do prostředí? „probe“ = pojistka je zapnutá, ale je čas na jednu zkušební tržbu
- * (slot se bere atomicky, takže ji dostane jen jeden souběžný pokus).
+ * (slot se bere atomicky, takže ji dostane jen jeden souběžný pokus; `until` = do kdy slot drží).
  */
-async function breakerGate(environment: string, now = new Date()): Promise<"open" | "probe" | "paused"> {
-  if (environment !== "playground" && environment !== "production") return "open";
+async function breakerGate(environment: string, now = new Date()): Promise<BreakerGate> {
+  if (environment !== "playground" && environment !== "production") return { state: "open" };
   const db = getDb();
   const row = await db.query.fsBreaker.findFirst({ where: eq(schema.fsBreaker.environment, environment) });
-  if (!row) return "open";
+  if (!row) return { state: "open" };
   const [probe] = await db
     .update(schema.fsBreaker)
     .set({ probeAt: new Date(now.getTime() + BREAKER.probeMs) })
     .where(and(eq(schema.fsBreaker.environment, environment), lte(schema.fsBreaker.probeAt, now)))
-    .returning({ environment: schema.fsBreaker.environment });
-  return probe ? "probe" : "paused";
+    .returning({ probeAt: schema.fsBreaker.probeAt });
+  return probe ? { state: "probe", until: probe.probeAt } : { state: "paused" };
 }
 
 /** Neověřitelné odpovědi od více účtů najednou = problém prostředí (kotvy, podpis FS), ne jedné tržby. */
@@ -774,17 +803,37 @@ export async function processPending(limit = 50, concurrency = 4): Promise<{ pro
     .where(and(eq(schema.sales.status, "queued"), lte(schema.sales.nextAttemptAt, now), ...(paused.length ? [notInArray(schema.sales.mode, paused)] : [])))
     .orderBy(asc(schema.sales.nextAttemptAt))
     .limit(limit);
+  let processed = 0;
+  // Zkušební tržba (R6.8): jen tržba bez blokace (nebo s INVALID_RESPONSE) – blokovaná do FS nedojde a slot by
+  // zbytečně držela hodinu. Tržba, která se zablokuje až teď (např. certifikát mezitím vypršel), slot vrátí, a tak
+  // se zkouší další kandidát, dokud jeden k FS opravdu nedojde.
   for (const b of breakers) {
     if (b.probeAt > now) continue;
-    const [probe] = await db
+    const candidates = await db
       .select({ id: schema.sales.id })
       .from(schema.sales)
-      .where(and(eq(schema.sales.status, "queued"), eq(schema.sales.mode, b.environment), lte(schema.sales.nextAttemptAt, now)))
+      .where(
+        and(
+          eq(schema.sales.status, "queued"),
+          eq(schema.sales.mode, b.environment),
+          lte(schema.sales.nextAttemptAt, now),
+          or(isNull(schema.sales.blockedReason), eq(schema.sales.blockedReason, "INVALID_RESPONSE")),
+        ),
+      )
       .orderBy(asc(schema.sales.nextAttemptAt))
-      .limit(1);
-    if (probe) due.push(probe);
+      .limit(PROBE_CANDIDATES);
+    for (const { id } of candidates) {
+      try {
+        await processSale(id);
+      } catch (e) {
+        console.error("[fiscal] zkušební tržbu se nepodařilo zpracovat", { saleId: id, error: safeError(e) });
+      }
+      processed++;
+      const still = await db.query.fsBreaker.findFirst({ where: eq(schema.fsBreaker.environment, b.environment) });
+      // pojistka zrušená, nebo slot spotřeboval pokus, který došel k FS
+      if (!still || still.probeAt > new Date()) break;
+    }
   }
-  let processed = 0;
   let next = 0;
   await Promise.all(
     Array.from({ length: Math.min(concurrency, due.length) }, async () => {
