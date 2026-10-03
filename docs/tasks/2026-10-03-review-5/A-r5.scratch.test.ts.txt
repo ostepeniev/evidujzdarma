@@ -1,0 +1,213 @@
+/**
+ * Рецензія №5, зона A — тест-чернетка (НЕ для репозиторію). Сценарії:
+ *  C1 (контроль R7.12): тржба B приходить між читанням списку і транзакцією settleElsewhere → B не позначена.
+ *  S1 (R7.12): дедуп «раз на день»: власник уже натиснув «Evidováno jinak», того ж дня каса довозить ще одну → листа немає.
+ *  S2 (R7.15 N7 неповний): mock-тржба застарілої каси на production-рахунку з кодом FUTURE_DATE (перевірка йде до MODE_MISMATCH)
+ *      → не тримає закритий рахунок, лист дня 0 «nemá», +31 d рахунок з карантином видалено.
+ *  S3 (R7.14): у NODE_ENV=production відсунута дата з мілісекундами (формат toISOString) мовчки ігнорується → константа.
+ *  S4 (R7.13): повтор уже прийнятої крос-режимної vratky (прийнята до R7.13) → карантин-дубль REFUND_MODE_MISMATCH.
+ *  C2 (контроль R7.15 N9): пристрій, відкликаний власником до закриття, на закритому рахунку (< 30 d) → 401 з allowClosed.
+ */
+import { randomUUID } from "node:crypto";
+import { getDb, schema } from "@ez/db";
+import { and, eq, like } from "drizzle-orm";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { hashPin } from "@/lib/pos/pin";
+import { HttpError, authenticateDevice } from "@/lib/server/auth";
+import { productionAcceptsFrom, salesStatus } from "@/lib/server/fiscal";
+import { resolveQuarantine } from "@/lib/server/quarantine";
+import { refundBlockedReason } from "@/lib/pos/sale-factory";
+import { applyPolledStatuses } from "@/lib/pos/sync-result";
+import type { LocalSale } from "@/lib/pos/types";
+import { closeAccount, runRetention, settleElsewhere, unsentProductionOf, unsentView } from "@/lib/server/lifecycle";
+import { ingestSales } from "@/lib/server/sales";
+import { verifyStaffPinOnline } from "@/lib/server/staff-pin";
+import { sha256 } from "@/lib/server/tokens";
+import { testCert } from "../helpers/certs";
+import { deviceContext, deviceSale, seedAccount, storeVerifiedCertificate } from "../helpers/fixtures";
+import { createTestDb, type TestDb } from "../helpers/test-db";
+
+let t: TestDb;
+let savedEnv: string | undefined;
+beforeAll(async () => {
+  t = await createTestDb();
+  savedEnv = process.env.EET_PRODUCTION_ACCEPTS_FROM;
+}, 60_000);
+afterAll(async () => t?.close());
+beforeEach(async () => t.reset());
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllEnvs();
+  vi.useRealTimers();
+  process.env.EET_PRODUCTION_ACCEPTS_FROM = savedEnv;
+});
+
+const DAY = 86_400_000;
+const mails = (to: string, prefix: string) =>
+  getDb()
+    .select()
+    .from(schema.emailOutbox)
+    .where(and(eq(schema.emailOutbox.to, to), like(schema.emailOutbox.dedupeKey, `${prefix}%`)));
+
+async function closedProduction() {
+  const s = await seedAccount({ mode: "production" });
+  await storeVerifiedCertificate(s.account.id, testCert().cert, "production");
+  const a = deviceSale(s.unit.id, { mode: "production", soldAt: new Date(Date.now() - 300_000).toISOString() });
+  await ingestSales(await deviceContext(s.device.id), [a as never]);
+  await closeAccount(s.account.id, { confirm: true });
+  return { s, a };
+}
+
+describe("rev5 A scratch", () => {
+  it("C1 control R7.12: a sale arriving between the read and the transaction is not settled", async () => {
+    const { s, a } = await closedProduction();
+    const ids = unsentView(await unsentProductionOf(s.account.id)).ids;
+    expect(ids).toEqual([a.id]);
+    const b = deviceSale(s.unit.id, { mode: "production", soldAt: new Date(Date.now() - 200_000).toISOString() });
+    const db = getDb();
+    const orig = db.transaction.bind(db);
+    vi.spyOn(db, "transaction").mockImplementationOnce((async (fn: never) => {
+      await ingestSales(await deviceContext(s.device.id), [b as never]);
+      return orig(fn);
+    }) as never);
+    const out = await settleElsewhere(s.account.id, { confirm: true, actor: s.user.email, ids });
+    expect(out).toEqual({ sales: 1, quarantine: 0 });
+    const rowB = await db.query.sales.findFirst({ where: eq(schema.sales.id, b.id) });
+    expect(rowB!.settledElsewhereAt).toBeNull();
+    expect(await runRetention(new Date(Date.now() + 31 * DAY))).toMatchObject({ accountsHeld: 1 });
+  });
+
+  it("S1 R7.12: after the owner settled, a sale delivered the same day sends no e-mail (daily dedupe)", async () => {
+    const { s } = await closedProduction();
+    const ctx = await deviceContext(s.device.id);
+    const b = deviceSale(s.unit.id, { mode: "production", soldAt: new Date(Date.now() - 200_000).toISOString() });
+    await ingestSales(ctx, [b as never]);
+    expect(await mails(s.user.email, "closed-unsent:")).toHaveLength(1);
+    const ids = unsentView(await unsentProductionOf(s.account.id)).ids;
+    await settleElsewhere(s.account.id, { confirm: true, actor: s.user.email, ids });
+    expect((await unsentProductionOf(s.account.id)).sales).toHaveLength(0);
+    // týž den: další offline pokladna doveze starší tržbu
+    const c = deviceSale(s.unit.id, { mode: "production", soldAt: new Date(Date.now() - 100_000).toISOString() });
+    const [rc] = await ingestSales(ctx, [c as never]);
+    expect(rc).toMatchObject({ ok: true, inserted: true });
+    expect((await unsentProductionOf(s.account.id)).sales.map((x) => x.id)).toEqual([c.id]);
+    // vlastník o C nedostane nic – stejný dedupe_key closed-unsent:{účet}:{den}:{e-mail}
+    expect(await mails(s.user.email, "closed-unsent:")).toHaveLength(1);
+  });
+
+  it("S2 R7.15 N7: stale-config mock sale on a production account with FUTURE_DATE is not held", async () => {
+    const s = await seedAccount({ mode: "production" });
+    await storeVerifiedCertificate(s.account.id, testCert().cert, "production");
+    // pokladna se starým nastavením (mock) a hodinami napřed o 15 min
+    const x = deviceSale(s.unit.id, { mode: "mock", soldAt: new Date(Math.floor((Date.now() + 15 * 60_000) / 1000) * 1000).toISOString() });
+    const [r] = await ingestSales(await deviceContext(s.device.id), [x as never]);
+    expect(r).toMatchObject({ quarantined: true, code: "FUTURE_DATE" });
+    // tatáž tržba s hodinami v pořádku by byla MODE_MISMATCH a účet by držela (N7)
+    expect((await unsentProductionOf(s.account.id)).quarantine).toHaveLength(0);
+    await closeAccount(s.account.id, { confirm: true });
+    const [day0] = await mails(s.user.email, "closed-summary:");
+    expect(String((day0!.payload as { text: string }).text)).toMatch(/Neodeslané ostré tržby nemá/);
+    expect(await runRetention(new Date(Date.now() + 31 * DAY))).toMatchObject({ accountsHeld: 0 });
+    expect(await getDb().query.saleQuarantine.findFirst({ where: eq(schema.saleQuarantine.id, x.id) })).toBeUndefined();
+  });
+
+  it("S3 R7.14: in production a postponed date with milliseconds is silently ignored", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    process.env.EET_PRODUCTION_ACCEPTS_FROM = new Date("2027-01-01T00:00:00+01:00").toISOString(); // 2026-12-31T23:00:00.000Z
+    expect(productionAcceptsFrom()).toBe(Date.parse("2026-11-01T00:00:00+01:00"));
+  });
+
+  it("S4 R7.13: re-sending an already accepted cross-mode refund → a duplicate in quarantine", async () => {
+    const s = await seedAccount({ mode: "playground" });
+    await storeVerifiedCertificate(s.account.id, testCert().cert, "playground");
+    await storeVerifiedCertificate(s.account.id, testCert().cert, "production");
+    await getDb().update(schema.staff).set({ pinHash: await hashPin("246813") }).where(eq(schema.staff.id, s.owner.id));
+    const orig = deviceSale(s.unit.id, { mode: "playground", soldAt: new Date(Date.now() - 3_600_000).toISOString() });
+    await ingestSales(await deviceContext(s.device.id), [orig as never]);
+    await getDb().update(schema.accounts).set({ eetMode: "production", eetModeChangedAt: new Date(Date.now() - 60_000) }).where(eq(schema.accounts.id, s.account.id));
+    const ctx = await deviceContext(s.device.id);
+    const approval = (await verifyStaffPinOnline(ctx, s.owner.id, "246813", "refund", { refundOf: orig.id, amount: 35000 })).approval!;
+    const x = deviceSale(s.unit.id, {
+      mode: "production",
+      lines: [{ name: "Střih", qty: -1, unitPrice: 35000, vatRate: 21 }],
+      payments: [{ method: "cash", amount: -35000 }],
+      refundOf: orig.id,
+      staffId: s.owner.id,
+      approval,
+    });
+    // stav jako před R7.13: vratka už v sales (přijatá starým serverem)
+    await getDb().insert(schema.sales).values({
+      id: x.id,
+      accountId: s.account.id,
+      deviceId: s.device.id,
+      unitId: s.unit.id,
+      registerId: "P1",
+      fsUnitId: 303,
+      sequence: x.sequence as string,
+      soldAt: new Date(x.soldAt as string),
+      total: -35000,
+      payments: [{ method: "cash", amount: -35000 }],
+      items: [{ name: "Střih", qty: -1, unitPrice: 35000, vatRate: 21 }],
+      refundOf: orig.id,
+      evidencedTotal: -35000,
+      mode: "production",
+      deadlineAt: new Date(Date.now() + 2 * DAY),
+    });
+    // pokladna nedostala odpověď a pošle tutéž vratku znovu
+    const [r] = await ingestSales(ctx, [x as never]);
+    expect(r).toMatchObject({ ok: false, quarantined: true, code: "REFUND_MODE_MISMATCH" });
+    expect(await getDb().query.saleQuarantine.findFirst({ where: eq(schema.saleQuarantine.id, x.id) })).toBeTruthy();
+    expect(await getDb().query.sales.findFirst({ where: eq(schema.sales.id, x.id) })).toBeTruthy();
+  });
+
+  it("S5 R7.13: after send_current_mode the register keeps the old local mode and blocks a refund the server would accept", async () => {
+    const s = await seedAccount({ mode: "production" });
+    await storeVerifiedCertificate(s.account.id, testCert().cert, "production");
+    await getDb().update(schema.staff).set({ pinHash: await hashPin("246813") }).where(eq(schema.staff.id, s.owner.id));
+    // pokladna se starým nastavením prodala v ukázkovém režimu po přepnutí → MODE_MISMATCH
+    const orig = deviceSale(s.unit.id, { mode: "mock", soldAt: new Date(Math.floor((Date.now() - 600_000) / 1000) * 1000).toISOString() });
+    await getDb().update(schema.accounts).set({ eetModeChangedAt: new Date(Date.now() - 3_600_000) }).where(eq(schema.accounts.id, s.account.id));
+    const [r0] = await ingestSales(await deviceContext(s.device.id), [orig as never]);
+    expect(r0).toMatchObject({ quarantined: true, code: "MODE_MISMATCH" });
+    // vlastník: tržba byla skutečná → odeslat v aktuálním (ostrém) režimu
+    const res = await resolveQuarantine(s.account.id, orig.id, { action: "send_current_mode" });
+    expect(res.ok).toBe(true);
+    const [st] = await salesStatus([orig.id], s.account.id);
+    expect(st!.mode).toBe("production");
+    // pokladna se zeptá na stav: patch režim nemění → lokální kopie zůstává „mock“
+    const [[, patch]] = applyPolledStatuses([orig.id], [st as never]);
+    expect(patch).not.toHaveProperty("mode");
+    const local = { ...(orig as object), mode: "mock", ...patch } as unknown as LocalSale;
+    expect(refundBlockedReason(local, "production")).toMatch(/ukázkový režim/);
+    // …přitom server ostrou vratku k této tržbě přijme
+    const ctx = await deviceContext(s.device.id);
+    const approval = (await verifyStaffPinOnline(ctx, s.owner.id, "246813", "refund", { refundOf: orig.id, amount: 35000 })).approval!;
+    const x = deviceSale(s.unit.id, {
+      mode: "production",
+      lines: [{ name: "Střih", qty: -1, unitPrice: 35000, vatRate: 21 }],
+      payments: [{ method: "cash", amount: -35000 }],
+      refundOf: orig.id,
+      staffId: s.owner.id,
+      approval,
+    });
+    const [r] = await ingestSales(ctx, [x as never]);
+    expect(r).toMatchObject({ ok: true });
+  });
+
+  it("C2 control R7.15 N9: a device revoked by the owner before closing gets 401 on a closed account (allowClosed)", async () => {
+    const s = await seedAccount({ mode: "mock" });
+    const token = "q".repeat(40);
+    await getDb().update(schema.devices).set({ tokenHash: sha256(token), revokedAt: new Date() }).where(eq(schema.devices.id, s.device.id));
+    await closeAccount(s.account.id, { confirm: true });
+    const req = new Request("http://localhost/api/pokladna/sales", { headers: { authorization: `Bearer ${token}` } });
+    const err = (await authenticateDevice(req, { allowClosed: true }).catch((e: unknown) => e)) as HttpError;
+    expect(err).toBeInstanceOf(HttpError);
+    expect(err.status).toBe(401);
+    expect(err.message).toBe("Účet je zrušený a pokladna je odpojená.");
+    // neznámý token – obecný text
+    const err2 = (await authenticateDevice(new Request("http://x", { headers: { authorization: `Bearer ${"w".repeat(40)}` } }), { allowClosed: true }).catch((e: unknown) => e)) as HttpError;
+    expect(err2.status).toBe(401);
+    expect(err2.message).toBe("Zařízení není registrované nebo bylo odpojeno");
+    void randomUUID;
+  });
+});

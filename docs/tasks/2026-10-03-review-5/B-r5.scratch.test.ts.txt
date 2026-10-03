@@ -1,0 +1,294 @@
+/**
+ * Рецензія №5 (B) – тест-чернетка. Лише читання: файл видаляється після прогону.
+ *  T1  чеські тексти з review-4.md (дослівні) ↔ рендер сайту / листи / llms.txt;
+ *  T2  nginx: блок B-r4 розд. 3 + access_log проходить правила R7.2 (і план open-site ловиться);
+ *  D1  повторна відписка зсуває unsubscribedAt (подовжує 3 роки);
+ *  D2  сторінка стану показує «pořadí na pokladnu» за непідтвердженим інтересом pokladna від третьої особи;
+ *  D3  DOI власника підтверджує інтерес pokladna, який додала третя особа → app-ready;
+ *  D4  <time dateTime> на юридичних сторінках = "2026-10-03-r7" (невалідне значення);
+ *  D5  зовнішні посилання без target=_blank / noreferrer у рендері публічних сторінок.
+ */
+import { readFileSync } from "node:fs";
+import { createElement, type FC } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { getDb, schema } from "@ez/db";
+import { eq } from "drizzle-orm";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { createTestDb, type TestDb } from "./helpers/test-db";
+import { pageText } from "./helpers/render-text";
+import { effectiveAuth, locations, mainServer, matchLocation, parseNginx, type Directive } from "./helpers/nginx";
+import { CLOSED_API, CLOSED_SECTIONS } from "@/lib/launch";
+
+vi.mock("next/server", async (orig) => ({ ...(await orig<typeof import("next/server")>()), after: () => {} }));
+vi.mock("next/navigation", async (orig) => ({
+  ...(await orig<typeof import("next/navigation")>()),
+  useRouter: () => ({ push: () => {}, replace: () => {}, prefetch: () => {}, back: () => {}, refresh: () => {} }),
+  usePathname: () => "/",
+  useSearchParams: () => new URLSearchParams(),
+}));
+
+const norm = (s: string) => s.replace(/[  ]/g, " ").replace(/\s+/g, " ").trim();
+const md = (s: string) => s.replace(/\*\*([^*]+)\*\*/g, "$1").replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");
+
+describe("T1 – verbatim Czech texts from review-4.md", () => {
+  it("every verbatim text is on the site (report)", async () => {
+    const { SITE, operatorLine } = await import("@/lib/site");
+    const legal = await import("@/lib/legal");
+    const review = readFileSync(new URL("../../../docs/tasks/2026-10-03-review-4.md", import.meta.url), "utf8");
+    // blockquote paragraphs
+    const paras: { line: number; text: string }[] = [];
+    let cur: { line: number; parts: string[] } | null = null;
+    review.split("\n").forEach((l, i) => {
+      const m = /^\s*>\s?(.*)$/.exec(l);
+      if (m && m[1]!.trim()) {
+        cur ??= { line: i + 1, parts: [] };
+        cur.parts.push(m[1]!.trim());
+      } else {
+        if (cur) paras.push({ line: cur.line, text: cur.parts.join(" ") });
+        cur = null;
+      }
+    });
+    if (cur) paras.push({ line: (cur as { line: number }).line, text: (cur as { parts: string[] }).parts.join(" ") });
+    const expected = paras.map((p) => ({
+      line: p.line,
+      text: norm(
+        md(p.text)
+          .replace("{operatorLine()}", operatorLine())
+          .replace("{SITE.email}", SITE.email)
+          .replace("{datum zveřejnění}", legal.REFERRAL_RULES_VERSION_LABEL),
+      ),
+    }));
+    const inline = [
+      "Předregistrujte se zdarma",
+      "Předregistrovat zdarma",
+      "údaje neprodáváme a ukládáme je v EU",
+      "(oprávněný zájem na férovém výsledku ankety, čl. 6 odst. 1 písm. f) GDPR)",
+      ", u webináře jeho termín",
+      "Tarif Zdarma je zdarma navždy (čl. 6.2), ale bez garancí",
+      "čl. 6.2 podmínek",
+      "Pravidla akce",
+      "Stav předregistrace najdete zde:",
+      "Jedním kliknutím potvrďte e-mail. Až pokladnu spustíme, pošleme vám odkaz.",
+      "Návod k DIS+ a certifikátu krok za krokem",
+      "hlídá lhůtu 48 hodin a tržby odešle, jakmile je pokladna online",
+    ].map((text) => ({ line: 0, text }));
+
+    // corpora
+    const page = async (p: string) => (await import(p)).default as FC;
+    const corpora: Record<string, string> = {
+      zasady: pageText(await page("@/app/(site)/ochrana-osobnich-udaju/page")),
+      podminky: pageText(await page("@/app/(site)/podminky/page")),
+      pravidla: pageText(await page("@/app/(site)/pravidla-doporuceni/page")),
+      ucetni: pageText(await page("@/app/(site)/ucetni/page")),
+      landing: pageText(await page("@/app/(site)/page")),
+      cenik: pageText(await page("@/app/(site)/cenik/page")),
+    };
+    const { WebinarForm } = await import("@/components/accountant/webinar-form");
+    corpora.webinarForm = pageText(WebinarForm as FC);
+    const { ToolCta } = await import("@/components/tool-cta");
+    corpora.toolCta = pageText(ToolCta as FC);
+    corpora.preregFormSrc = norm(readFileSync(new URL("../src/components/prereg-form.tsx", import.meta.url), "utf8").replace(/\{SITE\.email\}/g, SITE.email));
+    const { llmsTxt } = await import("@/lib/llms");
+    corpora.llms = norm(llmsTxt());
+    const { renderEmail } = await import("@/lib/emails");
+    const strip = (h: string) => norm(h.replace(/<[^>]+>/g, " ").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'"));
+    const e1 = renderEmail("prereg-confirm", { confirmToken: "T", unsubscribeToken: "U" });
+    const e2 = renderEmail("prereg-confirm", { confirmToken: "T", unsubscribeToken: "U", alreadyConfirmed: true });
+    corpora.emailNewText = norm(e1.text);
+    corpora.emailNewHtml = strip(e1.html);
+    corpora.emailAgainText = norm(e2.text);
+    corpora.emailAgainHtml = strip(e2.html);
+    const { PRICING_FAQ, PRICING_NOTICE } = (await import("@/content/pricing")) as unknown as { PRICING_FAQ?: { q: string; a: string }[]; PRICING_NOTICE: string };
+    corpora.pricingNotice = PRICING_NOTICE;
+    void PRICING_FAQ;
+
+    const report: string[] = [];
+    for (const e of [...expected, ...inline]) {
+      const where = Object.entries(corpora)
+        .filter(([, c]) => norm(c).includes(e.text))
+        .map(([k]) => k);
+      if (where.length) {
+        report.push(`OK   L${e.line} [${where.join(",")}] ${e.text.slice(0, 70)}`);
+        continue;
+      }
+      // nejdelší prefix, který někde je
+      let best = { k: "", n: 0 };
+      for (const [k, c] of Object.entries(corpora)) {
+        const cn = norm(c);
+        let lo = 0;
+        let hi = e.text.length;
+        while (lo < hi) {
+          const mid = Math.ceil((lo + hi) / 2);
+          if (cn.includes(e.text.slice(0, mid))) lo = mid;
+          else hi = mid - 1;
+        }
+        if (lo > best.n) best = { k, n: lo };
+      }
+      const cn = norm(corpora[best.k] ?? "");
+      const at = cn.indexOf(e.text.slice(0, best.n));
+      report.push(
+        `MISS L${e.line} best=${best.k} prefix=${best.n}/${e.text.length}\n     expected: …${JSON.stringify(e.text.slice(Math.max(0, best.n - 25), best.n + 60))}\n     site:     …${JSON.stringify(cn.slice(Math.max(0, at + best.n - 25), at + best.n + 60))}`,
+      );
+    }
+    console.log(`\n[T1] verbatim texts:\n${report.join("\n")}`);
+    expect(report.length).toBeGreaterThan(0);
+  });
+});
+
+/* ───────────── T2 nginx ───────────── */
+const CLOSED_PATHS = [
+  ...[...CLOSED_SECTIONS, ...CLOSED_API].flatMap((p) => [p, `${p}/`, `${p}/x`]),
+  "/api/ucet/certifikat",
+  "/api/ucet/certifikat/1",
+  "/firma/sitemap/0.xml",
+  "/provozovna/sitemap/0.xml",
+  "/u/00000000-0000-4000-8000-000000000000",
+];
+function violations(conf: string): string[] {
+  const server = mainServer(parseNginx(conf));
+  const out: string[] = [];
+  for (const path of CLOSED_PATHS) {
+    const auth = effectiveAuth(server, path);
+    if (!auth || auth === "off") out.push(`${path}: bez auth_basic (location ${matchLocation(locations(server), path)?.pattern ?? "—"})`);
+  }
+  if (effectiveAuth(server, "/api/pokladna/x") !== "off") out.push("/api/pokladna/x: chybí auth_basic off");
+  for (const loc of locations(server)) if (loc.block.some((d: Directive) => d.name === "proxy_set_header")) out.push(`location ${loc.pattern}: vlastní proxy_set_header`);
+  return out;
+}
+
+describe("T2 – nginx opening-day block with access_log", () => {
+  it("B-r4 §3 block + access_log ez_noquery passes R7.2 rules; public routes stay public; internal 404", () => {
+    const current = readFileSync(new URL("../../../infra/nginx/evidujzdarma.conf", import.meta.url), "utf8");
+    const block = readFileSync(new URL("../../../docs/tasks/2026-10-03-review-4/B-r4.md", import.meta.url), "utf8").split("```nginx")[1]!.split("```")[0]!;
+    const withLog = block.replace("    server_name evidujzdarma.cz;\n", "    server_name evidujzdarma.cz;\n    access_log /var/log/nginx/evidujzdarma.access.log ez_noquery;\n");
+    expect(withLog).not.toBe(block);
+    const third = current.indexOf("server {\n    listen 443 ssl;\n    listen [::]:443 ssl;\n    server_name evidujzdarma.cz;");
+    const next = current.slice(0, third) + withLog.trim() + "\n";
+    console.log(`\n[T2] violations(new conf) = ${JSON.stringify(violations(next))}`);
+    expect(violations(next)).toEqual([]);
+    const server = mainServer(parseNginx(next));
+    const pub = ["/", "/ucetni", "/registrace/zajem", "/pravidla-doporuceni", "/api/registrace/zajem", "/api/preregistrace", "/api/odhlasit", "/namitka", "/robots.txt", "/sitemap.xml", "/llms.txt"];
+    const pubAuth = pub.map((p) => `${p}=${effectiveAuth(server, p) ?? "none"}`);
+    console.log(`[T2] public: ${pubAuth.join(" ")}`);
+    const internal = matchLocation(locations(server), "/api/internal/dis-launch");
+    console.log(`[T2] /api/internal/dis-launch → location ${internal?.modifier} ${internal?.pattern}: ${JSON.stringify(internal?.block)}`);
+    expect(internal?.block.some((d) => d.name === "return" && d.args[0] === "404")).toBe(true);
+    // access_log je v main serveru
+    expect(server.block!.some((d) => d.name === "access_log" && d.args[1] === "ez_noquery")).toBe(true);
+    // a: soubor s log_format zůstává top-level (parser ho nepovažuje za server)
+    expect(parseNginx(next).some((d) => d.name === "log_format" && d.args[0] === "ez_noquery")).toBe(true);
+    // to, co infra.test.ts dělá s „current“: planFromOpenSite – nad novým konfigem
+    const planLike = next.replace(/\n\s*auth_basic "EvidujZdarma";\n\s*auth_basic_user_file [^\n]+\n/, "\n");
+    console.log(`[T2] infra.test planFromOpenSite-regex on new conf removes auth from: ${JSON.stringify(violations(planLike))}`);
+  });
+});
+
+/* ───────────── D1–D3 (PGlite) ───────────── */
+let t: TestDb;
+beforeAll(async () => {
+  t = await createTestDb();
+}, 60_000);
+afterAll(async () => t?.close());
+beforeEach(async () => t.reset());
+
+let ip = 0;
+const post = async (body: Record<string, unknown>) => {
+  const { POST } = await import("@/app/api/preregistrace/route");
+  return POST(new Request("http://localhost/api/preregistrace", { method: "POST", headers: { "content-type": "application/json", "x-real-ip": `10.55.0.${++ip}` }, body: JSON.stringify(body) }));
+};
+const mails = (to: string) => getDb().select().from(schema.emailOutbox).where(eq(schema.emailOutbox.to, to));
+const rowOf = (email: string) => getDb().query.preregistrations.findFirst({ where: eq(schema.preregistrations.email, email) });
+
+describe("D1 – repeated unsubscribe moves unsubscribedAt", () => {
+  it("second POST of the same (permanent) unsubscribe link resets the 3-year clock", async () => {
+    const { unsubscribeTokenFor } = await import("@/lib/server/preregistration");
+    const { POST: unsub } = await import("@/app/api/odhlasit/route");
+    await post({ email: "d1@example.cz" });
+    const row = (await rowOf("d1@example.cz"))!;
+    const req = () => new Request(`http://localhost/api/odhlasit?token=${encodeURIComponent(unsubscribeTokenFor(row.id))}`, { method: "POST", body: "confirm=1" });
+    await unsub(req());
+    const first = (await rowOf("d1@example.cz"))!.unsubscribedAt!;
+    await getDb().update(schema.preregistrations).set({ unsubscribedAt: new Date("2025-01-01T00:00:00Z") }).where(eq(schema.preregistrations.id, row.id));
+    const r2 = await unsub(req());
+    const second = (await rowOf("d1@example.cz"))!.unsubscribedAt!;
+    console.log(`\n[D1] first=${first.toISOString()} forced=2025-01-01 after 2nd POST=${second.toISOString()} status=${r2.status} body~${(await r2.text()).includes("Odhlášeno") ? "Odhlášeno" : "?"}`);
+    expect(second.getTime()).toBeGreaterThan(new Date("2025-06-01").getTime()); // RED = defekt potvrzen
+  });
+});
+
+describe("D2/D3 – interests added by a third party", () => {
+  it("D2: confirmed webinar-only address, third party asks 'pokladna' → status page claims a POS queue position", async () => {
+    const { confirmPreregistration, statusTokenFor } = await import("@/lib/server/preregistration");
+    await post({ email: "d2@example.cz", interest: "webinar", utm: { utm_source: "ucetni" } });
+    const [m] = await mails("d2@example.cz");
+    await confirmPreregistration((m!.payload as { confirmToken: string }).confirmToken);
+    await post({ email: "d2@example.cz" }); // třetí osoba z úvodní stránky (interest=pokladna)
+    const row = (await rowOf("d2@example.cz"))!;
+    const { default: ConfirmPage } = await import("@/app/(site)/registrace/potvrzeni/page");
+    const html = renderToStaticMarkup(await ConfirmPage({ searchParams: Promise.resolve({ token: statusTokenFor(row.id) }) } as never));
+    const ints = await getDb().select().from(schema.preregistrationInterests).where(eq(schema.preregistrationInterests.preregistrationId, row.id));
+    console.log(`\n[D2] interests=${JSON.stringify(ints.map((i) => ({ c: i.campaign, confirmed: !!i.confirmedAt })))} pageSaysPOS=${/v pořadí na včasný přístup k pokladně/.test(html)}`);
+    expect(/v pořadí na včasný přístup k pokladně/.test(html)).toBe(false); // RED = defekt
+  });
+
+  it("D3: unconfirmed webinar registrant; third party submits landing form; owner confirms newest link → app-ready queued", async () => {
+    const { confirmPreregistration } = await import("@/lib/server/preregistration");
+    await post({ email: "d3@example.cz", interest: "webinar", utm: { utm_source: "ucetni" } });
+    const first = (await mails("d3@example.cz"))[0]!;
+    const firstToken = (first.payload as { confirmToken: string }).confirmToken;
+    await post({ email: "d3@example.cz" }); // třetí osoba, interest=pokladna
+    const all = await mails("d3@example.cz");
+    const resend = all.find((x) => x.dedupeKey?.startsWith("prereg-confirm-resend"));
+    const oldOk = await confirmPreregistration(firstToken);
+    const newOk = resend ? await confirmPreregistration((resend.payload as { confirmToken: string }).confirmToken) : false;
+    const templates = (await mails("d3@example.cz")).map((x) => x.template);
+    console.log(`\n[D3] old link works=${oldOk} new link works=${newOk} resendInterest=${String((resend?.payload as { interest?: string })?.interest)} outbox=${JSON.stringify(templates)}`);
+    expect(templates).toContain("app-ready"); // observation
+  });
+});
+
+describe("D4/D5 – markup", () => {
+  it("D4: <time dateTime> on legal pages", async () => {
+    const Z = (await import("@/app/(site)/ochrana-osobnich-udaju/page")).default as FC;
+    const P = (await import("@/app/(site)/podminky/page")).default as FC;
+    const dt = [renderToStaticMarkup(createElement(Z)), renderToStaticMarkup(createElement(P))].flatMap((h) => [...h.matchAll(/<time dateTime="([^"]+)"/g)].map((m) => m[1]!));
+    console.log(`\n[D4] dateTime values: ${JSON.stringify(dt)}`);
+    expect(dt.every((v) => /^\d{4}-\d{2}-\d{2}$/.test(v))).toBe(false); // observation: invalid
+  });
+
+  it("D5: external <a> on static public pages – target/rel", async () => {
+    const pages = ["@/app/(site)/page", "@/app/(site)/ochrana-osobnich-udaju/page", "@/app/(site)/evidencni-jednotky/page", "@/app/(site)/ucetni/page", "@/app/(site)/o-nas/page", "@/app/(site)/nastroje/page", "@/app/(site)/co-se-o-eet-pise-spatne/page", "@/app/(site)/kalkulacka-eet-off/page", "@/app/(site)/qr-platba/page", "@/app/(site)/srovnani/moje-eet/page"];
+    const out: string[] = [];
+    for (const p of pages) {
+      let html = "";
+      try {
+        html = renderToStaticMarkup(createElement((await import(p)).default as FC));
+      } catch (e) {
+        out.push(`${p}: render error ${(e as Error).message.slice(0, 60)}`);
+        continue;
+      }
+      for (const m of html.matchAll(/<a\b[^>]*href="(https?:[^"]+)"[^>]*>/g)) {
+        const tag = m[0];
+        const ok = /target="_blank"/.test(tag) && /rel="[^"]*noopener[^"]*noreferrer|rel="[^"]*noreferrer[^"]*noopener/.test(tag);
+        if (!ok) out.push(`${p.replace("@/app/(site)/", "")}: ${m[1]} target=${/target="_blank"/.test(tag)} rel=${(/rel="([^"]*)"/.exec(tag) ?? [])[1]}`);
+      }
+    }
+    const { SiteHeader } = await import("@/components/site-header");
+    const { SiteFooter } = await import("@/components/site-footer");
+    for (const [n, C] of [["header", SiteHeader], ["footer", SiteFooter]] as const) {
+      for (const m of renderToStaticMarkup(createElement(C as FC)).matchAll(/<a\b[^>]*href="(https?:[^"]+)"[^>]*>/g)) out.push(`${n}: ${m[1]} ${m[0].includes("_blank") ? "blank" : "same-tab"}`);
+    }
+    console.log(`\n[D5] external links not opening safely in a new tab:\n${out.join("\n")}`);
+    expect(out.length).toBeGreaterThan(0); // observation
+  });
+});
+
+describe("D6 – cross-site text/plain form can post JSON to public POST routes", () => {
+  it("POST /api/preregistrace with content-type text/plain (no preflight) is accepted", async () => {
+    const { POST } = await import("@/app/api/preregistrace/route");
+    const res = await POST(new Request("http://localhost/api/preregistrace", { method: "POST", headers: { "content-type": "text/plain", origin: "https://evil.example", "x-real-ip": "10.66.0.1" }, body: JSON.stringify({ email: "d6@example.cz", interest: "webinar" }) }));
+    const n = (await mails("d6@example.cz")).length;
+    console.log(`\n[D6] status=${res.status} mails=${n}`);
+    expect(res.status).toBe(200); // observation
+  });
+});
