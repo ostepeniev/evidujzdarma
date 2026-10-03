@@ -5,10 +5,20 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { afterEach, describe, expect, it } from "vitest";
+import { mapRzp, mapSubject } from "@ez/cz";
 import { GUIDES, isIndexable } from "@/content/guides";
+import { ARES_FIXTURES } from "@/lib/server/ares-fixtures";
 import { createEetMcpServer, type McpDeps } from "@/lib/mcp/server";
 
-const deps: McpDeps = { lookupCompany: async () => null, fsStatus: async () => [], allow: () => true };
+// eet_check_ico s fixturou ARES (ne null) – jinak by gate neviděl checklist s odkazy (R6.5)
+const deps: McpDeps = {
+  lookupCompany: async (ico: string) => {
+    const f = ARES_FIXTURES[ico];
+    return f ? { subject: mapSubject(f.subject), rzp: f.rzp ? mapRzp(f.rzp) : null, fetchedAt: new Date().toISOString(), source: "fixture" as const } : null;
+  },
+  fsStatus: async () => [],
+  allow: () => true,
+} as McpDeps;
 let client: Client | null = null;
 async function connect(): Promise<Client> {
   const [a, b] = InMemoryTransport.createLinkedPair();
@@ -39,6 +49,16 @@ async function everything(c: Client): Promise<string> {
     ["eet_get_facts", { response_format: "json" }],
     ["eet_get_facts", {}],
     ["eet_list_misconceptions", { response_format: "json" }],
+    ["eet_list_misconceptions", {}],
+    // R6.5: všechny nástroje, eet_check_ico pro každou fixturu ARES (OSVČ, firma…)
+    ...Object.keys(ARES_FIXTURES).flatMap((ico): [string, Record<string, unknown>][] => [
+      ["eet_check_ico", { ico, response_format: "json" }],
+      ["eet_check_ico", { ico }],
+    ]),
+    ["eet_calculate_eet_off", { flat_tax_band: 1, yearly_income_czk: 600_000, response_format: "json" }],
+    ["eet_calculate_eet_off", { flat_tax_band: 1, yearly_income_czk: 600_000 }],
+    ["eet_get_fs_status", { response_format: "json" }],
+    ["eet_get_fs_status", {}],
   ];
   const out: string[] = [];
   for (const [name, args] of calls) {
@@ -51,7 +71,7 @@ async function everything(c: Client): Promise<string> {
 describe("Ф9 – MCP serves only reviewed guides", () => {
   const unreviewed = GUIDES.filter((g) => !g.reviewedBy);
 
-  it("gate: no MCP tool returns a slug or a link of a guide without review", async () => {
+  it("gate: no MCP tool (all of them, eet_check_ico with ARES fixtures) returns a slug or a link of a guide without review", async () => {
     expect(unreviewed.length).toBeGreaterThan(0);
     expect(unreviewed.every((g) => !isIndexable(g))).toBe(true);
     const all = await everything(await connect());

@@ -18,6 +18,17 @@ import { publicGuide, publicGuidePath, publicGuides, searchGuides, toHit } from 
 import { classifyPayment, PAYMENT_KINDS, PAYMENT_KIND_LABEL } from "./payments";
 
 export const MCP_SERVER_NAME = "evidujzdarma-mcp-server";
+/** Absolutní odkaz pro MCP; návod (/navody/…) jen, pokud je po revizi (Ф9) – jinak null. */
+function publicHref(href: string | undefined | null): string | null {
+  if (!href) return null;
+  const guide = /^\/navody\/([a-z0-9-]+)/.exec(href);
+  if (guide) {
+    const path = publicGuidePath(guide[1]!);
+    return path ? absoluteUrl(path) : null;
+  }
+  return absoluteUrl(href);
+}
+
 export const MCP_SERVER_VERSION = "1.0.0";
 
 /** Závislosti s I/O – v testech se podstrkují. */
@@ -112,7 +123,8 @@ Don't use for: payment-type questions (use eet_classify_payment) or the EET OFF 
         eet_off_text: a.eetOffText,
         reasons: a.reasons,
         active_establishments: a.activeEstablishments,
-        checklist: a.checklist.map((c) => ({ date: c.date ?? null, title: c.title, text: c.text, url: c.href ? absoluteUrl(c.href) : null })),
+        // odkaz na návod jen po revizi poradcem (Ф9, R6.5); jiné odkazy webu zůstávají
+        checklist: a.checklist.map((c) => ({ date: c.date ?? null, title: c.title, text: c.text, url: publicHref(c.href) })),
         url: absoluteUrl(`/kontrola-ico?ico=${ico}`),
         data_source: "ARES (Ministerstvo financí)",
       };
