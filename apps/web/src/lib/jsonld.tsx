@@ -9,6 +9,17 @@ export function JsonLd({ data }: { data: Ld | Ld[] }) {
   return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: json }} />;
 }
 
+/**
+ * Dostupnost nabídky ve strukturovaných datech (R8.9): dokud je pokladna zavřená, je všechno předobjednávka; po otevření
+ * tarif Zdarma InStock, placené doplňky PreOrder, dokud nejsou v kódu.
+ */
+export function offerAvailability(free: boolean): string {
+  return !isClosed("/pokladna") && free ? "https://schema.org/InStock" : "https://schema.org/PreOrder";
+}
+
+/** Obrázky produktu pro strukturovaná data – PNG (ikona 512 a OG obrázek), ne SVG (R8.9). */
+export const PRODUCT_IMAGES = (): string[] => [absoluteUrl("/icons/512"), absoluteUrl("/opengraph-image")];
+
 export function organizationLd(): Ld {
   return {
     "@context": "https://schema.org",
@@ -16,7 +27,8 @@ export function organizationLd(): Ld {
     "@id": `${SITE_URL}/#organization`,
     name: SITE.name,
     url: SITE_URL,
-    logo: absoluteUrl("/icon.svg"),
+    // Google bere jako logo bitmapu, ne SVG (R8.9)
+    logo: absoluteUrl("/icons/512"),
     email: SITE.email,
     description: SITE.description,
     parentOrganization: {
@@ -56,7 +68,7 @@ export function softwareApplicationLd(): Ld {
     // dokud je pokladna za heslem, odkaz vede na úvodní stránku s předregistrací (R7.6)
     url: absoluteUrl(isClosed("/pokladna") ? "/" : "/pokladna"),
     inLanguage: "cs-CZ",
-    offers: { "@type": "Offer", price: "0", priceCurrency: "CZK" },
+    offers: { "@type": "Offer", price: "0", priceCurrency: "CZK", availability: offerAvailability(true) },
     publisher: { "@id": `${SITE_URL}/#organization` },
   };
 }

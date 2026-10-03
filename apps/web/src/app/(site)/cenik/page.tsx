@@ -6,7 +6,7 @@ import { AddonCard, FeatureMatrix, PlanCard } from "@/components/pricing/plan-ca
 import { ToolCta } from "@/components/tool-cta";
 import { RichText } from "@/components/rich-text";
 import { ADDONS, PARTNER_PLAN, PLANS, PRICING_FAQ, PRICING_NOTICE, PRICING_UPDATED } from "@/content/pricing";
-import { JsonLd, faqLd } from "@/lib/jsonld";
+import { JsonLd, PRODUCT_IMAGES, faqLd, offerAvailability } from "@/lib/jsonld";
 import { SITE_URL, absoluteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -23,6 +23,7 @@ function offerLd(o: { name: string; price: number; monthly?: boolean; from?: boo
     description: o.description,
     priceCurrency: "CZK",
     url: absoluteUrl("/cenik"),
+    availability: offerAvailability(o.price === 0),
   };
   if (!o.monthly) return { ...base, price: String(o.price) };
   return {
@@ -45,6 +46,8 @@ function productLd() {
     description:
       "Nezávislá pokladna pro evidenci tržeb EET 2.0. Bezplatný tarif navždy, placené doplňky Premium, Terminál, Nastavení na klíč a API.",
     brand: { "@type": "Brand", name: "EvidujZdarma" },
+    // shippingDetails a hasMerchantReturnPolicy záměrně ne: digitální služba, upozornění Google jsou nepovinná (R8.9)
+    image: PRODUCT_IMAGES(),
     url: absoluteUrl("/cenik"),
     offers: [
       ...PLANS.map((p) => offerLd({ name: p.name, price: p.price, monthly: p.monthly, description: p.tagline })),
@@ -54,6 +57,7 @@ function productLd() {
         price: "1490",
         priceCurrency: "CZK",
         url: absoluteUrl("/cenik"),
+        availability: offerAvailability(false),
         priceSpecification: {
           "@type": "UnitPriceSpecification",
           priceCurrency: "CZK",

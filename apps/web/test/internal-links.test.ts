@@ -21,7 +21,7 @@ function walk(dir: string): string[] {
 
 /** Routy z adresáře app/: skupiny (x) se vynechávají, [param] je libovolný segment. */
 const ROUTES = walk(APP)
-  .filter((f) => /\/(page\.tsx|route\.ts)$/.test(f) || /\/(sitemap|robots|opengraph-image|icon|manifest)\.(ts|tsx)$/.test(f))
+  .filter((f) => /\/(page\.tsx|route\.tsx?)$/.test(f) || /\/(sitemap|robots|opengraph-image|icon|manifest)\.(ts|tsx)$/.test(f))
   .map((f) => {
     const rel = relative(APP, f).split("/").slice(0, -1).filter((s) => !/^\(.*\)$/.test(s));
     const name = f.split("/").pop()!.replace(/\.(ts|tsx)$/, "");
