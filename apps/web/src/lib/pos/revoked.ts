@@ -4,7 +4,7 @@
  */
 export function revokedNotice(serverMessage: string | null | undefined): { text: string; canRegister: boolean } {
   if (serverMessage?.startsWith("Účet je zrušený")) {
-    return { text: `${serverMessage} Tržby, které v zařízení zůstaly, už do účtu předat nejde.`, canRegister: false };
+    return { text: `${serverMessage} Tržby zůstanou uložené v zařízení. Do zrušeného účtu je už předat nejde.`, canRegister: false };
   }
   return { text: "Vlastník účtu zařízení odpojil v nastavení. Přihlaste se a zaregistrujte ho znovu.", canRegister: true };
 }

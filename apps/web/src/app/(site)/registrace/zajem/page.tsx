@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { INTEREST_LABEL, INTEREST_NEXT } from "@/lib/interests";
+import { INTEREST_NEXT, INTEREST_REQUEST } from "@/lib/interests";
 import { lookupInterest } from "@/lib/server/preregistration";
 
 export const metadata: Metadata = { title: "Potvrzení žádosti", robots: { index: false, follow: false } };
@@ -16,7 +16,7 @@ export default async function InterestPage({ searchParams }: PageProps<"/registr
         <div className="space-y-6">
           <h1 className="text-3xl font-extrabold sm:text-4xl">Potvrďte prosím žádost</h1>
           <p className="text-lg text-ink-soft">
-            Žádost: {INTEREST_LABEL[result.campaign]}. {INTEREST_NEXT[result.campaign]}
+            Žádost {INTEREST_REQUEST[result.campaign]}. {INTEREST_NEXT[result.campaign]}
           </p>
           <form method="post" action="/api/registrace/zajem">
             <input type="hidden" name="token" value={String(token)} />

@@ -5,6 +5,7 @@ import { getMeta, nextSequence, saveSale } from "./db";
 import { isConfigStale } from "./sync";
 import { mirrorPayments } from "./split-payment";
 import { correctedNow } from "./sync-result";
+import { modeIn } from "@/lib/modes";
 import type { DeviceCredentials, LocalSale, PosConfig, PosMode } from "./types";
 
 export interface NewSaleInput {
@@ -80,15 +81,13 @@ export async function createLocalSale(device: DeviceCredentials, config: PosConf
   return sale;
 }
 
-const MODE_NAME: Record<PosMode, string> = { mock: "ukázkový režim", playground: "Playground", production: "ostrý provoz" };
-
 /**
  * Vratka jen v režimu původní tržby (R7.13, Р3): k tržbě z jiného režimu ji pokladna nenabízí a řekne proč.
  * Server takovou vratku stejně nepřijme (karanténa REFUND_MODE_MISMATCH).
  */
 export function refundBlockedReason(original: Pick<LocalSale, "mode">, accountMode: PosMode): string | null {
   if (original.mode === accountMode) return null;
-  return `Tržba byla prodána v jiném režimu (${MODE_NAME[original.mode] ?? original.mode}). Vratku k ní pokladna neodešle.`;
+  return `Původní prodej proběhl ${modeIn(original.mode)}. Vratku k němu pokladna neodešle.`;
 }
 
 /** Položky pro vratku: záporné množství původních položek (po slevě); platby zrcadlí originál (R6.9). */

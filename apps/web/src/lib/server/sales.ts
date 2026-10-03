@@ -8,6 +8,7 @@ import { accountMode, productionAcceptsFrom, type EetMode } from "./fiscal";
 import { canSendInMode, ingestedFromQuarantine, markIngested, notifyClosedUnsent, quarantineSale } from "./quarantine";
 import { safeError } from "./log";
 import { verifyApproval } from "./staff-pin";
+import { modeIn } from "@/lib/modes";
 
 /** Tržba tak, jak ji posílá pokladna (částky v haléřích). */
 export const DeviceSaleSchema = z.object({
@@ -114,7 +115,7 @@ async function checkStaffAndRefund(accountId: string, deviceId: string, input: D
   if (original.mode !== input.mode) {
     throw new IngestRejection(
       "REFUND_MODE_MISMATCH",
-      `Vratka je v režimu ${MODE_LABEL[input.mode]}, ale původní tržba byla prodána v režimu ${MODE_LABEL[original.mode as EetMode] ?? original.mode}. Pokladna ji neodešle – vyřiďte ji ručně.`,
+      `Vratka je ${modeIn(input.mode)}, ale původní prodej proběhl ${modeIn(original.mode)}. Pokladna ji neodešle – vyřiďte ji ručně.`,
     );
   }
   if (original.refundOf) throw new IngestRejection("INVALID_SALE", "Vratku nelze vrátit");
@@ -132,7 +133,6 @@ async function checkStaffAndRefund(accountId: string, deviceId: string, input: D
 /** Posun hodin, který pokladna sama neopravuje (lib/pos/sync-result.ts, correctedNow). */
 const CLOCK_TOLERANCE_MS = 30_000;
 
-const MODE_LABEL: Record<EetMode, string> = { mock: "ukázkový", playground: "Playground", production: "ostrý provoz" };
 
 /**
  * Uloží tržby z pokladny. Idempotentní: stejné `id` se stejným obsahem se uloží jen jednou.
@@ -165,7 +165,7 @@ export async function ingestSales(ctx: DeviceContext, inputs: DeviceSale[]): Pro
           where: and(eq(schema.sales.id, input.id), eq(schema.sales.accountId, account.id), eq(schema.sales.deviceId, device.id)),
           columns: { id: true },
         });
-        if (!known) throw new IngestRejection("ACCOUNT_CLOSED", "Účet je zrušený – tržba prodaná po zrušení se do FS neodešle.");
+        if (!known) throw new IngestRejection("ACCOUNT_CLOSED", "Účet je zrušený – prodej po zrušení účtu se Finanční správě neodešle.");
       }
       // Pokladna se starou konfigurací (kiosk, offline při přepnutí) nesmí po přepnutí účtu prodávat
       // v předchozím režimu – „mock“ by dostal falešný POK a do FS by nic nešlo (R5.1). Tržby prodané
@@ -179,7 +179,7 @@ export async function ingestSales(ctx: DeviceContext, inputs: DeviceSale[]): Pro
         if (!known) {
           throw new IngestRejection(
             "MODE_MISMATCH",
-            `Tržba je v režimu ${MODE_LABEL[mode]}, ale účet je od ${account.eetModeChangedAt.toLocaleString("cs-CZ", { timeZone: "Europe/Prague" })} v režimu ${MODE_LABEL[accountMode(account)]}. Pokladna měla staré nastavení.`,
+            `Tržba je ${modeIn(mode)}, ale účet je od ${account.eetModeChangedAt.toLocaleString("cs-CZ", { timeZone: "Europe/Prague" })} ${modeIn(accountMode(account))}. Pokladna měla staré nastavení.`,
           );
         }
       }

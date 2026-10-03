@@ -21,7 +21,7 @@ export default async function ConfirmPage({ searchParams }: PageProps<"/registra
         <div className="space-y-6">
           <h1 className="text-3xl font-extrabold sm:text-4xl">Potvrďte prosím e-mail</h1>
           <p className="text-lg text-ink-soft">
-            Jedním kliknutím potvrdíte, že e-mail patří vám. {forPos ? "Pak vám pošleme včasný přístup k pokladně." : other.map((i) => INTEREST_NEXT[i]).join(" ")}
+            Jedním kliknutím potvrdíte, že e-mail patří vám. {forPos ? "Až pokladnu spustíme, pošleme vám odkaz." : other.map((i) => INTEREST_NEXT[i]).join(" ")}
           </p>
           <form method="post" action="/api/registrace/potvrdit">
             <input type="hidden" name="token" value={String(token)} />
@@ -36,7 +36,7 @@ export default async function ConfirmPage({ searchParams }: PageProps<"/registra
           <h1 className="text-3xl font-extrabold sm:text-4xl">E-mail je potvrzený</h1>
           {other.map((i) => (
             <p key={i} className="text-xl text-ink-soft">
-              {INTEREST_LABEL[i].charAt(0).toUpperCase() + INTEREST_LABEL[i].slice(1)}: {INTEREST_NEXT[i]}
+              {INTEREST_LABEL[i].charAt(0).toUpperCase() + INTEREST_LABEL[i].slice(1)}. {INTEREST_NEXT[i]}
             </p>
           ))}
           <div className="flex flex-wrap justify-center gap-3">

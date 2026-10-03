@@ -86,7 +86,8 @@ describe("R7.4 – webinar interest is separate from the cash-register pre-regis
   it("gate: texts – form footnote verbatim, no dead 'duplicate' branch, no Event JSON-LD or fixed dates, privacy policy data", async () => {
     const src = (p: string) => readFileSync(new URL(`../../src/${p}`, import.meta.url), "utf8");
     const form = src("components/accountant/webinar-form.tsx");
-    expect(form).toContain("E-mail a IČO použijeme jen k přihlášení na webinář a k zaslání pozvánky. Podrobnosti najdete v");
+    // text R8.3 (рецензія №5) – platí pro webinář i kabinet
+    expect(form).toContain("E-mail a IČO použijeme jen k vyřízení vaší žádosti (webinář nebo zpráva o spuštění Účetního kabinetu). Podrobnosti najdete v");
     expect(form).toContain("zásadách ochrany osobních údajů");
     expect(form).not.toMatch(/duplicate/);
     expect(form).not.toMatch(/souhlasíte se zpracováním/);
@@ -95,7 +96,7 @@ describe("R7.4 – webinar interest is separate from the cash-register pre-regis
     expect(html).not.toMatch(/"@type":"Event"/);
     expect(html).not.toMatch(/5\. 11\. 2026|3\. 12\. 2026/);
     expect(html).toContain("Pro účetní chystáme krátké webináře o EET 2.0. Zanechte e-mail a termín i odkaz vám pošleme, jakmile ho vypíšeme.");
-    expect(src("app/(site)/ochrana-osobnich-udaju/page.tsx")).toContain("zdroj návštěvy (UTM), u webináře jeho termín.");
+    expect(src("app/(site)/ochrana-osobnich-udaju/page.tsx")).toContain("zdroj návštěvy (UTM), u webinářů a Účetního kabinetu, o co máte zájem.");
   });
 
   it("migration 0028 backfills interests and cancels app-ready for webinar sign-ups", async () => {

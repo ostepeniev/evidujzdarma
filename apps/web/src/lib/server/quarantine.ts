@@ -25,10 +25,10 @@ export const QUARANTINE_REASON_TEXT: Record<string, string> = {
   REFUND_UNKNOWN_ORIGINAL: "Původní tržba k vratce není na serveru.",
   REFUND_DUPLICATE: "K této tržbě už vratka existuje.",
   REFUND_NOT_AUTHORIZED: "Vratku smí udělat jen vlastník nebo s jeho schválením.",
-  REFUND_MODE_MISMATCH: "Vratka je v jiném režimu, než v jakém byla prodána původní tržba – pokladna ji neodešle. Vyřiďte ji ručně.",
+  REFUND_MODE_MISMATCH: "Vratka je v jiném režimu než původní prodej – pokladna ji neodešle. Vyřiďte ji ručně.",
   UNKNOWN_STAFF: "Pokladní nepatří k tomuto účtu.",
   PRODUCTION_NOT_OPEN: "Ostré prostředí Finanční správy přijímá tržby až od 1. 11. 2026 (přechodný režim) – tržba z dřívější doby se odeslat nedá. Vyřiďte ji ručně.",
-  ACCOUNT_CLOSED: "Účet je zrušený – tržba prodaná po zrušení se do FS neodešle. Vyřiďte ji ručně.",
+  ACCOUNT_CLOSED: "Účet je zrušený – prodej po zrušení účtu se Finanční správě neodešle.",
   MODE_MISMATCH: "Pokladna prodávala v režimu, který už neplatí – účet byl mezitím přepnut. Rozhodněte, zda tržbu odeslat v aktuálním režimu, nebo šlo o zkoušku.",
 };
 
@@ -97,7 +97,7 @@ export async function notifyClosedUnsent(ctx: DeviceContext): Promise<void> {
       dedupeKey: `closed-unsent:${ctx.account.id}:${day}:${to}`,
       payload: {
         subject: "Zrušený účet: pokladna předala neodeslanou ostrou tržbu",
-        text: `Pokladna ${ctx.device.registerId} předala do zrušeného účtu ostrou tržbu, která se Finanční správě už neodešle. Najdete ji v seznamu neodeslaných tržeb v nastavení pokladny. Evidujte ji jinak (např. v aplikaci MOJE eet) a potom ji tam označte „Evidováno jinak“.`,
+        text: `Pokladna ${ctx.device.registerId} předala do zrušeného účtu ostrou tržbu, která se Finanční správě už neodešle. Najdete ji v seznamu neodeslaných tržeb v nastavení pokladny. Evidujte ji jinak (např. v aplikaci MOJE eet) a potom ji v nastavení pokladny označte „Evidováno jinak“.`,
         url: absoluteUrl("/pokladna/nastaveni"),
         buttonLabel: "Otevřít nastavení",
       },
@@ -155,7 +155,7 @@ export type QuarantineAction = "retry" | "retry_with_received_time" | "dismiss" 
 const MODE_RANK: Record<string, number> = { mock: 0, playground: 1, production: 2 };
 
 /**
- * Smí se tržba prodaná v režimu `sold` odeslat v režimu `target`? Jen směrem nahoru (R6.1): tržba z ostrého
+ * Smí se tržba z režimu `sold` odeslat v režimu `target`? Jen směrem nahoru (R6.1): tržba z ostrého
  * provozu nesmí skončit v Playgroundu ani v simulaci – dostala by falešný POK a do FS by nic nešlo (Р3).
  */
 export function canSendInMode(sold: string | null | undefined, target: string): boolean {

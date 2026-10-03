@@ -1,6 +1,6 @@
 import { SITE, SITE_URL, operatorLine } from "./site";
 import { TIMELINE } from "@/content/facts";
-import { INTEREST_LABEL, INTEREST_NEXT, isInterest } from "@/lib/interests";
+import { INTEREST_NEXT, INTEREST_REQUEST, isInterest } from "@/lib/interests";
 
 export type EmailTemplate = "prereg-confirm" | "interest-confirm" | "dis-launch" | "app-ready" | "login-link" | "receipt" | "notice";
 
@@ -73,7 +73,7 @@ function renderBody(template: EmailTemplate, p: Record<string, unknown>): Render
       // webinář a kabinet mají vlastní text – nejde o předregistraci k pokladně (R7.4, Z3)
       const interest = isInterest(p.interest) ? p.interest : "pokladna";
       if (!already && interest !== "pokladna") {
-        const what = interest === "webinar" ? "přihlášku na webináře EET 2.0 pro účetní" : "zájem o Účetní kabinet";
+        const what = interest === "webinar" ? "přihlášku na webinář EET 2.0 pro účetní" : "zájem o Účetní kabinet";
         return {
           subject: "Potvrďte prosím e-mail – EvidujZdarma",
           unsubscribeUrl: u.url,
@@ -106,7 +106,7 @@ ${button(confirmUrl, "Potvrdit e-mail")}`,
           "Dobrý den,",
           "",
           already
-            ? `tento e-mail už u nás je předregistrovaný a potvrzený. Stav předregistrace najdete zde: ${confirmUrl}`
+            ? `tento e-mail je u nás už předregistrovaný a potvrzený. Stav předregistrace najdete zde: ${confirmUrl}`
             : `děkujeme za předregistraci do EvidujZdarma. Potvrďte prosím e-mail: ${confirmUrl}`,
           "",
           `Váš EET plán${p.companyName ? ` pro ${p.companyName}` : ""}:`,
@@ -121,7 +121,7 @@ ${button(confirmUrl, "Potvrdit e-mail")}`,
           "Váš EET plán",
           `${
             already
-              ? `<p>Dobrý den,</p><p>tento e-mail už u nás je předregistrovaný a potvrzený. Stav předregistrace najdete zde:</p>
+              ? `<p>Dobrý den,</p><p>tento e-mail je u nás už předregistrovaný a potvrzený. Stav předregistrace najdete zde:</p>
 ${button(confirmUrl, "Zobrazit předregistraci")}`
               : `<p>Dobrý den,</p><p>děkujeme za předregistraci. Jedním kliknutím potvrďte e-mail. Až pokladnu spustíme, pošleme vám odkaz.</p>
 ${button(confirmUrl, "Potvrdit e-mail")}`
@@ -145,10 +145,10 @@ ${button(confirmUrl, "Potvrdit e-mail")}`
       return {
         subject: "Potvrďte prosím žádost – EvidujZdarma",
         unsubscribeUrl: u.url,
-        text: `Dobrý den,\n\npro tento e-mail jsme dostali žádost: ${INTEREST_LABEL[interest]}. Potvrďte ji prosím: ${url}\n${INTEREST_NEXT[interest]}\n\nPokud jste o nic nežádali, e-mail ignorujte – nic dalšího vám kvůli němu nepošleme.\n\nTým EvidujZdarma\n\n${SITE.independenceNotice}\n${u.text}`,
+        text: `Dobrý den,\n\npro tento e-mail jsme dostali žádost ${INTEREST_REQUEST[interest]}. Potvrďte ji prosím: ${url}\n${INTEREST_NEXT[interest]}\n\nPokud jste o nic nežádali, e-mail ignorujte – nic dalšího vám kvůli němu nepošleme.\n\nTým EvidujZdarma\n\n${SITE.independenceNotice}\n${u.text}`,
         html: layout(
           "Potvrďte prosím žádost",
-          `<p>Dobrý den,</p><p>pro tento e-mail jsme dostali žádost: ${esc(INTEREST_LABEL[interest])}. ${esc(INTEREST_NEXT[interest])}</p>${button(url, "Potvrdit žádost")}<p style="font-size:14px;color:#66756e">Pokud jste o nic nežádali, e-mail ignorujte – nic dalšího vám kvůli němu nepošleme.</p>`,
+          `<p>Dobrý den,</p><p>pro tento e-mail jsme dostali žádost ${esc(INTEREST_REQUEST[interest])}. ${esc(INTEREST_NEXT[interest])}</p>${button(url, "Potvrdit žádost")}<p style="font-size:14px;color:#66756e">Pokud jste o nic nežádali, e-mail ignorujte – nic dalšího vám kvůli němu nepošleme.</p>`,
           u.html,
         ),
       };

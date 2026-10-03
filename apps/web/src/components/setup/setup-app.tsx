@@ -9,6 +9,7 @@ import type { DeviceCredentials, PosConfig } from "@/lib/pos/types";
 import { FACTS } from "@/content/facts";
 import { pragueToday } from "@/lib/prague-time";
 import { ApiError, call, UNIT_TYPE_LABEL, type AccountStateDto } from "./api";
+import { modeIn } from "@/lib/modes";
 
 const MODE_LABEL: Record<string, string> = { mock: "ukázkový", playground: "Playground", production: "ostrý provoz" };
 
@@ -493,7 +494,7 @@ function ModeSection({ state, reload, hasProdCert, hasPgCert }: { state: State; 
                   } catch (e) {
                     const pending = e instanceof ApiError && e.status === 409 ? (e.data as { pending?: { mode: string; count: number; oldest: string }[] }).pending : undefined;
                     if (!pending) throw e;
-                    const list = pending.map((p) => `• ${p.count}× v režimu ${MODE_LABEL[p.mode] ?? p.mode} (nejstarší ${new Date(p.oldest).toLocaleString("cs-CZ")})`).join("\n");
+                    const list = pending.map((p) => `• ${p.count}× ${modeIn(p.mode)} (nejstarší ${new Date(p.oldest).toLocaleString("cs-CZ")})`).join("\n");
                     const ok = window.confirm(`Tyto tržby ještě nejsou vyřízené:\n${list}\n\nOdešlou se v režimu, ve kterém vznikly – přepnutí na ně nemá vliv. Přepnout režim?`);
                     if (!ok) return;
                     await call("/api/ucet/rezim", { method: "POST", json: { mode: m.v, confirm: true } });
@@ -1031,7 +1032,7 @@ function CloseAccountSection({ reload }: { reload: () => Promise<void> }) {
                 if (!(e instanceof ApiError && e.status === 409)) throw e;
                 const d = e.data as { pending?: { mode: string; count: number; oldest: string }[]; quarantine?: number; devices?: { name: string; lastSeenAt: string | null }[] };
                 const lines = [
-                  ...(d.pending ?? []).map((p) => `• ${p.count}× neodeslaná tržba v režimu ${MODE_LABEL[p.mode] ?? p.mode} (nejstarší ${new Date(p.oldest).toLocaleString("cs-CZ")})`),
+                  ...(d.pending ?? []).map((p) => `• ${p.count}× neodeslaná tržba ${modeIn(p.mode)} (nejstarší ${new Date(p.oldest).toLocaleString("cs-CZ")})`),
                   ...(d.quarantine ? [`• ${d.quarantine}× tržba čeká na vaše rozhodnutí`] : []),
                   ...(d.devices ?? []).map((x) => `• pokladna ${x.name}: naposledy online ${x.lastSeenAt ? new Date(x.lastSeenAt).toLocaleString("cs-CZ") : "nikdy"}`),
                 ].join("\n");
@@ -1245,10 +1246,10 @@ function ProblemSalesSection() {
                       className="btn-primary py-1.5 text-sm"
                       disabled={busy}
                       onClick={() =>
-                        window.confirm(`Tržba byla skutečná a odešle se v režimu ${MODE_LABEL[currentMode] ?? currentMode}. Pokračovat?`) && act(q.id, "send_current_mode")
+                        window.confirm(`Tržba byla skutečná a odešle se ${modeIn(currentMode)}. Pokračovat?`) && act(q.id, "send_current_mode")
                       }
                     >
-                      Odeslat v režimu {MODE_LABEL[currentMode] ?? currentMode}
+                      Odeslat {modeIn(currentMode)}
                     </button>
                   ) : (
                     // tržbu z ostrého provozu nelze poslat do testu ani simulace (R6.1)

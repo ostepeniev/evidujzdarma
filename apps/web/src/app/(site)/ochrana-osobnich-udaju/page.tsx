@@ -27,8 +27,8 @@ export const metadata: Metadata = {
 
 const PURPOSES: readonly { purpose: string; data: string; basis: string; retention: string }[] = [
   {
-    purpose: "Předregistrace k pokladně a přihláška na webinář",
-    data: "E-mail, nepovinně IČO a název firmy z ARES, obor, počet provozoven, o co máte zájem, kód doporučení, zdroj návštěvy (UTM), u webináře jeho termín.",
+    purpose: "Předregistrace k pokladně, přihláška na webinář a zájem o Účetní kabinet",
+    data: "E-mail, nepovinně IČO a název firmy z ARES, obor, počet provozoven, o co máte zájem, kód doporučení, zdroj návštěvy (UTM), u webinářů a Účetního kabinetu, o co máte zájem.",
     basis: "Provedení opatření před uzavřením smlouvy na vaši žádost – čl. 6 odst. 1 písm. b) GDPR.",
     retention:
       "Do spuštění pokladny (1. 12. 2026) a poté nejvýše 12 měsíců od spuštění, nebo od registrace, pokud proběhla později – pokud si nezaložíte účet ani neudělíte souhlas s novinkami; dříve na vaši žádost. Předregistraci, kterou jste nepotvrdili odkazem z e-mailu, smažeme do 90 dnů od posledního zaslaného odkazu. Zrušíte-li předregistraci (odkazem „Odhlásit“ v e-mailu), ostatní údaje smažeme a ponecháme si jen e-mail, datum předregistrace a datum zrušení, abychom vám už nic neposílali (3 roky).",
@@ -323,8 +323,8 @@ export default function PrivacyPage() {
           <div className="prose-ez min-w-0 max-w-3xl">
             <p className="mt-0 rounded-2xl border border-line bg-surface p-5 text-base text-ink">
               <strong>Ve zkratce:</strong> údaje neprodáváme a ukládáme je v EU. Marketingové e-maily posíláme jen se souhlasem.
-              Katalog firem stavíme z veřejných registrů a fyzickým osobám nezobrazujeme adresu bydliště. Proti zobrazení můžete
-              kdykoli vznést <Link href="/namitka">námitku</Link>.
+              Katalog firem z veřejných registrů připravujeme; fyzickým osobám v něm nebudeme zobrazovat adresu bydliště. Proti
+              zpracování můžete kdykoli vznést <Link href="/namitka">námitku</Link>.
             </p>
             {SECTIONS.map((s, i) => (
               <section key={s.id} id={s.id} aria-labelledby={`${s.id}-h`} className="scroll-mt-24">

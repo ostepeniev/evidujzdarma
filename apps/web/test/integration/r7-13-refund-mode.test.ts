@@ -68,8 +68,9 @@ describe("R7.13 – a refund only in the mode of the original sale", () => {
 
   it("gate: the register does not offer a refund of a sale sold in another mode and says why", () => {
     const sale = { mode: "playground" } as LocalSale;
-    expect(refundBlockedReason(sale, "production")).toBe("Tržba byla prodána v jiném režimu (Playground). Vratku k ní pokladna neodešle.");
-    expect(refundBlockedReason({ mode: "mock" } as LocalSale, "playground")).toBe("Tržba byla prodána v jiném režimu (ukázkový režim). Vratku k ní pokladna neodešle.");
+    // text R8.3 (рецензія №5): tržba se neprodává – „původní prodej proběhl…“
+    expect(refundBlockedReason(sale, "production")).toBe("Původní prodej proběhl v režimu Playground. Vratku k němu pokladna neodešle.");
+    expect(refundBlockedReason({ mode: "mock" } as LocalSale, "playground")).toBe("Původní prodej proběhl v ukázkovém režimu. Vratku k němu pokladna neodešle.");
     expect(refundBlockedReason({ mode: "production" } as LocalSale, "production")).toBeNull();
     const view = readFileSync(new URL("../../src/components/pos/receipt-view.tsx", import.meta.url), "utf8");
     expect(view).toMatch(/refundBlockedReason\(sale, config\.account\.mode\)/);
