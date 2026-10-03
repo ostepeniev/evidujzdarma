@@ -380,10 +380,13 @@ export async function processSale(saleId: string, account?: AccountRow): Promise
       .values({ saleId: claimed.id, attempt: claimed.attempts, environment: claimed.mode, messageUuid: p.messageUuid, requestSha256: p.sha256, firstAttempt, startedAt, result: "in_flight" })
       .returning({ id: schema.saleAttempts.id });
     inFlightId = a!.id;
-    await db
+    const mine = await db
       .update(schema.sales)
       .set({ firstSentAt: sql`coalesce(${schema.sales.firstSentAt}, now())` })
-      .where(and(eq(schema.sales.id, claimed.id), eq(schema.sales.claimToken, token)));
+      .where(and(eq(schema.sales.id, claimed.id), eq(schema.sales.claimToken, token)))
+      .returning({ id: schema.sales.id });
+    // tržbu mezitím převzal jiný pokus → tento nesmí odeslat (transport při chybě onPrepared POST neudělá; Д-6)
+    if (!mine.length) throw new Error("Tržbu mezitím převzal jiný pokus – tento se neodešle.");
   };
   let outcome: Outcome;
   try {

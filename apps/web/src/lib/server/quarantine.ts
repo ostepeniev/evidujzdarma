@@ -1,6 +1,6 @@
 import "server-only";
 import { getDb, schema } from "@ez/db";
-import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import { absoluteUrl } from "@/lib/site";
 import type { DeviceContext } from "./auth";
 import { HttpError } from "./auth";
@@ -31,11 +31,17 @@ export const QUARANTINE_REASON_TEXT: Record<string, string> = {
   MODE_MISMATCH: "Pokladna prodávala v režimu, který už neplatí – účet byl mezitím přepnut. Rozhodněte, zda tržbu odeslat v aktuálním režimu, nebo šlo o zkoušku.",
 };
 
-export async function quarantineSale(ctx: DeviceContext, payload: unknown, reasonCode: string, reason: string): Promise<void> {
+/**
+ * Uloží tržbu do karantény a upozorní vlastníka. Karanténu, kterou vlastník už vyřídil ručně (dismissed), opakované
+ * odeslání z pokladny znovu neotevře ani nepošle e-mail (Д-10) – vrací `{ dismissed: poznámka }`.
+ */
+export async function quarantineSale(ctx: DeviceContext, payload: unknown, reasonCode: string, reason: string): Promise<{ dismissed: string } | null> {
   const db = getDb();
   const id = (payload as { id?: unknown })?.id;
-  if (typeof id !== "string") return;
-  await db
+  if (typeof id !== "string") return null;
+  const prior = await db.query.saleQuarantine.findFirst({ where: and(eq(schema.saleQuarantine.id, id), eq(schema.saleQuarantine.accountId, ctx.account.id)), columns: { resolution: true, note: true } });
+  if (prior?.resolution === "dismissed") return { dismissed: prior.note ?? "Vyřízeno vlastníkem" };
+  const written = await db
     .insert(schema.saleQuarantine)
     .values({ id, accountId: ctx.account.id, deviceId: ctx.device.id, payload: payload as object, reasonCode, reason })
     .onConflictDoUpdate({
@@ -49,9 +55,11 @@ export async function quarantineSale(ctx: DeviceContext, payload: unknown, reaso
         resolution: null,
         resolvedAt: null,
       },
-      // cizí účet nikdy nepřepíše záznam jiného účtu
-      setWhere: eq(schema.saleQuarantine.accountId, ctx.account.id),
-    });
+      // cizí účet nikdy nepřepíše záznam jiného účtu; vyřízenou karanténu neotevře ani souběžný požadavek (Д-10)
+      setWhere: and(eq(schema.saleQuarantine.accountId, ctx.account.id), or(isNull(schema.saleQuarantine.resolution), ne(schema.saleQuarantine.resolution, "dismissed"))),
+    })
+    .returning({ resolution: schema.saleQuarantine.resolution });
+  if (!written.length && prior) return { dismissed: "Vyřízeno vlastníkem" };
   for (const to of await ownerEmails(ctx.account.id)) {
     await enqueueEmail({
       to,
@@ -65,6 +73,7 @@ export async function quarantineSale(ctx: DeviceContext, payload: unknown, reaso
       },
     });
   }
+  return null;
 }
 
 /**

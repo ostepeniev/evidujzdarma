@@ -227,11 +227,17 @@ export async function ingestSales(ctx: DeviceContext, inputs: DeviceSale[]): Pro
           .onConflictDoNothing({ target: schema.sales.id })
           .returning({ id: schema.sales.id });
       } catch (e) {
+        // souběžný POST stejné tržby (dvě karty pokladny): druhý požadavek narazí na jiný unikátní index dřív než na id.
+        // Je-li uložený řádek tatáž tržba, není to konflikt (Д-4).
+        const twin = await db.query.sales.findFirst({ where: eq(schema.sales.id, sale.id) }).catch(() => undefined);
+        if (twin && twin.accountId === account.id && twin.deviceId === device.id && sameSale(twin, sale, unit.id, mode)) {
+          inserted = [];
+        }
         // unikátní (zařízení, pořadové číslo) → jiná tržba už má toto číslo: trvalý konflikt
-        if (/sales_device_seq_uq/.test(errorText(e))) throw new IngestRejection("SEQUENCE_CONFLICT", "Pořadové číslo už bylo použito jinou tržbou", 409);
-        if (/sales_refund_of_uq/.test(errorText(e))) throw new IngestRejection("REFUND_DUPLICATE", "Tato tržba už byla vrácena", 409);
-        if (/sales_approval_jti_uq/.test(errorText(e))) throw new IngestRejection("REFUND_NOT_AUTHORIZED", "Toto schválení vratky už bylo použito – vlastník musí schválit znovu", 403);
-        throw e;
+        else if (/sales_device_seq_uq/.test(errorText(e))) throw new IngestRejection("SEQUENCE_CONFLICT", "Pořadové číslo už bylo použito jinou tržbou", 409);
+        else if (/sales_refund_of_uq/.test(errorText(e))) throw new IngestRejection("REFUND_DUPLICATE", "Tato tržba už byla vrácena", 409);
+        else if (/sales_approval_jti_uq/.test(errorText(e))) throw new IngestRejection("REFUND_NOT_AUTHORIZED", "Toto schválení vratky už bylo použito – vlastník musí schválit znovu", 403);
+        else throw e;
       }
 
       if (!inserted.length) {
@@ -240,18 +246,7 @@ export async function ingestSales(ctx: DeviceContext, inputs: DeviceSale[]): Pro
           throw new IngestRejection("ID_CONFLICT", "Konflikt identifikátoru tržby", 409);
         }
         // Stejné id musí znamenat stejnou tržbu – jinak jde o konflikt, ne o „už máme“.
-        const same =
-          existing.sequence === sale.sequence &&
-          existing.soldAt.getTime() === Date.parse(sale.soldAt) &&
-          existing.total === sale.total &&
-          existing.tip === sale.tip &&
-          existing.discount === sale.discount &&
-          existing.unitId === unit.id &&
-          existing.mode === mode &&
-          (existing.refundOf ?? null) === (sale.refundOf ?? null) &&
-          stable(existing.payments) === stable(sale.payments) &&
-          stable(existing.items) === stable(sale.lines);
-        if (!same) throw new IngestRejection("CONTENT_CONFLICT", "Tržba se stejným identifikátorem už existuje s jiným obsahem", 409);
+        if (!sameSale(existing, sale, unit.id, mode)) throw new IngestRejection("CONTENT_CONFLICT", "Tržba se stejným identifikátorem už existuje s jiným obsahem", 409);
       }
       await markIngested(account.id, sale.id);
       results.push({ id: sale.id, ok: true, inserted: inserted.length > 0 });
@@ -263,8 +258,9 @@ export async function ingestSales(ctx: DeviceContext, inputs: DeviceSale[]): Pro
           continue;
         }
         try {
-          await quarantineSale(ctx, input, e.code, e.message);
-          results.push({ id: input.id, ok: false, retryable: false, quarantined: true, code: e.code, error: e.message, httpStatus: e.httpStatus });
+          const done = await quarantineSale(ctx, input, e.code, e.message);
+          // vlastník tržbu už vyřídil ručně → pokladna ji uvidí jako vyřízenou, karanténa se znovu neotevře (Д-10)
+          results.push({ id: input.id, ok: false, retryable: false, quarantined: true, code: e.code, error: done?.dismissed ?? e.message, httpStatus: e.httpStatus });
         } catch {
           // ani karanténu nešlo uložit → pokladna musí tržbu držet a poslat znovu
           results.push({ id: input.id, ok: false, retryable: true, quarantined: false, code: "TEMPORARY", error: "Server je dočasně nedostupný, tržba se odešle znovu." });
@@ -276,6 +272,22 @@ export async function ingestSales(ctx: DeviceContext, inputs: DeviceSale[]): Pro
     }
   }
   return results;
+}
+
+/** Uložený řádek je tatáž tržba (stejný obsah), ne jiná se stejným id. */
+function sameSale(existing: typeof schema.sales.$inferSelect, sale: Sale, unitId: string, mode: EetMode): boolean {
+  return (
+    existing.sequence === sale.sequence &&
+    existing.soldAt.getTime() === Date.parse(sale.soldAt) &&
+    existing.total === sale.total &&
+    existing.tip === sale.tip &&
+    existing.discount === sale.discount &&
+    existing.unitId === unitId &&
+    existing.mode === mode &&
+    (existing.refundOf ?? null) === (sale.refundOf ?? null) &&
+    stable(existing.payments) === stable(sale.payments) &&
+    stable(existing.items) === stable(sale.lines)
+  );
 }
 
 function errorText(e: unknown): string {
