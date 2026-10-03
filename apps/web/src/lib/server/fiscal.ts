@@ -182,13 +182,20 @@ const INVALID_STREAK_LIMIT = 3;
 /** Neověřitelná odpověď: backoff 5 min × 4^(n−1), nejvýš 6 h – tržba zůstává ve frontě (R5.4). */
 const INVALID_MAX_DELAY_MS = 6 * 3_600_000;
 /** Pojistka prostředí (R5.4): ≥ 3 INVALID od ≥ 3 účtů za 10 min → pauza; zkušební tržba jednou za hodinu. */
+/** Jen úplné ISO-8601 s časem a posunem – Date.parse je benevolentní („1“ → rok 2001, „2026“ → 1. 1. 2026; R7.14). */
+const FULL_ISO_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?(Z|[+-]\d{2}:\d{2})$/;
+
 /**
- * Od kdy produkce FS přijímá tržby (produkce v1.1, 4.1; R5.9). Přepis přes env jen pro testy; neplatná hodnota
- * kontrolu nevypne – platí konstanta (fail-closed, R6.11).
+ * Od kdy produkce FS přijímá tržby (produkce v1.1, 4.1; R5.9). Přepis přes env: neplatná hodnota kontrolu nevypne –
+ * platí konstanta (fail-closed, R6.11, R7.14). V NODE_ENV=production smí env datum jen posunout dál (max(env, konstanta));
+ * dřívější datum jen v testech a vývoji.
  */
 export function productionAcceptsFrom(): number {
-  const env = process.env.EET_PRODUCTION_ACCEPTS_FROM ? Date.parse(process.env.EET_PRODUCTION_ACCEPTS_FROM) : NaN;
-  return Number.isFinite(env) ? env : Date.parse(EET_PRODUCTION_ACCEPTS_FROM);
+  const constant = Date.parse(EET_PRODUCTION_ACCEPTS_FROM);
+  const raw = process.env.EET_PRODUCTION_ACCEPTS_FROM?.trim() ?? "";
+  const env = FULL_ISO_RE.test(raw) ? Date.parse(raw) : NaN;
+  if (!Number.isFinite(env)) return constant;
+  return process.env.NODE_ENV === "production" ? Math.max(env, constant) : env;
 }
 
 const BREAKER = { windowMs: 10 * 60_000, minInvalid: 3, minAccounts: 3, probeMs: 3_600_000 } as const;
