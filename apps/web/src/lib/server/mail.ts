@@ -68,7 +68,7 @@ async function getTransporter(): Promise<Transporter | null> {
  */
 function withoutSecrets(template: string, payload: unknown): Record<string, unknown> {
   const p = { ...((payload ?? {}) as Record<string, unknown>) };
-  if (template === "prereg-confirm") delete p.confirmToken;
+  if (template === "prereg-confirm" || template === "interest-confirm") delete p.confirmToken;
   if (template === "login-link") delete p.url;
   return p;
 }

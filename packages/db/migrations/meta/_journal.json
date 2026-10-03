@@ -190,6 +190,20 @@
       "when": 1791034249851,
       "tag": "0026_prereg_unsubscribed_minimise",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1791034541173,
+      "tag": "0027_prereg_interests",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1791034542083,
+      "tag": "0028_prereg_interests_backfill",
+      "breakpoints": true
     }
   ]
 }

@@ -36,6 +36,8 @@ async function unsubscribe(token: string | null): Promise<boolean> {
       ...(row.consentAt ? {} : { confirmedAt: null, consentEvidence: null }),
     })
     .where(eq(schema.preregistrations.id, row.id));
+  // i zájem (webinář, kabinet) patří k údajům předregistrace (R7.4)
+  await db.delete(schema.preregistrationInterests).where(eq(schema.preregistrationInterests.preregistrationId, row.id));
   await db
     .update(schema.emailOutbox)
     .set({ status: "cancelled", lastError: "UNSUBSCRIBED" })

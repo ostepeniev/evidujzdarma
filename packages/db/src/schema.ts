@@ -70,6 +70,26 @@ export const preregistrations = pgTable(
   ],
 );
 
+/**
+ * O co adresa z předregistrace požádala (R7.4): pokladna, webináře, Účetní kabinet. Nová adresa potvrdí zájem
+ * stejným DOI jako předregistraci; už známá adresa vlastním odkazem (confirm_token_hash), záznam předregistrace se nemění.
+ */
+export const preregistrationInterests = pgTable(
+  "preregistration_interests",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    preregistrationId: uuid("preregistration_id")
+      .notNull()
+      .references(() => preregistrations.id, { onDelete: "cascade" }),
+    campaign: varchar("campaign", { length: 40 }).notNull(),
+    requestedAt: timestamp("requested_at", { withTimezone: true }).notNull().defaultNow(),
+    confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
+    /** SHA-256 tokenu potvrzení zájmu – jen u už známé adresy */
+    confirmTokenHash: varchar("confirm_token_hash", { length: 64 }),
+  },
+  (t) => [uniqueIndex("prereg_interest_uq").on(t.preregistrationId, t.campaign), index("prereg_interest_token_idx").on(t.confirmTokenHash)],
+);
+
 export const emailStatus = pgEnum("email_status", ["queued", "sending", "sent", "failed", "cancelled"]);
 
 export const emailOutbox = pgTable(

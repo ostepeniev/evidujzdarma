@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { INTEREST_NEXT } from "@/lib/interests";
 import { SITE } from "@/lib/site";
 import { WEBINAR_OPTIONS, type WebinarOption } from "./webinars";
 
@@ -10,11 +11,11 @@ type State =
   | { kind: "idle" }
   | { kind: "sending" }
   | { kind: "error"; message: string; field?: string }
-  | { kind: "done"; duplicate: boolean; campaign: Campaign };
+  | { kind: "done"; campaign: Campaign };
 
 /**
- * Přihláška na webinář „EET 2.0 pro účetní“ / zájem o Účetní kabinet.
- * Používá POST /api/preregistrace — kampaň se rozliší přes utm (utm_source=ucetni).
+ * Přihláška na webinář „EET 2.0 pro účetní“ / zájem o Účetní kabinet. Používá POST /api/preregistrace s polem
+ * interest (R7.4): nová adresa potvrdí e-mail, známá adresa dostane vlastní potvrzení zájmu. Odpověď je pro všechny stejná.
  */
 export function WebinarForm() {
   const [state, setState] = useState<State>({ kind: "idle" });
@@ -22,7 +23,7 @@ export function WebinarForm() {
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    const campaign = (fd.get("campaign") as Campaign | null) ?? "webinar-2026-11-05";
+    const campaign = (fd.get("campaign") as Campaign | null) ?? "webinar";
     setState({ kind: "sending" });
     try {
       const res = await fetch("/api/preregistrace", {
@@ -33,49 +34,31 @@ export function WebinarForm() {
           ico: fd.get("ico") || undefined,
           marketingConsent: fd.get("marketing") === "on",
           website: fd.get("website") ?? "",
-          utm: { utm_source: "ucetni", utm_campaign: campaign },
+          interest: campaign,
+          utm: { utm_source: "ucetni" },
         }),
       });
-      const data = (await res.json().catch(() => ({}))) as { error?: string; field?: string; duplicate?: boolean };
+      const data = (await res.json().catch(() => ({}))) as { error?: string; field?: string };
       if (!res.ok) {
         setState({ kind: "error", message: data.error ?? "Něco se nepovedlo. Zkuste to prosím znovu.", field: data.field });
         return;
       }
-      setState({ kind: "done", duplicate: Boolean(data.duplicate), campaign });
+      setState({ kind: "done", campaign });
     } catch {
       setState({ kind: "error", message: "Nepodařilo se odeslat. Zkontrolujte připojení a zkuste to znovu." });
     }
   }
 
   if (state.kind === "done") {
-    const option = WEBINAR_OPTIONS.find((o) => o.value === state.campaign)!;
     return (
       <div role="status" className="space-y-3 text-center">
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-brand-100 text-2xl text-brand-700" aria-hidden="true">
           ✓
         </div>
-        {state.duplicate ? (
-          <>
-            <h3 className="text-xl font-bold text-ink">Tento e-mail už u nás máme</h3>
-            <p className="text-ink-soft">
-              Abychom vás na „{option.label}“ určitě zapsali, napište nám prosím krátce na{" "}
-              <a href={`mailto:${SITE.email}?subject=${encodeURIComponent(`Přihláška: ${option.label}`)}`} className="font-medium text-brand-700 underline">
-                {SITE.email}
-              </a>
-              .
-            </p>
-          </>
-        ) : (
-          <>
-            <h3 className="text-xl font-bold text-ink">Hotovo, jste přihlášeni</h3>
-            <p className="text-ink-soft">
-              Poslali jsme vám e-mail s odkazem pro potvrzení adresy.{" "}
-              {state.campaign === "kabinet"
-                ? "O spuštění Účetního kabinetu vám dáme vědět jako prvním."
-                : "Přesný čas a odkaz na webinář vám pošleme e-mailem před termínem."}
-            </p>
-          </>
-        )}
+        {/* nová i už známá adresa dostane e-mail s odkazem k potvrzení – text platí pro obě (R7.4) */}
+        <h3 className="text-xl font-bold text-ink">Zkontrolujte prosím e-mail</h3>
+        <p className="text-ink-soft">Poslali jsme vám odkaz k potvrzení. {INTEREST_NEXT[state.campaign]}</p>
+        <p className="text-sm text-muted">Pokud jste se dříve z našich e-mailů odhlásili, e-mail vám nepřijde – napište nám na {SITE.email}.</p>
       </div>
     );
   }
@@ -149,7 +132,7 @@ export function WebinarForm() {
         {state.kind === "sending" ? "Odesílám…" : "Přihlásit se zdarma"}
       </button>
       <p className="text-xs leading-relaxed text-muted">
-        Odesláním souhlasíte se zpracováním e-mailu a IČO za účelem přihlášky a zaslání pozvánky. Více v{" "}
+        E-mail a IČO použijeme jen k přihlášení na webinář a k zaslání pozvánky. Podrobnosti najdete v{" "}
         <a href="/ochrana-osobnich-udaju" className="underline">
           zásadách ochrany osobních údajů
         </a>

@@ -2,14 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PartnerBadge } from "@/components/accountant/partner-badge";
 import { WebinarForm } from "@/components/accountant/webinar-form";
-import { WEBINARS } from "@/components/accountant/webinars";
 import { Faq, type FaqItem } from "@/components/faq";
 import { PageHeader } from "@/components/page-header";
 import { DIS_OPENS, FACTS, TIMELINE, timelineAt } from "@/content/facts";
 import { PARTNER_PLAN } from "@/content/pricing";
 import { JsonLd, faqLd } from "@/lib/jsonld";
 import { isClosed } from "@/lib/launch";
-import { SITE_URL, absoluteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "EET 2.0 pro účetní – kabinet a partnerství",
@@ -88,29 +86,12 @@ const FAQ: FaqItem[] = [
   },
 ];
 
-function eventsLd() {
-  return WEBINARS.map((w) => ({
-    "@context": "https://schema.org",
-    "@type": "Event",
-    name: `Webinář EET 2.0 pro účetní (${w.dateLabel})`,
-    description: w.topic,
-    startDate: w.date,
-    eventAttendanceMode: "https://schema.org/OnlineEventAttendanceMode",
-    eventStatus: "https://schema.org/EventScheduled",
-    isAccessibleForFree: true,
-    inLanguage: "cs-CZ",
-    location: { "@type": "VirtualLocation", url: absoluteUrl("/ucetni#webinar") },
-    organizer: { "@id": `${SITE_URL}/#organization` },
-    offers: { "@type": "Offer", price: "0", priceCurrency: "CZK", url: absoluteUrl("/ucetni#webinar") },
-  }));
-}
-
 const DEADLINES = TIMELINE.filter((t) => ["2026-11-01", "2026-12-01", "2027-01-01", "2027-01-11"].includes(t.date));
 
 export default function AccountantsPage() {
   return (
     <>
-      <JsonLd data={[...eventsLd(), faqLd(FAQ)]} />
+      <JsonLd data={[faqLd(FAQ)]} />
       <PageHeader
         title="EET 2.0 pro účetní"
         crumbs={[{ name: "Pro účetní", path: "/ucetni" }]}
@@ -231,18 +212,8 @@ export default function AccountantsPage() {
             <h2 id="webinar-h" className="text-2xl font-bold tracking-tight sm:text-3xl">
               Webinář „EET 2.0 pro účetní“
             </h2>
-            <p className="mt-2 text-lg text-ink-soft">Zdarma, online, s prostorem pro dotazy. Vyberte si termín:</p>
-            <ul className="mt-6 space-y-3">
-              {WEBINARS.map((w) => (
-                <li key={w.value} className="card p-5">
-                  <time dateTime={w.date} className="text-sm font-semibold text-brand-700">
-                    {w.dateLabel}
-                  </time>
-                  <p className="mt-1 text-[15px] leading-relaxed text-ink-soft">{w.topic}</p>
-                </li>
-              ))}
-            </ul>
-            <p className="mt-3 text-sm text-muted">Přesný čas a odkaz na připojení pošleme přihlášeným e-mailem.</p>
+            {/* termíny a JSON-LD Event až s rozesíláním odkazů (R7.4) */}
+            <p className="mt-2 text-lg text-ink-soft">Pro účetní chystáme krátké webináře o EET 2.0. Zanechte e-mail a termín i odkaz vám pošleme, jakmile ho vypíšeme.</p>
           </section>
           <div className="card self-start p-6 shadow-sm sm:p-8">
             <h3 className="mb-5 text-xl font-bold">Přihláška</h3>

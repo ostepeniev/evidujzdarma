@@ -2,6 +2,7 @@ import "server-only";
 import { and, count, eq, isNull, lt, sql } from "drizzle-orm";
 import { getDb, hasDatabase, schema } from "@ez/db";
 import { DIS_OPENS, timelineAt } from "@/content/facts";
+import { isInterest, type Interest } from "@/lib/interests";
 import { enqueueEmail } from "./mail";
 import { hmac, randomToken, safeEqual, sha256 } from "./tokens";
 
@@ -58,7 +59,57 @@ export async function lookupPreregistration(token: string) {
     .select({ value: count() })
     .from(schema.preregistrations)
     .where(and(eq(schema.preregistrations.referredBy, row.referralCode), sql`${schema.preregistrations.confirmedAt} is not null`));
-  return { confirmed: !!row.confirmedAt, position: before + 1, referralCode: row.referralCode, referrals };
+  const asked = await db
+    .select({ campaign: schema.preregistrationInterests.campaign })
+    .from(schema.preregistrationInterests)
+    .where(eq(schema.preregistrationInterests.preregistrationId, row.id));
+  const interests = asked.map((i) => i.campaign).filter(isInterest);
+  return { confirmed: !!row.confirmedAt, position: before + 1, referralCode: row.referralCode, referrals, interests };
+}
+
+/** „Pokladna je připravena“ – jen pro předregistraci k pokladně (R7.4, Z3), po potvrzení e-mailu. */
+async function scheduleAppReady(row: { id: string; email: string }) {
+  const now = new Date();
+  const appAt = new Date(`${timelineAt("2026-12-01").date}T08:00:00+01:00`);
+  await enqueueEmail({
+    to: row.email,
+    template: "app-ready",
+    payload: { unsubscribeToken: unsubscribeTokenFor(row.id) },
+    dedupeKey: `app-ready:${row.id}`,
+    sendAfter: appAt > now ? appAt : now,
+  });
+}
+
+async function interestByToken(token: string) {
+  if (!hasDatabase() || !TOKEN_RE.test(token)) return null;
+  const db = getDb();
+  const interest = await db.query.preregistrationInterests.findFirst({ where: eq(schema.preregistrationInterests.confirmTokenHash, sha256(token)) });
+  if (!interest || !isInterest(interest.campaign)) return null;
+  // nepotvrzený odkaz platí 30 dní, jako potvrzení předregistrace
+  if (!interest.confirmedAt && Date.now() - interest.requestedAt.getTime() > CONFIRM_TOKEN_TTL_MS) return null;
+  const prereg = await db.query.preregistrations.findFirst({ where: eq(schema.preregistrations.id, interest.preregistrationId) });
+  if (!prereg || prereg.unsubscribedAt) return null;
+  return { interest, campaign: interest.campaign as Interest, prereg };
+}
+
+/** Stav zájmu pro stránku /registrace/zajem – jen čte (Р5). */
+export async function lookupInterest(token: string): Promise<{ campaign: Interest; confirmed: boolean } | null> {
+  const r = await interestByToken(token);
+  return r ? { campaign: r.campaign, confirmed: !!r.interest.confirmedAt } : null;
+}
+
+/** Potvrzení zájmu už známé adresy (R7.4) – jen POSTem. Záznam předregistrace se nemění. */
+export async function confirmInterest(token: string): Promise<boolean> {
+  const r = await interestByToken(token);
+  if (!r) return false;
+  if (r.interest.confirmedAt) return true;
+  const updated = await getDb()
+    .update(schema.preregistrationInterests)
+    .set({ confirmedAt: new Date() })
+    .where(and(eq(schema.preregistrationInterests.id, r.interest.id), isNull(schema.preregistrationInterests.confirmedAt)))
+    .returning({ id: schema.preregistrationInterests.id });
+  if (updated.length && r.campaign === "pokladna" && r.prereg.confirmedAt) await scheduleAppReady(r.prereg);
+  return true;
 }
 
 /**
@@ -77,14 +128,16 @@ export async function confirmPreregistration(token: string): Promise<boolean> {
     .returning({ id: schema.preregistrations.id });
   if (!updated.length) return true;
   const now = new Date();
-  const appAt = new Date(`${timelineAt("2026-12-01").date}T08:00:00+01:00`);
-  await enqueueEmail({
-    to: row.email,
-    template: "app-ready",
-    payload: { unsubscribeToken: unsubscribeTokenFor(row.id) },
-    dedupeKey: `app-ready:${row.id}`,
-    sendAfter: appAt > now ? appAt : now,
-  });
+  // DOI potvrdí i zájem podaný spolu s předregistrací (bez vlastního tokenu) – R7.4
+  const confirmed = await db
+    .update(schema.preregistrationInterests)
+    .set({ confirmedAt: now })
+    .where(
+      and(eq(schema.preregistrationInterests.preregistrationId, row.id), isNull(schema.preregistrationInterests.confirmedAt), isNull(schema.preregistrationInterests.confirmTokenHash)),
+    )
+    .returning({ campaign: schema.preregistrationInterests.campaign });
+  const wantsPos = confirmed.some((i) => i.campaign === "pokladna");
+  if (wantsPos) await scheduleAppReady(row);
   const disAt = new Date(`${timelineAt(DIS_OPENS).date}T08:00:00+01:00`);
   if (row.marketingConsent && !row.unsubscribedAt && disAt > now) {
     await enqueueEmail({ to: row.email, template: "dis-launch", payload: { unsubscribeToken: unsubscribeTokenFor(row.id) }, dedupeKey: `dis-launch:${row.id}`, sendAfter: disAt });

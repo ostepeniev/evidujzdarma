@@ -1,6 +1,6 @@
 import { after } from "next/server";
 import { z } from "zod";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { isValidIco, normalizeIco } from "@ez/cz";
 import { getDb, hasDatabase, schema } from "@ez/db";
 import { INDUSTRY_SLUGS } from "@/content/industries";
@@ -12,6 +12,7 @@ import { issueConfirmToken, unsubscribeTokenFor } from "@/lib/server/preregistra
 import { MARKETING_CONSENT_VERSION } from "@/lib/legal";
 import { lookupCompany } from "@/lib/server/ares";
 import { assess } from "@/lib/eet-assessment";
+import { INTERESTS, type Interest } from "@/lib/interests";
 
 const NEEDS = ["terminal", "printer", "dis_help"] as const;
 
@@ -27,6 +28,8 @@ const Body = z.object({
   establishments: z.coerce.number().int().min(1).max(99).optional(),
   needs: z.array(z.enum(NEEDS)).max(3).default([]),
   marketingConsent: z.boolean().default(false),
+  /** o co adresa žádá: pokladna (formulář na úvodní stránce), webináře nebo kabinet (formulář pro účetní) – R7.4 */
+  interest: z.enum(INTERESTS).default("pokladna"),
   ref: z
     .string()
     .trim()
@@ -124,15 +127,22 @@ export async function POST(req: Request) {
     const existing = await db.query.preregistrations.findFirst({
       where: sql`lower(${schema.preregistrations.email}) = ${body.email}`,
     });
-    // Cizí záznam bez ověření neměníme – ani UTM (Д3-9). Znovu poslat odkaz (nový token – starý známe jen jako hash):
-    // nepotvrzenému k potvrzení, potvrzenému na stránku s pořadím. Nejvýš jednou denně; odpověď je stejná jako
-    // u nové registrace. Odhlášené adrese nic neposíláme – o e-mail ji může požádat kdokoli (Д3-9).
+    // Cizí záznam bez ověření neměníme – ani UTM (Д3-9). Odhlášené adrese nic neposíláme – o e-mail ji může
+    // požádat kdokoli (Д3-9). Odpověď je pro všechny stejná.
+    if (existing && !existing.unsubscribedAt) {
+      // Nový zájem (webinář, kabinet…) už potvrzené adresy: vlastní potvrzení POSTem, předregistrace se nemění (R7.4)
+      if (existing.confirmedAt && (await requestInterest(existing, body.interest, now))) return DONE();
+      // nepotvrzená adresa: zájem potvrdí stejný DOI jako předregistraci
+      await db.insert(schema.preregistrationInterests).values({ preregistrationId: existing.id, campaign: body.interest }).onConflictDoNothing();
+    }
+    // Znovu poslat odkaz (nový token – starý známe jen jako hash): nepotvrzenému k potvrzení, potvrzenému
+    // na stránku s pořadím. Nejvýš jednou denně.
     if (existing && !existing.unsubscribedAt) {
       const fresh = issueConfirmToken();
       const sent = await enqueueEmail({
         to: existing.email,
         template: "prereg-confirm",
-        payload: { ...emailPayload(existing, fresh.token), alreadyConfirmed: !!existing.confirmedAt },
+        payload: { ...emailPayload(existing, fresh.token), alreadyConfirmed: !!existing.confirmedAt, interest: body.interest },
         dedupeKey: `prereg-confirm-resend:${existing.id}:${now.toISOString().slice(0, 10)}`,
       });
       if (sent) {
@@ -143,16 +153,41 @@ export async function POST(req: Request) {
     return DONE();
   }
 
+  await db.insert(schema.preregistrationInterests).values({ preregistrationId: row.id, campaign: body.interest }).onConflictDoNothing();
   await enqueueEmail({
     to: body.email,
     template: "prereg-confirm",
-    payload: emailPayload({ id: row.id, companyName, referralCode }, confirm.token, plan),
+    payload: { ...emailPayload({ id: row.id, companyName, referralCode }, confirm.token, plan), interest: body.interest },
     dedupeKey: `prereg-confirm:${row.id}`,
   });
   // Marketingové e-maily se plánují až po potvrzení e-mailu (POST /api/registrace/potvrdit) – Р5.
   // Pořadí a doporučovací odkaz ukáže potvrzovací stránka (ne tato odpověď – B Дрібне 11).
   after(() => processOutbox(5));
   return DONE();
+}
+
+/**
+ * Zájem už potvrzené adresy (R7.4). Nový nebo dosud nepotvrzený zájem → e-mail s odkazem na potvrzení (POST na
+ * /registrace/zajem), nejvýš jednou denně. Vrací false, pokud už je zájem potvrzený (pak platí běžné připomenutí stavu).
+ */
+async function requestInterest(existing: { id: string; email: string }, campaign: Interest, now: Date): Promise<boolean> {
+  const db = getDb();
+  const where = and(eq(schema.preregistrationInterests.preregistrationId, existing.id), eq(schema.preregistrationInterests.campaign, campaign));
+  const has = await db.query.preregistrationInterests.findFirst({ where });
+  if (has?.confirmedAt) return false;
+  const fresh = issueConfirmToken();
+  if (!has) await db.insert(schema.preregistrationInterests).values({ preregistrationId: existing.id, campaign }).onConflictDoNothing();
+  const sent = await enqueueEmail({
+    to: existing.email,
+    template: "interest-confirm",
+    payload: { interest: campaign, confirmToken: fresh.token, unsubscribeToken: unsubscribeTokenFor(existing.id) },
+    dedupeKey: `interest-confirm:${existing.id}:${campaign}:${now.toISOString().slice(0, 10)}`,
+  });
+  if (sent) {
+    await db.update(schema.preregistrationInterests).set({ confirmTokenHash: fresh.hash, requestedAt: now }).where(where);
+    after(() => processOutbox(5));
+  }
+  return true;
 }
 
 function emailPayload(r: { id: string; companyName: string | null; referralCode: string }, confirmToken: string, plan: { date: string; text: string }[] | null = null) {
