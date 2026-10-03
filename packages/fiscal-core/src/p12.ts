@@ -94,11 +94,8 @@ function assemble(key: forge.pki.rsa.PrivateKey | undefined, certs: forge.pki.Ce
   if (!cert) throw new CertificateError("Certifikát v souboru neodpovídá privátnímu klíči. Stáhněte z DIS+ znovu celý soubor .p12.");
 
   const cn = cert.subject.getField("CN")?.value ?? null;
-  const serialAttr = cert.subject.getField({ name: "serialNumber" })?.value ?? null;
-  const dicMatch = [cn, serialAttr]
-    .filter((v): v is string => typeof v === "string")
-    .map((v) => v.match(/CZ\d{8,10}/)?.[0])
-    .find(Boolean);
+  // EIČ pokladního certifikátu = celý CN (FS); ne serialNumber ani kus delšího řetězce (R6.12)
+  const dicMatch = typeof cn === "string" && /^CZ\d{8,10}$/.test(cn) ? cn : null;
 
   const certificatePem = forge.pki.certificateToPem(cert);
   const der = forge.asn1.toDer(forge.pki.certificateToAsn1(cert)).getBytes();
@@ -282,6 +279,8 @@ export function createTestP12(opts: {
   notAfter?: Date;
   /** Policy OID pokladního certifikátu (R5.9); bez něj certifikát rozšíření certificatePolicies nemá */
   policyOid?: string | null;
+  /** atribut serialNumber v subjektu (R6.12: EIČ se z něj nebere) */
+  subjectSerialNumber?: string;
 }): Buffer {
   const keys = forge.pki.rsa.generateKeyPair(2048);
   const cert = forge.pki.createCertificate();
@@ -289,7 +288,7 @@ export function createTestP12(opts: {
   cert.serialNumber = "01" + forge.util.bytesToHex(forge.random.getBytesSync(8));
   cert.validity.notBefore = opts.notBefore ?? new Date();
   cert.validity.notAfter = opts.notAfter ?? new Date(Date.now() + (opts.days ?? 365) * 86_400_000);
-  const attrs = [{ name: "commonName", value: opts.commonName }, { name: "countryName", value: "CZ" }];
+  const attrs = [{ name: "commonName", value: opts.commonName }, { name: "countryName", value: "CZ" }, ...(opts.subjectSerialNumber ? [{ name: "serialNumber", value: opts.subjectSerialNumber }] : [])];
   cert.setSubject(attrs);
   cert.setIssuer([{ name: "commonName", value: opts.issuerCommonName ?? "EvidujZdarma TEST CA" }]);
   if (opts.policyOid) {
