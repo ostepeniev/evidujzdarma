@@ -70,7 +70,19 @@ function withoutSecrets(template: string, payload: unknown): Record<string, unkn
   const p = { ...((payload ?? {}) as Record<string, unknown>) };
   if (template === "prereg-confirm" || template === "interest-confirm") delete p.confirmToken;
   if (template === "login-link") delete p.url;
+  // notice s odkazem nesoucím token (potvrzení námitky) – token z adresy pryč (R7.5)
+  if (template === "notice" && typeof p.url === "string" && /[?&]token=/.test(p.url)) p.url = withoutTokenParam(p.url);
   return p;
+}
+
+function withoutTokenParam(url: string): string {
+  try {
+    const u = new URL(url);
+    u.searchParams.delete("token");
+    return u.toString();
+  } catch {
+    return url.replace(/([?&])token=[^&#]*/g, "$1");
+  }
 }
 
 /** Jak dlouho smí e-mail zůstat ve stavu „sending“, než ho jiný běh vrátí do fronty. */

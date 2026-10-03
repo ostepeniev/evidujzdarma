@@ -204,6 +204,13 @@
       "when": 1791034542083,
       "tag": "0028_prereg_interests_backfill",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1791034937107,
+      "tag": "0029_outbox_strip_objection_token",
+      "breakpoints": true
     }
   ]
 }

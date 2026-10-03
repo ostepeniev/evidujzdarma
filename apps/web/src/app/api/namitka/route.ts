@@ -56,6 +56,10 @@ export async function POST(req: Request) {
     return Response.json({ error: FIELD_MESSAGES[field] ?? "Zkontrolujte prosím formulář.", field: field || undefined }, { status: 400 });
   }
   if (body.website) return Response.json({ ok: true }); // tichý honeypot
+  // e-mail jde na zadanou adresu – nejvýš 3 denně na adresu, i z různých IP (rozesílání na cizí adresu, R7.5)
+  if (!rateLimit(`namitka-to:${body.email}`, 3, 86_400)) {
+    return Response.json({ error: "Na tuto adresu jsme dnes už poslali několik potvrzení. Zkuste to prosím zítra nebo nám napište e-mail." }, { status: 429 });
+  }
 
   if (!hasDatabase()) {
     return Response.json({ error: "Formulář je dočasně nedostupný. Napište nám prosím e-mail." }, { status: 503 });

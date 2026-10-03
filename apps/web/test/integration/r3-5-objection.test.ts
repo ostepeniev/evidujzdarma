@@ -24,8 +24,9 @@ let ipN = 0;
 async function firm(ico: string, legalForm: string) {
   await getDb().insert(schema.firms).values({ ico, name: `Firma ${ico}`, slug: `firma-${ico}`, legalForm } as never);
 }
-const submit = (ico: string) =>
-  POST(new Request("http://localhost/api/namitka", { method: "POST", headers: { "content-type": "application/json", "x-real-ip": `10.9.0.${++ipN}` }, body: JSON.stringify({ ico, name: "Jan Novák", email: "jan@example.cz", message: "Prosím o odstranění stránky." }) }));
+// e-mail na adresu je omezený na 3 denně (R7.5) – testy, které posílají víc žádostí, mění adresu
+const submit = (ico: string, email = "jan@example.cz") =>
+  POST(new Request("http://localhost/api/namitka", { method: "POST", headers: { "content-type": "application/json", "x-real-ip": `10.9.0.${++ipN}` }, body: JSON.stringify({ ico, name: "Jan Novák", email, message: "Prosím o odstranění stránky." }) }));
 const noindex = async (ico: string) => (await getDb().query.firms.findFirst({ where: eq(schema.firms.ico, ico) }))!.noindex;
 
 describe("R3.5 – objections", () => {
@@ -50,8 +51,8 @@ describe("R3.5 – objections", () => {
   it("the operator gets one daily digest instead of an e-mail per request", async () => {
     await firm("27074358", "112");
     await firm("12345679", "101");
-    await submit("27074358");
-    await submit("12345679");
+    await submit("27074358", "digest1@example.cz");
+    await submit("12345679", "digest2@example.cz");
     expect(await getDb().select().from(schema.emailOutbox).where(eq(schema.emailOutbox.to, SITE.email))).toHaveLength(0);
     await runObjectionDigest(new Date("2026-10-03T07:00:00Z"));
     await runObjectionDigest(new Date("2026-10-03T08:00:00Z"));
