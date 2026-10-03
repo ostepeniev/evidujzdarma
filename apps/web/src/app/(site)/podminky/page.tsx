@@ -146,9 +146,9 @@ const SECTIONS: readonly { id: string; title: string; body: ReactNode }[] = [
           nároku na konkrétní dobu odezvy podpory.
         </p>
         <p>
-          6.2 Provozovatel se zavazuje, že funkce, které ceník ke dni registrace uživatele uvádí jako součást tarifu Zdarma
-          (evidence tržeb, práce bez signálu, až 5 uživatelů, až 3 evidenční jednotky, doklad e-mailem, denní přehled,
-          export CSV, QR platba), nezpoplatní.
+          6.2 Tarif Zdarma je zdarma navždy: nemá časové omezení a provozovatel se zavazuje, že funkce, které ceník ke dni
+          registrace uživatele uvádí jako součást tarifu Zdarma (evidence tržeb, práce bez signálu, až 5 uživatelů, až 3 evidenční
+          jednotky, doklad e-mailem, denní přehled, export CSV, QR platba), nezpoplatní ani je nepřesune do placeného tarifu.
         </p>
         <p>
           6.3 Pokladna je navržena tak, aby tržby zaznamenala i při nedostupnosti internetu nebo serverů provozovatele a odeslala
@@ -286,8 +286,10 @@ const SECTIONS: readonly { id: string; title: string; body: ReactNode }[] = [
           {SITE.email}.
         </p>
         <p>
-          11.2 Provozovatel může tarif Zdarma ukončit s výpovědní dobou 60 dnů oznámenou e-mailem. Při závažném porušení podmínek
-          uživatelem (např. zneužití služby) může provozovatel přístup omezit nebo účet zrušit s okamžitou účinností.
+          11.2 Provozovatel neukončí tarif Zdarma samostatně, dokud službu EvidujZdarma provozuje. Celou službu může ukončit jen pro
+          všechny uživatele současně, s výpovědní dobou nejméně 6 měsíců oznámenou e-mailem; po tuto dobu půjde pokladna dál
+          používat a data vyexportovat. Při závažném porušení podmínek uživatelem (např. zneužití služby) může provozovatel přístup
+          omezit nebo účet zrušit s okamžitou účinností.
         </p>
         <p>
           11.3 Zrušením účtu přestanou pokladní certifikáty ve službě okamžitě fungovat a pokladny přestanou prodávat; mohou už jen
@@ -358,7 +360,7 @@ export default function TermsPage() {
           <div className="prose-ez min-w-0 max-w-3xl">
             <p className="mt-0 rounded-2xl border border-line bg-surface p-5 text-base text-ink">
               <strong>Ve zkratce:</strong> pokladna je technický nástroj – povinnost evidovat tržby máte vy. Tarif Zdarma je zdarma
-              navždy, ale bez garancí; Premium bude mít garantovanou úroveň služeb. Data ukládáme v EU, klíče certifikátů šifrovaně
+              navždy (čl. 6.2), ale bez garancí; Premium bude mít garantovanou úroveň služeb. Data ukládáme v EU, klíče certifikátů šifrovaně
               (heslo k certifikátu neukládáme), a kdykoli si je vyexportujete. Shrnutí nenahrazuje plné znění níže.
             </p>
             {SECTIONS.map((s, i) => (

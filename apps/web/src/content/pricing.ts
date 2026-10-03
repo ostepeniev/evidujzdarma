@@ -8,9 +8,12 @@
 
 export const PRICING_UPDATED = "2026-10-01";
 
-/** Zobrazí se nad ceníkem a v FAQ. */
+/** Zobrazí se v FAQ (prostý text – FAQ a JSON-LD odkazy nevykreslují). */
+export const PRICING_NOTICE_TEXT =
+  "Ceny placených doplňků jsou předběžné – teprve je ověřujeme a do spuštění se mohou změnit. Bezplatné jádro pokladny zůstane zdarma navždy (čl. 6.2 podmínek).";
+/** Zobrazí se nad ceníkem (RichText) – „navždy“ odkazuje na definici v podmínkách (Ц2, R7.9). */
 export const PRICING_NOTICE =
-  "Ceny placených doplňků jsou předběžné – teprve je ověřujeme a do spuštění se mohou změnit. Bezplatné jádro pokladny zůstane zdarma navždy.";
+  "Ceny placených doplňků jsou předběžné – teprve je ověřujeme a do spuštění se mohou změnit. Bezplatné jádro pokladny zůstane zdarma navždy ([čl. 6.2 podmínek](/podminky#zdarma)).";
 
 export type PlanStatus = "prereg" | "later" | "preparing";
 
@@ -181,7 +184,7 @@ export const PRICING_FAQ = [
   },
   {
     q: "Proč jsou ceny označené jako předběžné?",
-    a: PRICING_NOTICE + " Konečné ceny včetně informace o DPH zveřejníme před spuštěním placených funkcí a nikomu je nezačneme účtovat bez jeho výslovného souhlasu.",
+    a: PRICING_NOTICE_TEXT + " Konečné ceny včetně informace o DPH zveřejníme před spuštěním placených funkcí a nikomu je nezačneme účtovat bez jeho výslovného souhlasu.",
   },
   {
     q: "Kdy budou placené funkce dostupné?",

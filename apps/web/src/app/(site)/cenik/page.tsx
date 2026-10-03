@@ -4,6 +4,7 @@ import { Faq } from "@/components/faq";
 import { PageHeader } from "@/components/page-header";
 import { AddonCard, FeatureMatrix, PlanCard } from "@/components/pricing/plan-card";
 import { ToolCta } from "@/components/tool-cta";
+import { RichText } from "@/components/rich-text";
 import { ADDONS, PARTNER_PLAN, PLANS, PRICING_FAQ, PRICING_NOTICE, PRICING_UPDATED } from "@/content/pricing";
 import { JsonLd, faqLd } from "@/lib/jsonld";
 import { SITE_URL, absoluteUrl } from "@/lib/site";
@@ -78,7 +79,7 @@ export default function PricingPage() {
 
       <div className="container-page py-10 sm:py-14">
         <p role="note" className="mx-auto max-w-3xl rounded-2xl border border-sun-300 bg-sun-100 p-4 text-[15px] text-ink sm:p-5">
-          <strong>Předběžný ceník.</strong> {PRICING_NOTICE}
+          <strong>Předběžný ceník.</strong> <RichText text={PRICING_NOTICE} />
         </p>
 
         <section aria-labelledby="tarify" className="mt-10">
