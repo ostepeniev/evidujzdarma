@@ -228,7 +228,7 @@ Returns: eligible, reason (if not), verdict ('eet-off'|'evidence'|'tie'), surcha
     "eet_classify_payment",
     {
       title: "Is this payment registered in EET 2.0?",
-      description: `Decide whether a payment is an evidenced sale ("kontaktní platba") under EET 2.0. Payments accepted in person or at the premises (cash, card, QR scanned on site, vouchers, virtual assets, cheques) are evidenced; remote payments (bank transfer for an invoice, e-shop payment gateway, QR on an invoice/website) are not.
+      description: `Decide whether a payment is an evidenced sale ("kontaktní platba") under EET 2.0. Payments accepted in person or at the premises (cash, card, QR scanned on site, meal vouchers of another company, prepaid credit drawdown, deposits, virtual assets, cheques) are evidenced; redeeming a gift voucher for specific goods or a service is not a payment and is not evidenced (its sale was); remote payments (bank transfer for an invoice, e-shop payment gateway, QR on an invoice/website) are not.
 
 Args:
   - payment (${PAYMENT_KINDS.map((k) => `'${k}'`).join("|")})

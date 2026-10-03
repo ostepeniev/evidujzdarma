@@ -9,6 +9,11 @@ export const PAYMENT_KINDS = [
   "cash",
   "card",
   "qr_code",
+  "meal_voucher",
+  "credit",
+  "gift_voucher",
+  "deposit",
+  // starší obecná hodnota – odpověď „záleží na druhu“ (R6.6)
   "voucher",
   "virtual_assets",
   "cheque",
@@ -22,7 +27,11 @@ export const PAYMENT_KIND_LABEL: Record<PaymentKind, string> = {
   cash: "hotovost",
   card: "platební karta",
   qr_code: "QR platba",
-  voucher: "poukaz, dárková karta, stravenka",
+  meal_voucher: "stravenka nebo poukázka vydaná jinou firmou",
+  credit: "čerpání dříve nabitého kreditu (čip, předplacená karta)",
+  gift_voucher: "uplatnění dárkového poukazu na konkrétní zboží nebo službu",
+  deposit: "záloha nebo doplatek",
+  voucher: "poukaz (druh neuveden)",
   virtual_assets: "virtuální aktiva (kryptoměny)",
   cheque: "šek",
   bank_transfer: "bankovní převod",
@@ -40,19 +49,49 @@ export interface PaymentClassification {
   guide_url_path: string;
 }
 
-const CONTACT: readonly PaymentKind[] = ["cash", "card", "qr_code", "voucher", "virtual_assets", "cheque"];
+const CONTACT: readonly PaymentKind[] = ["cash", "card", "qr_code", "meal_voucher", "credit", "deposit", "virtual_assets", "cheque"];
+
+/** Poznámky k druhům, které rozlišuje seminář FS (Ф11) – stejně jako pokladna. */
+const KIND_NOTE: Partial<Record<PaymentKind, string>> = {
+  meal_voucher: "Platba stravenkou nebo poukázkou vydanou jinou firmou je běžná evidovaná platba.",
+  credit:
+    "Dobití kreditu i jeho pozdější čerpání se evidují obě – datová zpráva obsahuje částku určenou k následnému čerpání (urceno_cerp_zuct), resp. částku čerpání (cerp_zuct).",
+  deposit: "Záloha i doplatek zaplacené při osobním kontaktu se evidují jako dvě samostatné běžné platby (nejsou spolu provázané).",
+};
 
 export function classifyPayment(payment: PaymentKind, inPerson: boolean): PaymentClassification {
   const base = { payment, in_person: inPerson, guide_url_path: "/navody/kontaktni-platba", sources: [SOURCES.kdoMusi, SOURCES.danovkyKontaktni] };
   const exemptNote = "Platí, pokud vaše činnost není ze zákona vyjmutá z evidence.";
+  const seminar = [SOURCES.kdoMusi, SOURCES.seminarVyvojari];
+
+  if (payment === "gift_voucher") {
+    return {
+      ...base,
+      evidenced: "no",
+      explanation: "Uplatnění dárkového poukazu na konkrétní zboží nebo službu není platbou a neeviduje se – evidoval se už prodej poukazu.",
+      note: "Doplatek, který zákazník k poukazu zaplatí (hotově, kartou), se eviduje jako běžná platba.",
+      sources: seminar,
+    };
+  }
+  if (payment === "voucher") {
+    return {
+      ...base,
+      evidenced: "uncertain",
+      explanation:
+        "Záleží na druhu poukazu: stravenka nebo poukázka jiné firmy se eviduje (meal_voucher), čerpání nabitého kreditu se eviduje jako čerpání (credit), uplatnění dárkového poukazu na konkrétní zboží nebo službu se neeviduje (gift_voucher).",
+      note: FACTS.evidenced.prepayments,
+      sources: seminar,
+    };
+  }
 
   if (CONTACT.includes(payment)) {
     if (inPerson) {
       return {
         ...base,
         evidenced: "yes",
-        explanation: `${PAYMENT_KIND_LABEL[payment]} přijatá při osobním kontaktu nebo v provozovně je kontaktní platba – eviduje se. ${FACTS.evidenced.summary}`,
-        note: payment === "voucher" ? `${FACTS.evidenced.prepayments} ${exemptNote}` : exemptNote,
+        explanation: KIND_NOTE[payment] ?? `${PAYMENT_KIND_LABEL[payment]} přijatá při osobním kontaktu nebo v provozovně je kontaktní platba – eviduje se. ${FACTS.evidenced.summary}`,
+        note: exemptNote,
+        ...(KIND_NOTE[payment] ? { sources: seminar } : {}),
       };
     }
     return {

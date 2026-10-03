@@ -7,7 +7,7 @@
  * definitivně publikované (např. paušální daň 2027) — web je tak i označuje.
  */
 
-export const FACTS_UPDATED = "2026-10-01";
+export const FACTS_UPDATED = "2026-10-03";
 
 export interface Source {
   label: string;
@@ -18,6 +18,11 @@ export const SOURCES = {
   eetGov: { label: "eet.gov.cz – oficiální web EET 2.0", url: "https://eet.gov.cz" },
   harmonogram: { label: "eet.gov.cz: Jaký je harmonogram EET 2.0", url: "https://eet.gov.cz/cs/o-eet/jaky-je-harmonogram-eet-2-0" },
   kdoMusi: { label: "eet.gov.cz: Kdo musí evidovat tržby", url: "https://eet.gov.cz/cs/koho-se-eet-tyka/kdo-musi-evidovat-trzby" },
+  /** zálohy, kredit, poukazy – slajdy „Specifické případy“ (rozhodnutí Ф11) */
+  seminarVyvojari: {
+    label: "MF a FS: Seminář pro vývojáře EET 2.0 (prezentace, „Specifické případy“)",
+    url: "https://eet.gov.cz/assets/cs/cmsmedia/pro-vyvojare/EET2_Prezentace_Seminar_pro_vyvojare_23-.pdf",
+  },
   jakZacit: { label: "eet.gov.cz: Jak začít evidovat", url: "https://eet.gov.cz/cs/zacinam-s-eet/jak-zacit-evidovat" },
   prakticke: { label: "eet.gov.cz: Praktické informace", url: "https://eet.gov.cz/cs/zacinam-s-eet/prakticke-informace" },
   eetOff: { label: "eet.gov.cz: Co je režim EET OFF", url: "https://eet.gov.cz/cs/eet-off/co-je-rezim-eet-off" },
@@ -245,9 +250,10 @@ export const FACTS = {
       "Evidují se platby přijaté při osobním kontaktu nebo v provozovně: hotovost, platební karta, QR kód, poukázka, šek i virtuální aktiva.",
     notEvidenced:
       "Neevidují se vzdálené platby – platební brána e-shopu, QR kód na webu, bankovní převod na základě faktury.",
+    // doslovně podle rozhodnutí Ф11 (рецензія №3, R6.6)
     prepayments:
-      "U záloh, dárkových poukazů a dobíjení kreditu se eviduje přijetí platby určené k pozdějšímu čerpání i samotné čerpání – jako samostatné částky.",
-    sources: [SOURCES.kdoMusi, SOURCES.mfPredstavuje],
+      "Záloha i doplatek zaplacené při osobním kontaktu se evidují jako dvě samostatné běžné platby. Dobití kreditu (např. čipu nebo předplacené karty) a jeho pozdější čerpání se evidují obě – datová zpráva pak obsahuje i částku určenou k následnému čerpání, resp. částku čerpání. Jinak je to u dárkového poukazu na konkrétní zboží nebo službu: eviduje se jen jeho prodej, samotné uplatnění poukazu není platbou a neeviduje se. Platba stravenkou nebo poukázkou vydanou jinou firmou je běžná evidovaná platba.",
+    sources: [SOURCES.kdoMusi, SOURCES.seminarVyvojari],
   },
   whoMust: {
     summary: "Evidovat musí každý poplatník daně z příjmů (fyzická i právnická osoba), který přijímá evidované tržby.",
