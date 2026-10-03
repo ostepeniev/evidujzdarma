@@ -8,6 +8,7 @@ import { type Halere, lineTotal, vatBreakdown } from "./money.ts";
  * Způsoby platby. Poukazy podle semináře FS pro vývojáře, „Specifické případy“ (R5.10):
  *  - meal_voucher – stravenka / poukázka třetí strany: běžná platba v celk_trzba, bez cerp_zuct;
  *  - credit – kredit, čip, předplacená karta: celk_trzba + cerp_zuct (nabití = položka „prepayment“);
+ *  - záloha a doplatek nejsou zvláštní způsob platby: dvě běžné tržby, nijak neprovázané (Ф11, R6.7);
  *  - gift_voucher – dárkový poukaz na konkrétní zboží či službu: uplatnění se neeviduje;
  *  - voucher – jen pro tržby uložené před R5.10 (význam jako credit), pokladna ho už nenabízí.
  */
@@ -22,7 +23,8 @@ export const PAYMENT_LABEL: Record<PaymentMethod, string> = {
   meal_voucher: "Stravenka / poukázka",
   credit: "Kredit / předplacená karta",
   gift_voucher: "Dárkový poukaz",
-  voucher: "Poukaz / záloha",
+  // starší tržby (před R5.10), význam jako kredit → cerp_zuct; záloha to není (R6.7)
+  voucher: "Poukaz / kredit (starší)",
 };
 
 /**
@@ -32,7 +34,7 @@ export const PAYMENT_LABEL: Record<PaymentMethod, string> = {
  * zboží či službu se neeviduje (eviduje se jeho prodej) – seminář FS pro vývojáře (R5.10).
  */
 export const EVIDENCED_METHODS: readonly PaymentMethod[] = ["cash", "card", "qr", "meal_voucher", "credit", "voucher"];
-/** Úhrada dříve zaplaceným kreditem / zálohou → cerp_zuct. */
+/** Čerpání dříve nabitého kreditu → cerp_zuct. Doplatek po záloze sem nepatří – je to běžná platba (Ф11). */
 export const REDEEMED_METHODS: readonly PaymentMethod[] = ["credit", "voucher"];
 
 export interface SaleLine {
@@ -40,7 +42,10 @@ export interface SaleLine {
   qty: number;
   unitPrice: Halere;
   vatRate: number;
-  /** "prepayment" = prodej poukazu / přijetí zálohy určené k pozdějšímu čerpání */
+  /**
+   * "prepayment" = nabití kreditu (čip, předplacená karta) určené k pozdějšímu čerpání → urceno_cerp_zuct.
+   * Záloha na zakázku ani prodej dárkového poukazu to nejsou – jsou to běžné položky (Ф11, R6.7).
+   */
   kind?: "goods" | "prepayment";
 }
 
@@ -155,7 +160,7 @@ function applyDiscount(lines: SaleLine[], discount: Halere): SaleLine[] {
     const newTotal = t - share;
     // jednotkovou cenu přepočteme tak, aby qty × cena = nový součet (u qty ≠ 1 vznikne jedna položka)
     if (l.qty === 1) return { ...l, unitPrice: newTotal };
-    // druh položky (např. záloha / poukaz) se nesmí ztratit – jinak by se změnilo urceno_cerp_zuct
+    // druh položky (nabití kreditu) se nesmí ztratit – jinak by se změnilo urceno_cerp_zuct
     return { name: `${l.name} (${l.qty}×, po slevě)`, qty: 1, unitPrice: newTotal, vatRate: l.vatRate, ...(l.kind ? { kind: l.kind } : {}) };
   });
 }
@@ -163,9 +168,9 @@ function applyDiscount(lines: SaleLine[], discount: Halere): SaleLine[] {
 export interface EvidencedAmounts {
   /** celk_trzba — součet evidovaných plateb */
   total: Halere;
-  /** urceno_cerp_zuct — část určená k pozdějšímu čerpání (prodej poukazu, záloha) */
+  /** urceno_cerp_zuct — nabití kreditu určené k pozdějšímu čerpání */
   prepayment: Halere;
-  /** cerp_zuct — úhrada dříve zaplaceným poukazem / zálohou */
+  /** cerp_zuct — čerpání dříve nabitého kreditu */
   redeemed: Halere;
 }
 

@@ -36,7 +36,8 @@ export const GET = ownerRoute(async ({ req, accountId }) => {
     "Hotovost",
     "Karta",
     "QR platba",
-    "Poukaz/záloha",
+    // starší tržby před R5.10 (čerpání → cerp_zuct); záloha to není (R6.7)
+    "Poukaz/kredit (starší)",
     "Převod",
     "Spropitné",
     "Sleva",

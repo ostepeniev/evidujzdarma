@@ -143,7 +143,9 @@ export function PaymentSheet({
         <p className="mt-5 rounded-xl bg-surface p-4 text-[15px] text-ink-soft">Stravenka nebo poukázka vydaná jinou firmou. Eviduje se jako běžná platba.</p>
       )}
       {method === "credit" && (
-        <p className="mt-5 rounded-xl bg-surface p-4 text-[15px] text-ink-soft">Úhrada z dříve nabitého kreditu, čipu nebo předplacené karty. Eviduje se jako čerpání.</p>
+        <p className="mt-5 rounded-xl bg-surface p-4 text-[15px] text-ink-soft">
+          Úhrada z dříve nabitého kreditu, čipu nebo předplacené karty. Eviduje se jako čerpání. Doplatek po záloze sem nepatří – zaúčtujte ho jako běžnou platbu (hotově, kartou).
+        </p>
       )}
       {method === "gift_voucher" && (
         <p className="mt-5 rounded-xl bg-surface p-4 text-[15px] text-ink-soft">
