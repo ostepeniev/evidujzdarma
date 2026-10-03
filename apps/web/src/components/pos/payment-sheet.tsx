@@ -3,12 +3,14 @@
 import QRCode from "qrcode";
 import { useEffect, useMemo, useState } from "react";
 import { buildSpayd } from "@ez/cz/spayd";
-import { PAYMENT_LABEL, roundCash, type PaymentMethod } from "@ez/fiscal-core";
+import { PAYMENT_LABEL, roundCash, type Payment, type PaymentMethod } from "@ez/fiscal-core";
+import { MAX_PAYMENTS, REFUND_SWAPPABLE, splitPayments } from "@/lib/pos/split-payment";
 import type { PosConfig } from "@/lib/pos/types";
 import { Keypad, Sheet, applyKey, kc, parseKc } from "./ui";
 
 export interface PaymentResult {
-  method: PaymentMethod;
+  /** platby tržby – u rozdělené platby víc řádků (R6.9) */
+  payments: Payment[];
   tip: number;
   cashReceived: number | null;
 }
@@ -24,6 +26,7 @@ export function PaymentSheet({
   onPay,
   busy,
   error,
+  refundPayments,
 }: {
   total: number;
   config: PosConfig;
@@ -32,14 +35,23 @@ export function PaymentSheet({
   onPay: (r: PaymentResult) => void;
   busy: boolean;
   error: string | null;
+  /** u vratky: platby zrcadlící originál (R6.9) */
+  refundPayments?: Payment[];
 }) {
   const [method, setMethod] = useState<PaymentMethod>("cash");
   const [received, setReceived] = useState("");
   const [tipInput, setTipInput] = useState("");
   const [qrSvg, setQrSvg] = useState<string | null>(null);
+  // rozdělená platba (R6.9): části už zaplacené jiným způsobem; zbytek jde posledním zvoleným způsobem
+  const [parts, setParts] = useState<Payment[]>([]);
+  const [splitOpen, setSplitOpen] = useState(false);
+  const [partInput, setPartInput] = useState("");
+  const [localError, setLocalError] = useState<string | null>(null);
+  const [refundRows, setRefundRows] = useState<Payment[]>(() => refundPayments ?? [{ method: "cash", amount: total }]);
 
+  const remaining = total - parts.reduce((s, p) => s + p.amount, 0);
   const tip = method === "card" ? (parseKc(tipInput || "0") ?? 0) : 0;
-  const due = total + tip;
+  const due = remaining + tip;
   const receivedH = parseKc(received || "0") ?? 0;
   const change = method === "cash" && receivedH > 0 ? receivedH - due : 0;
   const quick = useMemo(() => {
@@ -67,27 +79,125 @@ export function PaymentSheet({
   }, [method, due, config.account.iban, config.account.name, sequenceHint]);
 
   const isRefund = total < 0;
-  const cashShort = method === "cash" && receivedH > 0 && receivedH < due;
+  const cashShort = !isRefund && method === "cash" && receivedH > 0 && receivedH < due;
+
+  function addPart() {
+    const amount = parseKc(partInput || "0") ?? 0;
+    if (amount <= 0 || amount >= remaining) {
+      setLocalError(`Část musí být větší než 0 a menší než zbývající částka ${kc(remaining)}.`);
+      return;
+    }
+    setParts([...parts, { method, amount }]);
+    setMethod(method === "cash" ? "card" : "cash");
+    setPartInput("");
+    setReceived("");
+    setTipInput("");
+    setSplitOpen(false);
+    setLocalError(null);
+  }
+
+  function confirm() {
+    if (isRefund) return onPay({ payments: refundRows, tip: 0, cashReceived: null });
+    try {
+      const payments = splitPayments(parts, method, total, tip);
+      onPay({ payments, tip, cashReceived: method === "cash" && receivedH > 0 ? receivedH : null });
+    } catch (e) {
+      setLocalError(e instanceof Error ? e.message : "Platbu nelze rozdělit.");
+    }
+  }
 
   return (
     <Sheet title={isRefund ? "Vrácení peněz" : "Platba"} onClose={onClose}>
       <p className="text-center text-sm text-muted">{isRefund ? "Vrátit zákazníkovi" : "K úhradě"}</p>
       <p className="text-center text-4xl font-extrabold tabular-nums">{kc(Math.abs(due))}</p>
 
-      <div className="mt-5 grid grid-cols-4 gap-2" role="radiogroup" aria-label="Způsob platby">
-        {METHODS.map((m) => (
-          <button
-            key={m}
-            type="button"
-            role="radio"
-            aria-checked={method === m}
-            onClick={() => setMethod(m)}
-            className={`rounded-2xl border px-2 py-3 text-sm font-semibold ${method === m ? "border-brand-600 bg-brand-600 text-white" : "border-line bg-white text-ink"}`}
-          >
-            {PAYMENT_LABEL[m].split(" ")[0]}
+      {isRefund && (
+        <div className="mt-5 space-y-3">
+          <p className="text-sm text-muted">Vrací se stejnými způsoby a ve stejném poměru, jakým zákazník platil. Hotovost, kartu, QR platbu a stravenku lze mezi sebou zaměnit.</p>
+          {refundRows.map((r, i) => (
+            <div key={i} className="rounded-xl border border-line p-3">
+              <div className="flex justify-between font-semibold">
+                <span>{PAYMENT_LABEL[r.method]}</span>
+                <span className="tabular-nums">{kc(Math.abs(r.amount))}</span>
+              </div>
+              {REFUND_SWAPPABLE.includes(r.method) && (
+                <div className="mt-2 flex flex-wrap gap-2" role="radiogroup" aria-label={`Způsob vrácení – ${kc(Math.abs(r.amount))}`}>
+                  {REFUND_SWAPPABLE.map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      role="radio"
+                      aria-checked={r.method === m}
+                      onClick={() => setRefundRows(refundRows.map((x, j) => (j === i ? { ...x, method: m } : x)))}
+                      className={`rounded-full border px-3 py-1.5 text-sm font-medium ${r.method === m ? "border-brand-600 bg-brand-600 text-white" : "border-line bg-white text-ink"}`}
+                    >
+                      {PAYMENT_LABEL[m].split(" ")[0]}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!isRefund && parts.length > 0 && (
+        <ul className="mt-4 space-y-1 rounded-xl bg-surface p-3 text-[15px]" aria-label="Už zaplaceno">
+          {parts.map((p, i) => (
+            <li key={i} className="flex items-center justify-between">
+              <span>{PAYMENT_LABEL[p.method]}</span>
+              <span className="flex items-center gap-3 tabular-nums">
+                {kc(p.amount)}
+                <button type="button" aria-label={`Odebrat ${PAYMENT_LABEL[p.method]} ${kc(p.amount)}`} onClick={() => setParts(parts.filter((_, j) => j !== i))} className="px-1 text-muted">
+                  ×
+                </button>
+              </span>
+            </li>
+          ))}
+          <li className="flex justify-between font-semibold">
+            <span>Zbývá doplatit</span>
+            <span className="tabular-nums">{kc(remaining)}</span>
+          </li>
+        </ul>
+      )}
+
+      {!isRefund && (
+        <div className="mt-5 grid grid-cols-4 gap-2" role="radiogroup" aria-label="Způsob platby">
+          {METHODS.map((m) => (
+            <button
+              key={m}
+              type="button"
+              role="radio"
+              aria-checked={method === m}
+              onClick={() => setMethod(m)}
+              className={`rounded-2xl border px-2 py-3 text-sm font-semibold ${method === m ? "border-brand-600 bg-brand-600 text-white" : "border-line bg-white text-ink"}`}
+            >
+              {PAYMENT_LABEL[m].split(" ")[0]}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {!isRefund &&
+        parts.length < MAX_PAYMENTS - 1 &&
+        (splitOpen ? (
+          <div className="mt-4 rounded-xl border border-line p-3">
+            <label htmlFor="part" className="label">
+              Část placená způsobem {PAYMENT_LABEL[method]}
+            </label>
+            <div className="flex gap-2">
+              <input id="part" inputMode="decimal" className="input" placeholder="0" value={partInput} onChange={(e) => setPartInput(e.target.value)} />
+              <button type="button" onClick={addPart} className="btn-secondary">
+                Přidat
+              </button>
+            </div>
+            <p className="mt-2 text-sm text-muted">Zbytek pak zaplatí zákazník jiným způsobem.</p>
+          </div>
+        ) : (
+          <button type="button" onClick={() => (setSplitOpen(true), setLocalError(null))} className="mt-3 text-sm font-semibold text-brand-700 underline">
+            Rozdělit platbu – zákazník platí víc způsoby
           </button>
         ))}
-      </div>
 
       {method === "cash" && !isRefund && (
         <div className="mt-5">
@@ -139,30 +249,30 @@ export function PaymentSheet({
         </div>
       )}
 
-      {method === "meal_voucher" && (
+      {method === "meal_voucher" && !isRefund && (
         <p className="mt-5 rounded-xl bg-surface p-4 text-[15px] text-ink-soft">Stravenka nebo poukázka vydaná jinou firmou. Eviduje se jako běžná platba.</p>
       )}
-      {method === "credit" && (
+      {method === "credit" && !isRefund && (
         <p className="mt-5 rounded-xl bg-surface p-4 text-[15px] text-ink-soft">
           Úhrada z dříve nabitého kreditu, čipu nebo předplacené karty. Eviduje se jako čerpání. Doplatek po záloze sem nepatří – zaúčtujte ho jako běžnou platbu (hotově, kartou).
         </p>
       )}
-      {method === "gift_voucher" && (
+      {method === "gift_voucher" && !isRefund && (
         <p className="mt-5 rounded-xl bg-surface p-4 text-[15px] text-ink-soft">
-          Dárkový poukaz na konkrétní zboží nebo službu, který jste dříve prodali. Jeho uplatnění se neeviduje – evidoval se už prodej poukazu.
+          Dárkový poukaz na konkrétní zboží nebo službu, který jste dříve prodali. Jeho uplatnění se neeviduje – evidoval se už prodej poukazu. Doplácí-li zákazník rozdíl, rozdělte platbu: hodnotu poukazu sem, zbytek hotově nebo kartou.
         </p>
       )}
 
-      {error && (
+      {(localError ?? error) && (
         <p role="alert" className="mt-4 rounded-xl bg-danger-50 p-3 text-danger-600">
-          {error}
+          {localError ?? error}
         </p>
       )}
 
       <button
         type="button"
         disabled={busy || cashShort}
-        onClick={() => onPay({ method, tip, cashReceived: method === "cash" && receivedH > 0 ? receivedH : null })}
+        onClick={confirm}
         className="btn-primary mt-6 w-full py-4 text-lg"
       >
         {busy ? "Ukládám…" : isRefund ? "Potvrdit vrácení" : `Zaplaceno – ${kc(due)}`}

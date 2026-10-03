@@ -139,7 +139,8 @@ export function PosApp() {
         const inp = refundInput(refund);
         sale = await createLocalSale(device, config, {
           lines: inp.lines,
-          payments: [{ method: r.method, amount: inp.payments[0]!.amount }],
+          // zrcadlo plateb originálu (R6.9); pokladní mohl zaměnit jen způsoby se stejnou evidencí
+          payments: r.payments,
           discount: 0,
           tip: 0,
           cashReceived: null,
@@ -149,11 +150,10 @@ export function PosApp() {
           staff,
         });
       } else {
-        const gross = cart.reduce((s, l) => s + Math.round(l.qty * l.unitPrice), 0);
-        const due = gross - discount + r.tip;
         sale = await createLocalSale(device, config, {
           lines: cart.map(({ key: _key, ...l }) => l),
-          payments: [{ method: r.method, amount: due }],
+          // jeden nebo víc způsobů platby (R6.9)
+          payments: r.payments,
           discount,
           tip: r.tip,
           cashReceived: r.cashReceived,
@@ -303,12 +303,13 @@ export function PosApp() {
           error={payError}
           onClose={() => setPaying(null)}
           onPay={pay}
+          refundPayments={paying.refundOf ? refundInput(paying.refundOf).payments : undefined}
         />
       )}
       {approval && (
         <OwnerApproval
           config={config}
-          refund={{ refundOf: approval.id, amount: -refundInput(approval).payments[0]!.amount }}
+          refund={{ refundOf: approval.id, amount: -refundInput(approval).total }}
           onClose={() => setApproval(null)}
           onApprove={(token) => {
             setPaying({ refundOf: approval, approval: token });

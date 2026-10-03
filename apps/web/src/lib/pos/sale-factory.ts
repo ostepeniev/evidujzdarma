@@ -3,6 +3,7 @@
 import { buildSale, refundLinesFrom, type Payment, type SaleLine } from "@ez/fiscal-core";
 import { getMeta, nextSequence, saveSale } from "./db";
 import { isConfigStale } from "./sync";
+import { mirrorPayments } from "./split-payment";
 import { correctedNow } from "./sync-result";
 import type { DeviceCredentials, LocalSale, PosConfig } from "./types";
 
@@ -79,8 +80,8 @@ export async function createLocalSale(device: DeviceCredentials, config: PosConf
   return sale;
 }
 
-/** Položky pro vratku: záporné množství původních položek (po slevě). */
-export function refundInput(original: LocalSale): { lines: SaleLine[]; payments: Payment[] } {
+/** Položky pro vratku: záporné množství původních položek (po slevě); platby zrcadlí originál (R6.9). */
+export function refundInput(original: LocalSale): { lines: SaleLine[]; payments: Payment[]; total: number } {
   const probe = buildSale({
     id: original.id,
     deviceId: "x",
@@ -98,7 +99,6 @@ export function refundInput(original: LocalSale): { lines: SaleLine[]; payments:
   });
   const lines = refundLinesFrom(probe);
   const total = lines.reduce((s, l) => s + Math.round(l.qty * l.unitPrice), 0);
-  // vracíme stejným způsobem, jakým se platilo (první způsob platby)
-  const method = original.payments[0]?.method ?? "cash";
-  return { lines, payments: [{ method, amount: total }] };
+  // vracíme stejnými způsoby, jakými se platilo, poměrně – jinak by se evidovala jiná částka než u originálu (R6.9)
+  return { lines, payments: mirrorPayments(original.payments, original.tip, total), total };
 }

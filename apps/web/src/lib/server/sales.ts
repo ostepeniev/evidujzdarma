@@ -2,7 +2,7 @@ import "server-only";
 import { and, eq, inArray, ne } from "drizzle-orm";
 import { z } from "zod";
 import { getDb, schema } from "@ez/db";
-import { EET_PRODUCTION_ACCEPTS_FROM, MAX_EET_AMOUNT, PAYMENT_METHODS, SaleValidationError, buildSale, deadlineFor, evidencedAmounts } from "@ez/fiscal-core";
+import { EET_PRODUCTION_ACCEPTS_FROM, MAX_EET_AMOUNT, PAYMENT_METHODS, SaleValidationError, buildSale, deadlineFor, evidencedAmounts, type Sale } from "@ez/fiscal-core";
 import type { DeviceContext } from "./auth";
 import { accountMode, type EetMode } from "./fiscal";
 import { ingestedFromQuarantine, markIngested, quarantineSale } from "./quarantine";
@@ -85,7 +85,8 @@ function stable(v: unknown): string {
  * Pokladní a vratka musí patřit k účtu; vratku dělá vlastník nebo ji vlastník schválí PINem.
  * Vratka nesmí přesáhnout původní tržbu a na jednu tržbu je nejvýš jedna (R1.7).
  */
-async function checkStaffAndRefund(accountId: string, deviceId: string, input: DeviceSale, total: number): Promise<{ approvedBy: string; approvalJti: string } | null> {
+async function checkStaffAndRefund(accountId: string, deviceId: string, input: DeviceSale, sale: Sale): Promise<{ approvedBy: string; approvalJti: string } | null> {
+  const total = sale.total;
   const db = getDb();
   const staffRow = (id: string) => db.query.staff.findFirst({ where: and(eq(schema.staff.id, id), eq(schema.staff.accountId, accountId)) });
   const cashier = input.staffId ? await staffRow(input.staffId) : undefined;
@@ -105,6 +106,11 @@ async function checkStaffAndRefund(accountId: string, deviceId: string, input: D
   if (!original) throw new IngestRejection("REFUND_UNKNOWN_ORIGINAL", "Původní tržba k vratce není na serveru");
   if (original.refundOf) throw new IngestRejection("INVALID_SALE", "Vratku nelze vrátit");
   if (-total > original.total) throw new IngestRejection("REFUND_EXCEEDS", "Vratka je vyšší než původní tržba");
+  // evidovaná částka a čerpání vratky nesmí přesáhnout originál – jinak by vratka „odevidovala“ víc, než se evidovalo (R6.9)
+  if (input.payments.some((p) => p.amount > 0)) throw new IngestRejection("INVALID_SALE", "Vratka nesmí obsahovat kladnou platbu");
+  const amounts = evidencedAmounts(sale);
+  if (-amounts.total > original.evidencedTotal) throw new IngestRejection("REFUND_EXCEEDS", "Evidovaná částka vratky je vyšší než evidovaná částka původní tržby");
+  if (-amounts.redeemed > original.redeemedAmount) throw new IngestRejection("REFUND_EXCEEDS", "Čerpání ve vratce je vyšší než čerpání u původní tržby");
   const other = await db.query.sales.findFirst({ where: and(eq(schema.sales.refundOf, input.refundOf), ne(schema.sales.id, input.id)), columns: { id: true } });
   if (other) throw new IngestRejection("REFUND_DUPLICATE", "Tato tržba už byla vrácena", 409);
   return { approvedBy: approver.id, approvalJti: approval!.jti };
@@ -186,7 +192,7 @@ export async function ingestSales(ctx: DeviceContext, inputs: DeviceSale[]): Pro
         if (e instanceof SaleValidationError) throw new IngestRejection("INVALID_SALE", e.issues.join("; "));
         throw e;
       }
-      const approved = await checkStaffAndRefund(account.id, device.id, input, sale.total);
+      const approved = await checkStaffAndRefund(account.id, device.id, input, sale);
       const amounts = evidencedAmounts(sale);
       // i dílčí částky zprávy (urceno_cerp_zuct, cerp_zuct) musí projít XSD – jinak by tržba visela jako MESSAGE_INVALID (A Дрібне 6)
       if ([amounts.total, amounts.prepayment, amounts.redeemed].some((a) => Math.abs(a) > MAX_EET_AMOUNT)) {
