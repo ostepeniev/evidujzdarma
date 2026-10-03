@@ -147,7 +147,7 @@ const SECTIONS: readonly { id: string; title: string; body: ReactNode }[] = [
         </p>
         <p>
           6.2 Provozovatel se zavazuje, že funkce, které ceník ke dni registrace uživatele uvádí jako součást tarifu Zdarma
-          (evidence tržeb, práce bez signálu, až 5 uživatelů, až 3 evidenční jednotky, doklad PDF a e-mailem, denní přehled,
+          (evidence tržeb, práce bez signálu, až 5 uživatelů, až 3 evidenční jednotky, doklad e-mailem, denní přehled,
           export CSV, QR platba), nezpoplatní.
         </p>
         <p>
@@ -297,7 +297,7 @@ const SECTIONS: readonly { id: string; title: string; body: ReactNode }[] = [
           uchování neukládá právní předpis. Obsahuje-li účet ostré tržby, které Finanční správa nepotvrdila, provozovatel ho uchová
           nejdéle 60 dnů od zrušení, aby je uživatel mohl vyřídit (evidovat jinak); uživatel je může v nastavení označit jako
           evidované jinak a provozovatel pak data smaže podle předchozí věty. O stavu účtu provozovatel uživatele informuje e-mailem
-          v den zrušení, 30. a 55. den po zrušení.
+          v den zrušení a – obsahuje-li účet neodeslané ostré tržby – také 30. a 55. den po zrušení.
         </p>
       </>
     ),

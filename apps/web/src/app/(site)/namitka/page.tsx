@@ -3,6 +3,7 @@ import Link from "next/link";
 import { isClosed } from "@/lib/launch";
 import { ObjectionForm } from "@/components/catalog/objection-form";
 import { PageHeader } from "@/components/page-header";
+import { CATALOG_DATA } from "@/content/catalog-data";
 import { SITE } from "@/lib/site";
 
 export async function generateMetadata({ searchParams }: PageProps<"/namitka">): Promise<Metadata> {
@@ -46,8 +47,8 @@ export default async function ObjectionPage({ searchParams }: PageProps<"/namitk
           </ul>
           <h2 className="!text-xl">Jaké údaje zpracováváme</h2>
           <p>
-            Jen údaje z veřejných registrů: název, IČO, DIČ, právní forma, data vzniku a zániku, obory činnosti a provozovny. U fyzických osob
-            nezobrazujeme adresu, jen obec. Nevytváříme stránky osob ani statutárních orgánů.
+            Jen veřejné údaje z registrů ARES, živnostenského rejstříku (RŽP) a ČSÚ: {CATALOG_DATA}. Nevytváříme stránky osob ani
+            statutárních orgánů.
           </p>
           <p>
             Raději e-mailem? Napište na <a href={`mailto:${SITE.email}`}>{SITE.email}</a>.

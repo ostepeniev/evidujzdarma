@@ -10,6 +10,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { PageHeader } from "@/components/page-header";
+import { CATALOG_DATA } from "@/content/catalog-data";
 import { PRIVACY_VERSION, PRIVACY_VERSION_LABEL } from "@/lib/legal";
 import { SITE, operatorLine } from "@/lib/site";
 
@@ -54,7 +55,7 @@ const PURPOSES: readonly { purpose: string; data: string; basis: string; retenti
   },
   {
     purpose: "Katalog firem a kontrola IČO",
-    data: "Veřejné údaje z registrů ARES, živnostenského rejstříku (RŽP) a ČSÚ: název, IČO, právní forma, obory činnosti, provozovny. U fyzických osob nezobrazujeme adresu bydliště.",
+    data: `Veřejné údaje z registrů ARES, živnostenského rejstříku (RŽP) a ČSÚ: ${CATALOG_DATA}. U fyzických osob nezobrazujeme adresu bydliště.`,
     basis: "Oprávněný zájem – čl. 6 odst. 1 písm. f) GDPR: informovat podnikatele a veřejnost o tom, zda se jich může týkat evidence tržeb.",
     retention: "Po dobu, kdy jsou údaje veřejné v registrech; aktualizujeme je pravidelně. Odpovědi ARES pro kontrolu IČO ukládáme do mezipaměti na 24 hodin.",
   },
@@ -170,8 +171,8 @@ const SECTIONS: readonly { id: string; title: string; body: ReactNode }[] = [
     body: (
       <>
         <p>
-          Na webu zveřejňujeme katalog firem a provozoven s orientačním vyhodnocením, zda se jich může týkat EET 2.0. Údaje
-          přebíráme z veřejných registrů – ARES, živnostenského rejstříku (RŽP) a Českého statistického úřadu. U podnikajících
+          Připravujeme katalog firem a provozoven s orientačním vyhodnocením, zda se jich může týkat EET 2.0. Zatím není veřejně
+          přístupný; zveřejníme ho až po posouzení oprávněného zájmu. Údaje přebíráme z veřejných registrů – ARES, živnostenského rejstříku (RŽP) a Českého statistického úřadu. U podnikajících
           fyzických osob nezobrazujeme adresu bydliště.
         </p>
         <p>
@@ -194,8 +195,10 @@ const SECTIONS: readonly { id: string; title: string; body: ReactNode }[] = [
         <p>Údaje neprodáváme. Předáváme je jen těmto příjemcům, a to v nezbytném rozsahu:</p>
         <ul>
           <li>
-            <strong>Zpracovatelé</strong> – poskytovatel hostingu se servery v Evropské unii a poskytovatel doručování e-mailů.
-            Po spuštění placených doplňků také platební partner. Se všemi máme uzavřenou smlouvu o zpracování osobních údajů.
+            <strong>Zpracovatelé</strong> – poskytovatel hostingu se servery v Evropské unii a poskytovatel doručování e-mailů Brevo
+            (Sendinblue SAS, 17 rue Salneuve, 75017 Paříž, Francie). Odkazy v e-mailech vedou přes doménu Brevo, která anonymně
+            počítá otevření a prokliky, bez vazby na konkrétního příjemce. Po spuštění placených doplňků také platební partner. Se
+            všemi máme uzavřenou smlouvu o zpracování osobních údajů.
           </li>
           <li>
             <strong>Finanční správa</strong> – datové zprávy o evidovaných tržbách, které pokladna odesílá za vás podle zákona o
@@ -210,7 +213,9 @@ const SECTIONS: readonly { id: string; title: string; body: ReactNode }[] = [
           </li>
         </ul>
         <p>
-          <strong>Osobní údaje nepředáváme mimo Evropskou unii</strong> (Evropský hospodářský prostor). Aktuální seznam
+          <strong>Údaje ukládáme v Evropské unii.</strong> Brevo e-maily odesílá a ukládá na serverech v EU; jeho podpora a někteří
+          jeho subdodavatelé mohou mít k údajům v nezbytném rozsahu přístup i ze zemí mimo EU (USA, Indie), a to na základě
+          standardních smluvních doložek EU, u společností v USA také rámce EU-U.S. Data Privacy Framework. Aktuální seznam
           zpracovatelů vám na požádání pošleme.
         </p>
       </>
@@ -224,8 +229,10 @@ const SECTIONS: readonly { id: string; title: string; body: ReactNode }[] = [
         Používáme jen nezbytné cookies pro přihlášení do účtu. Pokud přijdete přes odkaz s doporučením, uložíme si kód
         doporučení do úložiště vašeho prohlížeče, abychom ho mohli přiřadit k předregistraci. Když hlasujete v anketě, uložíme
         náhodný identifikátor do cookie <code>ez_voter</code> (platnost 1 rok), aby z jednoho prohlížeče šel jen jeden hlas;
-        u hlasu ukládáme jen jeho otisk, ne IP adresu ani jméno. Analytické ani reklamní cookies
-        nepoužíváme; kdybychom to změnili, nejdřív vás požádáme o souhlas.
+        u hlasu ukládáme jen jeho otisk, ne IP adresu ani jméno (oprávněný zájem na férovém výsledku ankety, čl. 6 odst. 1
+        písm. f) GDPR). Analytické ani reklamní cookies nepoužíváme; kdybychom to změnili, nejdřív vás požádáme o souhlas.
+        Název kanceláře, který vyplníte v šablonách dopisů pro klienty, zůstává jen ve vašem prohlížeči a na server ho
+        neposíláme.
       </p>
     ),
   },
@@ -314,7 +321,7 @@ export default function PrivacyPage() {
           </nav>
           <div className="prose-ez min-w-0 max-w-3xl">
             <p className="mt-0 rounded-2xl border border-line bg-surface p-5 text-base text-ink">
-              <strong>Ve zkratce:</strong> údaje neprodáváme a nepředáváme mimo EU. Marketingové e-maily posíláme jen se souhlasem.
+              <strong>Ve zkratce:</strong> údaje neprodáváme a ukládáme je v EU. Marketingové e-maily posíláme jen se souhlasem.
               Katalog firem stavíme z veřejných registrů a fyzickým osobám nezobrazujeme adresu bydliště. Proti zobrazení můžete
               kdykoli vznést <Link href="/namitka">námitku</Link>.
             </p>
