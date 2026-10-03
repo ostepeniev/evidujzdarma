@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { getConfig, getDevice, getMeta, pruneOld, rejectedSales, setMeta, deleteMeta, unsettledSales } from "@/lib/pos/db";
 import { createLocalSale, refundBlockedReason, refundInput } from "@/lib/pos/sale-factory";
+import { revokedNotice } from "@/lib/pos/revoked";
 import { DeviceRevokedError, configVersion, isConfigStale, onSyncChange, refreshConfig, startAutoSync, syncNow } from "@/lib/pos/sync";
 import type { DeviceCredentials, LocalSale, PosConfig } from "@/lib/pos/types";
 import { HistoryView, SummaryView } from "./history-view";
@@ -39,6 +40,11 @@ export function PosApp() {
   const [payError, setPayError] = useState<string | null>(null);
   const [receiptId, setReceiptId] = useState<string | null>(null);
   const [receiptFrom, setReceiptFrom] = useState<View>("register");
+  const [revokedMessage, setRevokedMessage] = useState<string | null>(null);
+  const onRevoked = useCallback((e: Error) => {
+    setRevokedMessage(e.message);
+    setPhase("revoked");
+  }, []);
 
   const needsLock = (cfg: PosConfig) => cfg.staff.length > 1 || cfg.staff.some((s) => s.pinHash || s.onlinePin);
 
@@ -65,7 +71,7 @@ export function PosApp() {
         cfg = (await refreshConfig()) ?? cfg;
       } catch (e) {
         if (e instanceof DeviceRevokedError) {
-          setPhase("revoked");
+          onRevoked(e);
           return;
         }
       }
@@ -87,7 +93,7 @@ export function PosApp() {
       void pruneOld();
     })();
     return () => stop?.();
-  }, [applyConfig]);
+  }, [applyConfig, onRevoked]);
 
   // Konfigurace se mění v nastavení → načíst při návratu do aplikace
   useEffect(() => {
@@ -98,12 +104,12 @@ export function PosApp() {
         const cfg = await refreshConfig();
         if (cfg) applyConfig(cfg, device);
       } catch (e) {
-        if (e instanceof DeviceRevokedError) setPhase("revoked");
+        if (e instanceof DeviceRevokedError) onRevoked(e);
       }
     };
     document.addEventListener("visibilitychange", onVisible);
     return () => document.removeEventListener("visibilitychange", onVisible);
-  }, [device, applyConfig]);
+  }, [device, applyConfig, onRevoked]);
 
   // Konfigurace načtená synchronizací (změna režimu účtu, obnova každých 5 min) se projeví hned (R5.1)
   const [configStale, setConfigStale] = useState(false);
@@ -169,7 +175,7 @@ export function PosApp() {
       setPaying(null);
       setReceiptFrom(view);
       setReceiptId(sale.id);
-      void syncNow().catch((e) => e instanceof DeviceRevokedError && setPhase("revoked"));
+      void syncNow().catch((e) => e instanceof DeviceRevokedError && onRevoked(e));
     } catch (e) {
       setPayError(e instanceof Error ? e.message : "Tržbu se nepodařilo uložit");
     } finally {
@@ -179,18 +185,22 @@ export function PosApp() {
 
   if (phase === "loading") return <p className="p-10 text-center text-muted">Načítám pokladnu…</p>;
 
+  // proč server pokladnu odmítl – u zrušeného účtu jeho text, ne „zaregistrujte znovu“ (R7.15 N9)
+  const revoked = revokedNotice(revokedMessage);
   if (phase === "unregistered" || phase === "revoked")
     return (
       <div className="mx-auto max-w-md px-4 py-16 text-center">
         <h1 className="text-2xl font-bold">{phase === "revoked" ? "Toto zařízení bylo odpojeno" : "Tohle zařízení zatím není pokladna"}</h1>
         <p className="mt-3 text-ink-soft">
           {phase === "revoked"
-            ? "Vlastník účtu zařízení odpojil v nastavení. Přihlaste se a zaregistrujte ho znovu."
+            ? revoked.text
             : "Přihlaste se e-mailem, nastavte firmu a evidenční jednotku a toto zařízení zaregistrujte jako pokladnu. Zabere to asi 15 minut."}
         </p>
-        <Link href="/pokladna/nastaveni" className="btn-primary mt-6">
-          Nastavit pokladnu
-        </Link>
+        {(phase !== "revoked" || revoked.canRegister) && (
+          <Link href="/pokladna/nastaveni" className="btn-primary mt-6">
+            Nastavit pokladnu
+          </Link>
+        )}
         {phase === "revoked" && (
           <button
             type="button"

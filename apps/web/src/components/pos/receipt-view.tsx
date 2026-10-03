@@ -2,7 +2,7 @@
 
 import QRCode from "qrcode";
 import { useEffect, useMemo, useState } from "react";
-import { PAYMENT_LABEL, deadlineFor, formatRemaining, renderReceiptText, urgency } from "@ez/fiscal-core";
+import { PAYMENT_LABEL, cashChange, deadlineFor, formatRemaining, renderReceiptText, urgency } from "@ez/fiscal-core";
 import { getSale, refundFor } from "@/lib/pos/db";
 import { refundBlockedReason } from "@/lib/pos/sale-factory";
 import { bluetoothSupported, printEscPos } from "@/lib/pos/escpos";
@@ -85,7 +85,8 @@ export function ReceiptView({
   const text = useMemo(() => (sale ? receiptTextFor(sale, config) : ""), [sale, config]);
   if (!sale) return <p className="p-8 text-center text-muted">Načítám…</p>;
 
-  const change = sale.cashReceived ? sale.cashReceived - sale.total : 0;
+  // přijatá hotovost patří k poslední (hotovostní) části platby (R7.15 N6)
+  const change = cashChange(sale.payments, sale.cashReceived);
   // vratka jen v režimu, ve kterém se tržba prodala (R7.13)
   const refundBlocked = onRefund && !sale.refundOf && sale.total > 0 ? refundBlockedReason(sale, config.account.mode) : null;
   const deadline = deadlineFor(sale.soldAt);

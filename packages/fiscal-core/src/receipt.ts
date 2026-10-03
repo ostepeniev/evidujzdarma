@@ -41,6 +41,16 @@ export interface ReceiptData {
   cashReceived?: Halere;
 }
 
+/**
+ * Kolik vrátit zákazníkovi: přijatá hotovost se vztahuje k poslední (hotovostní) části platby, ne k celé tržbě –
+ * po rozdělené platbě (poukaz + hotově) by jinak displej i doklad ukázaly méně (R7.15 N6).
+ */
+export function cashChange(payments: readonly { method: string; amount: Halere }[], cashReceived: Halere | null | undefined): Halere {
+  const last = payments[payments.length - 1];
+  if (!cashReceived || last?.method !== "cash") return 0;
+  return Math.max(0, cashReceived - last.amount);
+}
+
 const dateFmt = new Intl.DateTimeFormat("cs-CZ", {
   day: "numeric",
   month: "numeric",
@@ -113,9 +123,10 @@ export function renderReceiptText(r: ReceiptData, width = 42): string {
     // uplatnění dárkového poukazu na konkrétní zboží či službu se neeviduje (R5.10)
     if (p.method === "gift_voucher") L.push("    (uhrazeno poukazem, neeviduje se)");
   }
-  if (r.cashReceived && r.cashReceived > r.sale.total) {
+  const change = cashChange(r.sale.payments, r.cashReceived);
+  if (r.cashReceived && change > 0) {
     L.push(pad("  Přijato", formatCzk(r.cashReceived), width));
-    L.push(pad("  Vráceno", formatCzk(r.cashReceived - r.sale.total), width));
+    L.push(pad("  Vráceno", formatCzk(change), width));
   }
   if (r.sale.vat) {
     L.push(hr);

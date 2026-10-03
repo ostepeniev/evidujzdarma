@@ -152,18 +152,22 @@ export interface DeviceContext {
  * Zařízení podle tokenu. U zrušeného účtu (R5.8) smí jen dovyvézt uložené tržby a pokladní záznamy
  * a načíst konfiguraci (`allowClosed`); prodej, PIN a účtenky ne.
  */
+const CLOSED_DEVICE_TEXT = "Účet je zrušený a pokladna je odpojená.";
+
 export async function authenticateDevice(req: Request, opts: { allowClosed?: boolean } = {}): Promise<DeviceContext> {
   const auth = req.headers.get("authorization") ?? "";
   const token = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
   if (token.length < 30) throw new HttpError(401, "Chybí token zařízení");
   const db = getDb();
-  const device = await db.query.devices.findFirst({ where: and(eq(schema.devices.tokenHash, sha256(token)), isNull(schema.devices.revokedAt)) });
+  const device = await db.query.devices.findFirst({ where: eq(schema.devices.tokenHash, sha256(token)) });
   if (!device) throw new HttpError(401, "Zařízení není registrované nebo bylo odpojeno");
   const account = await db.query.accounts.findFirst({ where: eq(schema.accounts.id, device.accountId) });
+  // odpojené zařízení zrušeného účtu (retention po 30 dnech) se dozví proč – ne „zaregistrujte znovu“ (R7.15 N9)
+  if (device.revokedAt) throw new HttpError(401, account?.closedAt ? CLOSED_DEVICE_TEXT : "Zařízení není registrované nebo bylo odpojeno");
   if (!account) throw new HttpError(401, "Účet neexistuje");
   // 30 dnů po zrušení se pokladny odpojí, i když se účet kvůli neodeslaným tržbám ještě drží (Б7, R6.4)
   if (account.closedAt && Date.now() - account.closedAt.getTime() > RETENTION.closedDeviceDays * 86_400_000) {
-    throw new HttpError(401, "Účet je zrušený a pokladna je odpojená.");
+    throw new HttpError(401, CLOSED_DEVICE_TEXT);
   }
   if (account.closedAt && !opts.allowClosed) throw new HttpError(403, "Účet je zrušený – pokladna už jen předá uložené tržby do účtu.");
   // lastSeen aktualizujeme nejvýše jednou za minutu
