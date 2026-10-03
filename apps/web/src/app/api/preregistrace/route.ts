@@ -8,7 +8,7 @@ import { DIS_OPENS, TIMELINE, timelineAt } from "@/content/facts";
 import { enqueueEmail, processOutbox } from "@/lib/server/mail";
 import { clientIp, rateLimit } from "@/lib/server/rate-limit";
 import { shortCode } from "@/lib/server/tokens";
-import { issueConfirmToken, unsubscribeTokenFor } from "@/lib/server/preregistration";
+import { issueConfirmToken, statusTokenFor, unsubscribeTokenFor } from "@/lib/server/preregistration";
 import { MARKETING_CONSENT_VERSION } from "@/lib/legal";
 import { lookupCompany } from "@/lib/server/ares";
 import { assess } from "@/lib/eet-assessment";
@@ -135,18 +135,19 @@ export async function POST(req: Request) {
       // nepotvrzená adresa: zájem potvrdí stejný DOI jako předregistraci
       await db.insert(schema.preregistrationInterests).values({ preregistrationId: existing.id, campaign: body.interest }).onConflictDoNothing();
     }
-    // Znovu poslat odkaz (nový token – starý známe jen jako hash): nepotvrzenému k potvrzení, potvrzenému
-    // na stránku s pořadím. Nejvýš jednou denně.
+    // Znovu poslat odkaz, nejvýš jednou denně: nepotvrzenému nový potvrzovací (starý token známe jen jako hash),
+    // potvrzenému podepsaný odkaz na stránku stavu – jeho uložený token se nemění, takže opětovné vyplnění formuláře
+    // cizím člověkem nezneplatní odkaz, který vlastník už má (R7.16, B M4).
     if (existing && !existing.unsubscribedAt) {
-      const fresh = issueConfirmToken();
+      const fresh = existing.confirmedAt ? null : issueConfirmToken();
       const sent = await enqueueEmail({
         to: existing.email,
         template: "prereg-confirm",
-        payload: { ...emailPayload(existing, fresh.token), alreadyConfirmed: !!existing.confirmedAt, interest: body.interest },
+        payload: { ...emailPayload(existing, fresh?.token ?? statusTokenFor(existing.id)), alreadyConfirmed: !!existing.confirmedAt, interest: body.interest },
         dedupeKey: `prereg-confirm-resend:${existing.id}:${now.toISOString().slice(0, 10)}`,
       });
       if (sent) {
-        await db.update(schema.preregistrations).set({ confirmTokenHash: fresh.hash, confirmTokenIssuedAt: now }).where(eq(schema.preregistrations.id, existing.id));
+        if (fresh) await db.update(schema.preregistrations).set({ confirmTokenHash: fresh.hash, confirmTokenIssuedAt: now }).where(eq(schema.preregistrations.id, existing.id));
         after(() => processOutbox(5));
       }
     }

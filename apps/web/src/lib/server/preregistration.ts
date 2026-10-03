@@ -26,6 +26,15 @@ export function unsubscribeTokenFor(id: string): string {
 
 const SIGNED_UNSUBSCRIBE_RE = /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.([A-Za-z0-9_-]{43})$/;
 
+/**
+ * Odkaz na stránku stavu potvrzené předregistrace = id + podpis (R7.16, B M4). Připomenutí po opětovném vyplnění
+ * formuláře (to může udělat kdokoli) ho nese místo nového potvrzovacího tokenu – uložený token se u potvrzeného
+ * záznamu nemění, takže odkaz, který vlastník už má, platí dál. Platí jen pro potvrzený záznam a nic nepotvrzuje.
+ */
+export function statusTokenFor(id: string): string {
+  return `${id}.${hmac(`status:${id}`)}`;
+}
+
 /** Podmínka na řádek předregistrace podle odhlašovacího tokenu (null = neplatný token). */
 export function unsubscribeWhere(token: string) {
   const signed = SIGNED_UNSUBSCRIBE_RE.exec(token);
@@ -38,7 +47,14 @@ export function isUnsubscribeTokenShape(token: string): boolean {
 }
 
 async function byToken(token: string) {
-  if (!hasDatabase() || !TOKEN_RE.test(token)) return null;
+  if (!hasDatabase()) return null;
+  const signed = SIGNED_UNSUBSCRIBE_RE.exec(token);
+  if (signed) {
+    if (!safeEqual(token, statusTokenFor(signed[1]!))) return null;
+    const row = await getDb().query.preregistrations.findFirst({ where: eq(schema.preregistrations.id, signed[1]!) });
+    return row?.confirmedAt ? row : null;
+  }
+  if (!TOKEN_RE.test(token)) return null;
   const row = await getDb().query.preregistrations.findFirst({ where: eq(schema.preregistrations.confirmTokenHash, sha256(token)) });
   if (!row) return null;
   // nepotvrzený odkaz po 30 dnech neplatí (nový přijde po opětovném vyplnění formuláře)
