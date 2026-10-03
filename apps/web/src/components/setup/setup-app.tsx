@@ -1133,13 +1133,20 @@ interface QuarantineDto {
   soldAt: string | null;
   total: number;
   mode: string | null;
+  canSendCurrent?: boolean;
+  sendRefused?: string | null;
   receivedAt: string;
 }
 
 function ProblemSalesSection() {
   const [items, setItems] = useState<QuarantineDto[] | null>(null);
+  const [currentMode, setCurrentMode] = useState<string>("mock");
   const { busy, error, run } = useAction();
-  const load = () => call<{ items: QuarantineDto[] }>("/api/ucet/karantena").then((d) => setItems(d.items));
+  const load = () =>
+    call<{ items: QuarantineDto[]; accountMode?: string }>("/api/ucet/karantena").then((d) => {
+      setItems(d.items);
+      if (d.accountMode) setCurrentMode(d.accountMode);
+    });
   useEffect(() => {
     void load().catch(() => setItems([]));
   }, []);
@@ -1169,14 +1176,21 @@ function ProblemSalesSection() {
             <div className="mt-2 flex flex-wrap gap-2">
               {q.reasonCode === "MODE_MISMATCH" ? (
                 <>
-                  <button
-                    type="button"
-                    className="btn-primary py-1.5 text-sm"
-                    disabled={busy}
-                    onClick={() => window.confirm("Tržba byla skutečná a odešle se v režimu, který účet má teď. Pokračovat?") && act(q.id, "send_current_mode")}
-                  >
-                    Odeslat v aktuálním režimu
-                  </button>
+                  {q.canSendCurrent ? (
+                    <button
+                      type="button"
+                      className="btn-primary py-1.5 text-sm"
+                      disabled={busy}
+                      onClick={() =>
+                        window.confirm(`Tržba byla skutečná a odešle se v režimu ${MODE_LABEL[currentMode] ?? currentMode}. Pokračovat?`) && act(q.id, "send_current_mode")
+                      }
+                    >
+                      Odeslat v režimu {MODE_LABEL[currentMode] ?? currentMode}
+                    </button>
+                  ) : (
+                    // tržbu z ostrého provozu nelze poslat do testu ani simulace (R6.1)
+                    <p className="w-full text-sm text-ink-soft">{q.sendRefused}</p>
+                  )}
                   <button
                     type="button"
                     className="btn-secondary py-1.5 text-sm"

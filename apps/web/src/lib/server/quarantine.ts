@@ -113,6 +113,25 @@ export async function listQuarantine(accountId: string) {
 
 export type QuarantineAction = "retry" | "retry_with_received_time" | "dismiss" | "send_current_mode" | "was_test";
 
+const MODE_RANK: Record<string, number> = { mock: 0, playground: 1, production: 2 };
+
+/**
+ * Smí se tržba prodaná v režimu `sold` odeslat v režimu `target`? Jen směrem nahoru (R6.1): tržba z ostrého
+ * provozu nesmí skončit v Playgroundu ani v simulaci – dostala by falešný POK a do FS by nic nešlo (Р3).
+ */
+export function canSendInMode(sold: string | null | undefined, target: string): boolean {
+  const from = MODE_RANK[sold ?? "mock"];
+  const to = MODE_RANK[target];
+  return from !== undefined && to !== undefined && to >= from;
+}
+
+/** Proč nejde tržbu odeslat v nižším režimu (text pro vlastníka). */
+export function sendDownRefused(sold: string | null | undefined): string {
+  return sold === "production"
+    ? "Tržbu prodanou v ostrém režimu nelze odeslat v testovacím. Přepněte účet zpět, nebo ji vyřiďte ručně."
+    : "Tržbu prodanou v režimu Playground nelze odeslat v ukázkovém. Přepněte účet zpět, nebo ji vyřiďte ručně.";
+}
+
 /**
  * Rozhodnutí vlastníka: znovu přijmout (po opravě nastavení), přijmout s časem přijetí serverem
  * (jen u data v budoucnosti), nebo vyřídit ručně (s poznámkou – tržba zůstává v záznamu).
@@ -143,7 +162,9 @@ export async function resolveQuarantine(accountId: string, id: string, opts: { a
   if (opts.action === "send_current_mode") {
     // vlastník rozhodl: tržba byla skutečná → odeslat v režimu, který účet má teď (R5.1)
     const { accountMode } = await import("./fiscal");
-    payload = { ...payload, mode: accountMode(account) };
+    const target = accountMode(account);
+    if (!canSendInMode(payload.mode as string | undefined, target)) throw new HttpError(400, sendDownRefused(payload.mode as string | undefined));
+    payload = { ...payload, mode: target };
   }
   const { ingestSales, DeviceSaleSchema } = await import("./sales");
   const parsed = DeviceSaleSchema.safeParse(payload);
