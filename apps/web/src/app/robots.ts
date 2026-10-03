@@ -24,8 +24,9 @@ const AI_AND_SEARCH_BOTS = [
   "DuckDuckBot",
 ];
 
-// uzavřené sekce (eet-open-site) – i bez lomítka, ať robot nezkouší ani „/pokladna“
-const PRIVATE = ["/api/", "/ucet/", "/registrace/", ...CLOSED_SECTIONS.flatMap((p) => [p, `${p}/`])];
+// Uzavřené sekce (eet-open-site): „/pokladna$“ přesně a „/pokladna/“ vše pod. Disallow je prefix (RFC 9309),
+// takže samotné „/u“ by zakázalo i „/ucetni“ (R7.1).
+const PRIVATE = ["/api/", "/ucet/", "/registrace/", ...CLOSED_SECTIONS.flatMap((p) => [`${p}$`, `${p}/`])];
 
 export default async function robots(): Promise<MetadataRoute.Robots> {
   // sitemapy katalogu až s otevřením katalogu

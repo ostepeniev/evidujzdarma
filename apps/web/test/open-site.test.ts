@@ -32,7 +32,7 @@ describe("eet-open-site – what stays closed", () => {
     const rules = Array.isArray(r.rules) ? r.rules : [r.rules];
     for (const rule of rules) {
       const dis = ([] as string[]).concat(rule.disallow ?? []);
-      for (const p of CLOSED) expect(dis.some((d) => d === p || d === `${p}/`), `${p} in ${String(rule.userAgent)}`).toBe(true);
+      for (const p of CLOSED) expect(dis.includes(`${p}$`) && dis.includes(`${p}/`), `${p} in ${String(rule.userAgent)}`).toBe(true);
     }
     expect(([] as string[]).concat(r.sitemap ?? []).some((s) => /\/(firma|provozovna)\//.test(s))).toBe(false);
   });
