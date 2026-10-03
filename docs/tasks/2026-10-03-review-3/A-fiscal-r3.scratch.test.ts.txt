@@ -1,0 +1,112 @@
+/**
+ * Рецензія №3, A (фіскальна зона) – тест-чернетка рецензента. НЕ для коміту.
+ * Покласти як apps/web/test/integration/zz-rev3-scratch.test.ts на 68d0960 і запустити:
+ *   cd apps/web && npx vitest run test/integration/zz-rev3-scratch.test.ts
+ * На 68d0960: 4/4 зелені = усі чотири дефекти підтверджено (S1 → В-2, S2 → В-1, S3 → В-3, S4 → Д-1).
+ */
+import type { SendResult } from "@ez/fiscal-core";
+import { buildSale, evidencedAmounts } from "@ez/fiscal-core";
+import { getDb, schema } from "@ez/db";
+import { eq } from "drizzle-orm";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { __setTransportFactoryForTests, processPending, processSale, rebuildSnapshots } from "@/lib/server/fiscal";
+import { resolveQuarantine } from "@/lib/server/quarantine";
+import { ingestSales } from "@/lib/server/sales";
+import { refundInput } from "@/lib/pos/sale-factory";
+import { testCert } from "../helpers/certs";
+import { fakeTransports } from "../helpers/fake-transport";
+import { deviceContext, deviceSale, seedAccount, storeVerifiedCertificate } from "../helpers/fixtures";
+import { createTestDb, type TestDb } from "../helpers/test-db";
+
+let t: TestDb;
+beforeAll(async () => {
+  t = await createTestDb();
+}, 60_000);
+afterAll(async () => t?.close());
+beforeEach(async () => t.reset());
+afterEach(() => __setTransportFactoryForTests(null));
+
+const MIN = 60_000;
+const iso = (ms: number) => new Date(Math.floor(ms / 1000) * 1000).toISOString();
+const invalid = (): SendResult => ({ ok: false, retryable: true, code: "INVALID_RESPONSE", message: "Podpis nesedí", messageUuid: crypto.randomUUID() });
+const ok = (): SendResult => ({ ok: true, confirmationCode: "11111111-2222-4333-8444-555555555555-0a", test: false, receivedAt: new Date().toISOString(), messageUuid: crypto.randomUUID(), warnings: [] });
+
+describe("rev3 scratch", () => {
+  it("S1: breaker probe slot is spent on a blocked sale (CERT_MISSING); healthy sales stay paused another hour", async () => {
+    let answer = invalid;
+    const fake = fakeTransports(() => answer());
+    __setTransportFactoryForTests(fake.factory);
+    const healthy: string[] = [];
+    for (let i = 0; i < 3; i++) {
+      const s = await seedAccount({ mode: "production" });
+      await storeVerifiedCertificate(s.account.id, testCert().cert, "production");
+      const sale = deviceSale(s.unit.id, { mode: "production" });
+      await ingestSales(await deviceContext(s.device.id), [sale as never]);
+      healthy.push(sale.id);
+    }
+    await processPending();
+    expect(await getDb().select().from(schema.fsBreaker)).toHaveLength(1);
+    // account without a certificate (e.g. expired / replaced) – its sale is blocked, oldest in the queue
+    const b = await seedAccount({ mode: "production" });
+    const blockedSale = deviceSale(b.unit.id, { mode: "production" });
+    await ingestSales(await deviceContext(b.device.id), [blockedSale as never]);
+    await getDb().update(schema.sales).set({ nextAttemptAt: new Date(Date.now() - 2 * 3_600_000) }).where(eq(schema.sales.id, blockedSale.id));
+    for (const id of healthy) await getDb().update(schema.sales).set({ nextAttemptAt: new Date(Date.now() - MIN) }).where(eq(schema.sales.id, id));
+    await getDb().update(schema.fsBreaker).set({ probeAt: new Date(Date.now() - 1000) });
+    answer = ok; // FS is fine again
+    const before = fake.calls.length;
+    await processPending();
+    const br = await getDb().select().from(schema.fsBreaker);
+    // observed on 68d0960: 0 transport calls, breaker still on, probeAt +60 min, blocked sale CERT_MISSING
+    expect(fake.calls.length - before).toBe(0);
+    expect(br).toHaveLength(1);
+  });
+
+  it("S2: production→mock switch, stale production POS: 'send_current_mode' confirms a production-sold sale via mock", async () => {
+    const s = await seedAccount({ mode: "production" });
+    await storeVerifiedCertificate(s.account.id, testCert().cert, "production");
+    const t0 = Date.now() - 5 * MIN;
+    await getDb().update(schema.accounts).set({ eetMode: "mock", eetModeChangedAt: new Date(t0) }).where(eq(schema.accounts.id, s.account.id));
+    const fake = fakeTransports();
+    __setTransportFactoryForTests(fake.factory);
+    const sale = deviceSale(s.unit.id, { mode: "production", soldAt: iso(t0 + MIN) });
+    const [r] = await ingestSales(await deviceContext(s.device.id), [sale as never]);
+    expect(r).toMatchObject({ quarantined: true, code: "MODE_MISMATCH" });
+    await resolveQuarantine(s.account.id, sale.id, { action: "send_current_mode" });
+    await processPending();
+    const row = await getDb().query.sales.findFirst({ where: eq(schema.sales.id, sale.id) });
+    // observed: mode 'mock', status 'confirmed', transport calls ['mock']
+    expect(row).toMatchObject({ mode: "mock", status: "confirmed" });
+  });
+
+  it("S3: refund of a sale paid 300 gift voucher + 700 cash: refundInput evidences 0 (or -1000), never -700", () => {
+    const base = { id: crypto.randomUUID(), deviceId: "d", registerId: "P1", unitId: "1", sequence: "S1", soldAt: new Date().toISOString(), vatPayer: false, mode: "test" as const };
+    const original = buildSale({ ...base, lines: [{ name: "Masáž", qty: 1, unitPrice: 100000, vatRate: 21 }], payments: [{ method: "gift_voucher", amount: 30000 }, { method: "cash", amount: 70000 }] });
+    expect(evidencedAmounts(original).total).toBe(70000);
+    const local = { ...original, unitLabel: "x", staffId: null, staffName: null, approval: null, cashReceived: null, mode: "mock", status: "confirmed", confirmationCode: null, error: null, syncedAt: null, createdAt: "" } as never;
+    const inp = refundInput(local);
+    const refund = buildSale({ ...base, id: crypto.randomUUID(), refundOf: original.id, lines: inp.lines, payments: inp.payments });
+    // observed: payments [{gift_voucher,-100000}] → evidenced 0; with cash first: [{cash,-100000}] → evidenced -100000
+    expect(evidencedAmounts(refund).total).not.toBe(-70000);
+  });
+
+  it("S4: rebuild allowed although an earlier attempt of the same snapshot timed out (FS may have recorded it)", async () => {
+    const s = await seedAccount({ mode: "production" });
+    await storeVerifiedCertificate(s.account.id, testCert().cert, "production");
+    const answers: SendResult[] = [
+      { ok: false, retryable: true, code: "NETWORK", message: "timeout", messageUuid: crypto.randomUUID() },
+      { ok: false, retryable: false, errorClass: "permanent", code: "EET_4", message: "Chybný podpis", messageUuid: crypto.randomUUID() },
+    ];
+    const fake = fakeTransports((_c, n) => answers[n - 1] ?? ok());
+    __setTransportFactoryForTests(fake.factory);
+    const sale = deviceSale(s.unit.id, { mode: "production" });
+    await ingestSales(await deviceContext(s.device.id), [sale as never]);
+    await processSale(sale.id);
+    await getDb().update(schema.sales).set({ nextAttemptAt: new Date(Date.now() - 1000) }).where(eq(schema.sales.id, sale.id));
+    await processSale(sale.id);
+    expect((await getDb().query.sales.findFirst({ where: eq(schema.sales.id, sale.id) }))!.status).toBe("rejected");
+    await getDb().update(schema.evidenceUnits).set({ fsUnitId: 304 }).where(eq(schema.evidenceUnits.id, s.unit.id));
+    const r = await rebuildSnapshots(s.account.id, [sale.id]);
+    expect(r.rebuilt).toEqual([sale.id]);
+  });
+});

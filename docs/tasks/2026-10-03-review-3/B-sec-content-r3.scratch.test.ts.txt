@@ -1,0 +1,110 @@
+/**
+ * Тест-чернетка рецензента B (рецензія №3), запускався як apps/web/test/zz-rev3-sec-scratch.test.ts
+ * на 68d0960: `npx vitest run test/zz-rev3-sec-scratch.test.ts --reporter=verbose --silent=false`.
+ * Усі 4 тести зелені = підозри ПІДТВЕРДЖЕНО (тести описують поточну, а не бажану поведінку).
+ * Вивід:
+ *   LEAKED via eet_check_ico: [ 'jak-aktivovat-dis-a-certifikat' ]
+ *   closed-account new sale: 200 [{"ok":true,"inserted":true,"status":"confirmed","confirmationCode":"…-ff","mode":"mock"}]
+ *   retention with open production quarantine: {"accounts":1,"accountsHeld":0,…}
+ */
+import { randomBytes } from "node:crypto";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
+import { getDb, schema } from "@ez/db";
+import { mapRzp, mapSubject } from "@ez/cz";
+import { eq } from "drizzle-orm";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { GUIDES } from "@/content/guides";
+import { createEetMcpServer, type McpDeps } from "@/lib/mcp/server";
+import { ARES_FIXTURES } from "@/lib/server/ares-fixtures";
+import { sameOrigin } from "@/lib/server/request-guard";
+import { POST as salesPost } from "@/app/api/pokladna/sales/route";
+import { closeAccount } from "@/lib/server/lifecycle";
+import { sha256 } from "@/lib/server/tokens";
+import { deviceSale, seedAccount } from "./helpers/fixtures";
+import { createTestDb, type TestDb } from "./helpers/test-db";
+
+describe("Ф9 – eet_check_ico", () => {
+  it("checklist links of eet_check_ico (not covered by the gate)", async () => {
+    const out: string[] = [];
+    for (const ico of Object.keys(ARES_FIXTURES)) {
+      const f = ARES_FIXTURES[ico]!;
+      const deps: McpDeps = {
+        lookupCompany: async () => ({ subject: mapSubject(f.subject), rzp: f.rzp ? mapRzp(f.rzp) : null, fetchedAt: new Date().toISOString(), source: "fixture" as const }),
+        fsStatus: async () => [],
+        allow: () => true,
+      };
+      const [a, b] = InMemoryTransport.createLinkedPair();
+      await createEetMcpServer(deps).connect(a);
+      const c = new Client({ name: "t", version: "1" });
+      await c.connect(b);
+      const r = (await c.callTool({ name: "eet_check_ico", arguments: { ico, response_format: "json" } })) as { structuredContent?: unknown; content: { text: string }[] };
+      out.push(JSON.stringify(r.structuredContent ?? {}), r.content.map((x) => x.text).join("\n"));
+      await c.close();
+    }
+    const all = out.join("\n");
+    const leaked = GUIDES.filter((g) => !g.reviewedBy && all.includes(`/navody/${g.slug}`)).map((g) => g.slug);
+    console.log("LEAKED via eet_check_ico:", leaked);
+    expect(leaked.length).toBeGreaterThan(0);
+  });
+});
+
+describe("same-origin behind nginx", () => {
+  const mk = (h: Record<string, string>) => new Request("http://127.0.0.1:3100/api/ucet", { method: "POST", headers: h });
+  it("nginx headers: own origin passes, foreign fails, spoofed XFH is overwritten by nginx anyway", () => {
+    const ng = { host: "evidujzdarma.cz", "x-forwarded-host": "evidujzdarma.cz", "x-forwarded-proto": "https" };
+    expect(sameOrigin(mk({ ...ng, origin: "https://evidujzdarma.cz" }))).toBe(true);
+    expect(sameOrigin(mk({ ...ng, origin: "https://evil.example" }))).toBe(false);
+    expect(sameOrigin(mk({ ...ng, origin: "https://sub.evidujzdarma.cz" }))).toBe(false);
+    expect(sameOrigin(mk({ ...ng, origin: "null" }))).toBe(false);
+    expect(sameOrigin(mk({ ...ng, "sec-fetch-site": "same-site" }))).toBe(false);
+    expect(sameOrigin(mk({ ...ng, "sec-fetch-site": "cross-site" }))).toBe(false);
+    // without nginx (direct to app) a client could set XFH – but such a client is not a browser carrying the victim's cookie
+    expect(sameOrigin(mk({ host: "127.0.0.1:3100", "x-forwarded-host": "evil.example", origin: "https://evil.example" }))).toBe(true);
+    // origin equal to the internal URL host passes too (req.url host)
+    expect(sameOrigin(mk({ host: "evidujzdarma.cz", origin: "http://127.0.0.1:3100" }))).toBe(true);
+  });
+});
+
+let t: TestDb;
+describe("R5.8 – closed account: server accepts NEW sales sold after closing", () => {
+  beforeAll(async () => {
+    t = await createTestDb();
+  }, 60_000);
+  afterAll(async () => t?.close());
+  beforeEach(async () => t.reset());
+
+  it("sale with soldAt after closedAt is stored and queued (no server-side 'upload only')", async () => {
+    const s = await seedAccount({ mode: "mock" });
+    await closeAccount(s.account.id);
+    const closed = (await getDb().query.accounts.findFirst({ where: eq(schema.accounts.id, s.account.id) }))!;
+    expect(closed.closedAt).toBeTruthy();
+    const token = randomBytes(32).toString("base64url");
+    await getDb().update(schema.devices).set({ tokenHash: sha256(token) }).where(eq(schema.devices.id, s.device.id));
+    const after = deviceSale(s.unit.id, { soldAt: new Date(Date.now() + 60_000).toISOString() });
+    const res = await salesPost(
+      new Request("http://localhost/api/pokladna/sales", { method: "POST", headers: { authorization: `Bearer ${token}`, "content-type": "application/json" }, body: JSON.stringify({ sales: [after] }) }),
+    );
+    const body = (await res.json()) as { results: { ok: boolean; status?: string; confirmationCode?: string | null }[] };
+    console.log("closed-account new sale:", res.status, JSON.stringify(body.results));
+    const row = await getDb().query.sales.findFirst({ where: eq(schema.sales.id, (after as { id: string }).id) });
+    expect(row).toBeTruthy();
+    expect(row!.soldAt.getTime()).toBeGreaterThan(closed.closedAt!.getTime());
+  });
+
+  it("retention deletes a closed account whose only unconfirmed production sale sits in an open quarantine", async () => {
+    const { ingestSales } = await import("@/lib/server/sales");
+    const { runRetention } = await import("@/lib/server/lifecycle");
+    const { deviceContext, storeVerifiedCertificate } = await import("./helpers/fixtures");
+    const { testCert } = await import("./helpers/certs");
+    const s = await seedAccount({ mode: "production" });
+    await storeVerifiedCertificate(s.account.id, testCert().cert, "production");
+    // future date → FUTURE_DATE quarantine (production sale, never evidenced)
+    const r = await ingestSales(await deviceContext(s.device.id), [deviceSale(s.unit.id, { mode: "production", soldAt: new Date(Date.now() + 11 * 60_000).toISOString() }) as never]);
+    expect(r[0]).toMatchObject({ ok: false, quarantined: true });
+    await closeAccount(s.account.id, { confirm: true });
+    const out = await runRetention(new Date(Date.now() + 31 * 86_400_000));
+    console.log("retention with open production quarantine:", JSON.stringify(out));
+    expect(await getDb().query.accounts.findFirst({ where: eq(schema.accounts.id, s.account.id) })).toBeUndefined();
+  });
+});
