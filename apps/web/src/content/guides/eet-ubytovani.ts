@@ -13,7 +13,7 @@ export const eetUbytovani: Guide = {
   summary: [
     "Platby hostů na místě (recepce, check-in, check-out) se evidují – hotovost, karta i QR kód.",
     "Záloha nebo celá platba převodem, platební bránou či přes platformu online se neeviduje.",
-    "Záloha zaplacená na místě se eviduje při přijetí i při čerpání jako samostatné částky.",
+    "Záloha zaplacená na místě se eviduje jako běžná platba, doplatek na místě také.",
     "U vratné kauce a místního poplatku z pobytu zatím chybí metodika Finanční správy – ověřte u poradce.",
     "Horská chata bez signálu: tržbu lze odeslat dodatečně, nejpozději do 48 hodin.",
   ],
@@ -42,7 +42,7 @@ export const eetUbytovani: Guide = {
               ["Host platí ubytování na recepci hotově nebo kartou", "**Ano**", "Typický případ."],
               ["Host naskenuje QR kód na recepci a zaplatí z mobilu", "**Ano**", "Kontaktní platba."],
               ["Záloha převodem na účet při rezervaci", "Ne", "Vzdálená platba."],
-              ["Záloha zaplacená na místě (např. při prohlídce)", "**Ano**", "Jako částka určená k pozdějšímu čerpání."],
+              ["Záloha zaplacená na místě (např. při prohlídce)", "**Ano**", "Jako běžná platba."],
               ["Platba přes Booking.com / Airbnb online, platforma vám pošle výplatu", "Ne", "Platí se vzdáleně přes platformu."],
               ["Rezervace přes platformu, host platí až při příjezdu na místě", "**Ano**", "Rozhoduje platba na místě."],
               ["Minibar, snídaně, parkování, wellness placené na místě", "**Ano**", "Všechny kontaktní platby."],
@@ -64,12 +64,12 @@ export const eetUbytovani: Guide = {
         {
           ol: [
             "Host při rezervaci pošle zálohu **převodem** → neevidujete.",
-            "Host při příjezdu zaplatí **na místě zálohu** (např. kartou) → evidujete ji jako částku určenou k pozdějšímu čerpání.",
-            "Při odjezdu host doplatí zbytek **na místě** → evidujete doplatek; pokud čerpáte zálohu přijatou na místě, uvedete i čerpání.",
+            "Host při příjezdu zaplatí **na místě zálohu** (např. kartou) → evidujete ji jako běžnou platbu.",
+            "Při odjezdu host doplatí zbytek **na místě** → evidujete doplatek jako další samostatnou platbu.",
           ],
         },
         {
-          note: "Zda a jak se v datové zprávě uvádí čerpání zálohy, která sama evidovaná nebyla (host ji poslal převodem), Finanční správa k 1. 10. 2026 podrobně nevysvětlila. Doplatek zaplacený na místě evidujete vždy. Postup si ověřte u daňového poradce nebo na [eet.gov.cz](https://eet.gov.cz).",
+          note: "Záloha a doplatek se v datové zprávě nepropojují: každou platbu přijatou na místě evidujete zvlášť, zálohu poslanou převodem neevidujete. Doplatek zaplacený na místě evidujete vždy. Postup si ověřte u daňového poradce nebo na [eet.gov.cz](https://eet.gov.cz).",
           tone: "warn",
         },
       ],
@@ -123,7 +123,7 @@ export const eetUbytovani: Guide = {
     },
     {
       q: "Eviduje se záloha za ubytování?",
-      a: "Záloha poslaná převodem ne. Záloha zaplacená na místě ano – jako částka určená k pozdějšímu čerpání. Doplatek na místě evidujete vždy.",
+      a: "Záloha poslaná převodem ne. Záloha zaplacená na místě ano – jako běžná platba. Doplatek na místě evidujete vždy.",
     },
     {
       q: "Eviduje se vratná kauce?",
@@ -138,10 +138,11 @@ export const eetUbytovani: Guide = {
       a: "Příjmy z nájmu pod EET nespadají. EET se týká krátkodobého ubytování provozovaného jako podnikání, pokud přijímáte platby na místě.",
     },
   ],
-  sources: [SOURCES.mfPredstavuje, SOURCES.kdoMusi, SOURCES.danovkyKontaktni, SOURCES.prakticke, SOURCES.jakZacit, SOURCES.vyvojari, SOURCES.zmp],
+  sources: [SOURCES.mfPredstavuje, SOURCES.kdoMusi, SOURCES.danovkyKontaktni, SOURCES.prakticke, SOURCES.jakZacit, SOURCES.vyvojari, SOURCES.zmp, SOURCES.seminarVyvojari],
   related: ["kontaktni-platba", "eet-bez-internetu", "evidencni-jednotka"],
   published: "2026-10-01",
-  updated: "2026-10-01",
-  changelog: [{ date: "2026-10-01", text: "Opraveno podle schváleného znění zákona: evidovat se musí od 1. 1. 2027, ne od 1. 2. 2027." }],
+  updated: "2026-10-03",
+  changelog: [
+    { date: "2026-10-03", text: "Opraveno podle semináře Finanční správy pro vývojáře: záloha a doplatek jsou dvě běžné platby, dárkový poukaz se eviduje jen při prodeji (jeho uplatnění není platbou) a částku určenou k čerpání a čerpání uvádí pokladna jen u kreditu." },{ date: "2026-10-01", text: "Opraveno podle schváleného znění zákona: evidovat se musí od 1. 1. 2027, ne od 1. 2. 2027." }],
   reviewedBy: null,
 };

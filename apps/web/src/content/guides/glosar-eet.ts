@@ -75,9 +75,9 @@ export const glosarEet: Guide = {
         },
         { h3: "Ojedinělá tržba" },
         { p: FACTS.whoMust.occasional },
-        { h3: "Záloha určená k čerpání a čerpání" },
+        { h3: "Částka určená k čerpání a čerpání" },
         {
-          p: "U záloh, dárkových poukazů a dobíjení kreditu se eviduje přijetí platby určené k pozdějšímu čerpání i samotné čerpání, jako samostatné částky. V datové zprávě jim odpovídají pole **urceno_cerp_zuct** a **cerp_zuct**.",
+          p: "Týká se dobití kreditu (např. čipu nebo předplacené karty): eviduje se dobití i pozdější čerpání a v datové zprávě se k nim uvádějí pole **urceno_cerp_zuct** a **cerp_zuct**. Záloha a doplatek jsou dvě běžné platby. Dárkový poukaz na konkrétní zboží nebo službu se eviduje jen při prodeji.",
         },
         { h3: "Pověření (tržba za jiného)" },
         {
@@ -135,7 +135,7 @@ export const glosarEet: Guide = {
       blocks: [
         { h3: "Datová zpráva" },
         {
-          p: "Zpráva o jedné evidované tržbě, kterou pokladna odešle Finanční správě. Obsahuje mimo jiné EIČ poplatníka, ID evidenční jednotky, označení pokladny, pořadové číslo, datum a čas tržby a celkovou částku, případně částky záloh a čerpání. Neobsahuje rozpis DPH, způsob platby ani položky.",
+          p: "Zpráva o jedné evidované tržbě, kterou pokladna odešle Finanční správě. Obsahuje mimo jiné EIČ poplatníka, ID evidenční jednotky, označení pokladny, pořadové číslo, datum a čas tržby a celkovou částku, u kreditu případně částku určenou k čerpání nebo čerpání. Neobsahuje rozpis DPH, způsob platby ani položky.",
         },
         { h3: "POK (potvrzovací kód)" },
         {
@@ -214,6 +214,7 @@ export const glosarEet: Guide = {
     },
   ],
   sources: [
+    SOURCES.seminarVyvojari,
     SOURCES.harmonogram,
     SOURCES.jakZacit,
     SOURCES.prakticke,
@@ -227,8 +228,9 @@ export const glosarEet: Guide = {
   ],
   related: ["eet-2-0-kompletni-pruvodce", "eet-2-0-vs-eet-1-0", "evidencni-jednotka"],
   published: "2026-10-01",
-  updated: "2026-10-01",
+  updated: "2026-10-03",
   changelog: [
+    { date: "2026-10-03", text: "Opraveno podle semináře Finanční správy pro vývojáře: záloha a doplatek jsou dvě běžné platby, dárkový poukaz se eviduje jen při prodeji (jeho uplatnění není platbou) a částku určenou k čerpání a čerpání uvádí pokladna jen u kreditu." },
     {
       date: "2026-10-01",
       text: "Opraveno podle schváleného znění zákona: evidovat se musí od 1. 1. 2027, a to i v lednu. Doplněny pojmy účinnost zákona a ojedinělá tržba a to, že POK na dokladu není povinný.",

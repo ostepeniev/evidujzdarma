@@ -196,7 +196,7 @@ export const eet20KompletniPruvodce: Guide = {
         {
           ol: [
             "Zákazník zaplatí – hotově, kartou nebo QR kódem.",
-            "Pokladna sestaví **datovou zprávu**: vaše EIČ, ID evidenční jednotky, označení pokladny, pořadové číslo, datum a čas, celkovou částku (případně zálohu a čerpání).",
+            "Pokladna sestaví **datovou zprávu**: vaše EIČ, ID evidenční jednotky, označení pokladny, pořadové číslo, datum a čas, celkovou částku (u dobití nebo čerpání kreditu i tuto částku zvlášť).",
             "Zprávu podepíše vaším pokladním certifikátem a odešle Finanční správě.",
             "Finanční správa vrátí **potvrzovací kód (POK)**. Tržba je zaevidovaná.",
           ],
@@ -205,7 +205,7 @@ export const eet20KompletniPruvodce: Guide = {
           p: "Zpráva neobsahuje sazby DPH, způsob platby ani položky. Celé odeslání trvá běžně okamžik a zákazníka nijak nezdržuje.",
         },
         {
-          p: "U záloh a poukazů posílá pokladna částky zvlášť: prodej dárkového poukazu na místě odešle jako částku určenou k pozdějšímu čerpání, jeho uplatnění pak jako čerpání. Pokladna, kterou si vyberete, proto musí zálohy a poukazy umět rozlišit – ověřte si to dřív, než začnete poukazy na rok 2027 prodávat.",
+          p: "Záloha a doplatek zaplacené na místě jsou dvě běžné platby. Zvlášť se v datové zprávě uvádí jen dobití kreditu (čip, předplacená karta) a jeho čerpání. Dárkový poukaz na konkrétní zboží nebo službu evidujete při prodeji, jeho uplatnění platbou není a neeviduje se. Pokladna, kterou si vyberete, proto musí platbu poukazem a kreditem umět rozlišit – ověřte si to dřív, než začnete poukazy na rok 2027 prodávat.",
         },
         { h3: "Co když vypadne internet" },
         { p: FACTS.offline.summary },
@@ -279,7 +279,7 @@ export const eet20KompletniPruvodce: Guide = {
         },
         { h3: "Kadeřnictví, kosmetika, barbershopy" },
         {
-          p: "Většina plateb je kontaktních, dárkové poukazy se evidují dvakrát, pronájem křesla znamená vlastní evidenci každé OSVČ. Viz [EET pro kadeřnictví a kosmetiku](/navody/eet-kadernictvi-kosmetika).",
+          p: "Většina plateb je kontaktních, dárkový poukaz se eviduje jen při prodeji, pronájem křesla znamená vlastní evidenci každé OSVČ. Viz [EET pro kadeřnictví a kosmetiku](/navody/eet-kadernictvi-kosmetika).",
         },
         { h3: "Gastronomie" },
         {
@@ -367,7 +367,6 @@ export const eet20KompletniPruvodce: Guide = {
             `číslo zákona ve Sbírce zákonů (paragrafy uvádíme podle schváleného znění – ${FACTS.law.printNo}),`,
             "zda bude Finanční správa v lednu 2027 pokutovat – oficiálně to stanoveno není, evidovat se ale musí od 1. 1. 2027,",
             "jak zacházet s místním poplatkem z pobytu, vratnými kaucemi a spropitným,",
-            "jak evidovat čerpání zálohy, která byla zaplacena převodem,",
             "převody provedené „u pokladny“ bez QR kódu a další hraniční případy kontaktní platby,",
             "konkrétní limity výjimky pro drobnou vedlejší činnost spolků,",
             "kdy je tržba ojedinělá z hlediska obvykle přijímaných tržeb – pevnou částku zákon nestanoví,",
@@ -452,6 +451,7 @@ export const eet20KompletniPruvodce: Guide = {
     },
   ],
   sources: [
+    SOURCES.seminarVyvojari,
     SOURCES.prezident,
     SOURCES.mfPredstavuje,
     SOURCES.fsVladaSchvalila,
@@ -476,8 +476,9 @@ export const eet20KompletniPruvodce: Guide = {
   ],
   related: ["koho-se-eet-tyka", "kontaktni-platba", "jak-aktivovat-dis-a-certifikat"],
   published: "2026-10-01",
-  updated: "2026-10-01",
+  updated: "2026-10-03",
   changelog: [
+    { date: "2026-10-03", text: "Opraveno podle semináře Finanční správy pro vývojáře: záloha a doplatek jsou dvě běžné platby, dárkový poukaz se eviduje jen při prodeji (jeho uplatnění není platbou) a částku určenou k čerpání a čerpání uvádí pokladna jen u kreditu." },
     {
       date: "2026-10-01",
       text: "Opraveno podle schváleného znění zákona: evidovat se musí od 1. 1. 2027, evidovat se musí od prvního dne bez výjimky pro leden; test pokladny přesunut na prosinec 2026. Doplněno: žádná hranice 50 000 Kč pro příležitostné tržby, pravidla EET OFF během roku, oznamování všech evidenčních jednotek a podmínky slevy na dani až 5 000 Kč.",

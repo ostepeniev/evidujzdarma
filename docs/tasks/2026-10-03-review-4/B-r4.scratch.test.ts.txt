@@ -1,0 +1,97 @@
+/** Review 4 (B) scratch – read-only verification, deleted after run. */
+import { getDb, schema } from "@ez/db";
+import { eq } from "drizzle-orm";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { createTestDb, type TestDb } from "../helpers/test-db";
+
+vi.mock("next/server", async (orig) => ({ ...(await orig<typeof import("next/server")>()), after: () => {} }));
+
+const { POST: preregister } = await import("@/app/api/preregistrace/route");
+const { POST: unsubscribePost } = await import("@/app/api/odhlasit/route");
+const { processOutbox } = await import("@/lib/server/mail");
+const { createObjection } = await import("@/lib/server/objections");
+const { runRetention } = await import("@/lib/server/lifecycle");
+const { unsubscribeTokenFor, lookupPreregistration, confirmPreregistration } = await import("@/lib/server/preregistration");
+const { default: robots } = await import("@/app/robots");
+const { STATIC_PAGES } = await import("@/lib/static-pages");
+
+let t: TestDb;
+beforeAll(async () => {
+  t = await createTestDb();
+}, 60_000);
+afterAll(async () => t?.close());
+beforeEach(async () => t.reset());
+
+let ip = 0;
+const post = (body: Record<string, unknown>) =>
+  preregister(new Request("http://localhost/api/preregistrace", { method: "POST", headers: { "content-type": "application/json", "x-real-ip": `10.9.0.${++ip}` }, body: JSON.stringify(body) }));
+const rowOf = (email: string) => getDb().query.preregistrations.findFirst({ where: eq(schema.preregistrations.email, email) });
+const outbox = (email: string) => getDb().select().from(schema.emailOutbox).where(eq(schema.emailOutbox.to, email));
+const DAY = 86_400_000;
+
+describe("R4-B scratch", () => {
+  it("robots: no Disallow is an RFC 9309 prefix of a public STATIC_PAGES path", async () => {
+    const r = await robots();
+    const rules = Array.isArray(r.rules) ? r.rules : [r.rules];
+    const blocked: string[] = [];
+    for (const rule of rules) {
+      const dis = ([] as string[]).concat(rule.disallow ?? []);
+      for (const p of STATIC_PAGES) for (const d of dis) if (!d.endsWith("$") && p.path.startsWith(d)) blocked.push(`${p.path} <- ${d}`);
+    }
+    console.log("BLOCKED", [...new Set(blocked)]);
+    expect([...new Set(blocked)]).toEqual([]);
+  });
+
+  it("Д3-5 gap: objection confirm token stays in email_outbox payload after send", async () => {
+    await createObjection({ kind: "objection", ico: "12345679", icp: null, name: "Jan Novak", email: "obj@example.cz", message: "prosim o odstraneni" });
+    const [q] = await outbox("obj@example.cz");
+    const url = String((q!.payload as { url: string }).url);
+    const token = new URL(url).searchParams.get("token")!;
+    await processOutbox(10);
+    const [sent] = await outbox("obj@example.cz");
+    console.log("OBJ status", sent!.status, "payload has token:", JSON.stringify(sent!.payload).includes(token));
+    expect(JSON.stringify(sent!.payload)).not.toContain(token);
+  });
+
+  it("retention: unconfirmed pre-registration that clicked 'Odhlásit' is NOT deleted after 90 days", async () => {
+    await post({ email: "victim@example.cz", ico: "12345679" });
+    const row = (await rowOf("victim@example.cz"))!;
+    const tok = unsubscribeTokenFor(row.id);
+    const res = await unsubscribePost(new Request(`http://localhost/api/odhlasit?token=${encodeURIComponent(tok)}`, { method: "POST", body: "confirm=1" }));
+    expect(res.status).toBe(200);
+    const out = await runRetention(new Date(Date.now() + 120 * DAY));
+    const after = await rowOf("victim@example.cz");
+    console.log("RETENTION", out, "row kept:", !!after, "ico:", after?.ico, "company:", after?.companyName);
+    expect(after).toBeUndefined();
+  });
+
+  it("Д3-9 side effect: unsubscribed address cannot pre-register again (200, 0 mails, row unchanged)", async () => {
+    await post({ email: "again@example.cz" });
+    const row = (await rowOf("again@example.cz"))!;
+    await unsubscribePost(new Request(`http://localhost/api/odhlasit?token=${encodeURIComponent(unsubscribeTokenFor(row.id))}`, { method: "POST", body: "confirm=1" }));
+    const before = (await outbox("again@example.cz")).length;
+    const res = await post({ email: "again@example.cz", marketingConsent: true });
+    const after = (await rowOf("again@example.cz"))!;
+    console.log("RE-REG status", res.status, "mails +", (await outbox("again@example.cz")).length - before, "unsub", !!after.unsubscribedAt, "consent", after.marketingConsent);
+    expect(res.status).toBe(200);
+  });
+
+  it("webinar sign-up by an existing address leaves no trace", async () => {
+    await post({ email: "acc@example.cz" });
+    const res = await post({ email: "acc@example.cz", utm: { utm_source: "ucetni", utm_campaign: "webinar-2026-11-05" } });
+    const body = await res.json();
+    const r = (await rowOf("acc@example.cz"))!;
+    console.log("WEBINAR resp", body, "utm", r.utm);
+    expect(body.duplicate).toBeUndefined();
+  });
+
+  it("third party re-submitting a confirmed address invalidates the owner's status link", async () => {
+    await post({ email: "conf@example.cz" });
+    const [q] = await outbox("conf@example.cz");
+    const token = (q!.payload as { confirmToken: string }).confirmToken;
+    expect(await confirmPreregistration(token)).toBe(true);
+    expect(await lookupPreregistration(token)).not.toBeNull();
+    await post({ email: "conf@example.cz" });
+    console.log("OLD LINK after resubmit:", await lookupPreregistration(token));
+  });
+});

@@ -1,0 +1,119 @@
+/** Рецензія №4 (A) – тест-чернетка, у репозиторій не входить. */
+import { getDb, schema } from "@ez/db";
+import { and, eq, like } from "drizzle-orm";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { accountState } from "@/lib/server/account";
+import { closeAccount, runRetention, settleElsewhere } from "@/lib/server/lifecycle";
+import { ingestSales } from "@/lib/server/sales";
+import { productionAcceptsFrom } from "@/lib/server/fiscal";
+import { testCert } from "../helpers/certs";
+import { deviceContext, deviceSale, seedAccount, storeVerifiedCertificate } from "../helpers/fixtures";
+import { createTestDb, type TestDb } from "../helpers/test-db";
+
+let t: TestDb;
+const saved = process.env.EET_PRODUCTION_ACCEPTS_FROM;
+beforeAll(async () => {
+  t = await createTestDb();
+}, 60_000);
+afterAll(async () => t?.close());
+beforeEach(async () => t.reset());
+afterEach(() => {
+  vi.useRealTimers();
+  process.env.EET_PRODUCTION_ACCEPTS_FROM = saved;
+});
+const DAY = 86_400_000;
+
+describe("rev4 scratch", () => {
+  it("N1: settleElsewhere settles sales the owner never saw (uploaded after the page showed the count)", async () => {
+    const s = await seedAccount({ mode: "production" });
+    await storeVerifiedCertificate(s.account.id, testCert().cert, "production");
+    const a = deviceSale(s.unit.id, { mode: "production", soldAt: new Date(Date.now() - 120_000).toISOString() });
+    const b = deviceSale(s.unit.id, { mode: "production", soldAt: new Date(Date.now() - 60_000).toISOString() });
+    await ingestSales(await deviceContext(s.device.id), [a as never]);
+    await closeAccount(s.account.id, { confirm: true });
+    const user = { id: s.user.id, email: s.user.email, memberships: [{ role: "owner", accountKind: "business", accountId: s.account.id }] } as never;
+    const shown = (await accountState(user)) as { closure: { unsentProduction: number } | null };
+    expect(shown.closure!.unsentProduction).toBe(1); // vlastník vidí 1
+    // offline pokladna mezitím dovezla starší tržbu prodanou před zrušením
+    const [rb] = await ingestSales(await deviceContext(s.device.id), [b as never]);
+    expect(rb).toMatchObject({ ok: true });
+    const r = await settleElsewhere(s.account.id, { confirm: true, actor: s.user.email });
+    expect(r.sales).toBe(2); // označí i tržbu, kterou vlastník neviděl
+    const rowB = await getDb().query.sales.findFirst({ where: eq(schema.sales.id, b.id) });
+    expect(rowB!.settledElsewhereAt).not.toBeNull();
+    expect(await runRetention(new Date(Date.now() + 31 * DAY))).toMatchObject({ accountsHeld: 0 });
+    expect(await getDb().query.sales.findFirst({ where: eq(schema.sales.id, b.id) })).toBeUndefined();
+  });
+
+  it("N2: MODE_MISMATCH quarantine (stale POS sold as mock on a production account) is not held; day-0 mail says 'nemá'", async () => {
+    const s = await seedAccount({ mode: "production" });
+    const sale = deviceSale(s.unit.id, { mode: "mock", soldAt: new Date(Date.now() + 1000).toISOString() });
+    const [r] = await ingestSales(await deviceContext(s.device.id), [sale as never]);
+    expect(r).toMatchObject({ quarantined: true, code: "MODE_MISMATCH" });
+    await closeAccount(s.account.id, { confirm: true });
+    const mails = await getDb().select().from(schema.emailOutbox).where(and(eq(schema.emailOutbox.to, s.user.email), like(schema.emailOutbox.dedupeKey, "closed-summary:%")));
+    expect(String((mails[0]!.payload as { text: string }).text)).toMatch(/nemá/);
+    await runRetention(new Date(Date.now() + 31 * DAY));
+    expect(await getDb().query.accounts.findFirst({ where: eq(schema.accounts.id, s.account.id) })).toBeUndefined();
+  });
+
+  it("N3: env EET_PRODUCTION_ACCEPTS_FROM='1' parses as year 2001 → production check effectively off", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-20T10:00:00+02:00"));
+    process.env.EET_PRODUCTION_ACCEPTS_FROM = "1";
+    expect(productionAcceptsFrom()).toBeLessThan(Date.parse("2026-11-01T00:00:00+01:00"));
+    const s = await seedAccount({ mode: "production" });
+    await storeVerifiedCertificate(s.account.id, testCert().cert, "production");
+    const [r] = await ingestSales(await deviceContext(s.device.id), [deviceSale(s.unit.id, { mode: "production" }) as never]);
+    expect(r).toMatchObject({ ok: true });
+  });
+
+  it("N4: a regular (non-refund) sale with a negative payment line is accepted with negative celk_trzba", async () => {
+    const s = await seedAccount({ mode: "mock" });
+    const sale = deviceSale(s.unit.id, {
+      lines: [{ name: "Střih", qty: 1, unitPrice: 100000, vatRate: 21 }],
+      payments: [
+        { method: "cash", amount: -50000 },
+        { method: "gift_voucher", amount: 150000 },
+      ],
+    });
+    const [r] = await ingestSales(await deviceContext(s.device.id), [sale as never]);
+    expect(r).toMatchObject({ ok: true });
+    const row = await getDb().query.sales.findFirst({ where: eq(schema.sales.id, sale.id) });
+    expect(row!.evidencedTotal).toBe(-50000);
+  });
+});
+
+// ---- N5 (окремий файл у прогоні) ----
+import { getDb, schema } from "@ez/db";
+import { eq } from "drizzle-orm";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { hashPin } from "@/lib/pos/pin";
+import { ingestSales } from "@/lib/server/sales";
+import { verifyStaffPinOnline } from "@/lib/server/staff-pin";
+import { testCert } from "../helpers/certs";
+import { deviceContext, deviceSale, seedAccount, storeVerifiedCertificate } from "../helpers/fixtures";
+import { createTestDb, type TestDb } from "../helpers/test-db";
+let t: TestDb;
+beforeAll(async () => { t = await createTestDb(); }, 60_000);
+afterAll(async () => t?.close());
+beforeEach(async () => t.reset());
+describe("rev4 scratch 2", () => {
+  it("N5: production refund of a playground original is accepted (no mode check)", async () => {
+    const s = await seedAccount({ mode: "playground" });
+    await storeVerifiedCertificate(s.account.id, testCert().cert, "production");
+    await getDb().update(schema.staff).set({ pinHash: await hashPin("246813") }).where(eq(schema.staff.id, s.owner.id));
+    const orig = deviceSale(s.unit.id, { mode: "playground", soldAt: new Date(Date.now() - 3_600_000).toISOString() });
+    const [r0] = await ingestSales(await deviceContext(s.device.id), [orig as never]);
+    expect(r0!.ok).toBe(true);
+    await getDb().update(schema.accounts).set({ eetMode: "production", eetModeChangedAt: new Date(Date.now() - 60_000) }).where(eq(schema.accounts.id, s.account.id));
+    const ctx = await deviceContext(s.device.id);
+    const approval = (await verifyStaffPinOnline(ctx, s.owner.id, "246813", "refund", { refundOf: orig.id, amount: 35000 })).approval!;
+    const x = deviceSale(s.unit.id, { mode: "production", lines: [{ name: "Střih", qty: -1, unitPrice: 35000, vatRate: 21 }], payments: [{ method: "cash", amount: -35000 }], refundOf: orig.id, staffId: s.owner.id, approval });
+    const [r] = await ingestSales(ctx, [x as never]);
+    expect(r).toMatchObject({ ok: true });
+    const row = await getDb().query.sales.findFirst({ where: eq(schema.sales.id, x.id) });
+    expect(row!.mode).toBe("production");
+    expect(row!.evidencedTotal).toBe(-35000);
+  });
+});

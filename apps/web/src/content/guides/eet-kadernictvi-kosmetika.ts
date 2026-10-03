@@ -9,10 +9,10 @@ export const eetKadernictviKosmetika: Guide = {
   description:
     "Salon, pronájem křesla, mobilní kadeřnice, dárkové poukazy, spropitné: co od 1. 1. 2027 evidovat v EET 2.0 v kadeřnictví, kosmetice a barbershopu.",
   lead:
-    "Kadeřnictví, kosmetika, nehtová studia a barbershopy evidují od **1. 1. 2027** každou platbu klienta na místě – hotovost, kartu i QR kód. Dárkový poukaz se eviduje při prodeji i při uplatnění. Kdo si v salonu pronajímá křeslo, eviduje své tržby sám. Malé paušalistky mohou zvolit EET OFF za **1 400 Kč** měsíčně.",
+    "Kadeřnictví, kosmetika, nehtová studia a barbershopy evidují od **1. 1. 2027** každou platbu klienta na místě – hotovost, kartu i QR kód. Dárkový poukaz se eviduje jen při prodeji, jeho uplatnění ne. Kdo si v salonu pronajímá křeslo, eviduje své tržby sám. Malé paušalistky mohou zvolit EET OFF za **1 400 Kč** měsíčně.",
   summary: [
     "Eviduje se každá platba klienta v salonu: hotovost, karta i QR kód, služby i prodej kosmetiky.",
-    "Dárkové poukazy se evidují dvakrát: při prodeji (částka k čerpání) a při uplatnění (čerpání).",
+    "Dárkový poukaz se eviduje při prodeji. Jeho uplatnění není platbou a neeviduje se.",
     "Pronájem křesla: každá OSVČ eviduje své tržby sama, ve své pokladně a se svým certifikátem.",
     "Mobilní kadeřnice nebo kosmetička bez salonu uvede jako evidenční jednotku sama sebe.",
     "Záloha přes online rezervační systém (platební brána) se neeviduje.",
@@ -33,9 +33,9 @@ export const eetKadernictviKosmetika: Guide = {
               ["Klient zaplatí QR kódem u pultu", "**Ano**"],
               ["Prodej šamponu nebo kosmetiky na místě", "**Ano**"],
               ["Záloha za termín zaplacená online v rezervačním systému", "Ne (vzdálená platba)"],
-              ["Prodej dárkového poukazu na místě", "**Ano** (částka určená k čerpání)"],
-              ["Uplatnění dárkového poukazu", "**Ano** (čerpání)"],
-              ["Dárkový poukaz zakoupený online přes platební bránu", "Při prodeji ne; jak evidovat jeho uplatnění, Finanční správa zatím podrobně nepopsala"],
+              ["Prodej dárkového poukazu na místě", "**Ano**"],
+              ["Uplatnění dárkového poukazu na službu nebo zboží", "Ne (nejde o platbu)"],
+              ["Dárkový poukaz zakoupený online přes platební bránu", "Ne – prodej je vzdálená platba a uplatnění se neeviduje"],
             ],
           },
         },
@@ -49,12 +49,12 @@ export const eetKadernictviKosmetika: Guide = {
         { p: FACTS.evidenced.prepayments },
         {
           ol: [
-            "Zákazník u vás koupí poukaz na kosmetické ošetření za 1 500 Kč a zaplatí kartou → evidujete 1 500 Kč jako částku **určenou k pozdějšímu čerpání**.",
-            "Obdarovaná přijde na ošetření za 1 800 Kč, uplatní poukaz a 300 Kč doplatí hotově → evidujete **čerpání** 1 500 Kč a doplatek 300 Kč.",
+            "Zákazník u vás koupí poukaz na kosmetické ošetření za 1 500 Kč a zaplatí kartou → evidujete tržbu 1 500 Kč.",
+            "Obdarovaná přijde na ošetření za 1 800 Kč, uplatní poukaz a 300 Kč doplatí hotově → evidujete jen **doplatek 300 Kč**. Uplatnění poukazu se neeviduje.",
           ],
         },
         {
-          p: "Pokladna proto musí umět poukazy rozlišit. Ověřte si to u své pokladny dřív, než začnete na Vánoce prodávat poukazy na rok 2027.",
+          p: "Pokladna proto musí umět přijmout platbu poukazem tak, aby se do evidence dostal jen doplatek. Ověřte si to u své pokladny dřív, než začnete na Vánoce prodávat poukazy na rok 2027.",
         },
       ],
     },
@@ -122,7 +122,7 @@ export const eetKadernictviKosmetika: Guide = {
     },
     {
       q: "Jak se evidují dárkové poukazy?",
-      a: "Dvakrát: při prodeji jako částka určená k pozdějšímu čerpání a při uplatnění jako čerpání. Případný doplatek evidujete normálně.",
+      a: "Jen při prodeji. Uplatnění poukazu není platbou a neeviduje se; případný doplatek evidujete normálně.",
     },
     {
       q: "Klientka zaplatila zálohu přes rezervační systém. Eviduje se?",
@@ -137,10 +137,11 @@ export const eetKadernictviKosmetika: Guide = {
       a: "Ne automaticky. EET 2.0 účtenku nepřikazuje; na žádost klientky ale musíte vydat doklad podle zákona o ochraně spotřebitele. Více v návodu [Musím vydávat účtenku?](/navody/musim-vydavat-uctenku)",
     },
   ],
-  sources: [SOURCES.mfPredstavuje, SOURCES.kdoMusi, SOURCES.jakZacit, SOURCES.eetOff, SOURCES.mojeEet, SOURCES.podnikatelDetail],
+  sources: [SOURCES.mfPredstavuje, SOURCES.kdoMusi, SOURCES.jakZacit, SOURCES.eetOff, SOURCES.mojeEet, SOURCES.podnikatelDetail, SOURCES.seminarVyvojari],
   related: ["trzba-za-jineho", "eet-off", "musim-vydavat-uctenku"],
   published: "2026-10-01",
-  updated: "2026-10-01",
-  changelog: [{ date: "2026-10-01", text: "Opraveno podle schváleného znění zákona: evidovat se musí od 1. 1. 2027, ne od 1. 2. 2027." }],
+  updated: "2026-10-03",
+  changelog: [
+    { date: "2026-10-03", text: "Opraveno podle semináře Finanční správy pro vývojáře: záloha a doplatek jsou dvě běžné platby, dárkový poukaz se eviduje jen při prodeji (jeho uplatnění není platbou) a částku určenou k čerpání a čerpání uvádí pokladna jen u kreditu." },{ date: "2026-10-01", text: "Opraveno podle schváleného znění zákona: evidovat se musí od 1. 1. 2027, ne od 1. 2. 2027." }],
   reviewedBy: null,
 };

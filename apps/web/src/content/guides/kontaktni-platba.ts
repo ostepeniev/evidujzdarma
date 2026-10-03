@@ -9,12 +9,12 @@ export const kontaktniPlatba: Guide = {
   description:
     "Hotovost, karta, QR kód, převod, záloha, poukaz: které platby se od 1. 1. 2027 evidují v EET 2.0 a které ne. Přehledná tabulka a hraniční případy.",
   lead:
-    "V EET 2.0 se od **1. 1. 2027** eviduje každá **kontaktní platba** – peníze přijaté při osobním kontaktu se zákazníkem nebo v provozovně: hotovost, karta, QR kód, poukázka, šek i kryptoměny. Neeviduje se platba přes bránu e-shopu ani převod na fakturu. U záloh a poukazů se eviduje přijetí i čerpání zvlášť.",
+    "V EET 2.0 se od **1. 1. 2027** eviduje každá **kontaktní platba** – peníze přijaté při osobním kontaktu se zákazníkem nebo v provozovně: hotovost, karta, QR kód, poukázka, šek i kryptoměny. Neeviduje se platba přes bránu e-shopu ani převod na fakturu. Záloha a doplatek jsou dvě běžné platby, dárkový poukaz se eviduje jen při prodeji.",
   summary: [
     "Rozhoduje okolnost platby (osobní kontakt, provozovna), ne platební prostředek.",
     "Eviduje se hotovost, platební karta, QR kód, poukázka, šek i virtuální aktiva.",
     "Neeviduje se platební brána e-shopu, QR kód na webu a bankovní převod na základě faktury.",
-    "Zálohy, dárkové poukazy a dobití kreditu se evidují dvakrát – při přijetí i při čerpání, jako samostatné částky.",
+    "Záloha a doplatek se evidují jako dvě běžné platby, dárkový poukaz jen při prodeji. Dobití kreditu i jeho čerpání se evidují obě.",
   ],
   sections: [
     {
@@ -78,18 +78,20 @@ export const kontaktniPlatba: Guide = {
       blocks: [
         { p: FACTS.evidenced.prepayments },
         {
-          p: "V datové zprávě jsou na to dvě samostatná pole: částka **určená k pozdějšímu čerpání** (přijatá záloha, prodaný poukaz, dobitý kredit) a částka, která je **čerpáním** dříve zaplacené zálohy. Pokladna je musí umět odeslat odděleně.",
+          p: "Samostatná pole v datové zprávě se týkají jen kreditu: částka **určená k pozdějšímu čerpání** (dobitý kredit) a částka **čerpání** (platba z kreditu). Pokladna je musí umět odeslat odděleně.",
         },
         {
           table: {
             head: ["Situace", "Co odeslat"],
             rows: [
-              ["Zákazník u vás koupí dárkový poukaz za 1 000 Kč (hotově)", "Tržba 1 000 Kč jako částka určená k čerpání"],
-              ["Obdarovaný poukaz uplatní na službu za 1 000 Kč", "Tržba s čerpáním 1 000 Kč (zaplaceno poukazem)"],
-              ["Host penzionu zaplatí na místě zálohu 2 000 Kč kartou", "Tržba 2 000 Kč jako částka určená k čerpání"],
+              ["Zákazník u vás koupí dárkový poukaz za 1 000 Kč (hotově)", "Tržba 1 000 Kč"],
+              ["Obdarovaný poukaz uplatní na službu za 1 000 Kč", "Neeviduje se (uplatnění poukazu není platba)"],
+              ["Host penzionu zaplatí na místě zálohu 2 000 Kč kartou", "Tržba 2 000 Kč (běžná platba)"],
+              ["Zákazník si dobije čip na 500 Kč", "Tržba 500 Kč jako částka určená k čerpání"],
+              ["Zaplatí z čipu 120 Kč za službu", "Tržba s čerpáním 120 Kč"],
               ["Záloha převodem na účet dva týdny předem", "Neeviduje se (vzdálená platba)"],
             ],
-            caption: "Ilustrační příklady. Jak správně zaúčtovat čerpání zálohy přijaté převodem, zatím Finanční správa podrobně nepopsala.",
+            caption: "Ilustrační příklady podle semináře Finanční správy pro vývojáře (prezentace, „Specifické případy“).",
           },
         },
         {
@@ -134,7 +136,7 @@ export const kontaktniPlatba: Guide = {
     },
     {
       q: "Musí se v EET 2.0 odesílat, jak zákazník zaplatil?",
-      a: "Ne. Podle zveřejněné technické dokumentace datová zpráva neobsahuje způsob platby, sazby DPH ani položky – jen celkovou částku, datum, evidenční jednotku a pořadové číslo, případně částky záloh a čerpání.",
+      a: "Ne. Podle zveřejněné technické dokumentace datová zpráva neobsahuje způsob platby, sazby DPH ani položky – jen celkovou částku, datum, evidenční jednotku a pořadové číslo, u kreditu případně částku určenou k čerpání nebo čerpání.",
     },
     {
       q: "Evidují se stravenky?",
@@ -142,6 +144,7 @@ export const kontaktniPlatba: Guide = {
     },
   ],
   sources: [
+    SOURCES.seminarVyvojari,
     SOURCES.mfPredstavuje,
     SOURCES.kdoMusi,
     SOURCES.fsVladaSchvalila,
@@ -154,8 +157,9 @@ export const kontaktniPlatba: Guide = {
   ],
   related: ["koho-se-eet-tyka", "eet-ubytovani", "eet-remeslnici"],
   published: "2026-10-01",
-  updated: "2026-10-01",
+  updated: "2026-10-03",
   changelog: [
+    { date: "2026-10-03", text: "Opraveno podle semináře Finanční správy pro vývojáře: záloha a doplatek jsou dvě běžné platby, dárkový poukaz se eviduje jen při prodeji (jeho uplatnění není platbou) a částku určenou k čerpání a čerpání uvádí pokladna jen u kreditu." },
     {
       date: "2026-10-01",
       text: "Opraveno podle schváleného znění zákona: kontaktní platby se evidují od 1. 1. 2027, ne od 1. 2. 2027. Doplněno, že hranice 50 000 Kč pro příležitostné tržby v zákoně není.",

@@ -89,7 +89,7 @@ export const eet20VsEet10: Guide = {
       heading: "3. Méně údajů ve zprávě",
       blocks: [
         {
-          p: "Datová zpráva EET 2.0 obsahuje jen nezbytné údaje: identifikaci poplatníka (EIČ), ID evidenční jednotky, označení pokladny, pořadové číslo, datum a čas tržby, celkovou částku a případně částky záloh a jejich čerpání. Rozpis podle sazeb DPH, způsob platby ani položky se neposílají.",
+          p: "Datová zpráva EET 2.0 obsahuje jen nezbytné údaje: identifikaci poplatníka (EIČ), ID evidenční jednotky, označení pokladny, pořadové číslo, datum a čas tržby, celkovou částku a u kreditu případně částku určenou k čerpání nebo čerpání. Rozpis podle sazeb DPH, způsob platby ani položky se neposílají.",
         },
         {
           p: "Pro vývojáře: oproti staré EET se mění i názvy polí – **dic_popl** nahradilo **eic_popl** a **id_provoz** nahradilo **id_jednotky**. Komunikace probíhá přes rozhraní SOAP s podpisem certifikátem; dokumentaci zveřejňuje [eet.gov.cz pro vývojáře](https://eet.gov.cz/pro-vyvojare/).",
@@ -130,7 +130,7 @@ export const eet20VsEet10: Guide = {
             "Evidovat musí poplatník daně z příjmů, který přijímá evidované tržby.",
             "Tržba se odesílá online a při výpadku spojení dodatečně do 48 hodin.",
             "Pokladna potřebuje pokladní certifikát od Finanční správy (zdarma).",
-            "Zálohy a jejich čerpání se v datové zprávě rozlišují samostatnými částkami.",
+            "Dobití kreditu a jeho čerpání se v datové zprávě uvádějí samostatnými částkami.",
             "Maximální pokuta 500 000 Kč.",
           ],
         },
@@ -161,6 +161,7 @@ export const eet20VsEet10: Guide = {
     },
   ],
   sources: [
+    SOURCES.seminarVyvojari,
     SOURCES.prezident,
     SOURCES.mfPredstavuje,
     SOURCES.vyvojari,
@@ -175,8 +176,9 @@ export const eet20VsEet10: Guide = {
   ],
   related: ["eet-2-0-kompletni-pruvodce", "kontaktni-platba", "musim-vydavat-uctenku"],
   published: "2026-10-01",
-  updated: "2026-10-01",
+  updated: "2026-10-03",
   changelog: [
+    { date: "2026-10-03", text: "Opraveno podle semináře Finanční správy pro vývojáře: záloha a doplatek jsou dvě běžné platby, dárkový poukaz se eviduje jen při prodeji (jeho uplatnění není platbou) a částku určenou k čerpání a čerpání uvádí pokladna jen u kreditu." },
     {
       date: "2026-10-01",
       text: "Opraveno podle schváleného znění zákona: EET 2.0 se eviduje naostro od 1. 1. 2027, zákon výjimku pro leden nestanoví. Doplněno, že uvádět POK na dokladu není povinné.",

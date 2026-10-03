@@ -13,7 +13,7 @@ export const eetRemeslnici: Guide = {
   summary: [
     "Platba u zákazníka hotově, kartou nebo QR kódem se eviduje; faktura uhrazená převodem ne.",
     "Bez provozovny je evidenční jednotkou podnikatel sám – jedna jednotka pro všechny zakázky.",
-    "Záloha na materiál zaplacená na místě se eviduje při přijetí i při vyúčtování.",
+    "Záloha na materiál zaplacená na místě se eviduje jako běžná platba, doplatek při vyúčtování také.",
     "V místech bez signálu (sklep, novostavba) lze tržbu odeslat dodatečně, nejpozději do 48 hodin.",
     `Malí paušalisté se mohou evidenci vyhnout přes EET OFF za ${formatKc(FACTS.eetOff.surchargeMonthly)} měsíčně.`,
   ],
@@ -66,11 +66,11 @@ export const eetRemeslnici: Guide = {
           table: {
             head: ["Krok", "Co evidovat"],
             rows: [
-              ["Zákazník vám při prohlídce dá 5 000 Kč hotově na materiál", "Tržba 5 000 Kč jako částka určená k pozdějšímu čerpání"],
-              ["Po dokončení vyúčtujete 12 000 Kč, zákazník doplatí 7 000 Kč hotově", "Tržba s čerpáním zálohy 5 000 Kč a doplatkem 7 000 Kč"],
+              ["Zákazník vám při prohlídce dá 5 000 Kč hotově na materiál", "Tržba 5 000 Kč"],
+              ["Po dokončení vyúčtujete 12 000 Kč, zákazník doplatí 7 000 Kč hotově", "Tržba 7 000 Kč"],
               ["Záloha 5 000 Kč přišla převodem na účet", "Neevidujete; evidujete jen doplatek zaplacený na místě"],
             ],
-            caption: "Ilustrační příklad. Přesné vyplnění čerpání u záloh přijatých převodem Finanční správa zatím podrobně nepopsala.",
+            caption: "Ilustrační příklad. Záloha a doplatek jsou dvě samostatné běžné platby, v datové zprávě se nijak nepropojují.",
           },
         },
       ],
@@ -130,7 +130,7 @@ export const eetRemeslnici: Guide = {
     },
     {
       q: "Zákazník mi dal zálohu na materiál v hotovosti. Eviduje se?",
-      a: "Ano, jako částka určená k pozdějšímu čerpání. Při vyúčtování pak evidujete čerpání zálohy a doplatek.",
+      a: "Ano, jako běžnou platbu. Doplatek při vyúčtování pak evidujete jako další samostatnou platbu.",
     },
     {
       q: "Co když u zákazníka není signál?",
@@ -141,11 +141,12 @@ export const eetRemeslnici: Guide = {
       a: "Ano. Pravidla jsou stejná pro všechny služby poskytované mimo provozovnu: evidujete platby přijaté osobně, ne převody na fakturu.",
     },
   ],
-  sources: [SOURCES.mfPredstavuje, SOURCES.kdoMusi, SOURCES.danovkyKontaktni, SOURCES.jakZacit, SOURCES.prakticke, SOURCES.eetOff, SOURCES.mojeEet],
+  sources: [SOURCES.mfPredstavuje, SOURCES.kdoMusi, SOURCES.danovkyKontaktni, SOURCES.jakZacit, SOURCES.prakticke, SOURCES.eetOff, SOURCES.mojeEet, SOURCES.seminarVyvojari],
   related: ["kontaktni-platba", "eet-bez-internetu", "evidencni-jednotka"],
   published: "2026-10-01",
-  updated: "2026-10-01",
+  updated: "2026-10-03",
   changelog: [
+    { date: "2026-10-03", text: "Opraveno podle semináře Finanční správy pro vývojáře: záloha a doplatek jsou dvě běžné platby, dárkový poukaz se eviduje jen při prodeji (jeho uplatnění není platbou) a částku určenou k čerpání a čerpání uvádí pokladna jen u kreditu." },
     {
       date: "2026-10-01",
       text: "Opraveno podle schváleného znění zákona: evidovat se musí od 1. 1. 2027, ne od 1. 2. 2027; test pokladny doporučujeme v prosinci 2026 místo lednového pilotního provozu.",
