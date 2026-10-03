@@ -57,7 +57,8 @@ async function getTransporter(): Promise<Transporter | null> {
     return null;
   }
   const nodemailer = await import("nodemailer");
-  transporter = nodemailer.createTransport(url) as unknown as Transporter;
+  // pomalý SMTP: spojení i nečinnost končí dřív, než jiný běh vrátí e-mail ze „sending“ do fronty (OUTBOX_STALE_MS) – jinak dvojí odeslání (Д3-10)
+  transporter = nodemailer.createTransport({ url, connectionTimeout: 60_000, greetingTimeout: 30_000, socketTimeout: 60_000 }) as unknown as Transporter;
   return transporter;
 }
 

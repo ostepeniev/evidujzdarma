@@ -52,7 +52,11 @@ const TTL_MS = 24 * 3_600_000;
  * (Т7) by jinak rostla s každým novým IČO. Úplnou cache drží DB; bez DB je paměť jediná cache.
  */
 const memory = new Map<string, { at: number; value: unknown }>();
-const memoryMax = () => Number(process.env.ARES_MEMORY_MAX) || 2_000;
+/** Strop paměťové cache: jen kladné celé číslo – 0 nebo záporné by memorySet zacyklilo (Д3-4). */
+const memoryMax = () => {
+  const n = Number(process.env.ARES_MEMORY_MAX);
+  return Number.isInteger(n) && n >= 1 ? n : 2_000;
+};
 
 function memoryGet(key: string, now: number) {
   const e = memory.get(key);
@@ -137,6 +141,7 @@ export async function lookupCompany(icoInput: string, opts: { pool?: AresPool } 
 export const __aresCacheForTests = {
   cached,
   size: () => memory.size,
+  max: memoryMax,
   clear: () => memory.clear(),
   peek: (key: string) => memory.has(key),
 };

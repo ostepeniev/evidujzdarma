@@ -1,4 +1,5 @@
 import "server-only";
+import { csvCell } from "@/lib/csv";
 import { getDb, schema } from "@ez/db";
 import { CASH_MOVEMENT_LABEL, PAYMENT_METHODS, decimalString, type ClosingTotals } from "@ez/fiscal-core";
 import { and, asc, desc, eq, gte, inArray, lt, lte } from "drizzle-orm";
@@ -225,14 +226,10 @@ export function buildCashBook(closings: readonly ClosingRow[], movements: readon
 /** Český Excel: středník, desetinná čárka, UTF-8 s BOM. */
 export function cashBookCsv(rows: readonly CashBookRow[]): string {
   const num = (h: number) => (h ? decimalString(h).replace(".", ",") : "");
-  const cell = (v: unknown) => {
-    const s = v === null || v === undefined ? "" : String(v);
-    return /[;"\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-  };
   const fmt = new Intl.DateTimeFormat("cs-CZ", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Prague" });
   const head = ["Datum a čas", "Pokladna", "Doklad", "Popis", "Příjem", "Výdaj", "Zůstatek", "Pokladní", "Poznámka"];
   const lines = rows.map((r) =>
-    [fmt.format(r.at), r.registerId, r.doc, r.text, num(r.income), num(r.expense), decimalString(r.balance).replace(".", ","), r.staff, r.note].map(cell).join(";"),
+    [fmt.format(r.at), r.registerId, r.doc, r.text, num(r.income), num(r.expense), decimalString(r.balance).replace(".", ","), r.staff, r.note].map(csvCell).join(";"),
   );
   return "﻿" + [head.join(";"), ...lines].join("\r\n");
 }

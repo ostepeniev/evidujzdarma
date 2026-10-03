@@ -6,6 +6,11 @@ import { API_BODY_LIMIT, sameOrigin } from "./request-guard";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/** [id] v cestě musí být UUID – jinak 404 dřív, než se sáhne do DB (B Дрібне 3, Д3-2). */
+export function assertUuidParam(id: unknown): void {
+  if (typeof id !== "string" || !UUID_RE.test(id)) throw new HttpError(404, "Nenalezeno");
+}
+
 export async function parseJson<T extends z.ZodTypeAny>(req: Request, schema: T): Promise<z.infer<T>> {
   // i bez proxy (jiný matcher, přímé volání) se velké tělo nečte (Н2-2)
   if (Number(req.headers.get("content-length") ?? "0") > API_BODY_LIMIT) throw new HttpError(413, "Požadavek je příliš velký.");

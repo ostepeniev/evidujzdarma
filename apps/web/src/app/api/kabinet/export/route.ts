@@ -1,15 +1,12 @@
 import { and, asc, eq, gte, inArray, lt } from "drizzle-orm";
 import { getDb, schema } from "@ez/db";
 import { decimalString } from "@ez/fiscal-core";
+import { csvCell } from "@/lib/csv";
 import { DAY_RE, pragueDayRange, pragueToday } from "@/lib/prague-time";
 import { errorResponse, getCurrentUser } from "@/lib/server/auth";
 import { linkedClientAccounts, requireAccountant } from "@/lib/server/cabinet";
 
 const num = (h: number) => decimalString(h).replace(".", ",");
-const cell = (v: unknown) => {
-  const s = v === null || v === undefined ? "" : String(v);
-  return /[;"\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-};
 
 /** Export tržeb všech propojených klientů (jen ostrý provoz). */
 export async function GET(req: Request) {
@@ -46,7 +43,7 @@ export async function GET(req: Request) {
       const c = byAccount.get(s.accountId);
       const sum = (m: string) => s.payments.filter((p) => p.method === m).reduce((a, p) => a + p.amount, 0);
       return [c?.ico, c?.label, fmt.format(s.soldAt), s.registerId, s.sequence, num(s.total), num(sum("cash")), num(sum("card")), num(sum("qr")), num(sum("voucher")), num(sum("transfer")), num(s.evidencedTotal), s.confirmationCode, s.status, num(sum("meal_voucher")), num(sum("credit")), num(sum("gift_voucher"))]
-        .map(cell)
+        .map(csvCell)
         .join(";");
     });
     return new Response("﻿" + [head.join(";"), ...lines].join("\r\n"), {

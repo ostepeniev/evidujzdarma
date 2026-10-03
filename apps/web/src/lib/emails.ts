@@ -114,10 +114,10 @@ ${button(confirmUrl, "Potvrdit e-mail")}`
         // DIS+ existuje od roku 2021 – nová je v něm evidence tržeb (C Дрібне 3)
         subject: "Evidence tržeb v DIS+ je spuštěná – návod krok za krokem",
         unsubscribeUrl: u.url,
-        text: `Dobrý den,\n\nFinanční správa zpřístupnila v DIS+ přihlášení k evidenci tržeb. Připravili jsme návod se snímky obrazovky: ${url}\n\nTým EvidujZdarma\n\n${COMMERCIAL_NOTICE}\n${u.text}`,
+        text: `Dobrý den,\n\nFinanční správa zpřístupnila v DIS+ přihlášení k evidenci tržeb. Připravili jsme návod krok za krokem: ${url}\n\nTým EvidujZdarma\n\n${COMMERCIAL_NOTICE}\n${u.text}`,
         html: layout(
           "Evidence tržeb v DIS+ je spuštěná",
-          `<p>Dobrý den,</p><p>Finanční správa zpřístupnila v DIS+ přihlášení k evidenci tržeb. Připravili jsme návod se snímky obrazovky – aktivace a stažení certifikátu zabere pár minut.</p>${button(url, "Otevřít návod")}`,
+          `<p>Dobrý den,</p><p>Finanční správa zpřístupnila v DIS+ přihlášení k evidenci tržeb. Připravili jsme návod krok za krokem – aktivace a stažení certifikátu zabere pár minut.</p>${button(url, "Otevřít návod")}`,
           `${esc(COMMERCIAL_NOTICE)} ${u.html}`,
         ),
       };

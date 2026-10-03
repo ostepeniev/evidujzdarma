@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getDb, schema } from "@ez/db";
 import { HttpError, errorResponse, getCurrentUser } from "@/lib/server/auth";
 import { requireAccountant } from "@/lib/server/cabinet";
-import { parseJson } from "@/lib/server/route-helpers";
+import { assertUuidParam, parseJson } from "@/lib/server/route-helpers";
 
 const Patch = z.object({
   label: z.string().trim().max(200).nullable().optional(),
@@ -14,8 +14,9 @@ const Patch = z.object({
 
 export async function PATCH(req: Request, ctx: RouteContext<"/api/kabinet/klienti/[id]">) {
   try {
-    const accountId = await requireAccountant(await getCurrentUser());
     const { id } = await ctx.params;
+    assertUuidParam(id);
+    const accountId = await requireAccountant(await getCurrentUser());
     const input = await parseJson(req, Patch);
     const [row] = await getDb()
       .update(schema.accountantClients)
@@ -31,8 +32,9 @@ export async function PATCH(req: Request, ctx: RouteContext<"/api/kabinet/klient
 
 export async function DELETE(_req: Request, ctx: RouteContext<"/api/kabinet/klienti/[id]">) {
   try {
-    const accountId = await requireAccountant(await getCurrentUser());
     const { id } = await ctx.params;
+    assertUuidParam(id);
+    const accountId = await requireAccountant(await getCurrentUser());
     await getDb()
       .delete(schema.accountantClients)
       .where(and(eq(schema.accountantClients.id, id), eq(schema.accountantClients.accountantAccountId, accountId)));

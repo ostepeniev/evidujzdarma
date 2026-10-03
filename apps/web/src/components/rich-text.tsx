@@ -18,8 +18,8 @@ export function RichText({ text }: { text: string }): ReactNode {
     } else {
       const label = m[2]!;
       const href = m[3]!;
-      // „//host“ je odkaz na cizí doménu, ne interní cesta (B Дрібне 16)
-      if (href.startsWith("/") && !href.startsWith("//")) {
+      // „//host“ i „/\host“ (prohlížeč ho čte jako „//host“) je odkaz na cizí doménu, ne interní cesta (B Дрібне 16, Д3-3)
+      if (href.startsWith("/") && !/^\/[\\/]/.test(href)) {
         out.push(
           <Link key={i++} href={href}>
             {label}
