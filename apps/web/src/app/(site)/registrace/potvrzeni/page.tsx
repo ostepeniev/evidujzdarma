@@ -54,7 +54,12 @@ export default async function ConfirmPage({ searchParams }: PageProps<"/registra
           </p>
           <div className="mx-auto max-w-xl rounded-2xl bg-sun-100 p-6 text-left">
             <p className="font-semibold">Pozvěte kolegu – oba získáte Premium na 3 měsíce zdarma</p>
-            <p className="mt-1 text-sm text-ink-soft">Potvrzených pozvánek: {result.referrals}</p>
+            <p className="mt-1 text-sm text-ink-soft">
+              Potvrzených pozvánek: {result.referrals} ·{" "}
+              <Link href="/pravidla-doporuceni" className="underline underline-offset-2">
+                Pravidla akce
+              </Link>
+            </p>
             <div className="mt-3">
               <CopyLink url={`${SITE_URL}/?ref=${result.referralCode}`} />
             </div>

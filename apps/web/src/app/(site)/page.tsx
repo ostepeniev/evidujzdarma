@@ -163,16 +163,27 @@ export default function HomePage() {
             <p className="mt-3 text-lg text-ink-soft">Pošleme vám osobní EET plán podle vašeho IČO a termínů a dáme vědět, jakmile bude pokladna připravená.</p>
             <ul className="mt-6 space-y-3 text-[17px]">
               {[
-                "Osobní checklist: co udělat od 1. 11., do 1. 12. a do 1. 1.",
-                "Návod k DIS+ a certifikátu se snímky obrazovky",
-                "Včasný přístup k pokladně podle pořadí",
-                "Za pozvaného kolegu Premium na 3 měsíce pro oba",
-              ].map((t) => (
+                { t: "Osobní checklist: co udělat od 1. 11., do 1. 12. a do 1. 1." },
+                { t: "Návod k DIS+ a certifikátu se snímky obrazovky" },
+                { t: "Včasný přístup k pokladně podle pořadí" },
+                // akce má pravidla (Ц3, R7.10)
+                { t: "Za pozvaného kolegu Premium na 3 měsíce pro oba", rules: true },
+              ].map(({ t, rules }) => (
                 <li key={t} className="flex gap-3">
                   <span aria-hidden="true" className="text-brand-600">
                     ✓
                   </span>
-                  {t}
+                  <span>
+                    {t}
+                    {rules && (
+                      <>
+                        {" "}
+                        <Link href="/pravidla-doporuceni" className="text-base text-muted underline underline-offset-2">
+                          Pravidla akce
+                        </Link>
+                      </>
+                    )}
+                  </span>
                 </li>
               ))}
             </ul>

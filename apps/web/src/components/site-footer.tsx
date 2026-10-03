@@ -44,6 +44,7 @@ const COLUMNS = [
       { href: "/o-nas", label: "O nás a kontakt" },
       { href: "/podminky", label: "Obchodní podmínky" },
       { href: "/ochrana-osobnich-udaju", label: "Ochrana osobních údajů" },
+      { href: "/pravidla-doporuceni", label: "Pravidla akce Doporučte kolegu" },
       { href: "/namitka", label: "Námitka / oprava údajů" },
     ],
   },

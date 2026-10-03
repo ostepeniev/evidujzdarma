@@ -2,6 +2,8 @@
 // R7 (рецензія №4): návrh pro právníka; datum zveřejnění nastaví kontrolor v den otevření webu (Z10)
 export const TERMS_VERSION = "2026-10-03-r7";
 export const TERMS_VERSION_LABEL = "3. 10. 2026";
+/** Pravidla akce Doporučte kolegu (Ц3, R7.10) – datum zveřejnění nastaví kontrolor v den otevření webu. */
+export const REFERRAL_RULES_VERSION_LABEL = "3. 10. 2026";
 /** Verze zásad ochrany osobních údajů. */
 export const PRIVACY_VERSION = "2026-10-03-r7";
 export const PRIVACY_VERSION_LABEL = "3. 10. 2026";

@@ -19,4 +19,5 @@ export const STATIC_PAGES: readonly { path: string; title: string; priority: num
   { path: "/o-nas", title: "O nás a kontakt", priority: 0.4, changeFrequency: "monthly" },
   { path: "/podminky", title: "Obchodní podmínky", priority: 0.2, changeFrequency: "monthly" },
   { path: "/ochrana-osobnich-udaju", title: "Ochrana osobních údajů", priority: 0.2, changeFrequency: "monthly" },
+  { path: "/pravidla-doporuceni", title: "Pravidla akce Doporučte kolegu", priority: 0.2, changeFrequency: "monthly" },
 ];

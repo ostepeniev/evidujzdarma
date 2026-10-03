@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { INDUSTRIES } from "@/content/industries";
 
 type State =
@@ -27,21 +27,12 @@ function readUtm(): Record<string, string> | undefined {
 
 export function PreregForm({ defaultIco = "" }: { defaultIco?: string }) {
   const [state, setState] = useState<State>({ kind: "idle" });
-  const [ref, setRef] = useState<string>("");
 
-  useEffect(() => {
+  /** Kód doporučení jen z adresy v okamžiku odeslání – do prohlížeče se neukládá (R7.10, Z6). */
+  function refFromUrl(): string | undefined {
     const r = new URLSearchParams(window.location.search).get("ref");
-    if (r && /^[a-z0-9]{4,12}$/.test(r)) {
-      setRef(r);
-      try {
-        localStorage.setItem("ez_ref", r);
-      } catch {}
-    } else {
-      try {
-        setRef(localStorage.getItem("ez_ref") ?? "");
-      } catch {}
-    }
-  }, []);
+    return r && /^[a-z0-9]{4,12}$/.test(r) ? r : undefined;
+  }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -58,7 +49,7 @@ export function PreregForm({ defaultIco = "" }: { defaultIco?: string }) {
           establishments: fd.get("establishments") || undefined,
           needs: fd.getAll("needs"),
           marketingConsent: fd.get("marketing") === "on",
-          ref: ref || undefined,
+          ref: refFromUrl(),
           website: fd.get("website") ?? "",
           utm: readUtm(),
         }),

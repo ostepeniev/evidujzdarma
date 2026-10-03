@@ -54,7 +54,10 @@ export function PartnerBadge() {
           </button>
           <span className="text-sm text-muted" aria-live="polite">
             Text <code className="rounded bg-surface px-1">{PLACEHOLDER_REF}</code> nahraďte svým kódem, který dostanete po
-            předregistraci.
+            předregistraci.{" "}
+            <a href="/pravidla-doporuceni" className="underline underline-offset-2">
+              Pravidla akce
+            </a>
           </span>
         </div>
       </div>

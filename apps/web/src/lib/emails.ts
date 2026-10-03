@@ -106,7 +106,7 @@ ${button(confirmUrl, "Potvrdit e-mail")}`,
           "Dobrý den,",
           "",
           already
-            ? `tento e-mail už u nás je předregistrovaný a potvrzený. Pořadí a doporučovací odkaz najdete zde: ${confirmUrl}`
+            ? `tento e-mail už u nás je předregistrovaný a potvrzený. Stav předregistrace najdete zde: ${confirmUrl}`
             : `děkujeme za předregistraci do EvidujZdarma. Potvrďte prosím e-mail: ${confirmUrl}`,
           "",
           `Váš EET plán${p.companyName ? ` pro ${p.companyName}` : ""}:`,
@@ -121,9 +121,9 @@ ${button(confirmUrl, "Potvrdit e-mail")}`,
           "Váš EET plán",
           `${
             already
-              ? `<p>Dobrý den,</p><p>tento e-mail už u nás je předregistrovaný a potvrzený. Pořadí a doporučovací odkaz najdete na stránce předregistrace.</p>
+              ? `<p>Dobrý den,</p><p>tento e-mail už u nás je předregistrovaný a potvrzený. Stav předregistrace najdete zde:</p>
 ${button(confirmUrl, "Zobrazit předregistraci")}`
-              : `<p>Dobrý den,</p><p>děkujeme za předregistraci. Jedním kliknutím potvrďte e-mail – pošleme vám návody a včasný přístup k pokladně.</p>
+              : `<p>Dobrý den,</p><p>děkujeme za předregistraci. Jedním kliknutím potvrďte e-mail. Až pokladnu spustíme, pošleme vám odkaz.</p>
 ${button(confirmUrl, "Potvrdit e-mail")}`
           }
 <h2 style="font-size:18px;margin:28px 0 8px">Váš EET plán${company}</h2>

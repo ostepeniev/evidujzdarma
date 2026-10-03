@@ -192,7 +192,7 @@ export const PRICING_FAQ = [
   },
   {
     q: "Mohu Premium získat zdarma?",
-    a: "Ano – za každého pozvaného kolegu z předregistrace získáte vy i on Premium na 3 měsíce zdarma. Odkaz pro pozvání dostanete po předregistraci.",
+    a: "Ano – když se přes váš odkaz předregistruje kolega a do 31. 3. 2027 začne s EvidujZdarma evidovat tržby, získáte oba Premium na 3 měsíce zdarma. Odkaz dostanete po potvrzení předregistrace. Podrobnosti najdete v pravidlech akce.",
   },
   {
     q: "Co když mi limit 3 evidenčních jednotek nestačí?",
