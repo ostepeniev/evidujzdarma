@@ -5,7 +5,7 @@ import { isValidIco, normalizeIco, toIban } from "@ez/cz";
 import { getDb, schema } from "@ez/db";
 import { HttpError, type CurrentUser } from "./auth";
 import { RETENTION, TERMS_VERSION } from "@/lib/legal";
-import { ACCOUNT_BLOCKS, requeueBlocked } from "./fiscal";
+import { ACCOUNT_BLOCKS, productionAcceptsFrom, requeueBlocked } from "./fiscal";
 import { closedDeleteBy, linkedAccountants, unsentProductionOf } from "./lifecycle";
 import { randomToken, sha256 } from "./tokens";
 
@@ -191,6 +191,11 @@ export async function setEetMode(accountId: string, mode: "mock" | "playground" 
     if (pending.length) {
       throw new HttpError(409, "Některé tržby ještě nejsou vyřízené. Odešlou se v režimu, ve kterém vznikly. Potvrďte přepnutí.", { pending });
     }
+  }
+  if (mode === "production" && account.eetMode !== "production" && Date.now() < productionAcceptsFrom()) {
+    // každá ostrá tržba by skončila v karanténě PRODUCTION_NOT_OPEN, kde zbývá jen ruční vyřízení (R6.11)
+    const from = new Intl.DateTimeFormat("cs-CZ", { day: "numeric", month: "numeric", year: "numeric", timeZone: "Europe/Prague" }).format(productionAcceptsFrom());
+    throw new HttpError(400, `Ostré prostředí Finanční správy přijímá tržby až od ${from} (přechodný režim). Ostrý provoz zapněte nejdřív v ten den; do té doby můžete zkoušet v Playgroundu.`);
   }
   if (mode !== "mock") {
     if (!(account.eic ?? account.dic)) throw new HttpError(400, "Nejdřív vyplňte EIČ (DIČ).");

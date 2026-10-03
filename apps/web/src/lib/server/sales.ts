@@ -2,9 +2,9 @@ import "server-only";
 import { and, eq, inArray, ne } from "drizzle-orm";
 import { z } from "zod";
 import { getDb, schema } from "@ez/db";
-import { EET_PRODUCTION_ACCEPTS_FROM, MAX_EET_AMOUNT, PAYMENT_METHODS, SaleValidationError, buildSale, deadlineFor, evidencedAmounts, type Sale } from "@ez/fiscal-core";
+import { MAX_EET_AMOUNT, PAYMENT_METHODS, SaleValidationError, buildSale, deadlineFor, evidencedAmounts, type Sale } from "@ez/fiscal-core";
 import type { DeviceContext } from "./auth";
-import { accountMode, type EetMode } from "./fiscal";
+import { accountMode, productionAcceptsFrom, type EetMode } from "./fiscal";
 import { ingestedFromQuarantine, markIngested, quarantineSale } from "./quarantine";
 import { verifyApproval } from "./staff-pin";
 
@@ -117,11 +117,6 @@ async function checkStaffAndRefund(accountId: string, deviceId: string, input: D
 }
 
 const MODE_LABEL: Record<EetMode, string> = { mock: "ukázkový", playground: "Playground", production: "ostrý provoz" };
-
-/** Od kdy produkce FS přijímá tržby (produkce v1.1, 4.1; R5.9). Přepis přes env jen pro testy. */
-function productionAcceptsFrom(): number {
-  return Date.parse(process.env.EET_PRODUCTION_ACCEPTS_FROM || EET_PRODUCTION_ACCEPTS_FROM);
-}
 
 /**
  * Uloží tržby z pokladny. Idempotentní: stejné `id` se stejným obsahem se uloží jen jednou.
