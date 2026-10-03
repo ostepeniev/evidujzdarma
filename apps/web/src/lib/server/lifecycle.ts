@@ -1,5 +1,5 @@
 import "server-only";
-import { and, eq, exists, inArray, isNotNull, isNull, lt, ne, notExists, notInArray, or, sql } from "drizzle-orm";
+import { and, eq, exists, inArray, isNotNull, isNull, lt, ne, not, notExists, notInArray, or, sql } from "drizzle-orm";
 import { getDb, schema } from "@ez/db";
 import { RETENTION } from "@/lib/legal";
 import { HttpError } from "./auth";
@@ -108,12 +108,18 @@ export async function runRetention(now = new Date()): Promise<Record<string, num
   // Zrušené účty: 30 dnů na export, pak smazání (kaskáda: tržby, zařízení, jednotky, personál…).
   // Účet s produkčními tržbami bez POK se nesmaže bez samostatného rozhodnutí provozovatele (R5.8).
   const expired = and(isNotNull(schema.accounts.closedAt), lt(schema.accounts.closedAt, ago(now, RETENTION.closedAccountDays * DAY)));
-  const unsentProduction = db
+  const unsentSales = db
     .select({ x: sql`1` })
     .from(schema.sales)
     .where(and(eq(schema.sales.accountId, schema.accounts.id), eq(schema.sales.mode, "production"), notInArray(schema.sales.status, ["confirmed", "not_required"])));
-  await count("accounts", db.delete(schema.accounts).where(and(expired, notExists(unsentProduction))).returning({ id: schema.accounts.id }));
-  const held = await db.select({ id: schema.accounts.id }).from(schema.accounts).where(and(expired, exists(unsentProduction)));
+  // produkční tržba v otevřené karanténě taky nebyla evidována – karanténa by zmizela kaskádou s účtem (R6.3)
+  const openProductionQuarantine = db
+    .select({ x: sql`1` })
+    .from(schema.saleQuarantine)
+    .where(and(eq(schema.saleQuarantine.accountId, schema.accounts.id), isNull(schema.saleQuarantine.resolvedAt), sql`${schema.saleQuarantine.payload}->>'mode' = 'production'`));
+  const unsentProduction = or(exists(unsentSales), exists(openProductionQuarantine))!;
+  await count("accounts", db.delete(schema.accounts).where(and(expired, not(unsentProduction))).returning({ id: schema.accounts.id }));
+  const held = await db.select({ id: schema.accounts.id }).from(schema.accounts).where(and(expired, unsentProduction));
   out.accountsHeld = held.length;
   if (held.length) {
     const { enqueueEmail } = await import("./mail");
