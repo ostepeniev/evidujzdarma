@@ -27,6 +27,7 @@ export const QUARANTINE_REASON_TEXT: Record<string, string> = {
   REFUND_NOT_AUTHORIZED: "Vratku smí udělat jen vlastník nebo s jeho schválením.",
   UNKNOWN_STAFF: "Pokladní nepatří k tomuto účtu.",
   PRODUCTION_NOT_OPEN: "Ostré prostředí Finanční správy přijímá tržby až od 1. 11. 2026 (přechodný režim) – tržba z dřívější doby se odeslat nedá. Vyřiďte ji ručně.",
+  ACCOUNT_CLOSED: "Účet je zrušený – tržba prodaná po zrušení se do FS neodešle. Vyřiďte ji ručně.",
   MODE_MISMATCH: "Pokladna prodávala v režimu, který už neplatí – účet byl mezitím přepnut. Rozhodněte, zda tržbu odeslat v aktuálním režimu, nebo šlo o zkoušku.",
 };
 

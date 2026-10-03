@@ -141,6 +141,10 @@ export async function ingestSales(ctx: DeviceContext, inputs: DeviceSale[]): Pro
       const soldAtMs = Date.parse(input.soldAt);
       if (soldAtMs - Date.now() > MAX_FUTURE_MS) throw new IngestRejection("FUTURE_DATE", "Datum tržby je v budoucnosti – zkontrolujte čas v zařízení.");
       if (Date.now() - soldAtMs > MAX_PAST_MS) throw new IngestRejection("TOO_OLD", "Tržba je starší než 45 dní.");
+      // zrušený účet: pokladny smí jen dovézt tržby prodané před zrušením – drží to server, ne jen pokladna (R6.2)
+      if (account.closedAt && soldAtMs > account.closedAt.getTime()) {
+        throw new IngestRejection("ACCOUNT_CLOSED", "Účet je zrušený – tržba prodaná po zrušení se do FS neodešle.");
+      }
       // Pokladna se starou konfigurací (kiosk, offline při přepnutí) nesmí po přepnutí účtu prodávat
       // v předchozím režimu – „mock“ by dostal falešný POK a do FS by nic nešlo (R5.1). Tržby prodané
       // před přepnutím zůstávají ve svém režimu (Р3, T8/T9). Už přijatá tržba se posuzuje dál podle id.
