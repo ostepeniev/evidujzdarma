@@ -1,7 +1,8 @@
 import { NextResponse, after } from "next/server";
 import { z } from "zod";
 import { hasDatabase } from "@ez/db";
-import { LOGIN_NONCE_COOKIE, createLoginToken, loginNonceCookieOptions } from "@/lib/server/auth";
+import { LOGIN_NONCE_COOKIE, createLoginToken, errorResponse, loginNonceCookieOptions } from "@/lib/server/auth";
+import { requireSameOrigin } from "@/lib/server/route-helpers";
 import { enqueueEmail, processOutbox } from "@/lib/server/mail";
 import { clientIp, rateLimit } from "@/lib/server/rate-limit";
 import { SITE_URL } from "@/lib/site";
@@ -9,6 +10,11 @@ import { SITE_URL } from "@/lib/site";
 const Body = z.object({ email: z.string().trim().toLowerCase().email().max(254), redirectTo: z.string().max(200).optional() });
 
 export async function POST(req: Request) {
+  try {
+    requireSameOrigin(req); // i mimo proxy.ts (Д3-8)
+  } catch (e) {
+    return errorResponse(e);
+  }
   if (!hasDatabase()) return Response.json({ error: "Služba je dočasně nedostupná" }, { status: 503 });
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return Response.json({ error: "Zadejte platný e-mail." }, { status: 400 });

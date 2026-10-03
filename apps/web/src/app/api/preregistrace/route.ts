@@ -42,8 +42,8 @@ const Body = z.object({
       const kept = Object.fromEntries(UTM_KEYS.filter((k) => typeof u[k] === "string" && u[k]).map((k) => [k, (u[k] as string).slice(0, 100)]));
       return Object.keys(kept).length ? kept : undefined;
     }),
-  /** honeypot — vyplní jen bot; odpověď je stejná jako pro člověka (B Дрібне 8) */
-  website: z.string().max(500).optional(),
+  /** honeypot — vyplní jen bot; odpověď je stejná jako pro člověka (B Дрібне 8), i u dlouhé hodnoty (Д3-9) */
+  website: z.unknown().optional(),
 });
 
 const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"] as const;
@@ -124,18 +124,10 @@ export async function POST(req: Request) {
     const existing = await db.query.preregistrations.findFirst({
       where: sql`lower(${schema.preregistrations.email}) = ${body.email}`,
     });
-    // Zájem o další akci (např. webinář) od už registrovaného e-mailu: doplníme UTM, nic nepřepisujeme.
-    if (existing && body.utm) {
-      const merged: Record<string, string> = { ...(existing.utm ?? {}) };
-      for (const [k, v] of Object.entries(body.utm)) {
-        const prev = merged[k];
-        merged[k] = prev && prev !== v && !prev.split(",").includes(v) ? `${prev},${v}`.slice(0, 300) : v;
-      }
-      await db.update(schema.preregistrations).set({ utm: merged }).where(sql`${schema.preregistrations.id} = ${existing.id}`);
-    }
-    // Znovu poslat odkaz (nový token – starý známe jen jako hash): nepotvrzenému k potvrzení,
-    // potvrzenému na stránku s pořadím. Nejvýš jednou denně; odpověď je stejná jako u nové registrace.
-    if (existing) {
+    // Cizí záznam bez ověření neměníme – ani UTM (Д3-9). Znovu poslat odkaz (nový token – starý známe jen jako hash):
+    // nepotvrzenému k potvrzení, potvrzenému na stránku s pořadím. Nejvýš jednou denně; odpověď je stejná jako
+    // u nové registrace. Odhlášené adrese nic neposíláme – o e-mail ji může požádat kdokoli (Д3-9).
+    if (existing && !existing.unsubscribedAt) {
       const fresh = issueConfirmToken();
       const sent = await enqueueEmail({
         to: existing.email,

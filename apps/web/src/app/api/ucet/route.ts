@@ -1,6 +1,6 @@
 import { errorResponse, getCurrentUser, HttpError } from "@/lib/server/auth";
 import { AccountInput, accountState, upsertAccount } from "@/lib/server/account";
-import { parseJson } from "@/lib/server/route-helpers";
+import { parseJson, requireSameOrigin } from "@/lib/server/route-helpers";
 
 export async function GET() {
   try {
@@ -14,6 +14,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    requireSameOrigin(req); // i mimo proxy.ts (Д3-8)
     const user = await getCurrentUser();
     if (!user) throw new HttpError(401, "Nejste přihlášeni");
     const input = await parseJson(req, AccountInput);

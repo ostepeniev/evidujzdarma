@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { LOGIN_NONCE_COOKIE, SESSION_COOKIE, consumeLoginToken, sessionCookieOptions } from "@/lib/server/auth";
+import { LOGIN_NONCE_COOKIE, SESSION_COOKIE, consumeLoginToken, errorResponse, sessionCookieOptions } from "@/lib/server/auth";
+import { requireSameOrigin } from "@/lib/server/route-helpers";
 import { SITE_URL } from "@/lib/site";
 
 const TOKEN_RE = /^[A-Za-z0-9_-]{30,64}$/;
@@ -21,6 +22,11 @@ function cookieValue(req: Request, name: string): string | null {
 
 /** Dokončení přihlášení tlačítkem: token + nonce z cookie prohlížeče, který o odkaz požádal. */
 export async function POST(req: Request) {
+  try {
+    requireSameOrigin(req); // i mimo proxy.ts (Д3-8)
+  } catch (e) {
+    return errorResponse(e);
+  }
   const form = await req.formData().catch(() => null);
   const token = String(form?.get("token") ?? "");
   const nonce = cookieValue(req, LOGIN_NONCE_COOKIE);

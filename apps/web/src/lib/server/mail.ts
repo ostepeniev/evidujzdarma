@@ -62,6 +62,17 @@ async function getTransporter(): Promise<Transporter | null> {
   return transporter;
 }
 
+/**
+ * Payload bez jednorázových tajemství – po odeslání (nebo zrušení) je fronta už nepotřebuje a v DB ani v záloze
+ * nesmí zůstat použitelný odkaz: potvrzení předregistrace (DOI), přihlašovací odkaz (Д3-5).
+ */
+function withoutSecrets(template: string, payload: unknown): Record<string, unknown> {
+  const p = { ...((payload ?? {}) as Record<string, unknown>) };
+  if (template === "prereg-confirm") delete p.confirmToken;
+  if (template === "login-link") delete p.url;
+  return p;
+}
+
 /** Jak dlouho smí e-mail zůstat ve stavu „sending“, než ho jiný běh vrátí do fronty. */
 const OUTBOX_STALE_MS = 10 * 60_000;
 
@@ -99,7 +110,7 @@ export async function processOutbox(limit = 20): Promise<{ sent: number; failed:
     try {
       const blocked = await blockedReason(row.template as EmailTemplate, row.to);
       if (blocked) {
-        await db.update(schema.emailOutbox).set({ status: "cancelled", lastError: blocked }).where(eq(schema.emailOutbox.id, row.id));
+        await db.update(schema.emailOutbox).set({ status: "cancelled", lastError: blocked, payload: withoutSecrets(row.template, row.payload) }).where(eq(schema.emailOutbox.id, row.id));
         continue;
       }
       const mail = renderEmail(row.template as EmailTemplate, row.payload);
@@ -120,7 +131,7 @@ export async function processOutbox(limit = 20): Promise<{ sent: number; failed:
       } else {
         console.info(`[mail:dev] → ${row.to}: ${mail.subject}\n${mail.text}`);
       }
-      await db.update(schema.emailOutbox).set({ status: "sent", sentAt: new Date(), lastError: null }).where(eq(schema.emailOutbox.id, row.id));
+      await db.update(schema.emailOutbox).set({ status: "sent", sentAt: new Date(), lastError: null, payload: withoutSecrets(row.template, row.payload) }).where(eq(schema.emailOutbox.id, row.id));
       sent++;
     } catch (e) {
       failed++;
@@ -129,6 +140,7 @@ export async function processOutbox(limit = 20): Promise<{ sent: number; failed:
         .update(schema.emailOutbox)
         .set({
           status: retry ? "queued" : "failed",
+          ...(retry ? {} : { payload: withoutSecrets(row.template, row.payload) }),
           lastError: safeError(e).message,
           sendAfter: new Date(Date.now() + 2 ** row.attempts * 60_000),
         })

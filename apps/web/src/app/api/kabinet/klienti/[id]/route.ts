@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getDb, schema } from "@ez/db";
 import { HttpError, errorResponse, getCurrentUser } from "@/lib/server/auth";
 import { requireAccountant } from "@/lib/server/cabinet";
-import { assertUuidParam, parseJson } from "@/lib/server/route-helpers";
+import { assertUuidParam, parseJson, requireSameOrigin } from "@/lib/server/route-helpers";
 
 const Patch = z.object({
   label: z.string().trim().max(200).nullable().optional(),
@@ -16,6 +16,7 @@ export async function PATCH(req: Request, ctx: RouteContext<"/api/kabinet/klient
   try {
     const { id } = await ctx.params;
     assertUuidParam(id);
+    requireSameOrigin(req);
     const accountId = await requireAccountant(await getCurrentUser());
     const input = await parseJson(req, Patch);
     const [row] = await getDb()
@@ -30,10 +31,11 @@ export async function PATCH(req: Request, ctx: RouteContext<"/api/kabinet/klient
   }
 }
 
-export async function DELETE(_req: Request, ctx: RouteContext<"/api/kabinet/klienti/[id]">) {
+export async function DELETE(req: Request, ctx: RouteContext<"/api/kabinet/klienti/[id]">) {
   try {
     const { id } = await ctx.params;
     assertUuidParam(id);
+    requireSameOrigin(req);
     const accountId = await requireAccountant(await getCurrentUser());
     await getDb()
       .delete(schema.accountantClients)

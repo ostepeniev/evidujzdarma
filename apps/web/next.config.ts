@@ -31,6 +31,10 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   transpilePackages: ["@ez/cz", "@ez/db", "@ez/fiscal-core"],
   serverExternalPackages: ["postgres", "node-forge", "nodemailer"],
+  experimental: {
+    // tělo bez Content-Length (chunked) proxy jinak bufferuje až do 10 MB; stejný strop jako API_BODY_LIMIT (Д3-7)
+    proxyClientMaxBodySize: "1mb",
+  },
   async rewrites() {
     // IndexNow: ověřovací soubor /{klíč}.txt
     return [{ source: "/:key([a-zA-Z0-9-]{8,128}).txt", destination: "/api/indexnow/key/:key" }];

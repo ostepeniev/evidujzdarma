@@ -4,7 +4,7 @@ import { isValidIco, normalizeIco } from "@ez/cz";
 import { getDb, schema } from "@ez/db";
 import { HttpError, errorResponse, getCurrentUser } from "@/lib/server/auth";
 import { accountantMembership, cabinetClients, createAccountantAccount } from "@/lib/server/cabinet";
-import { parseJson } from "@/lib/server/route-helpers";
+import { parseJson, requireSameOrigin } from "@/lib/server/route-helpers";
 import { SITE_URL } from "@/lib/site";
 
 export async function GET() {
@@ -33,6 +33,7 @@ const Body = z.object({
 
 export async function POST(req: Request) {
   try {
+    requireSameOrigin(req); // i mimo proxy.ts (Д3-8)
     const user = await getCurrentUser();
     if (!user) throw new HttpError(401, "Nejste přihlášeni");
     const input = await parseJson(req, Body);

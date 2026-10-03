@@ -4,13 +4,14 @@ import { HttpError, errorResponse, getCurrentUser } from "@/lib/server/auth";
 import { lookupCompany } from "@/lib/server/ares";
 import { addClients, requireAccountant } from "@/lib/server/cabinet";
 import { rateLimit } from "@/lib/server/rate-limit";
-import { parseJson } from "@/lib/server/route-helpers";
+import { parseJson, requireSameOrigin } from "@/lib/server/route-helpers";
 
 const MAX = 500;
 
 /** Přidá klienty podle seznamu IČO. Název doplní z ARES (cache), pokud je rychle k dispozici. */
 export async function POST(req: Request) {
   try {
+    requireSameOrigin(req); // i mimo proxy.ts (Д3-8)
     const accountId = await requireAccountant(await getCurrentUser());
     const { text } = await parseJson(req, z.object({ text: z.string().max(20_000) }));
     const { valid, invalid } = parseIcoList(text);

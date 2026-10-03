@@ -6,6 +6,11 @@ import { API_BODY_LIMIT, sameOrigin } from "./request-guard";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/** Změny přes cookie session jen z našeho původu – i mimo proxy.ts (obrana do hloubky; B Дрібне 1, Д3-8). */
+export function requireSameOrigin(req: Request): void {
+  if (!["GET", "HEAD"].includes(req.method.toUpperCase()) && !sameOrigin(req)) throw new HttpError(403, "Požadavek z cizí stránky byl odmítnut.");
+}
+
 /** [id] v cestě musí být UUID – jinak 404 dřív, než se sáhne do DB (B Дрібне 3, Д3-2). */
 export function assertUuidParam(id: unknown): void {
   if (typeof id !== "string" || !UUID_RE.test(id)) throw new HttpError(404, "Nenalezeno");
@@ -31,7 +36,7 @@ export function ownerRoute<C = unknown>(handler: (ctx: { req: Request; user: Cur
       const id = (params as { id?: unknown } | undefined)?.id;
       if (typeof id === "string" && !UUID_RE.test(id)) throw new HttpError(404, "Nenalezeno");
       // obrana do hloubky ke kontrole v proxy.ts: změny jen z našeho původu (B Дрібне 1)
-      if (!["GET", "HEAD"].includes(req.method.toUpperCase()) && !sameOrigin(req)) throw new HttpError(403, "Požadavek z cizí stránky byl odmítnut.");
+      requireSameOrigin(req);
       if (!hasDatabase()) throw new HttpError(503, "Služba je dočasně nedostupná");
       const { user, accountId } = await requireOwnerAccount();
       return await handler({ req, user, accountId, params });
