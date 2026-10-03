@@ -46,7 +46,14 @@ export async function closureBlockers(accountId: string) {
   const pending = await db
     .select({ mode: schema.sales.mode, count: sql<number>`count(*)::int`, oldest: sql<string>`min(${schema.sales.soldAt})::text` })
     .from(schema.sales)
-    .where(and(eq(schema.sales.accountId, accountId), ne(schema.sales.mode, "mock"), inArray(schema.sales.status, ["queued", "sending", "failed", "rejected"])))
+    .where(
+      and(
+        eq(schema.sales.accountId, accountId),
+        ne(schema.sales.mode, "mock"),
+        inArray(schema.sales.status, ["queued", "sending", "failed", "rejected"]),
+        isNull(schema.sales.settledElsewhereAt),
+      ),
+    )
     .groupBy(schema.sales.mode);
   const [q] = await db
     .select({ n: sql<number>`count(*)::int` })
@@ -88,7 +95,130 @@ export async function closeAccount(accountId: string, opts: { confirm?: boolean 
   });
   forgetCredential(accountId);
   const acc = await db.query.accounts.findFirst({ where: eq(schema.accounts.id, accountId), columns: { closedAt: true } });
-  return new Date((acc?.closedAt ?? now).getTime() + RETENTION.closedAccountDays * 86_400_000);
+  const closedAt = acc?.closedAt ?? now;
+  // první ze tří souhrnných e-mailů po zrušení (Б7)
+  await sendClosedSummary(accountId, closedAt, 0);
+  return new Date(closedAt.getTime() + RETENTION.closedAccountDays * DAY_MS);
+}
+
+const DAY_MS = 86_400_000;
+
+/** Neodeslané ostré tržby zrušeného účtu – v sales (bez POK, neoznačené „Evidováno jinak“) a v otevřené karanténě. */
+export async function unsentProductionOf(accountId: string) {
+  const db = getDb();
+  const sales = await db
+    .select({ id: schema.sales.id, soldAt: schema.sales.soldAt, total: schema.sales.total, registerId: schema.sales.registerId, sequence: schema.sales.sequence })
+    .from(schema.sales)
+    .where(
+      and(
+        eq(schema.sales.accountId, accountId),
+        eq(schema.sales.mode, "production"),
+        notInArray(schema.sales.status, ["confirmed", "not_required"]),
+        isNull(schema.sales.settledElsewhereAt),
+      ),
+    )
+    .orderBy(schema.sales.soldAt)
+    .limit(500);
+  const quarantine = await db
+    .select({ id: schema.saleQuarantine.id, payload: schema.saleQuarantine.payload })
+    .from(schema.saleQuarantine)
+    .where(and(eq(schema.saleQuarantine.accountId, accountId), isNull(schema.saleQuarantine.resolvedAt), sql`${schema.saleQuarantine.payload}->>'mode' = 'production'`))
+    .limit(500);
+  return { sales, quarantine };
+}
+
+/** Do kdy data zrušeného účtu nejpozději smažeme: 30 dnů, s neodeslanými ostrými tržbami nejdéle 60 dnů (Б7). */
+export function closedDeleteBy(closedAt: Date, held: boolean): Date {
+  return new Date(closedAt.getTime() + (held ? RETENTION.closedAccountHoldDays : RETENTION.closedAccountDays) * DAY_MS);
+}
+
+/**
+ * Souhrnný e-mail po zrušení účtu (Б7, R6.4): den zrušení, 30. a 55. den – s odkazem na export a seznamem
+ * neodeslaných ostrých tržeb. 30. a 55. den jen u účtu, který se kvůli nim ještě drží.
+ */
+export async function sendClosedSummary(accountId: string, closedAt: Date, day: number): Promise<boolean> {
+  const unsent = await unsentProductionOf(accountId);
+  const n = unsent.sales.length + unsent.quarantine.length;
+  if (day > 0 && n === 0) return false;
+  const [{ enqueueEmail }, { ownerEmails }, { absoluteUrl }] = await Promise.all([import("./mail"), import("./owners"), import("@/lib/site")]);
+  const dateCs = (d: Date) => d.toLocaleDateString("cs-CZ", { timeZone: "Europe/Prague" });
+  const deleteBy = closedDeleteBy(closedAt, n > 0);
+  const list = unsent.sales
+    .slice(0, 20)
+    .map((s) => `• ${s.soldAt.toLocaleString("cs-CZ", { timeZone: "Europe/Prague" })} · ${(s.total / 100).toFixed(2).replace(".", ",")} Kč · ${s.registerId}/${s.sequence}`);
+  const more = unsent.sales.length > 20 ? [`• … a dalších ${unsent.sales.length - 20}`] : [];
+  const q = unsent.quarantine.length ? [`• ${unsent.quarantine.length}× tržba v karanténě (server ji nemohl přijmout)`] : [];
+  const text =
+    n > 0
+      ? [
+          `Účet byl zrušen ${dateCs(closedAt)}. Neodeslané ostré tržby (Finanční správě se po zrušení už neodešlou):`,
+          ...list,
+          ...more,
+          ...q,
+          "",
+          `Evidujte je jinak (např. v aplikaci MOJE eet) a v nastavení pokladny je pak označte „Evidováno jinak“. Data účtu smažeme nejpozději ${dateCs(deleteBy)} – do té doby si stáhněte export tržeb.`,
+        ].join("\n")
+      : `Účet byl zrušen ${dateCs(closedAt)}. Neodeslané ostré tržby nemá. Data smažeme ${dateCs(deleteBy)} – do té doby si stáhněte export tržeb.`;
+  let sent = false;
+  for (const to of await ownerEmails(accountId)) {
+    sent =
+      (await enqueueEmail({
+        to,
+        template: "notice",
+        dedupeKey: `closed-summary:${accountId}:${day}:${to}`,
+        payload: { subject: day === 0 ? "Účet EvidujZdarma je zrušený" : `Zrušený účet – data smažeme ${dateCs(deleteBy)}`, text, url: absoluteUrl("/pokladna/nastaveni#export"), buttonLabel: "Stáhnout export" },
+      })) || sent;
+  }
+  return sent;
+}
+
+/**
+ * „Evidováno jinak“ (Б7, R6.4): vlastník zrušeného účtu potvrdí, že neodeslané ostré tržby evidoval jinak.
+ * Tržby se označí (do auditu sale_attempts s tím, kdo to udělal), produkční karanténa se vyřídí; účet se pak už nedrží.
+ * Jen u zrušeného účtu – na živém účtu by to byl tichý konec tržby (invariant 1).
+ */
+export async function settleElsewhere(accountId: string, opts: { confirm: boolean; actor: string }): Promise<{ sales: number; quarantine: number }> {
+  const db = getDb();
+  const acc = await db.query.accounts.findFirst({ where: eq(schema.accounts.id, accountId), columns: { closedAt: true } });
+  if (!acc?.closedAt) throw new HttpError(400, "„Evidováno jinak“ jde jen u zrušeného účtu. Neodeslané tržby živého účtu odešlete znovu.");
+  if (!opts.confirm) throw new HttpError(400, "Potvrďte, že jste tyto tržby evidovali jinak.");
+  const unsent = await unsentProductionOf(accountId);
+  const now = new Date();
+  const actor = opts.actor.slice(0, 200);
+  await db.transaction(async (tx) => {
+    for (const s of unsent.sales) {
+      const [row] = await tx
+        .update(schema.sales)
+        .set({
+          settledElsewhereAt: now,
+          // z fronty ven: odeslat se po zrušení stejně nedá (certifikát je smazaný)
+          status: sql`case when ${schema.sales.status} in ('queued', 'failed', 'sending') then 'rejected'::sale_status else ${schema.sales.status} end`,
+          blockedReason: null,
+          claimToken: null,
+          lastError: "EVIDENCED_ELSEWHERE: Vlastník tržbu evidoval jinak (zrušený účet).",
+        })
+        .where(and(eq(schema.sales.id, s.id), isNull(schema.sales.settledElsewhereAt)))
+        .returning({ attempts: schema.sales.attempts });
+      if (!row) continue;
+      await tx.insert(schema.saleAttempts).values({
+        saleId: s.id,
+        attempt: row.attempts,
+        environment: "production",
+        firstAttempt: false,
+        startedAt: now,
+        result: "settled",
+        code: "EVIDENCED_ELSEWHERE",
+        message: `vlastník ${actor}: evidováno jinak (zrušený účet)`,
+      });
+    }
+    if (unsent.quarantine.length) {
+      await tx
+        .update(schema.saleQuarantine)
+        .set({ resolution: "dismissed", resolvedAt: now, updatedAt: now, note: `Evidováno jinak – vlastník ${actor} (zrušený účet)` })
+        .where(inArray(schema.saleQuarantine.id, unsent.quarantine.map((q) => q.id)));
+    }
+  });
+  return { sales: unsent.sales.length, quarantine: unsent.quarantine.length };
 }
 
 const addMonths = (d: Date, m: number) => {
@@ -106,20 +236,41 @@ export async function runRetention(now = new Date()): Promise<Record<string, num
   const DAY = 86_400_000;
 
   // Zrušené účty: 30 dnů na export, pak smazání (kaskáda: tržby, zařízení, jednotky, personál…).
-  // Účet s produkčními tržbami bez POK se nesmaže bez samostatného rozhodnutí provozovatele (R5.8).
+  // Účet s produkčními tržbami bez POK se drží, nejdéle však 60 dnů od zrušení (R5.8, Б7/R6.4).
   const expired = and(isNotNull(schema.accounts.closedAt), lt(schema.accounts.closedAt, ago(now, RETENTION.closedAccountDays * DAY)));
+  const holdOver = and(isNotNull(schema.accounts.closedAt), lt(schema.accounts.closedAt, ago(now, RETENTION.closedAccountHoldDays * DAY)));
   const unsentSales = db
     .select({ x: sql`1` })
     .from(schema.sales)
-    .where(and(eq(schema.sales.accountId, schema.accounts.id), eq(schema.sales.mode, "production"), notInArray(schema.sales.status, ["confirmed", "not_required"])));
+    .where(
+      and(
+        eq(schema.sales.accountId, schema.accounts.id),
+        eq(schema.sales.mode, "production"),
+        notInArray(schema.sales.status, ["confirmed", "not_required"]),
+        isNull(schema.sales.settledElsewhereAt),
+      ),
+    );
   // produkční tržba v otevřené karanténě taky nebyla evidována – karanténa by zmizela kaskádou s účtem (R6.3)
   const openProductionQuarantine = db
     .select({ x: sql`1` })
     .from(schema.saleQuarantine)
     .where(and(eq(schema.saleQuarantine.accountId, schema.accounts.id), isNull(schema.saleQuarantine.resolvedAt), sql`${schema.saleQuarantine.payload}->>'mode' = 'production'`));
   const unsentProduction = or(exists(unsentSales), exists(openProductionQuarantine))!;
-  await count("accounts", db.delete(schema.accounts).where(and(expired, not(unsentProduction))).returning({ id: schema.accounts.id }));
+  await count("accounts", db.delete(schema.accounts).where(or(and(expired, not(unsentProduction)), holdOver)).returning({ id: schema.accounts.id }));
   const held = await db.select({ id: schema.accounts.id }).from(schema.accounts).where(and(expired, unsentProduction));
+  // pokladny zrušeného účtu po 30 dnech odpojit, i když se účet ještě drží (Б7)
+  const closedLong = db
+    .select({ id: schema.accounts.id })
+    .from(schema.accounts)
+    .where(and(isNotNull(schema.accounts.closedAt), lt(schema.accounts.closedAt, ago(now, RETENTION.closedDeviceDays * DAY))));
+  await count(
+    "devicesRevoked",
+    db
+      .update(schema.devices)
+      .set({ revokedAt: now })
+      .where(and(isNull(schema.devices.revokedAt), inArray(schema.devices.accountId, closedLong)))
+      .returning({ id: schema.devices.id }),
+  );
   out.accountsHeld = held.length;
   if (held.length) {
     const { enqueueEmail } = await import("./mail");
@@ -130,7 +281,7 @@ export async function runRetention(now = new Date()): Promise<Record<string, num
       dedupeKey: `retention-held:${now.toISOString().slice(0, 10)}`,
       payload: {
         subject: `Zrušené účty s neodeslanými produkčními tržbami (${held.length})`,
-        text: `Retention tyto zrušené účty nesmazala, protože mají produkční tržby bez POK: ${held.map((h) => h.id).join(", ")}. Rozhodněte o nich samostatně (vlastník je může potřebovat pro ruční evidenci).`,
+        text: `Retention tyto zrušené účty zatím nesmazala, protože mají produkční tržby bez POK: ${held.map((h) => h.id).join(", ")}. Smažou se nejpozději ${RETENTION.closedAccountHoldDays} dnů od zrušení, nebo dřív, když vlastník tržby označí „Evidováno jinak“.`,
       },
     });
   }

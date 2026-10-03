@@ -389,6 +389,8 @@ export const sales = pgTable(
     blockedReason: varchar("blocked_reason", { length: 32 }),
     /** snímek dat zprávy z prvního pokusu – opakování posílá přesně tato data (Р4) */
     eetData: jsonb("eet_data"),
+    /** vlastník zrušeného účtu označil neodeslanou ostrou tržbu „Evidováno jinak“ (R6.4, Б7) – účet ji už nedrží */
+    settledElsewhereAt: timestamp("settled_elsewhere_at", { withTimezone: true }),
     createdAt: createdAt(),
   },
   (t) => [

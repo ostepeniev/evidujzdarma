@@ -118,12 +118,7 @@ export function SetupApp({ initial }: { initial: State }) {
         </div>
       </header>
 
-      {acc?.closedAt && (
-        <p role="alert" className="rounded-3xl border-2 border-danger-600 bg-white p-5 text-[15px]">
-          <strong className="text-danger-600">Účet je zrušený.</strong> Certifikáty už nefungují a pokladny neprodávají – jen odešlou uložené tržby. Data smažeme{" "}
-          {new Date(new Date(acc.closedAt).getTime() + 30 * 86_400_000).toLocaleDateString("cs-CZ")} – do té doby si stáhněte export tržeb níže.
-        </p>
-      )}
+      {acc?.closedAt && <ClosedAccountBanner state={state} reload={reload} />}
       <CompanySection state={state} onSaved={setState} />
       {acc && (
         <>
@@ -950,6 +945,49 @@ function AccountantsSection({ state, reload }: { state: State; reload: () => Pro
   );
 }
 
+/** Zrušený účet (Б7, R6.4): do kdy nejpozději data smažeme, co ještě čeká a „Evidováno jinak“. */
+function ClosedAccountBanner({ state, reload }: { state: State; reload: () => Promise<void> }) {
+  const c = state.closure;
+  const { busy, error, run } = useAction();
+  const day = (iso: string) => new Date(iso).toLocaleDateString("cs-CZ");
+  const unsent = (c?.unsentProduction ?? 0) + (c?.quarantineProduction ?? 0);
+  return (
+    <div role="alert" className="rounded-3xl border-2 border-danger-600 bg-white p-5 text-[15px]">
+      <p>
+        <strong className="text-danger-600">Účet je zrušený.</strong> Certifikáty už nefungují a pokladny neprodávají – jen předají tržby, které v nich
+        zůstaly uložené, do vašeho účtu (Finanční správě se už neodesílají).
+        {c && <> Pokladny se odpojí {day(c.devicesOffAt)}.</>}
+      </p>
+      {c?.held ? (
+        <>
+          <p className="mt-2">
+            Účet má <strong>{unsent} neodeslaných ostrých tržeb</strong>. Evidujte je jinak (např. v aplikaci MOJE eet) a potom je zde označte jako
+            evidované jinak. Data smažeme nejpozději <strong>{day(c.deleteBy)}</strong> – do té doby si stáhněte export tržeb níže.
+          </p>
+          <button
+            type="button"
+            className="btn-secondary mt-3 py-2 text-sm"
+            disabled={busy}
+            onClick={() =>
+              window.confirm(`Potvrzujete, že jste všech ${unsent} neodeslaných ostrých tržeb evidovali jinak? Zapíše se to do záznamu a data účtu pak smažeme po 30 dnech od zrušení.`) &&
+              void run(async () => {
+                await call("/api/ucet/zrusit/evidovano-jinak", { method: "POST", json: { confirm: true } });
+                await reload();
+              })
+            }
+          >
+            Evidováno jinak
+          </button>
+        </>
+      ) : (
+        <p className="mt-2">Data smažeme {c ? day(c.deleteBy) : ""} – do té doby si stáhněte export tržeb níže.</p>
+      )}
+      {(c?.unsentPlayground ?? 0) > 0 && <p className="mt-2 text-sm text-muted">Testovací tržby (Playground) se neevidují – nic s nimi dělat nemusíte.</p>}
+      <ErrorText error={error} />
+    </div>
+  );
+}
+
 function CloseAccountSection({ reload }: { reload: () => Promise<void> }) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
@@ -958,7 +996,9 @@ function CloseAccountSection({ reload }: { reload: () => Promise<void> }) {
     <section id="zrusit-ucet" className="scroll-mt-24 rounded-3xl border border-line bg-white p-6">
       <h2 className="text-xl font-bold">Zrušit účet</h2>
       <p className="mt-1 text-[15px] text-ink-soft">
-        Pokladní certifikáty přestanou okamžitě fungovat a pokladny přestanou prodávat (uložené tržby ještě odešlou). Na export dat máte 30 dnů, potom data smažeme. Certifikát nezapomeňte zneplatnit v DIS+.
+        Pokladní certifikáty přestanou okamžitě fungovat a pokladny přestanou prodávat (uložené tržby ještě předají do účtu, Finanční správě se už
+        neodesílají). Na export dat máte 30 dnů, potom data smažeme; má-li účet neodeslané ostré tržby, nejdéle 60 dnů. Certifikát nezapomeňte
+        zneplatnit v DIS+.
       </p>
       {!open ? (
         <button type="button" className="btn-ghost mt-3 text-danger-600" onClick={() => setOpen(true)}>
@@ -981,7 +1021,16 @@ function CloseAccountSection({ reload }: { reload: () => Promise<void> }) {
                   ...(d.quarantine ? [`• ${d.quarantine}× tržba čeká na vaše rozhodnutí`] : []),
                   ...(d.devices ?? []).map((x) => `• pokladna ${x.name}: naposledy online ${x.lastSeenAt ? new Date(x.lastSeenAt).toLocaleString("cs-CZ") : "nikdy"}`),
                 ].join("\n");
-                const ok = window.confirm(`${e.message}\n\n${lines}\n\nTyto tržby se po zrušení Finanční správě neodešlou – evidujte je jinak (např. MOJE eet). Opravdu zrušit účet?`);
+                const prod = (d.pending ?? []).some((p) => p.mode === "production") || (d.quarantine ?? 0) > 0;
+                const pg = (d.pending ?? []).some((p) => p.mode === "playground");
+                // „evidujte jinak“ jen u ostrých tržeb; testovací se neevidují (R6.4)
+                const advice = [
+                  prod ? "Ostré tržby se po zrušení Finanční správě neodešlou – evidujte je jinak (např. MOJE eet). Účet s nimi podržíme nejdéle 60 dnů." : "",
+                  pg ? "Testovací tržby (Playground) se neevidují." : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ");
+                const ok = window.confirm(`${e.message}\n\n${lines}\n\n${advice} Opravdu zrušit účet?`);
                 if (!ok) return;
                 await call("/api/ucet/zrusit", { method: "POST", json: { confirm: text.trim(), acknowledgeUnsent: true } });
               }

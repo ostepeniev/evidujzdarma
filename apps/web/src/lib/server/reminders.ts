@@ -1,10 +1,12 @@
 import "server-only";
-import { and, eq, gt, isNotNull, isNull, lte, or, sql } from "drizzle-orm";
+import { and, eq, gt, isNotNull, isNull, lte, or, sql, type AnyColumn } from "drizzle-orm";
 import { getDb, schema } from "@ez/db";
 import { enqueueEmail } from "./mail";
 import { ownerEmails } from "./owners";
 import { absoluteUrl } from "@/lib/site";
 import { BLOCK_TEXT } from "./fiscal";
+import { sendClosedSummary } from "./lifecycle";
+import { RETENTION } from "@/lib/legal";
 
 const dateCs = (d: Date) => d.toLocaleDateString("cs-CZ", { timeZone: "Europe/Prague" });
 
@@ -34,6 +36,7 @@ export async function runReminders(now = new Date()): Promise<number> {
         and(
           isNull(schema.certificates.revokedAt),
           eq(schema.certificates.environment, "production"),
+          openAccount(schema.certificates.accountId),
           gt(schema.certificates.validTo, now),
           lte(schema.certificates.validTo, new Date(now.getTime() + days * 86_400_000)),
         ),
@@ -61,7 +64,7 @@ export async function runReminders(now = new Date()): Promise<number> {
   const stuck = await db
     .select({ accountId: schema.sales.accountId, n: sql<number>`count(*)::int`, first: sql<Date>`min(${schema.sales.deadlineAt})` })
     .from(schema.sales)
-    .where(and(eq(schema.sales.status, "queued"), gt(schema.sales.deadlineAt, now), lte(schema.sales.deadlineAt, new Date(now.getTime() + 12 * 3_600_000))))
+    .where(and(eq(schema.sales.status, "queued"), gt(schema.sales.deadlineAt, now), lte(schema.sales.deadlineAt, new Date(now.getTime() + 12 * 3_600_000)), openAccount(schema.sales.accountId)))
     .groupBy(schema.sales.accountId);
   const sixHourSlot = `${now.toISOString().slice(0, 10)}T${Math.floor(now.getUTCHours() / 6)}`;
   for (const s of stuck) {
@@ -122,10 +125,13 @@ export async function runReminders(now = new Date()): Promise<number> {
     })
     .from(schema.sales)
     .where(
-      or(
-        eq(schema.sales.status, "rejected"),
-        and(eq(schema.sales.status, "queued"), isNotNull(schema.sales.blockedReason)),
-        and(eq(schema.sales.status, "queued"), lte(schema.sales.deadlineAt, now)),
+      and(
+        openAccount(schema.sales.accountId),
+        or(
+          eq(schema.sales.status, "rejected"),
+          and(eq(schema.sales.status, "queued"), isNotNull(schema.sales.blockedReason)),
+          and(eq(schema.sales.status, "queued"), lte(schema.sales.deadlineAt, now)),
+        ),
       ),
     )
     .groupBy(schema.sales.accountId);
@@ -133,13 +139,13 @@ export async function runReminders(now = new Date()): Promise<number> {
   const quarantined = await db
     .select({ accountId: schema.saleQuarantine.accountId, n: sql<number>`count(*)::int` })
     .from(schema.saleQuarantine)
-    .where(isNull(schema.saleQuarantine.resolvedAt))
+    .where(and(isNull(schema.saleQuarantine.resolvedAt), openAccount(schema.saleQuarantine.accountId)))
     .groupBy(schema.saleQuarantine.accountId);
   for (const q of quarantined) digest(q.accountId).quarantine = q.n;
   const warned = await db
     .select({ accountId: schema.sales.accountId, n: sql<number>`count(*)::int` })
     .from(schema.sales)
-    .where(and(gt(schema.sales.sentAt, new Date(now.getTime() - 86_400_000)), sql`jsonb_array_length(coalesce(${schema.sales.warnings}, '[]'::jsonb)) > 0`))
+    .where(and(gt(schema.sales.sentAt, new Date(now.getTime() - 86_400_000)), sql`jsonb_array_length(coalesce(${schema.sales.warnings}, '[]'::jsonb)) > 0`, openAccount(schema.sales.accountId)))
     .groupBy(schema.sales.accountId);
   for (const w of warned) digest(w.accountId).warned = w.n;
 
@@ -169,5 +175,18 @@ export async function runReminders(now = new Date()): Promise<number> {
       queued++;
     }
   }
+  // 5) Zrušené účty: místo denního přehledu jen souhrn 30. a 55. den po zrušení (den 0 posílá closeAccount; Б7)
+  const closed = await db.select({ id: schema.accounts.id, closedAt: schema.accounts.closedAt }).from(schema.accounts).where(isNotNull(schema.accounts.closedAt));
+  for (const c of closed) {
+    for (const day of RETENTION.closedSummaryDays) {
+      if (day === 0 || now.getTime() < c.closedAt!.getTime() + day * 86_400_000) continue;
+      if (await sendClosedSummary(c.id, c.closedAt!, day)) queued++;
+    }
+  }
   return queued;
+}
+
+/** Jen účty, které nejsou zrušené – zrušeným chodí místo připomínek souhrn (Б7, R6.4). */
+function openAccount(accountId: AnyColumn) {
+  return sql`exists (select 1 from ${schema.accounts} where ${schema.accounts.id} = ${accountId} and ${schema.accounts.closedAt} is null)`;
 }

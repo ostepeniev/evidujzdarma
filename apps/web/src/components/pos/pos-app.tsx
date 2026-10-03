@@ -250,7 +250,7 @@ export function PosApp() {
       />
       {config.account.closed && (
         <p role="alert" className="bg-danger-50 px-4 py-2 text-center text-sm font-medium text-danger-600">
-          Účet je zrušený. Pokladna už neprodává – jen odešle tržby, které jsou v ní uložené.
+          Účet je zrušený. Pokladna už neprodává – jen předá tržby, které jsou v ní uložené, do účtu (Finanční správě se už neodesílají).
         </p>
       )}
       {configStale && (

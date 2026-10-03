@@ -4,6 +4,7 @@ import { and, eq, gt, isNull, sql } from "drizzle-orm";
 import { getDb, schema } from "@ez/db";
 import { safeError } from "./log";
 import { randomToken, sha256 } from "./tokens";
+import { RETENTION } from "@/lib/legal";
 
 export const SESSION_COOKIE = "ez_session";
 /** Nonce prohlížeče, který o přihlašovací odkaz požádal; v produkci s prefixem __Host- (Secure, Path=/, bez Domain). */
@@ -160,7 +161,11 @@ export async function authenticateDevice(req: Request, opts: { allowClosed?: boo
   if (!device) throw new HttpError(401, "Zařízení není registrované nebo bylo odpojeno");
   const account = await db.query.accounts.findFirst({ where: eq(schema.accounts.id, device.accountId) });
   if (!account) throw new HttpError(401, "Účet neexistuje");
-  if (account.closedAt && !opts.allowClosed) throw new HttpError(403, "Účet je zrušený – pokladna už jen odešle uložené tržby.");
+  // 30 dnů po zrušení se pokladny odpojí, i když se účet kvůli neodeslaným tržbám ještě drží (Б7, R6.4)
+  if (account.closedAt && Date.now() - account.closedAt.getTime() > RETENTION.closedDeviceDays * 86_400_000) {
+    throw new HttpError(401, "Účet je zrušený a pokladna je odpojená.");
+  }
+  if (account.closedAt && !opts.allowClosed) throw new HttpError(403, "Účet je zrušený – pokladna už jen předá uložené tržby do účtu.");
   // lastSeen aktualizujeme nejvýše jednou za minutu
   if (!device.lastSeenAt || Date.now() - device.lastSeenAt.getTime() > 60_000) {
     await db.update(schema.devices).set({ lastSeenAt: new Date() }).where(eq(schema.devices.id, device.id));

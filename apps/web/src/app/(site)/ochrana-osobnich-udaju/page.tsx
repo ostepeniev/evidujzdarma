@@ -41,7 +41,8 @@ const PURPOSES: readonly { purpose: string; data: string; basis: string; retenti
     purpose: "Účet a provoz pokladny",
     data: "E-mail a jméno uživatele, údaje firmy (název, IČO, DIČ), jména pokladních, evidenční jednotky, pokladní certifikát, tržby, doklady.",
     basis: "Plnění smlouvy – čl. 6 odst. 1 písm. b) GDPR; u placených tarifů také právní povinnost (účetní a daňové doklady) – písm. c).",
-    retention: "Po dobu trvání účtu a 30 dnů po jeho zrušení (na export), potom údaje smažeme. Účetní doklady k platbám po dobu stanovenou zákonem.",
+    retention:
+      "Po dobu trvání účtu a 30 dnů po jeho zrušení (na export), potom údaje smažeme. Obsahuje-li zrušený účet ostré tržby, které nebyly odeslány Finanční správě, uchováme ho nejdéle 60 dnů od zrušení, abyste je mohli vyřídit; dříve, pokud je v nastavení označíte jako evidované jinak. Účetní doklady k platbám po dobu stanovenou zákonem.",
   },
   {
     purpose: "Účetní kabinet",

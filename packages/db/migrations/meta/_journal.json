@@ -169,6 +169,13 @@
       "when": 1790979885516,
       "tag": "0023_outbox_claimed_at",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1791020584776,
+      "tag": "0024_sales_settled_elsewhere",
+      "breakpoints": true
     }
   ]
 }

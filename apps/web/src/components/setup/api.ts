@@ -46,6 +46,8 @@ export interface AccountStateDto {
   catalog?: { id: string; name: string; price: number; vatRate: number; color: string | null; active: boolean }[];
   devices?: { id: string; name: string; registerId: string; unitId: string | null; lastSeenAt: string | null }[];
   certificates?: { id: string; subject: string; eic: string | null; environment: string; validFrom: string; validTo: string; verifiedAt: string | null }[];
+  /** zrušený účet: kdy nejpozději smažeme data a co ještě čeká (R6.4) */
+  closure?: { held: boolean; deleteBy: string; devicesOffAt: string; unsentProduction: number; quarantineProduction: number; unsentPlayground: number } | null;
   salesCount?: number;
   accountants?: { id: string; name: string }[];
 }

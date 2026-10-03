@@ -4,9 +4,9 @@ import { z } from "zod";
 import { isValidIco, normalizeIco, toIban } from "@ez/cz";
 import { getDb, schema } from "@ez/db";
 import { HttpError, type CurrentUser } from "./auth";
-import { TERMS_VERSION } from "@/lib/legal";
+import { RETENTION, TERMS_VERSION } from "@/lib/legal";
 import { ACCOUNT_BLOCKS, requeueBlocked } from "./fiscal";
-import { linkedAccountants } from "./lifecycle";
+import { closedDeleteBy, linkedAccountants, unsentProductionOf } from "./lifecycle";
 import { randomToken, sha256 } from "./tokens";
 
 export const FREE_LIMITS = { staff: 5, units: 3, devices: 10 } as const;
@@ -67,6 +67,25 @@ export async function accountState(user: CurrentUser) {
     certificates,
     salesCount: salesCount[0]?.n ?? 0,
     accountants: await linkedAccountants(account.id),
+    closure: account.closedAt ? await closureState(account.id, account.closedAt) : null,
+  };
+}
+
+/** Stav zrušeného účtu pro nastavení (Б7, R6.4): kdy nejpozději smažeme data a co ještě čeká. */
+async function closureState(accountId: string, closedAt: Date) {
+  const unsent = await unsentProductionOf(accountId);
+  const [pg] = await getDb()
+    .select({ n: sql<number>`count(*)::int` })
+    .from(schema.sales)
+    .where(and(eq(schema.sales.accountId, accountId), eq(schema.sales.mode, "playground"), inArray(schema.sales.status, ["queued", "sending", "failed", "rejected"])));
+  const held = unsent.sales.length + unsent.quarantine.length > 0;
+  return {
+    held,
+    deleteBy: closedDeleteBy(closedAt, held).toISOString(),
+    devicesOffAt: new Date(closedAt.getTime() + RETENTION.closedDeviceDays * 86_400_000).toISOString(),
+    unsentProduction: unsent.sales.length,
+    quarantineProduction: unsent.quarantine.length,
+    unsentPlayground: pg?.n ?? 0,
   };
 }
 

@@ -1,9 +1,9 @@
 /** Verze obchodních podmínek – při změně textu zvýšit; souhlas se ukládá k uživateli (users.terms_version). */
-export const TERMS_VERSION = "2026-10-02";
-export const TERMS_VERSION_LABEL = "2. 10. 2026";
+export const TERMS_VERSION = "2026-10-03";
+export const TERMS_VERSION_LABEL = "3. 10. 2026";
 /** Verze zásad ochrany osobních údajů. */
-export const PRIVACY_VERSION = "2026-10-03";
-export const PRIVACY_VERSION_LABEL = "3. 10. 2026";
+export const PRIVACY_VERSION = "2026-10-04";
+export const PRIVACY_VERSION_LABEL = "4. 10. 2026";
 /**
  * Verze textu marketingového souhlasu v předregistraci (prereg-form.tsx). Ukládá se jako doklad souhlasu
  * (preregistrations.consent_evidence = "souhlas:<verze>"); při změně textu zvýšit.
@@ -20,6 +20,12 @@ export const RETENTION = {
   consentProofYears: 3,
   objectionYears: 3,
   closedAccountDays: 30,
+  /** zrušený účet s neodeslanými ostrými tržbami – nejdéle (Б7, R6.4) */
+  closedAccountHoldDays: 60,
+  /** pokladny zrušeného účtu se odpojí (i když se účet ještě drží) */
+  closedDeviceDays: 30,
+  /** souhrnné e-maily po zrušení: den zrušení, 30. a 55. den */
+  closedSummaryDays: [0, 30, 55] as readonly number[],
   emailLogDays: 90,
   sessionDays: 90,
   aresCacheHours: 24,

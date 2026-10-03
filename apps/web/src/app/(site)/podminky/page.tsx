@@ -4,7 +4,9 @@
 // (3) obsah přílohy SLA k Premium (dostupnost, kompenzace, doba reakce podpory) – zatím nevydána; (4) lhůty
 // v čl. 11 a 12 (30 dní na export po ukončení, 60 dní výpověď ze strany provozovatele, 30 dní oznámení změn);
 // (5) zpracovatelská doložka dle čl. 28 GDPR je v čl. 10 – ověřit, zda stačí, nebo je třeba samostatná smlouva;
-// (6) identifikační údaje provozovatele jsou v lib/site.ts (OPERATOR, ověřeno v OR 2. 10. 2026).
+// (6) identifikační údaje provozovatele jsou v lib/site.ts (OPERATOR, ověřeno v OR 2. 10. 2026);
+// (7) NÁVRH 3. 10. 2026 (R6.4, Б7): čl. 10.2, 10.3 a 11.3 – zrušený účet s neodeslanými ostrými tržbami nejdéle 60 dnů,
+// pokladny odpojeny po 30 dnech, „Evidováno jinak“; právní titul uchování po 30. dni a oznámení změny podle čl. 12.1.
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -246,7 +248,8 @@ const SECTIONS: readonly { id: string; title: string; body: ReactNode }[] = [
           2016/679 (GDPR). Tento článek je smlouvou o zpracování osobních údajů.
         </p>
         <p>
-          10.2 <strong>Předmět a doba:</strong> zpracování po dobu poskytování služby a 30 dnů po zrušení účtu (čl. 11.3).{" "}
+          10.2 <strong>Předmět a doba:</strong> zpracování po dobu poskytování služby a 30 dnů po zrušení účtu, nejdéle 60 dnů, pokud účet
+          obsahuje neodeslané ostré tržby (čl. 11.3).{" "}
           <strong>Povaha a účel:</strong> uložení, zobrazení, odeslání dokladu e-mailem a export – výhradně pro poskytování služby.{" "}
           <strong>Typ údajů:</strong> jméno a PIN pokladní (PIN jen jako otisk), e-mail zákazníka.{" "}
           <strong>Subjekty údajů:</strong> pokladní a zaměstnanci uživatele, zákazníci uživatele.
@@ -267,7 +270,7 @@ const SECTIONS: readonly { id: string; title: string; body: ReactNode }[] = [
           <li>údaje nepředává mimo Evropský hospodářský prostor;</li>
           <li>pomáhá uživateli vyřizovat žádosti subjektů údajů a plnit povinnosti podle čl. 32 až 36 GDPR;</li>
           <li>porušení zabezpečení osobních údajů oznámí uživateli bez zbytečného odkladu, nejpozději do 48 hodin od zjištění;</li>
-          <li>po zrušení účtu údaje smaže (čl. 11.3); export si uživatel může stáhnout předem;</li>
+          <li>po zrušení účtu údaje smaže ve lhůtách podle čl. 11.3; export si uživatel může stáhnout předem;</li>
           <li>poskytne uživateli informace potřebné k doložení plnění těchto povinností a umožní audit v přiměřeném rozsahu.</li>
         </ol>
       </>
@@ -288,10 +291,13 @@ const SECTIONS: readonly { id: string; title: string; body: ReactNode }[] = [
         </p>
         <p>
           11.3 Zrušením účtu přestanou pokladní certifikáty ve službě okamžitě fungovat a pokladny přestanou prodávat; mohou už jen
-          odeslat tržby, které v nich zůstaly uložené. Má-li účet tržby, které ještě nebyly odeslány Finanční správě, služba před
-          zrušením zobrazí jejich seznam a zrušení musí uživatel výslovně potvrdit. Uživatel má 30 dnů na export dat; poté
-          provozovatel data smaže, pokud mu jejich další uchování neukládá právní předpis. Účet s tržbami, které Finanční správa
-          nepotvrdila, provozovatel automaticky nesmaže.
+          předat službě tržby, které v nich zůstaly uložené (Finanční správě se po zrušení neodesílají), a 30 dnů po zrušení se
+          odpojí. Má-li účet tržby, které ještě nebyly odeslány Finanční správě, služba před zrušením zobrazí jejich seznam a zrušení
+          musí uživatel výslovně potvrdit. Uživatel má 30 dnů na export dat; poté provozovatel data smaže, pokud mu jejich další
+          uchování neukládá právní předpis. Obsahuje-li účet ostré tržby, které Finanční správa nepotvrdila, provozovatel ho uchová
+          nejdéle 60 dnů od zrušení, aby je uživatel mohl vyřídit (evidovat jinak); uživatel je může v nastavení označit jako
+          evidované jinak a provozovatel pak data smaže podle předchozí věty. O stavu účtu provozovatel uživatele informuje e-mailem
+          v den zrušení, 30. a 55. den po zrušení.
         </p>
       </>
     ),

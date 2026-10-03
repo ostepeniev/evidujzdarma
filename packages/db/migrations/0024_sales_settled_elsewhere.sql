@@ -1,0 +1,1 @@
+ALTER TABLE "sales" ADD COLUMN "settled_elsewhere_at" timestamp with time zone;
