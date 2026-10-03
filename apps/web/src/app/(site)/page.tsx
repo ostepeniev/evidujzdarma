@@ -164,7 +164,7 @@ export default function HomePage() {
             <ul className="mt-6 space-y-3 text-[17px]">
               {[
                 { t: "Osobní checklist: co udělat od 1. 11., do 1. 12. a do 1. 1." },
-                { t: "Návod k DIS+ a certifikátu se snímky obrazovky" },
+                { t: "Návod k DIS+ a certifikátu krok za krokem" },
                 { t: "Včasný přístup k pokladně podle pořadí" },
                 // akce má pravidla (Ц3, R7.10)
                 { t: "Za pozvaného kolegu Premium na 3 měsíce pro oba", rules: true },

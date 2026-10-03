@@ -55,7 +55,7 @@ export const PLANS: readonly Plan[] = [
     tagline: "Všechno, co potřebuje malý podnikatel pro evidenci tržeb.",
     features: [
       "Pokladna pro EET 2.0 v telefonu, tabletu i počítači",
-      "Funguje i bez signálu, tržby odešle sama do 48 hodin",
+      "Funguje i bez signálu, hlídá lhůtu 48 hodin a tržby odešle, jakmile je pokladna online",
       "Až 5 uživatelů s vlastním PINem",
       "Až 3 evidenční jednotky",
       "Doklad e-mailem, odkazem a QR kódem",
