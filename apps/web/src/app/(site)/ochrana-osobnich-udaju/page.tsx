@@ -29,13 +29,14 @@ const PURPOSES: readonly { purpose: string; data: string; basis: string; retenti
     data: "E-mail, nepovinně IČO a název firmy z ARES, obor, počet provozoven, o co máte zájem, kód doporučení, zdroj návštěvy (UTM).",
     basis: "Provedení opatření před uzavřením smlouvy na vaši žádost – čl. 6 odst. 1 písm. b) GDPR.",
     retention:
-      "Do spuštění pokladny (1. 12. 2026) a poté nejvýše 12 měsíců od spuštění, nebo od registrace, pokud proběhla později – pokud si nezaložíte účet ani neudělíte souhlas s novinkami; dříve na vaši žádost. Předregistraci, kterou jste nepotvrdili odkazem z e-mailu, smažeme do 90 dnů od posledního zaslaného odkazu.",
+      "Do spuštění pokladny (1. 12. 2026) a poté nejvýše 12 měsíců od spuštění, nebo od registrace, pokud proběhla později – pokud si nezaložíte účet ani neudělíte souhlas s novinkami; dříve na vaši žádost. Předregistraci, kterou jste nepotvrdili odkazem z e-mailu, smažeme do 90 dnů od posledního zaslaného odkazu. Odhlásíte-li se z našich e-mailů, ostatní údaje z předregistrace smažeme a ponecháme si jen e-mail a datum odhlášení, abychom vám už nic neposílali (3 roky).",
   },
   {
     purpose: "Novinky k EET a nabídky e-mailem",
     data: "E-mail, údaje z předregistrace, datum udělení souhlasu, verze jeho textu a čas potvrzení e-mailu (u předregistrací do 2. 10. 2026 místo verze textu otisk IP adresy a prohlížeče).",
     basis: "Váš souhlas – čl. 6 odst. 1 písm. a) GDPR a § 7 zákona č. 480/2004 Sb., o některých službách informační společnosti.",
-    retention: "Do odvolání souhlasu. Doklad o souhlasu a jeho odvolání uchováváme ještě 3 roky po odvolání pro případ sporu.",
+    retention:
+      "Do odvolání souhlasu. Doklad o souhlasu a jeho odvolání (e-mail, datum a verzi textu souhlasu) uchováváme ještě 3 roky po odvolání pro případ sporu; ostatní údaje z předregistrace po odvolání smažeme.",
   },
   {
     purpose: "Účet a provoz pokladny",

@@ -1,6 +1,7 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { getDb, hasDatabase, schema } from "@ez/db";
 import { isUnsubscribeTokenShape, unsubscribeWhere } from "@/lib/server/preregistration";
+import { randomToken, sha256, shortCode } from "@/lib/server/tokens";
 
 /**
  * Odhlášení z e-mailů. GET jen zobrazí stránku s tlačítkem (GET nesmí měnit stav – Р5),
@@ -14,9 +15,27 @@ async function unsubscribe(token: string | null): Promise<boolean> {
     .update(schema.preregistrations)
     .set({ unsubscribedAt: new Date(), marketingConsent: false })
     .where(where)
-    .returning({ email: schema.preregistrations.email });
-  const email = rows[0]?.email;
-  if (!email) return false;
+    .returning({ id: schema.preregistrations.id, email: schema.preregistrations.email, consentAt: schema.preregistrations.marketingConsentAt });
+  const row = rows[0];
+  if (!row) return false;
+  const email = row.email;
+  // Odhlášení neprodlužuje uchování předregistrace (R7.3): zůstane jen adresa a datum odhlášení (abychom nic neposlali),
+  // u udělaného souhlasu navíc jeho doklad. Povinné sloupce dostanou náhodné hodnoty, které nikam nevedou.
+  await db
+    .update(schema.preregistrations)
+    .set({
+      ico: null,
+      companyName: null,
+      industry: null,
+      establishmentsCount: null,
+      needs: [],
+      utm: null,
+      referredBy: null,
+      referralCode: shortCode(8),
+      confirmTokenHash: sha256(randomToken()),
+      ...(row.consentAt ? {} : { confirmedAt: null, consentEvidence: null }),
+    })
+    .where(eq(schema.preregistrations.id, row.id));
   await db
     .update(schema.emailOutbox)
     .set({ status: "cancelled", lastError: "UNSUBSCRIBED" })

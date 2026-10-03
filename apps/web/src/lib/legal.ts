@@ -1,9 +1,10 @@
 /** Verze obchodních podmínek – při změně textu zvýšit; souhlas se ukládá k uživateli (users.terms_version). */
-export const TERMS_VERSION = "2026-10-03";
+// R7 (рецензія №4): návrh pro právníka; datum zveřejnění nastaví kontrolor v den otevření webu (Z10)
+export const TERMS_VERSION = "2026-10-03-r7";
 export const TERMS_VERSION_LABEL = "3. 10. 2026";
 /** Verze zásad ochrany osobních údajů. */
-export const PRIVACY_VERSION = "2026-10-04";
-export const PRIVACY_VERSION_LABEL = "4. 10. 2026";
+export const PRIVACY_VERSION = "2026-10-03-r7";
+export const PRIVACY_VERSION_LABEL = "3. 10. 2026";
 /**
  * Verze textu marketingového souhlasu v předregistraci (prereg-form.tsx). Ukládá se jako doklad souhlasu
  * (preregistrations.consent_evidence = "souhlas:<verze>"); při změně textu zvýšit.
