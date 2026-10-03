@@ -206,9 +206,13 @@ export function PosApp() {
             type="button"
             className="mt-3 block w-full text-sm text-muted underline"
             onClick={async () => {
-              // neodeslané tržby zůstanou v zařízení, ale odejdou až po nové registraci (A r1 nové Дрібне 6)
+              // neodeslané tržby zůstanou v zařízení a odejdou po nové registraci (A r1 nové Дрібне 6) – u zrušeného účtu
+              // registrace není, tržby už do účtu nepředá (R8.3, N17)
               const waiting = (await unsettledSales()).length + (await rejectedSales()).length;
-              if (waiting && !window.confirm(`V zařízení ${waiting === 1 ? "je 1 neodeslaná tržba" : `je ${waiting} neodeslaných tržeb`}. Zůstanou uložené, ale Finanční správě se odešlou až po nové registraci pokladny. Pokračovat?`)) return;
+              const after = revoked.canRegister
+                ? "Zůstanou uložené, ale Finanční správě se odešlou až po nové registraci pokladny."
+                : "Tržby zůstanou uložené v zařízení. Do zrušeného účtu je už předat nejde.";
+              if (waiting && !window.confirm(`V zařízení ${waiting === 1 ? "je 1 neodeslaná tržba" : `je ${waiting} neodeslaných tržeb`}. ${after} Pokračovat?`)) return;
               await deleteMeta("device");
               await deleteMeta("config");
               location.reload();

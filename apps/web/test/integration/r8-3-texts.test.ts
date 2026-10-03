@@ -123,8 +123,10 @@ describe("R8.3 – Czech texts (verbatim from the review)", () => {
     expect(src("app/(site)/ochrana-osobnich-udaju/page.tsx")).toMatch(/kdykoli vznést\s*<Link href="\/namitka">námitku<\/Link>\./);
   });
 
-  it("gate: the register of a closed account (N17)", () => {
-    expect(revokedNotice("Účet je zrušený a pokladna je odpojená.").text).toBe("Účet je zrušený a pokladna je odpojená. Tržby zůstanou uložené v zařízení. Do zrušeného účtu je už předat nejde.");
+  it("gate: the register of a closed account – 'Odebrat registraci' confirmation (N17)", () => {
+    expect(src("components/pos/pos-app.tsx")).toContain('"Tržby zůstanou uložené v zařízení. Do zrušeného účtu je už předat nejde."');
+    expect(src("components/pos/pos-app.tsx")).toMatch(/revoked\.canRegister\s*\?\s*"Zůstanou uložené, ale Finanční správě se odešlou až po nové registraci pokladny\."/);
+    expect(revokedNotice("Účet je zrušený a pokladna je odpojená.").text).toBe("Účet je zrušený a pokladna je odpojená. Tržby, které v zařízení zůstaly, už do účtu předat nejde.");
   });
 
   it("gate: no 'byla prodána', 'tržba prodaná', 'v režimu ukázkový' anywhere in src", () => {
