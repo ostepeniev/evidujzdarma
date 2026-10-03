@@ -90,11 +90,23 @@ export async function quarantineSale(ctx: DeviceContext, payload: unknown, reaso
  */
 export async function notifyClosedUnsent(ctx: DeviceContext): Promise<void> {
   const day = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Prague" });
+  // po „Evidováno jinak“ se denní dedupe obnoví: vlastník se dozví i o tržbě, která přijde týž den po vyřízení (R8.7 N12)
+  const db = getDb();
+  const [{ at: salesAt } = { at: null }] = await db
+    .select({ at: sql<string | null>`max(${schema.sales.settledElsewhereAt})::text` })
+    .from(schema.sales)
+    .where(eq(schema.sales.accountId, ctx.account.id));
+  const [{ at: quarantineAt } = { at: null }] = await db
+    .select({ at: sql<string | null>`max(${schema.saleQuarantine.resolvedAt})::text` })
+    .from(schema.saleQuarantine)
+    .where(and(eq(schema.saleQuarantine.accountId, ctx.account.id), sql`${schema.saleQuarantine.note} like 'Evidováno jinak%'`));
+  const settled = [salesAt, quarantineAt].filter((x): x is string => !!x).map((x) => Date.parse(x.replace(" ", "T").replace(/([+-]\d{2})$/, "$1:00")));
+  const lastSettled = settled.length ? String(Math.max(...settled)) : "0";
   for (const to of await ownerEmails(ctx.account.id)) {
     await enqueueEmail({
       to,
       template: "notice",
-      dedupeKey: `closed-unsent:${ctx.account.id}:${day}:${to}`,
+      dedupeKey: `closed-unsent:${ctx.account.id}:${day}:${lastSettled}:${to}`,
       payload: {
         subject: "Zrušený účet: pokladna předala neodeslanou ostrou tržbu",
         text: `Pokladna ${ctx.device.registerId} předala do zrušeného účtu ostrou tržbu, která se Finanční správě už neodešle. Najdete ji v seznamu neodeslaných tržeb v nastavení pokladny. Evidujte ji jinak (např. v aplikaci MOJE eet) a potom ji v nastavení pokladny označte „Evidováno jinak“.`,

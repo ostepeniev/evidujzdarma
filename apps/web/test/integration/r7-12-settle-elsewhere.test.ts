@@ -75,7 +75,8 @@ describe("R7.12 – 'Evidováno jinak' only for the sales the owner saw", () => 
     const src = (await import("node:fs")).readFileSync(new URL("../../src/app/api/ucet/zrusit/evidovano-jinak/route.ts", import.meta.url), "utf8");
     expect(src).toMatch(/ids/);
     const ui = (await import("node:fs")).readFileSync(new URL("../../src/components/setup/setup-app.tsx", import.meta.url), "utf8");
-    expect(ui).toMatch(/evidovano-jinak[\s\S]{0,200}ids:/);
+    // R8.7 N16: id, u dlouhého seznamu počet a čas posledního přijetí
+    expect(ui).toMatch(/\{ ids: c\.unsentIds \} : \{ seen: c\.unsentSeen \}[\s\S]{0,200}evidovano-jinak/);
   });
 
   it("the shown list settles exactly those sales (and the shown quarantine); unknown or foreign ids are ignored", async () => {

@@ -212,6 +212,15 @@ export async function ingestSales(ctx: DeviceContext, inputs: DeviceSale[]): Pro
         if (e instanceof SaleValidationError) throw new IngestRejection("INVALID_SALE", e.issues.join("; "));
         throw e;
       }
+      // Opakované odeslání tržby, kterou server od této pokladny už přijal (pokladna nedostala odpověď): ok ještě před
+      // kontrolami vratky a plateb – ty se mezitím mohly zpřísnit (R7.13, R7.15 N4) a stará tržba by skončila jako
+      // duplikát v karanténě (R8.7 N15)
+      const accepted = await db.query.sales.findFirst({ where: and(eq(schema.sales.id, sale.id), eq(schema.sales.accountId, account.id), eq(schema.sales.deviceId, device.id)) });
+      if (accepted && sameSale(accepted, sale, unit.id, mode)) {
+        await markIngested(account.id, sale.id);
+        results.push({ id: sale.id, ok: true, inserted: false });
+        continue;
+      }
       const approved = await checkStaffAndRefund(account.id, device.id, input, sale);
       const amounts = evidencedAmounts(sale);
       // i dílčí částky zprávy (urceno_cerp_zuct, cerp_zuct) musí projít XSD – jinak by tržba visela jako MESSAGE_INVALID (A Дрібне 6)

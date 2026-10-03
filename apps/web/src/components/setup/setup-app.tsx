@@ -972,7 +972,7 @@ function ClosedAccountBanner({ state, reload }: { state: State; reload: () => Pr
                 • {new Date(x.soldAt).toLocaleString("cs-CZ")} · {formatCzk(x.total)} · {x.registerId}/{x.sequence}
               </li>
             ))}
-            {c.unsentSales.length > 20 && <li>• … a dalších {c.unsentSales.length - 20}</li>}
+            {c.unsentProduction > c.unsentSales.length && <li>• … a dalších {c.unsentProduction - c.unsentSales.length}</li>}
             {c.quarantineProduction > 0 && <li>• {c.quarantineProduction}× tržba v karanténě (server ji nemohl přijmout)</li>}
           </ul>
           <button
@@ -982,7 +982,9 @@ function ClosedAccountBanner({ state, reload }: { state: State; reload: () => Pr
             onClick={() =>
               window.confirm(`Potvrzujete, že jste všech ${unsent} neodeslaných ostrých tržeb evidovali jinak? Zapíše se to do záznamu a data účtu pak smažeme po 30 dnech od zrušení.`) &&
               void run(async () => {
-                await call("/api/ucet/zrusit/evidovano-jinak", { method: "POST", json: { confirm: true, ids: c.unsentIds } }).catch(async (e: unknown) => {
+                // dlouhý seznam: místo id počet a čas posledního přijetí, které vlastník viděl (R8.7 N16)
+                const seen = c.unsentIds ? { ids: c.unsentIds } : { seen: c.unsentSeen };
+                await call("/api/ucet/zrusit/evidovano-jinak", { method: "POST", json: { confirm: true, ...seen } }).catch(async (e: unknown) => {
                   // seznam se mezitím změnil → ukázat aktuální seznam, potvrzení se neprovedlo
                   if (e instanceof ApiError && e.status === 409) await reload();
                   throw e;

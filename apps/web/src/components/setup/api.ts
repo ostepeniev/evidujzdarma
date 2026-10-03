@@ -53,9 +53,12 @@ export interface AccountStateDto {
     devicesOffAt: string;
     unsentProduction: number;
     quarantineProduction: number;
-    /** id zobrazených neodeslaných ostrých tržeb a karantény – „Evidováno jinak“ potvrdí jen je (R7.12) */
-    unsentIds: string[];
+    /** id zobrazených neodeslaných ostrých tržeb a karantény – „Evidováno jinak“ potvrdí jen je (R7.12); dlouhý seznam: null */
+    unsentIds: string[] | null;
+    /** prvních 20 neodeslaných ostrých tržeb */
     unsentSales: { id: string; soldAt: string; total: number; registerId: string; sequence: string }[];
+    /** dlouhý seznam: co vlastník viděl – počet a čas posledního přijetí (R8.7 N16) */
+    unsentSeen: { count: number; lastAt: string | null };
     unsentPlayground: number;
   } | null;
   salesCount?: number;

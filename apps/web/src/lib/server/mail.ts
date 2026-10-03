@@ -1,4 +1,5 @@
 import "server-only";
+import { createHash } from "node:crypto";
 import { and, eq, inArray, isNull, lt, lte, or, sql } from "drizzle-orm";
 import { getDb, hasDatabase, schema } from "@ez/db";
 import { renderEmail, type EmailTemplate } from "@/lib/emails";
@@ -45,12 +46,25 @@ export async function enqueueEmail(opts: {
       to: opts.to,
       template: opts.template,
       payload: opts.payload,
-      dedupeKey: opts.dedupeKey,
+      dedupeKey: opts.dedupeKey === undefined ? undefined : fitDedupeKey(opts.dedupeKey),
       sendAfter: opts.sendAfter ?? new Date(),
     })
     .onConflictDoNothing()
     .returning({ id: schema.emailOutbox.id });
   return rows.length > 0;
+}
+
+/** Délka sloupce email_outbox.dedupe_key. */
+const DEDUPE_KEY_MAX = 128;
+
+/**
+ * Klíč delší než sloupec (dlouhá e-mailová adresa v klíči) se deterministicky zkrátí – začátek + otisk celého klíče –
+ * místo chyby „value too long“, která by e-mail (a s ním třeba příjem tržby) shodila (R8.7). Stejný vstup = stejný klíč.
+ */
+export function fitDedupeKey(key: string): string {
+  if (key.length <= DEDUPE_KEY_MAX) return key;
+  const hash = createHash("sha256").update(key).digest("hex").slice(0, 40);
+  return `${key.slice(0, DEDUPE_KEY_MAX - hash.length - 1)}#${hash}`;
 }
 
 type Transporter = { sendMail(msg: Record<string, unknown>): Promise<unknown> };

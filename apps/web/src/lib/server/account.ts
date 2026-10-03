@@ -86,9 +86,11 @@ async function closureState(accountId: string, closedAt: Date) {
     devicesOffAt: new Date(closedAt.getTime() + RETENTION.closedDeviceDays * 86_400_000).toISOString(),
     unsentProduction: unsent.sales.length,
     quarantineProduction: unsent.quarantine.length,
-    /** co vlastník vidí a „Evidováno jinak“ pak potvrdí – přesně tato id (R7.12) */
+    /** co vlastník vidí a „Evidováno jinak“ pak potvrdí – přesně tato id (R7.12); u dlouhého seznamu null a platí unsentSeen (R8.7 N16) */
     unsentIds: view.ids,
+    /** prvních 20 tržeb pro zobrazení */
     unsentSales: view.sales,
+    unsentSeen: view.seen,
     unsentPlayground: pg?.n ?? 0,
   };
 }
