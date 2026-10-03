@@ -176,6 +176,13 @@
       "when": 1791020584776,
       "tag": "0024_sales_settled_elsewhere",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1791024540788,
+      "tag": "0025_outbox_strip_secrets",
+      "breakpoints": true
     }
   ]
 }

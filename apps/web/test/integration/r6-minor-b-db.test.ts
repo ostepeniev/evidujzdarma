@@ -95,3 +95,23 @@ describe("Д3-9 – pre-registration", () => {
     expect(await rowOf("bot2@example.cz")).toBeUndefined();
   });
 });
+
+describe("Д3-5 – migration 0025 strips secrets from rows sent before the fix", () => {
+  it("gate: sent prereg-confirm / login-link rows lose the token; queued rows keep it", async () => {
+    const { readFileSync: read } = await import("node:fs");
+    const db = getDb();
+    await db.insert(schema.emailOutbox).values([
+      { to: "a@example.cz", template: "prereg-confirm", payload: { confirmToken: "OLDTOKEN", referralCode: "x" }, status: "sent" },
+      { to: "b@example.cz", template: "login-link", payload: { url: "https://x/?token=OLDLOGIN" }, status: "sent" },
+      { to: "c@example.cz", template: "prereg-confirm", payload: { confirmToken: "PENDING" }, status: "queued" },
+    ]);
+    const migration = read(new URL("../../../../packages/db/migrations/0025_outbox_strip_secrets.sql", import.meta.url), "utf8");
+    for (const stmt of migration.split("--> statement-breakpoint")) await db.execute(sql.raw(stmt));
+    const rows = await db.select().from(schema.emailOutbox);
+    const by = (to: string) => JSON.stringify(rows.find((r) => r.to === to)!.payload);
+    expect(by("a@example.cz")).not.toContain("OLDTOKEN");
+    expect(by("a@example.cz")).toContain("referralCode");
+    expect(by("b@example.cz")).not.toContain("OLDLOGIN");
+    expect(by("c@example.cz")).toContain("PENDING");
+  });
+});
