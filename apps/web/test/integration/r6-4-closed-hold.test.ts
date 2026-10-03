@@ -9,7 +9,7 @@ import { getDb, schema } from "@ez/db";
 import { and, eq, like } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { HttpError, authenticateDevice } from "@/lib/server/auth";
-import { closeAccount, runRetention, settleElsewhere } from "@/lib/server/lifecycle";
+import { closeAccount, runRetention, settleElsewhere, unsentProductionOf, unsentView } from "@/lib/server/lifecycle";
 import { runReminders } from "@/lib/server/reminders";
 import { ingestSales } from "@/lib/server/sales";
 import { sha256 } from "@/lib/server/tokens";
@@ -91,7 +91,9 @@ describe("R6.4 – the hold of a closed account ends", () => {
     // i produkční tržba v otevřené karanténě
     await ingestSales(await deviceContext(s.device.id), [deviceSale(s.unit.id, { mode: "production", soldAt: new Date(Date.now() - 60_000).toISOString(), unitId: crypto.randomUUID() }) as never]);
     await expect(settleElsewhere(s.account.id, { confirm: false, actor: s.user.email })).rejects.toBeInstanceOf(HttpError);
-    const out = await settleElsewhere(s.account.id, { confirm: true, actor: s.user.email });
+    // potvrzuje se seznam, který vlastník viděl (R7.12)
+    const { ids } = unsentView(await unsentProductionOf(s.account.id));
+    const out = await settleElsewhere(s.account.id, { confirm: true, actor: s.user.email, ids });
     expect(out).toMatchObject({ sales: 1, quarantine: 1 });
     const audit = await getDb().select().from(schema.saleAttempts).where(eq(schema.saleAttempts.saleId, sale.id));
     expect(audit.some((a) => a.code === "EVIDENCED_ELSEWHERE" && a.message!.includes(s.user.email))).toBe(true);

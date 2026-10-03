@@ -103,7 +103,10 @@ export async function closeAccount(accountId: string, opts: { confirm?: boolean 
 
 const DAY_MS = 86_400_000;
 
-/** Neodeslané ostré tržby zrušeného účtu – v sales (bez POK, neoznačené „Evidováno jinak“) a v otevřené karanténě. */
+/**
+ * Neodeslané ostré tržby zrušeného účtu – v sales (bez POK, neoznačené „Evidováno jinak“) a v otevřené karanténě.
+ * Bez limitu: počet v nastavení, v e-mailu i to, co „Evidováno jinak“ označí, musí být tentýž seznam (R7.12).
+ */
 export async function unsentProductionOf(accountId: string) {
   const db = getDb();
   const sales = await db
@@ -117,14 +120,22 @@ export async function unsentProductionOf(accountId: string) {
         isNull(schema.sales.settledElsewhereAt),
       ),
     )
-    .orderBy(schema.sales.soldAt)
-    .limit(500);
+    .orderBy(schema.sales.soldAt);
   const quarantine = await db
     .select({ id: schema.saleQuarantine.id, payload: schema.saleQuarantine.payload })
     .from(schema.saleQuarantine)
     .where(and(eq(schema.saleQuarantine.accountId, accountId), isNull(schema.saleQuarantine.resolvedAt), sql`${schema.saleQuarantine.payload}->>'mode' = 'production'`))
-    .limit(500);
+    .orderBy(schema.saleQuarantine.receivedAt);
   return { sales, quarantine };
+}
+
+/** Seznam pro vlastníka (nastavení, odpověď 409): přesně ta id, která pak „Evidováno jinak“ pošle zpět (R7.12). */
+export function unsentView(unsent: Awaited<ReturnType<typeof unsentProductionOf>>) {
+  return {
+    ids: [...unsent.sales.map((s) => s.id), ...unsent.quarantine.map((q) => q.id)],
+    sales: unsent.sales.map((s) => ({ id: s.id, soldAt: s.soldAt.toISOString(), total: s.total, registerId: s.registerId, sequence: s.sequence })),
+    quarantine: unsent.quarantine.length,
+  };
 }
 
 /** Do kdy data zrušeného účtu nejpozději smažeme: 30 dnů, s neodeslanými ostrými tržbami nejdéle 60 dnů (Б7). */
@@ -176,13 +187,22 @@ export async function sendClosedSummary(accountId: string, closedAt: Date, day: 
  * „Evidováno jinak“ (Б7, R6.4): vlastník zrušeného účtu potvrdí, že neodeslané ostré tržby evidoval jinak.
  * Tržby se označí (do auditu sale_attempts s tím, kdo to udělal), produkční karanténa se vyřídí; účet se pak už nedrží.
  * Jen u zrušeného účtu – na živém účtu by to byl tichý konec tržby (invariant 1).
+ *
+ * Potvrzení platí jen pro seznam, který vlastník viděl (`ids`, R7.12): přibyla-li mezitím další neodeslaná ostrá tržba
+ * (offline pokladna ji dovezla), neoznačí se nic a vrátí se 409 s aktuálním seznamem. Bez `ids` (stará stránka) také 409.
+ * Id, která už neodeslaná nejsou (nebo patří jinam), se ignorují.
  */
-export async function settleElsewhere(accountId: string, opts: { confirm: boolean; actor: string }): Promise<{ sales: number; quarantine: number }> {
+export async function settleElsewhere(accountId: string, opts: { confirm: boolean; actor: string; ids?: readonly string[] }): Promise<{ sales: number; quarantine: number }> {
   const db = getDb();
   const acc = await db.query.accounts.findFirst({ where: eq(schema.accounts.id, accountId), columns: { closedAt: true } });
   if (!acc?.closedAt) throw new HttpError(400, "„Evidováno jinak“ jde jen u zrušeného účtu. Neodeslané tržby živého účtu odešlete znovu.");
   if (!opts.confirm) throw new HttpError(400, "Potvrďte, že jste tyto tržby evidovali jinak.");
   const unsent = await unsentProductionOf(accountId);
+  const seen = new Set(opts.ids ?? []);
+  const view = unsentView(unsent);
+  if (!opts.ids || view.ids.some((id) => !seen.has(id))) {
+    throw new HttpError(409, "Seznam neodeslaných ostrých tržeb se mezitím změnil. Zkontrolujte aktuální seznam a potvrďte znovu.", { unsent: view });
+  }
   const now = new Date();
   const actor = opts.actor.slice(0, 200);
   await db.transaction(async (tx) => {

@@ -6,7 +6,7 @@ import { getDb, schema } from "@ez/db";
 import { HttpError, type CurrentUser } from "./auth";
 import { RETENTION, TERMS_VERSION } from "@/lib/legal";
 import { ACCOUNT_BLOCKS, productionAcceptsFrom, requeueBlocked } from "./fiscal";
-import { closedDeleteBy, linkedAccountants, unsentProductionOf } from "./lifecycle";
+import { closedDeleteBy, linkedAccountants, unsentProductionOf, unsentView } from "./lifecycle";
 import { randomToken, sha256 } from "./tokens";
 
 export const FREE_LIMITS = { staff: 5, units: 3, devices: 10 } as const;
@@ -79,12 +79,16 @@ async function closureState(accountId: string, closedAt: Date) {
     .from(schema.sales)
     .where(and(eq(schema.sales.accountId, accountId), eq(schema.sales.mode, "playground"), inArray(schema.sales.status, ["queued", "sending", "failed", "rejected"])));
   const held = unsent.sales.length + unsent.quarantine.length > 0;
+  const view = unsentView(unsent);
   return {
     held,
     deleteBy: closedDeleteBy(closedAt, held).toISOString(),
     devicesOffAt: new Date(closedAt.getTime() + RETENTION.closedDeviceDays * 86_400_000).toISOString(),
     unsentProduction: unsent.sales.length,
     quarantineProduction: unsent.quarantine.length,
+    /** co vlastník vidí a „Evidováno jinak“ pak potvrdí – přesně tato id (R7.12) */
+    unsentIds: view.ids,
+    unsentSales: view.sales,
     unsentPlayground: pg?.n ?? 0,
   };
 }

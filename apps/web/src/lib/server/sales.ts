@@ -5,7 +5,8 @@ import { getDb, schema } from "@ez/db";
 import { MAX_EET_AMOUNT, PAYMENT_METHODS, SaleValidationError, buildSale, deadlineFor, evidencedAmounts, type Sale } from "@ez/fiscal-core";
 import type { DeviceContext } from "./auth";
 import { accountMode, productionAcceptsFrom, type EetMode } from "./fiscal";
-import { canSendInMode, ingestedFromQuarantine, markIngested, quarantineSale } from "./quarantine";
+import { canSendInMode, ingestedFromQuarantine, markIngested, notifyClosedUnsent, quarantineSale } from "./quarantine";
+import { safeError } from "./log";
 import { verifyApproval } from "./staff-pin";
 
 /** Tržba tak, jak ji posílá pokladna (částky v haléřích). */
@@ -256,6 +257,10 @@ export async function ingestSales(ctx: DeviceContext, inputs: DeviceSale[]): Pro
         if (!sameSale(existing, sale, unit.id, mode)) throw new IngestRejection("CONTENT_CONFLICT", "Tržba se stejným identifikátorem už existuje s jiným obsahem", 409);
       }
       await markIngested(account.id, sale.id);
+      // zrušený účet dostal novou neodeslanou ostrou tržbu → vlastník o ní ví dřív, než potvrdí „Evidováno jinak“ (R7.12)
+      if (account.closedAt && mode === "production" && inserted.length && amounts.total !== 0) {
+        await notifyClosedUnsent(ctx).catch((e: unknown) => console.error("[ingest] e-mail zrušenému účtu", safeError(e)));
+      }
       results.push({ id: sale.id, ok: true, inserted: inserted.length > 0 });
     } catch (e) {
       if (e instanceof IngestRejection) {

@@ -964,6 +964,16 @@ function ClosedAccountBanner({ state, reload }: { state: State; reload: () => Pr
             Účet má <strong>{unsent} neodeslaných ostrých tržeb</strong>. Evidujte je jinak (např. v aplikaci MOJE eet) a potom je zde označte jako
             evidované jinak. Data smažeme nejpozději <strong>{day(c.deleteBy)}</strong> – do té doby si stáhněte export tržeb níže.
           </p>
+          {/* potvrzuje se tento seznam – tržba, kterou pokladna doveze později, se do potvrzení nezapočítá (R7.12) */}
+          <ul className="mt-2 space-y-0.5 text-sm tabular-nums">
+            {c.unsentSales.slice(0, 20).map((x) => (
+              <li key={x.id}>
+                • {new Date(x.soldAt).toLocaleString("cs-CZ")} · {formatCzk(x.total)} · {x.registerId}/{x.sequence}
+              </li>
+            ))}
+            {c.unsentSales.length > 20 && <li>• … a dalších {c.unsentSales.length - 20}</li>}
+            {c.quarantineProduction > 0 && <li>• {c.quarantineProduction}× tržba v karanténě (server ji nemohl přijmout)</li>}
+          </ul>
           <button
             type="button"
             className="btn-secondary mt-3 py-2 text-sm"
@@ -971,7 +981,11 @@ function ClosedAccountBanner({ state, reload }: { state: State; reload: () => Pr
             onClick={() =>
               window.confirm(`Potvrzujete, že jste všech ${unsent} neodeslaných ostrých tržeb evidovali jinak? Zapíše se to do záznamu a data účtu pak smažeme po 30 dnech od zrušení.`) &&
               void run(async () => {
-                await call("/api/ucet/zrusit/evidovano-jinak", { method: "POST", json: { confirm: true } });
+                await call("/api/ucet/zrusit/evidovano-jinak", { method: "POST", json: { confirm: true, ids: c.unsentIds } }).catch(async (e: unknown) => {
+                  // seznam se mezitím změnil → ukázat aktuální seznam, potvrzení se neprovedlo
+                  if (e instanceof ApiError && e.status === 409) await reload();
+                  throw e;
+                });
                 await reload();
               })
             }

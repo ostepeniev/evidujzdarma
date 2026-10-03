@@ -77,6 +77,27 @@ export async function quarantineSale(ctx: DeviceContext, payload: unknown, reaso
 }
 
 /**
+ * Zrušený účet: pokladna dovezla ostrou tržbu, která se Finanční správě už neodešle (R7.12). Objeví se v seznamu
+ * neodeslaných tržeb v nastavení; vlastník dostane e-mail nejvýš jednou denně, aby ho nepřekvapila až „Evidováno jinak“.
+ */
+export async function notifyClosedUnsent(ctx: DeviceContext): Promise<void> {
+  const day = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Prague" });
+  for (const to of await ownerEmails(ctx.account.id)) {
+    await enqueueEmail({
+      to,
+      template: "notice",
+      dedupeKey: `closed-unsent:${ctx.account.id}:${day}:${to}`,
+      payload: {
+        subject: "Zrušený účet: pokladna předala neodeslanou ostrou tržbu",
+        text: `Pokladna ${ctx.device.registerId} předala do zrušeného účtu ostrou tržbu, která se Finanční správě už neodešle. Najdete ji v seznamu neodeslaných tržeb v nastavení pokladny. Evidujte ji jinak (např. v aplikaci MOJE eet) a potom ji tam označte „Evidováno jinak“.`,
+        url: absoluteUrl("/pokladna/nastaveni"),
+        buttonLabel: "Otevřít nastavení",
+      },
+    });
+  }
+}
+
+/**
  * Tržbu z karantény už vlastník přijal (resolution 'ingested') a je v evidenci → opakované odeslání původní
  * verze z pokladny (např. s budoucím časem) nesmí karanténu otevřít znovu ani poslat e-mail (R5.7).
  */

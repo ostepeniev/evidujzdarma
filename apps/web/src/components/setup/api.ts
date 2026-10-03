@@ -47,7 +47,17 @@ export interface AccountStateDto {
   devices?: { id: string; name: string; registerId: string; unitId: string | null; lastSeenAt: string | null }[];
   certificates?: { id: string; subject: string; eic: string | null; environment: string; validFrom: string; validTo: string; verifiedAt: string | null }[];
   /** zrušený účet: kdy nejpozději smažeme data a co ještě čeká (R6.4) */
-  closure?: { held: boolean; deleteBy: string; devicesOffAt: string; unsentProduction: number; quarantineProduction: number; unsentPlayground: number } | null;
+  closure?: {
+    held: boolean;
+    deleteBy: string;
+    devicesOffAt: string;
+    unsentProduction: number;
+    quarantineProduction: number;
+    /** id zobrazených neodeslaných ostrých tržeb a karantény – „Evidováno jinak“ potvrdí jen je (R7.12) */
+    unsentIds: string[];
+    unsentSales: { id: string; soldAt: string; total: number; registerId: string; sequence: string }[];
+    unsentPlayground: number;
+  } | null;
   salesCount?: number;
   accountants?: { id: string; name: string }[];
 }
