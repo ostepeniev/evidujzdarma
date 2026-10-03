@@ -2,6 +2,7 @@ import Link from "next/link";
 import { isClosed } from "@/lib/launch";
 import { SITE, operatorLine } from "@/lib/site";
 import { Logo } from "./logo";
+import { ExternalLink } from "@/components/external-link";
 
 const COLUMNS = [
   {
@@ -60,9 +61,9 @@ export function SiteFooter() {
           <p className="rounded-xl border border-line bg-white p-3 text-sm text-ink">
             <strong>Nezávislá služba.</strong> EvidujZdarma není provozována Finanční správou ani jiným státním
             orgánem. Oficiální státní aplikace a informace:{" "}
-            <a href="https://eet.gov.cz" className="underline underline-offset-2" rel="noopener">
+            <ExternalLink href="https://eet.gov.cz" className="underline underline-offset-2">
               eet.gov.cz
-            </a>
+            </ExternalLink>
             .
           </p>
         </div>

@@ -6,6 +6,7 @@ import type { RzpRecord, Subject } from "@ez/cz";
 import { legalFormShort } from "@ez/cz/legal-form";
 import { krajByCode } from "@ez/cz/regions";
 import { assess, DEFAULT_ANSWERS, type Answers } from "@/lib/eet-assessment";
+import { ExternalLink } from "@/components/external-link";
 
 const TONE = {
   likely: { box: "border-brand-500 bg-brand-50", dot: "bg-brand-500", label: "Pravděpodobně ano" },
@@ -176,9 +177,9 @@ export function IcoResult({ subject, rzp, fetchedAt }: { subject: Subject; rzp: 
 
       <p className="text-sm text-muted">
         Orientační výsledek z veřejných údajů, nejde o daňové poradenství. Přesné podmínky:{" "}
-        <a href="https://eet.gov.cz/cs/koho-se-eet-tyka/kdo-musi-evidovat-trzby" className="underline" rel="noopener">
+        <ExternalLink href="https://eet.gov.cz/cs/koho-se-eet-tyka/kdo-musi-evidovat-trzby" className="underline">
           eet.gov.cz – Kdo musí evidovat tržby
-        </a>
+        </ExternalLink>
         .
       </p>
     </div>

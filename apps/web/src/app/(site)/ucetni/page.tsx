@@ -8,6 +8,7 @@ import { DIS_OPENS, FACTS, TIMELINE, timelineAt } from "@/content/facts";
 import { PARTNER_PLAN } from "@/content/pricing";
 import { JsonLd, faqLd } from "@/lib/jsonld";
 import { isClosed } from "@/lib/launch";
+import { ExternalLink } from "@/components/external-link";
 
 export const metadata: Metadata = {
   title: "EET 2.0 pro účetní – kabinet a partnerství",
@@ -126,9 +127,9 @@ export default function AccountantsPage() {
           </ol>
           <p className="mt-3 text-sm text-muted">
             Zdroj:{" "}
-            <a href={timelineAt(DIS_OPENS).source.url} className="underline underline-offset-2" rel="noopener">
+            <ExternalLink href={timelineAt(DIS_OPENS).source.url} className="underline underline-offset-2">
               {timelineAt(DIS_OPENS).source.label}
-            </a>
+            </ExternalLink>
           </p>
         </section>
 

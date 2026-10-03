@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/page-header";
 import { ToolCta } from "@/components/tool-cta";
 import { FACTS, FACTS_UPDATED, SOURCES } from "@/content/facts";
 import { JsonLd, articleLd, faqLd } from "@/lib/jsonld";
+import { ExternalLink } from "@/components/external-link";
 
 const TITLE = "EvidujZdarma vs. MOJE eet: férové srovnání";
 const DESCRIPTION =
@@ -117,9 +118,9 @@ export default function CompareMojeEetPage() {
                 </li>
               ))}
             </ul>
-            <a href={SOURCES.eetGov.url} className="btn-secondary mt-6" rel="noopener">
+            <ExternalLink href={SOURCES.eetGov.url} className="btn-secondary mt-6">
               Oficiální web eet.gov.cz <span aria-hidden="true">↗</span>
-            </a>
+            </ExternalLink>
           </div>
           <div className="card border-2 border-brand-500">
             <h3 className="text-xl font-bold text-ink">EvidujZdarma se vyplatí, když…</h3>
@@ -159,9 +160,9 @@ export default function CompareMojeEetPage() {
           <p>{FACTS.mojeEet.summary}</p>
           <p>
             Aplikace má být dostupná od <strong>1. 12. 2026</strong> na{" "}
-            <a href={SOURCES.eetGov.url} rel="noopener">
+            <ExternalLink href={SOURCES.eetGov.url}>
               eet.gov.cz
-            </a>
+            </ExternalLink>
             . Podrobnosti o tom, jak bude fungovat při výpadku připojení, Finanční správa zatím nezveřejnila – podle dostupných
             informací vyžaduje pro provoz internet.
           </p>
@@ -215,9 +216,9 @@ export default function CompareMojeEetPage() {
             {[SOURCES.mojeEet, SOURCES.mojeEet2fa, SOURCES.harmonogram, SOURCES.prakticke].map((s, i) => (
               <span key={s.url}>
                 {i > 0 && " · "}
-                <a href={s.url} rel="noopener">
+                <ExternalLink href={s.url}>
                   {s.label}
-                </a>
+                </ExternalLink>
               </span>
             ))}
           </p>

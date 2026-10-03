@@ -5,6 +5,7 @@ import { QrGenerator } from "@/components/qr-generator";
 import { ToolCta } from "@/components/tool-cta";
 import { SOURCES } from "@/content/facts";
 import { JsonLd, faqLd } from "@/lib/jsonld";
+import { ExternalLink } from "@/components/external-link";
 
 export const metadata: Metadata = {
   title: "Generátor QR platby zdarma (SPAYD)",
@@ -57,9 +58,9 @@ export default function QrPage() {
             {FAQ_SOURCES.map((s, i) => (
               <span key={s.url}>
                 {i > 0 && " · "}
-                <a href={s.url} rel="noopener">
+                <ExternalLink href={s.url}>
                   {s.label}
-                </a>
+                </ExternalLink>
               </span>
             ))}
           </p>

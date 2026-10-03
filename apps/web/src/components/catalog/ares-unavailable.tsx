@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { aresUrl } from "./paths";
+import { ExternalLink } from "@/components/external-link";
 
 /** Firma není v našem katalogu a ARES právě neodpovídá: místo chyby 500 vysvětlení a odkaz přímo do ARES. */
 export function AresUnavailable({ ico }: { ico: string }) {
@@ -15,9 +16,9 @@ export function AresUnavailable({ ico }: { ico: string }) {
           </p>
           <p>
             Údaje si můžete ověřit i přímo v{" "}
-            <a href={aresUrl(ico)} className="text-brand-700 underline underline-offset-4" rel="noopener" target="_blank">
+            <ExternalLink href={aresUrl(ico)} className="text-brand-700 underline underline-offset-4">
               ARES
-            </a>
+            </ExternalLink>
             , nebo zkusit naši{" "}
             <Link href="/kontrola-ico" className="text-brand-700 underline underline-offset-4">
               kontrolu IČO

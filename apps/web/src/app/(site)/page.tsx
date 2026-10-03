@@ -11,6 +11,7 @@ import { LANDING_FAQ, WHO_MUST } from "@/content/landing";
 import { FACTS_UPDATED } from "@/content/facts";
 import { POLLS } from "@/content/polls";
 import { JsonLd, faqLd, softwareApplicationLd } from "@/lib/jsonld";
+import { ExternalLink } from "@/components/external-link";
 
 export const metadata: Metadata = {
   title: { absolute: "Evidence tržeb EET 2.0 zdarma – pokladna i bez signálu | EvidujZdarma" },
@@ -79,9 +80,9 @@ export default function HomePage() {
         <Timeline />
         <p className="mt-4 text-sm text-muted">
           Ověřeno k {new Date(FACTS_UPDATED).toLocaleDateString("cs-CZ")}. Zdroj:{" "}
-          <a href="https://eet.gov.cz" className="underline" rel="noopener">
+          <ExternalLink href="https://eet.gov.cz" className="underline">
             eet.gov.cz
-          </a>{" "}
+          </ExternalLink>{" "}
           a tiskové zprávy Finanční správy a Ministerstva financí.
         </p>
       </section>

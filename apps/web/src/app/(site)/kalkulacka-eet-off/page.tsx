@@ -6,6 +6,7 @@ import { EetOffCalculator } from "@/components/tools/eet-off-calculator";
 import { FACTS, SOURCES, formatKc } from "@/content/facts";
 import { JsonLd, faqLd } from "@/lib/jsonld";
 import { FactsVerified } from "@/components/facts-verified";
+import { ExternalLink } from "@/components/external-link";
 
 export const metadata: Metadata = {
   title: "Kalkulačka EET OFF 2027 – vyplatí se přirážka?",
@@ -69,9 +70,9 @@ export default function EetOffPage() {
             {[SOURCES.eetOff, SOURCES.eetOffJak, SOURCES.pausal2027].map((s, i) => (
               <span key={s.url}>
                 {i > 0 && ", "}
-                <a href={s.url} className="underline" rel="noopener">
+                <ExternalLink href={s.url} className="underline">
                   {s.label}
-                </a>
+                </ExternalLink>
               </span>
             ))}
             . Výpočet je orientační, nejde o daňové poradenství.

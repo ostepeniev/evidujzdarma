@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/page-header";
 import { ToolCta } from "@/components/tool-cta";
 import { MYTHS, MYTHS_UPDATED } from "@/content/myths";
 import { JsonLd, articleLd, faqLd } from "@/lib/jsonld";
+import { ExternalLink } from "@/components/external-link";
 
 const PATH = "/co-se-o-eet-pise-spatne";
 const TITLE = "Co se o EET 2.0 píše špatně";
@@ -100,9 +101,9 @@ export default function MythsPage() {
                 {m.sources.map((s, j) => (
                   <span key={s.url}>
                     {j > 0 && " · "}
-                    <a href={s.url} rel="noopener" target="_blank" className="underline decoration-line underline-offset-2 hover:text-brand-700">
+                    <ExternalLink href={s.url} className="underline decoration-line underline-offset-2 hover:text-brand-700">
                       {s.label}
-                    </a>
+                    </ExternalLink>
                   </span>
                 ))}
               </p>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { isClosed } from "@/lib/launch";
 import { NAV, SITE } from "@/lib/site";
 import { Logo } from "./logo";
+import { ExternalLink } from "@/components/external-link";
 
 export function IndependenceBar() {
   return (
@@ -10,9 +11,9 @@ export function IndependenceBar() {
         <strong className="font-semibold">{SITE.independenceNotice}</strong>{" "}
         <span className="hidden sm:inline">
           Oficiální informace najdete na{" "}
-          <a className="underline underline-offset-2" href="https://eet.gov.cz" rel="noopener">
+          <ExternalLink href="https://eet.gov.cz" className="underline underline-offset-2">
             eet.gov.cz
-          </a>
+          </ExternalLink>
           .
         </span>
       </p>

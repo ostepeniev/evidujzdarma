@@ -1,9 +1,10 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { ExternalLink } from "@/components/external-link";
 
 /**
  * Bezpečné vykreslení inline syntaxe: **tučně** a [text](url). Nic jiného (žádné HTML).
- * Interní odkazy (začínající "/") jdou přes next/link, externí dostanou rel="noopener".
+ * Interní odkazy (začínající "/") jdou přes next/link, externí přes ExternalLink (nová karta, R8.1).
  */
 export function RichText({ text }: { text: string }): ReactNode {
   const out: ReactNode[] = [];
@@ -27,9 +28,9 @@ export function RichText({ text }: { text: string }): ReactNode {
         );
       } else if (/^https:\/\//.test(href)) {
         out.push(
-          <a key={i++} href={href} rel="noopener" target="_blank">
+          <ExternalLink key={i++} href={href}>
             {label}
-          </a>,
+          </ExternalLink>,
         );
       } else {
         out.push(label);

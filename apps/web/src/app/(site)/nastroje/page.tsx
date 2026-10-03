@@ -5,6 +5,7 @@ import { ToolCta } from "@/components/tool-cta";
 import { FACTS_UPDATED } from "@/content/facts";
 import { JsonLd } from "@/lib/jsonld";
 import { SITE_URL, absoluteUrl } from "@/lib/site";
+import { ExternalLink } from "@/components/external-link";
 
 export const metadata: Metadata = {
   title: "Nástroje k EET 2.0 zdarma",
@@ -119,9 +120,9 @@ export default function ToolsPage() {
           </h2>
           <p className="mt-2 text-[15px] leading-relaxed text-ink-soft">
             Údaje o firmách načítáme z veřejného registru ARES, pravidla EET 2.0 z oficiálních zdrojů Finanční správy (
-            <a href="https://eet.gov.cz" className="underline underline-offset-2" rel="noopener">
+            <ExternalLink href="https://eet.gov.cz" className="underline underline-offset-2">
               eet.gov.cz
-            </a>
+            </ExternalLink>
             ) a z textu zákona. Fakta jsme naposledy ověřili {new Date(FACTS_UPDATED).toLocaleDateString("cs-CZ")}. Výsledky
             nástrojů jsou orientační – nenahrazují posouzení daňového poradce ani stanovisko Finanční správy.
           </p>

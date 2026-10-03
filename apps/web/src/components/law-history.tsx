@@ -1,4 +1,5 @@
 import { LAW_HISTORY } from "@/content/facts";
+import { ExternalLink } from "@/components/external-link";
 
 /** Historie zákona o evidenci tržeb – od konceptu MF po podpis prezidenta. */
 export function LawHistory() {
@@ -11,9 +12,9 @@ export function LawHistory() {
             {s.dateLabel}
           </time>
           <p className="mt-0.5 text-base text-ink">{s.text}</p>
-          <a href={s.source.url} rel="noopener" target="_blank" className="text-sm text-muted underline decoration-line underline-offset-2 hover:text-brand-700">
+          <ExternalLink href={s.source.url} className="text-sm text-muted underline decoration-line underline-offset-2 hover:text-brand-700">
             {s.source.label}
-          </a>
+          </ExternalLink>
         </li>
       ))}
     </ol>

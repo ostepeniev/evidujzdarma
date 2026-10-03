@@ -15,6 +15,7 @@ import { PageHeader } from "@/components/page-header";
 import { JsonLd } from "@/lib/jsonld";
 import { loadFirmPage } from "@/lib/server/firm-page";
 import { clientIpFromHeaders } from "@/lib/server/rate-limit";
+import { ExternalLink } from "@/components/external-link";
 
 // Stránky firem se renderují pro každý požadavek a neukládají se do ISR cache na disk: miliony
 // platných IČO by ji jinak mohly zaplnit (R3.3). Data z DB jsou levná, živé dotazy do ARES mají limit na IP.
@@ -150,9 +151,9 @@ export default async function FirmPage({ params }: PageProps<"/firma/[slug]">) {
             {firm.establishments === null ? (
               <p className="mt-3 text-ink-soft">
                 Provozovny ze živnostenského rejstříku zatím nejsou načteny.{" "}
-                <a href={aresUrl(firm.ico)} className="text-brand-700 underline underline-offset-4" rel="noopener" target="_blank">
+                <ExternalLink href={aresUrl(firm.ico)} className="text-brand-700 underline underline-offset-4">
                   Zobrazit v ARES
-                </a>
+                </ExternalLink>
               </p>
             ) : firm.establishments.length === 0 ? (
               <p className="mt-3 text-ink-soft">V živnostenském rejstříku není evidována žádná aktivní provozovna.</p>

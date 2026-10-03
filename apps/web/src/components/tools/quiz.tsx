@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { FACTS, SOURCES, formatKc, type Source } from "@/content/facts";
+import { ExternalLink } from "@/components/external-link";
 
 type Choice = { label: string; next: string };
 interface Question {
@@ -192,9 +193,9 @@ export function Quiz() {
             {result.sources.map((s, i) => (
               <span key={s.url}>
                 {i > 0 && ", "}
-                <a href={s.url} className="underline" rel="noopener">
+                <ExternalLink href={s.url} className="underline">
                   {s.label}
-                </a>
+                </ExternalLink>
               </span>
             ))}
             . Orientační výsledek, nejde o daňové poradenství.

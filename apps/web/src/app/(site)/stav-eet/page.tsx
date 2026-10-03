@@ -8,6 +8,7 @@ import { FACTS, SOURCES } from "@/content/facts";
 import { STATUS_LABEL, SLOW_MS, type ProbeStatus } from "@/lib/fs-status";
 import { JsonLd, faqLd } from "@/lib/jsonld";
 import { statusSummary, type EnvSummary } from "@/lib/server/fs-monitor";
+import { ExternalLink } from "@/components/external-link";
 
 export const dynamic = "force-dynamic";
 
@@ -188,9 +189,9 @@ export default async function StatusPage() {
           <Faq items={FAQ} />
           <p className="mt-4 text-sm text-muted">
             Zdroje:{" "}
-            <a href={SOURCES.prakticke.url} className="underline" rel="noopener">
+            <ExternalLink href={SOURCES.prakticke.url} className="underline">
               {SOURCES.prakticke.label}
-            </a>
+            </ExternalLink>
             . Data o stavu jsou k dispozici i strojově na{" "}
             <a href="/api/stav-eet" className="underline">
               /api/stav-eet

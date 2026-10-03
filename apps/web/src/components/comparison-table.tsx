@@ -1,5 +1,6 @@
 import { SITE } from "@/lib/site";
 import { COMPARISON_ROWS, COMPARISON_SOURCES } from "@/content/comparison";
+import { ExternalLink } from "@/components/external-link";
 
 export function ComparisonTable() {
   return (
@@ -38,15 +39,15 @@ export function ComparisonTable() {
         {COMPARISON_SOURCES.map((s, i) => (
           <span key={s.url}>
             {i > 0 && ", "}
-            <a href={s.url} className="underline underline-offset-2" rel="noopener">
+            <ExternalLink href={s.url} className="underline underline-offset-2">
               {s.label}
-            </a>
+            </ExternalLink>
           </span>
         ))}
         . Státní aplikace má být dostupná od 1. 12. 2026 na{" "}
-        <a href="https://eet.gov.cz" className="underline underline-offset-2" rel="noopener">
+        <ExternalLink href="https://eet.gov.cz" className="underline underline-offset-2">
           eet.gov.cz
-        </a>
+        </ExternalLink>
         . Stav k 2. 10. 2026. MOJE eet zatím není spuštěná – údaje upřesníme podle oficiálního popisu Finanční správy. Pokud najdete nepřesnost, napište nám na{" "}
         <a href={`mailto:${SITE.email}`} className="underline underline-offset-2">
           {SITE.email}

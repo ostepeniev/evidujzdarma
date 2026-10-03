@@ -6,6 +6,7 @@ import { UnitsWizard } from "@/components/tools/units-wizard";
 import { FACTS, SOURCES } from "@/content/facts";
 import { JsonLd, faqLd } from "@/lib/jsonld";
 import { FactsVerified } from "@/components/facts-verified";
+import { ExternalLink } from "@/components/external-link";
 
 export const metadata: Metadata = {
   title: "Průvodce evidenčními jednotkami EET 2.0",
@@ -43,9 +44,9 @@ export default function UnitsPage() {
           <Faq items={FAQ} />
           <p className="mt-4 text-sm text-muted">
             Zdroj:{" "}
-            <a href={SOURCES.jakZacit.url} className="underline" rel="noopener">
+            <ExternalLink href={SOURCES.jakZacit.url} className="underline">
               {SOURCES.jakZacit.label}
-            </a>
+            </ExternalLink>
             . Orientační průvodce, nejde o daňové poradenství.
           </p>
           <FactsVerified />

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { aresUrl, dateCs, objectionPath } from "./paths";
+import { ExternalLink } from "@/components/external-link";
 
 /** Odkud jsou údaje + k jakému datu + odkaz na oficiální záznam a na námitku. Na každé stránce katalogu. */
 export function SourceNote({ ico, icp, source }: { ico: string; icp?: string; source: { kind: "ares" | "res"; date: string } }) {
@@ -18,9 +19,9 @@ export function SourceNote({ ico, icp, source }: { ico: string; icp?: string; so
       </p>
       <p className="mt-1">
         Zobrazujeme jen veřejné údaje z registrů (ARES, živnostenský rejstřík, RES ČSÚ) bez vlastních popisů a hodnocení.{" "}
-        <a href={aresUrl(ico)} className="font-medium text-brand-700 underline underline-offset-4" rel="noopener" target="_blank">
+        <ExternalLink href={aresUrl(ico)} className="font-medium text-brand-700 underline underline-offset-4">
           Oficiální záznam v ARES
-        </a>
+        </ExternalLink>
         {" · "}
         <Link href={objectionPath({ ico, icp })} className="font-medium text-brand-700 underline underline-offset-4" rel="nofollow">
           Nahlásit chybu / námitka

@@ -13,6 +13,7 @@ import { PageHeader } from "@/components/page-header";
 import { CATALOG_DATA } from "@/content/catalog-data";
 import { PRIVACY_VERSION, PRIVACY_VERSION_LABEL } from "@/lib/legal";
 import { SITE, operatorLine } from "@/lib/site";
+import { ExternalLink } from "@/components/external-link";
 
 const VERSION_DATE = PRIVACY_VERSION;
 const VERSION_LABEL = PRIVACY_VERSION_LABEL;
@@ -257,9 +258,9 @@ const SECTIONS: readonly { id: string; title: string; body: ReactNode }[] = [
         <p>
           Pokud se domníváte, že údaje zpracováváme v rozporu s předpisy, můžete podat stížnost u Úřadu pro ochranu osobních
           údajů (
-          <a href="https://uoou.gov.cz" rel="noopener">
+          <ExternalLink href="https://uoou.gov.cz">
             uoou.gov.cz
-          </a>
+          </ExternalLink>
           ).
         </p>
         <p>

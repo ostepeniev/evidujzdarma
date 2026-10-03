@@ -5,6 +5,7 @@ import { ToolCta } from "@/components/tool-cta";
 import { FACTS, FACTS_UPDATED, SOURCES } from "@/content/facts";
 import { JsonLd } from "@/lib/jsonld";
 import { OPERATOR, SITE, SITE_URL, absoluteUrl } from "@/lib/site";
+import { ExternalLink } from "@/components/external-link";
 
 export const metadata: Metadata = {
   title: "O nás a kontakt",
@@ -73,9 +74,9 @@ export default function AboutPage() {
             </p>
             <p className="mt-3 text-[15px] leading-relaxed text-ink-soft">
               Oficiální informace a bezplatnou státní aplikaci MOJE eet najdete na{" "}
-              <a href={SOURCES.eetGov.url} className="font-medium text-brand-700 underline underline-offset-4" rel="noopener">
+              <ExternalLink href={SOURCES.eetGov.url} className="font-medium text-brand-700 underline underline-offset-4">
                 eet.gov.cz
-              </a>
+              </ExternalLink>
               . Jak se od ní lišíme, férově popisujeme ve{" "}
               <Link href="/srovnani/moje-eet" className="font-medium text-brand-700 underline underline-offset-4">
                 srovnání s MOJE eet

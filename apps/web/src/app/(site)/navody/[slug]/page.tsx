@@ -9,6 +9,7 @@ import { ToolCta } from "@/components/tool-cta";
 import { GUIDES, getGuide, isIndexable } from "@/content/guides";
 import { CATEGORY_LABEL } from "@/content/guides/types";
 import { JsonLd, articleLd, faqLd, howToLd } from "@/lib/jsonld";
+import { ExternalLink } from "@/components/external-link";
 
 export const dynamicParams = false;
 
@@ -113,9 +114,9 @@ export default async function GuidePage({ params }: PageProps<"/navody/[slug]">)
             <ul>
               {g.sources.map((s) => (
                 <li key={s.url}>
-                  <a href={s.url} rel="noopener" target="_blank">
+                  <ExternalLink href={s.url}>
                     {s.label}
-                  </a>
+                  </ExternalLink>
                 </li>
               ))}
             </ul>
