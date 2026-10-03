@@ -6,7 +6,6 @@
  */
 import { getDevice, getMeta, markCashSynced, rejectedSales, setMeta, unsettledSales, unsyncedCash, updateSale } from "./db";
 import {
-  CONFIG_REFRESH_MS,
   REJECTED_POLL_MS,
   accountModeChanged,
   applyPolledStatuses,
@@ -15,6 +14,7 @@ import {
   clockOffsetFrom,
   planSync,
   postBatches,
+  shouldRefreshConfig,
   type BatchResponse,
   type ServerSaleResult,
   type ServerSaleStatus,
@@ -126,8 +126,9 @@ async function syncCash(): Promise<void> {
 }
 
 async function doSync(): Promise<SyncReport> {
-  // kiosk s trvale viditelnou kartou: konfigurace se jinak obnovuje jen při startu a návratu (R5.1)
-  if (Date.now() - lastConfigAt > CONFIG_REFRESH_MS) await refreshConfig();
+  // kiosk s trvale viditelnou kartou: konfigurace se jinak obnovuje jen při startu a návratu (R5.1);
+  // zastaralá konfigurace (pokladna neprodává) se zkouší při každé synchronizaci (Д-5)
+  if (shouldRefreshConfig({ stale: configStale, lastConfigAt, now: Date.now() })) await refreshConfig();
   // odmítnuté tržby mohl vlastník mezitím vyřešit – zeptáme se na ně jednou za 5 min (R5.7)
   const pollRejected = Date.now() - lastRejectedPollAt > REJECTED_POLL_MS;
   const rejected = pollRejected ? await rejectedSales() : [];

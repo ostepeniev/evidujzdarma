@@ -5,7 +5,7 @@ import { getDb, schema } from "@ez/db";
 import { MAX_EET_AMOUNT, PAYMENT_METHODS, SaleValidationError, buildSale, deadlineFor, evidencedAmounts, type Sale } from "@ez/fiscal-core";
 import type { DeviceContext } from "./auth";
 import { accountMode, productionAcceptsFrom, type EetMode } from "./fiscal";
-import { ingestedFromQuarantine, markIngested, quarantineSale } from "./quarantine";
+import { canSendInMode, ingestedFromQuarantine, markIngested, quarantineSale } from "./quarantine";
 import { verifyApproval } from "./staff-pin";
 
 /** Tržba tak, jak ji posílá pokladna (částky v haléřích). */
@@ -116,6 +116,9 @@ async function checkStaffAndRefund(accountId: string, deviceId: string, input: D
   return { approvedBy: approver.id, approvalJti: approval!.jti };
 }
 
+/** Posun hodin, který pokladna sama neopravuje (lib/pos/sync-result.ts, correctedNow). */
+const CLOCK_TOLERANCE_MS = 30_000;
+
 const MODE_LABEL: Record<EetMode, string> = { mock: "ukázkový", playground: "Playground", production: "ostrý provoz" };
 
 /**
@@ -149,7 +152,11 @@ export async function ingestSales(ctx: DeviceContext, inputs: DeviceSale[]): Pro
       // Pokladna se starou konfigurací (kiosk, offline při přepnutí) nesmí po přepnutí účtu prodávat
       // v předchozím režimu – „mock“ by dostal falešný POK a do FS by nic nešlo (R5.1). Tržby prodané
       // před přepnutím zůstávají ve svém režimu (Р3, T8/T9). Už přijatá tržba se posuzuje dál podle id.
-      if (mode !== accountMode(account) && soldAtMs >= account.eetModeChangedAt.getTime()) {
+      // Hodiny pokladny pozadu o méně než CLOCK_TOLERANCE_MS pokladna sama neopraví (correctedNow): po přepnutí nahoru
+      // (např. ukázkový → ostrý) by se skutečná tržba připsala starému režimu – i v tomto okně rozhodne vlastník (Д-8).
+      // Po přepnutí dolů tržba zůstává ve svém vyšším režimu, tam se nic neztrácí.
+      const lag = mode !== accountMode(account) && canSendInMode(mode, accountMode(account)) ? CLOCK_TOLERANCE_MS : 0;
+      if (mode !== accountMode(account) && soldAtMs >= account.eetModeChangedAt.getTime() - lag) {
         const known = await db.query.sales.findFirst({ where: and(eq(schema.sales.id, input.id), eq(schema.sales.accountId, account.id)), columns: { id: true } });
         if (!known) {
           throw new IngestRejection(

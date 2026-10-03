@@ -18,7 +18,8 @@ export async function POST(req: Request) {
     const body = Body.safeParse(await req.json().catch(() => null));
     if (!body.success) throw new HttpError(400, "Neplatný požadavek");
     const { staffId, pin, purpose, refundOf, amount } = body.data;
-    if (purpose === "refund" && (!refundOf || !amount)) throw new HttpError(400, "Schválení vratky musí uvést tržbu a částku.");
+    // takový požadavek posílá jen pokladna starší než R5.5 – vratka v ní nejde, pomůže jen nová verze (Д-3)
+    if (purpose === "refund" && (!refundOf || !amount)) throw new HttpError(400, "Pokladna používá starší verzi. Obnovte stránku pokladny (načte se nová verze) a vratku zadejte znovu.");
     const refund = purpose === "refund" ? { refundOf: refundOf!, amount: amount! } : undefined;
     return Response.json({ ok: true, ...(await verifyStaffPinOnline(ctx, staffId, pin, purpose, refund)) });
   } catch (e) {

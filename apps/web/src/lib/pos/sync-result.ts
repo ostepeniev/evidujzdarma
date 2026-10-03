@@ -179,3 +179,11 @@ export function accountModeChanged(serverMode: unknown, configMode: string | und
 
 /** Konfiguraci obnovujeme nejméně jednou za 5 minut, i když se nic nezměnilo (R5.1). */
 export const CONFIG_REFRESH_MS = 5 * 60_000;
+
+/**
+ * Načíst konfiguraci teď? Zastaralou (server hlásí jiný režim) při každé synchronizaci – pokladna do té doby
+ * neprodává (Д-5); jinak jednou za CONFIG_REFRESH_MS.
+ */
+export function shouldRefreshConfig(o: { stale: boolean; lastConfigAt: number; now: number }): boolean {
+  return o.stale || o.now - o.lastConfigAt > CONFIG_REFRESH_MS;
+}
