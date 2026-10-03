@@ -94,10 +94,17 @@ export async function lookupPreregistration(token: string) {
     .select({ value: count() })
     .from(schema.preregistrations)
     .where(and(eq(schema.preregistrations.referredBy, row.referralCode), sql`${schema.preregistrations.confirmedAt} is not null`));
+  // potvrzená adresa: jen potvrzené zájmy; nepotvrzená: jen ty, které potvrdí její DOI (bez vlastního tokenu) – zájem,
+  // který k adrese přidal někdo jiný, se na stránce stavu neukáže, dokud ho vlastník nepotvrdí (R8.4, Д-2)
   const asked = await db
     .select({ campaign: schema.preregistrationInterests.campaign })
     .from(schema.preregistrationInterests)
-    .where(eq(schema.preregistrationInterests.preregistrationId, row.id));
+    .where(
+      and(
+        eq(schema.preregistrationInterests.preregistrationId, row.id),
+        row.confirmedAt ? isNotNull(schema.preregistrationInterests.confirmedAt) : isNull(schema.preregistrationInterests.confirmTokenHash),
+      ),
+    );
   const interests = asked.map((i) => i.campaign).filter(isInterest);
   return { confirmed: !!row.confirmedAt, position: before + 1, referralCode: row.referralCode, referrals, interests };
 }
@@ -131,6 +138,28 @@ async function interestByToken(token: string) {
 export async function lookupInterest(token: string): Promise<{ campaign: Interest; confirmed: boolean } | null> {
   const r = await interestByToken(token);
   return r ? { campaign: r.campaign, confirmed: !!r.interest.confirmedAt } : null;
+}
+
+/**
+ * Žádost o potvrzení zájmu vlastním odkazem (R7.4, R8.4): nový nebo dosud nepotvrzený zájem → e-mail „interest-confirm“
+ * s odkazem na /registrace/zajem, nejvýš jednou denně. Vrací false, je-li zájem už potvrzený.
+ */
+export async function requestInterestConfirmation(prereg: { id: string; email: string }, campaign: Interest, now = new Date()): Promise<boolean> {
+  const db = getDb();
+  const where = and(eq(schema.preregistrationInterests.preregistrationId, prereg.id), eq(schema.preregistrationInterests.campaign, campaign));
+  const has = await db.query.preregistrationInterests.findFirst({ where });
+  if (has?.confirmedAt) return false;
+  const fresh = issueConfirmToken();
+  // nový zájem rovnou s vlastním tokenem – DOI ho nepotvrdí
+  if (!has) await db.insert(schema.preregistrationInterests).values({ preregistrationId: prereg.id, campaign, confirmTokenHash: fresh.hash, requestedAt: now }).onConflictDoNothing();
+  const sent = await enqueueEmail({
+    to: prereg.email,
+    template: "interest-confirm",
+    payload: { interest: campaign, confirmToken: fresh.token, unsubscribeToken: unsubscribeTokenFor(prereg.id) },
+    dedupeKey: `interest-confirm:${prereg.id}:${campaign}:${now.toISOString().slice(0, 10)}`,
+  });
+  if (sent && has) await db.update(schema.preregistrationInterests).set({ confirmTokenHash: fresh.hash, requestedAt: now }).where(where);
+  return true;
 }
 
 /** Potvrzení zájmu už známé adresy (R7.4) – jen POSTem. Záznam předregistrace se nemění. */
@@ -173,6 +202,13 @@ export async function confirmPreregistration(token: string): Promise<boolean> {
     .returning({ campaign: schema.preregistrationInterests.campaign });
   const wantsPos = confirmed.some((i) => i.campaign === "pokladna");
   if (wantsPos) await scheduleAppReady(row);
+  // zájmy, které k ještě nepotvrzené adrese přidalo další vyplnění formuláře (možná někdo jiný): DOI je nepotvrdí,
+  // vlastník teď dostane jejich potvrzení zvlášť (R8.4, Д-3)
+  const pending = await db
+    .select({ campaign: schema.preregistrationInterests.campaign })
+    .from(schema.preregistrationInterests)
+    .where(and(eq(schema.preregistrationInterests.preregistrationId, row.id), isNull(schema.preregistrationInterests.confirmedAt), isNotNull(schema.preregistrationInterests.confirmTokenHash)));
+  for (const p of pending) if (isInterest(p.campaign)) await requestInterestConfirmation(row, p.campaign, now);
   // e-mail ke spuštění DIS+ už se neplánuje podle kalendáře – tvrdí fakt o FS, spouští ho ručně provozovatel (R7.6)
   return true;
 }
