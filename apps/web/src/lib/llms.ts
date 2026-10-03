@@ -1,3 +1,4 @@
+import { isClosed } from "@/lib/launch";
 import { plainText } from "@/components/rich-text";
 import { FACTS, FACTS_UPDATED, TIMELINE } from "@/content/facts";
 import { GUIDES, isIndexable } from "@/content/guides";
@@ -38,7 +39,10 @@ export function llmsTxt(): string {
   return [
     `# ${SITE.name}`,
     "",
-    `> ${SITE.name} (${SITE.domain}) je bezplatná pokladna pro evidenci tržeb EET 2.0 v České republice: funguje i bez signálu (dodatečné odeslání do 48 hodin), až 5 uživatelů a 3 evidenční jednotky zdarma, účtenka e-mailem a QR kódem (SMS připravujeme), export CSV pro účetní. ${SITE.independenceNotice} Provozovatel: ${OPERATOR.name}.`,
+    // dokud je pokladna za heslem, AI asistenti nesmí o ní mluvit jako o dostupné (R7.6)
+    isClosed("/pokladna")
+      ? `> EvidujZdarma připravuje bezplatnou pokladnu pro EET 2.0. Pokladnu právě spouštíme; zatím je otevřená předregistrace. ${SITE.independenceNotice} Provozovatel: ${OPERATOR.name}.`
+      : `> ${SITE.name} (${SITE.domain}) je bezplatná pokladna pro evidenci tržeb EET 2.0 v České republice: funguje i bez signálu (dodatečné odeslání do 48 hodin), až 5 uživatelů a 3 evidenční jednotky zdarma, účtenka e-mailem a QR kódem (SMS připravujeme), export CSV pro účetní. ${SITE.independenceNotice} Provozovatel: ${OPERATOR.name}.`,
     "",
     factsSection(),
     "",

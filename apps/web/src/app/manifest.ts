@@ -1,12 +1,15 @@
 import type { MetadataRoute } from "next";
+import { isClosed } from "@/lib/launch";
 
 export default function manifest(): MetadataRoute.Manifest {
+  // „Nainstalovat aplikaci“ z veřejné stránky nesmí vést na zavřenou pokladnu (401) – R7.6
+  const start = isClosed("/pokladna") ? "/" : "/pokladna";
   return {
     name: "EvidujZdarma – pokladna pro EET 2.0",
     short_name: "Pokladna",
     description: "Bezplatná pokladna pro evidenci tržeb EET 2.0. Funguje i bez signálu.",
-    id: "/pokladna",
-    start_url: "/pokladna",
+    id: start,
+    start_url: start,
     scope: "/",
     display: "standalone",
     orientation: "any",

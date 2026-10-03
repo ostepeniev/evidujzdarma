@@ -211,6 +211,13 @@
       "when": 1791034937107,
       "tag": "0029_outbox_strip_objection_token",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1791035379815,
+      "tag": "0030_dis_launch_manual",
+      "breakpoints": true
     }
   ]
 }

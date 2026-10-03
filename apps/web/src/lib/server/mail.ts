@@ -2,6 +2,7 @@ import "server-only";
 import { and, eq, inArray, isNull, lt, lte, or, sql } from "drizzle-orm";
 import { getDb, hasDatabase, schema } from "@ez/db";
 import { renderEmail, type EmailTemplate } from "@/lib/emails";
+import { isClosed } from "@/lib/launch";
 import { safeError } from "./log";
 
 /** Obchodní sdělení – odejde jen s potvrzeným e-mailem (DOI), souhlasem a bez odhlášení v okamžiku odeslání (Р5). */
@@ -9,9 +10,15 @@ export const MARKETING_TEMPLATES: ReadonlySet<EmailTemplate> = new Set<EmailTemp
 /** E-maily k čekací listině (včasný přístup) – jen potvrzeným a neodhlášeným adresám. */
 const WAITLIST_TEMPLATES: ReadonlySet<EmailTemplate> = new Set<EmailTemplate>(["app-ready"]);
 
+/** Pokladna ještě není otevřená: e-mail se neodešle ani nezruší, jen se odloží (R7.6). */
+const NOT_LAUNCHED = "NOT_LAUNCHED";
+const NOT_LAUNCHED_RETRY_MS = 24 * 3_600_000;
+
 /** Smí se e-mail odeslat právě teď? null = ano, jinak důvod. Kontroluje se při odeslání, ne při zařazení. */
 async function blockedReason(template: EmailTemplate, to: string): Promise<string | null> {
   if (!MARKETING_TEMPLATES.has(template) && !WAITLIST_TEMPLATES.has(template)) return null;
+  // „Pokladna je připravena“ jen po skutečném otevření pokladny – jinak by odkaz vedl na heslo (R7.6)
+  if (template === "app-ready" && isClosed("/pokladna")) return NOT_LAUNCHED;
   const p = await getDb().query.preregistrations.findFirst({ where: sql`lower(${schema.preregistrations.email}) = lower(${to})` });
   if (!p?.confirmedAt) return "UNCONFIRMED";
   if (p.unsubscribedAt) return "UNSUBSCRIBED";
@@ -121,6 +128,13 @@ export async function processOutbox(limit = 20): Promise<{ sent: number; failed:
   for (const row of claimed) {
     try {
       const blocked = await blockedReason(row.template as EmailTemplate, row.to);
+      if (blocked === NOT_LAUNCHED) {
+        await db
+          .update(schema.emailOutbox)
+          .set({ status: "queued", claimedAt: null, attempts: row.attempts - 1, lastError: blocked, sendAfter: new Date(Date.now() + NOT_LAUNCHED_RETRY_MS) })
+          .where(eq(schema.emailOutbox.id, row.id));
+        continue;
+      }
       if (blocked) {
         await db.update(schema.emailOutbox).set({ status: "cancelled", lastError: blocked, payload: withoutSecrets(row.template, row.payload) }).where(eq(schema.emailOutbox.id, row.id));
         continue;

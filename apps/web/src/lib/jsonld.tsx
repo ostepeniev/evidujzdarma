@@ -1,3 +1,4 @@
+import { isClosed } from "@/lib/launch";
 import { OPERATOR, SITE, SITE_URL, absoluteUrl } from "./site";
 
 type Ld = Record<string, unknown>;
@@ -52,7 +53,8 @@ export function softwareApplicationLd(): Ld {
     name: "EvidujZdarma – pokladna pro EET 2.0",
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web, Android, iOS, Windows, macOS",
-    url: absoluteUrl("/pokladna"),
+    // dokud je pokladna za heslem, odkaz vede na úvodní stránku s předregistrací (R7.6)
+    url: absoluteUrl(isClosed("/pokladna") ? "/" : "/pokladna"),
     inLanguage: "cs-CZ",
     offers: { "@type": "Offer", price: "0", priceCurrency: "CZK" },
     publisher: { "@id": `${SITE_URL}/#organization` },

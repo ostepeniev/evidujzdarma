@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { isClosed } from "@/lib/launch";
 import { ObjectionForm } from "@/components/catalog/objection-form";
 import { PageHeader } from "@/components/page-header";
 import { SITE } from "@/lib/site";
@@ -25,10 +26,8 @@ export default async function ObjectionPage({ searchParams }: PageProps<"/namitk
     <>
       <PageHeader
         title="Námitka a oprava údajů"
-        crumbs={[
-          { name: "Katalog firem", path: "/firmy" },
-          { name: "Námitka", path: "/namitka" },
-        ]}
+        // katalog je zatím za heslem – drobečková navigace do něj nevede (R7.6)
+        crumbs={[...(isClosed("/firmy") ? [] : [{ name: "Katalog firem", path: "/firmy" }]), { name: "Námitka", path: "/namitka" }]}
         lead="Katalog zobrazuje jen veřejné údaje z registrů. Pokud nesouhlasíte s jejich zveřejněním u nás nebo jsou nepřesné, dejte nám vědět."
       />
       <div className="container-page grid gap-10 py-10 lg:grid-cols-[minmax(0,1fr)_360px]">
@@ -54,8 +53,13 @@ export default async function ObjectionPage({ searchParams }: PageProps<"/namitk
             Raději e-mailem? Napište na <a href={`mailto:${SITE.email}`}>{SITE.email}</a>.
           </p>
           <p>
-            Podrobnosti v <Link href="/ochrana-osobnich-udaju">zásadách ochrany osobních údajů</Link>.{" "}
-            <Link href="/firmy">Zpět do katalogu firem</Link>
+            Podrobnosti v <Link href="/ochrana-osobnich-udaju">zásadách ochrany osobních údajů</Link>.
+            {!isClosed("/firmy") && (
+              <>
+                {" "}
+                <Link href="/firmy">Zpět do katalogu firem</Link>
+              </>
+            )}
           </p>
         </aside>
       </div>

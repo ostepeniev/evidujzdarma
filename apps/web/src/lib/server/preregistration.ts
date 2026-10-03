@@ -1,7 +1,7 @@
 import "server-only";
-import { and, count, eq, isNull, lt, sql } from "drizzle-orm";
+import { and, count, eq, isNotNull, isNull, lt, sql } from "drizzle-orm";
 import { getDb, hasDatabase, schema } from "@ez/db";
-import { DIS_OPENS, timelineAt } from "@/content/facts";
+import { timelineAt } from "@/content/facts";
 import { isInterest, type Interest } from "@/lib/interests";
 import { enqueueEmail } from "./mail";
 import { hmac, randomToken, safeEqual, sha256 } from "./tokens";
@@ -138,9 +138,24 @@ export async function confirmPreregistration(token: string): Promise<boolean> {
     .returning({ campaign: schema.preregistrationInterests.campaign });
   const wantsPos = confirmed.some((i) => i.campaign === "pokladna");
   if (wantsPos) await scheduleAppReady(row);
-  const disAt = new Date(`${timelineAt(DIS_OPENS).date}T08:00:00+01:00`);
-  if (row.marketingConsent && !row.unsubscribedAt && disAt > now) {
-    await enqueueEmail({ to: row.email, template: "dis-launch", payload: { unsubscribeToken: unsubscribeTokenFor(row.id) }, dedupeKey: `dis-launch:${row.id}`, sendAfter: disAt });
-  }
+  // e-mail ke spuštění DIS+ už se neplánuje podle kalendáře – tvrdí fakt o FS, spouští ho ručně provozovatel (R7.6)
   return true;
+}
+
+/**
+ * E-mail „Evidence tržeb v DIS+ je spuštěná“ (dis-launch) – ruční spuštění provozovatelem po ověření, že FS
+ * DIS+ skutečně spustila (R7.6). Jen potvrzeným adresám se souhlasem a bez odhlášení; při odeslání se to
+ * kontroluje znovu (mail.ts). Vrací počet nově zařazených e-mailů.
+ */
+export async function queueDisLaunch(): Promise<number> {
+  const db = getDb();
+  const rows = await db
+    .select({ id: schema.preregistrations.id, email: schema.preregistrations.email })
+    .from(schema.preregistrations)
+    .where(and(eq(schema.preregistrations.marketingConsent, true), isNotNull(schema.preregistrations.confirmedAt), isNull(schema.preregistrations.unsubscribedAt)));
+  let queued = 0;
+  for (const r of rows) {
+    if (await enqueueEmail({ to: r.email, template: "dis-launch", payload: { unsubscribeToken: unsubscribeTokenFor(r.id) }, dedupeKey: `dis-launch:${r.id}` })) queued++;
+  }
+  return queued;
 }

@@ -69,7 +69,8 @@ describe("R2.6 – marketing e-mails only with proof of consent at send time", (
     const c = await confirmRoute.POST(new Request("http://localhost/api/registrace/potvrdit", { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: form }));
     expect(c.status).toBe(303);
     const after = await getDb().select({ template: schema.emailOutbox.template }).from(schema.emailOutbox).where(eq(schema.emailOutbox.to, email));
-    expect(after.map((a) => a.template).sort()).toEqual(["app-ready", "dis-launch", "prereg-confirm"].filter((x) => x !== "dis-launch" || new Date() < new Date("2026-11-01T08:00:00+01:00")).sort());
+    // dis-launch už se neplánuje automaticky – spouští ho ručně provozovatel (R7.6)
+    expect(after.map((a) => a.template).sort()).toEqual(["app-ready", "prereg-confirm"]);
   });
 
   it("transactional confirmation e-mail carries no referral block; marketing is marked as obchodní sdělení", async () => {
