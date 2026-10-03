@@ -6,6 +6,7 @@ import { createObjection } from "@/lib/server/objections";
 import { isValidIco, normalizeIco } from "@ez/cz";
 import { getDb, hasDatabase, schema } from "@ez/db";
 import { clientIp, rateLimit } from "@/lib/server/rate-limit";
+import { isJsonRequest } from "@/lib/server/request-guard";
 
 /**
  * Námitka dle čl. 21 GDPR / žádost o opravu údajů v katalogu.
@@ -44,6 +45,8 @@ const FIELD_MESSAGES: Record<string, string> = {
 };
 
 export async function POST(req: Request) {
+  // jen JSON – cizí formulář (enctype=text/plain) by obešel CORS a limit na IP posílal z IP návštěvníků (R8.5, Д-5)
+  if (!isJsonRequest(req)) return Response.json({ error: "Neplatný požadavek." }, { status: 415 });
   const ip = clientIp(req);
   if (!rateLimit(`namitka:${ip}`, 5, 3600)) {
     return Response.json({ error: "Příliš mnoho žádostí, zkuste to prosím později nebo napište e-mail." }, { status: 429 });

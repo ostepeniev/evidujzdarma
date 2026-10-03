@@ -4,18 +4,19 @@
 // navržené interní lhůty, ne zákonné); (3) roli správce × zpracovatele u dat pokladny (údaje zákazníků a pokladních
 // podnikatele) a potřebu zpracovatelské smlouvy dle čl. 28 GDPR v obchodních podmínkách; (4) doplnit jména
 // zpracovatelů (hosting v EU, doručování e-mailů, později platební partner a poskytovatel AI přehledu – u AI ověřit,
-// že data neopustí EU); (5) cookies – nyní jen nezbytné (přihlášení) a localStorage pro kód doporučení; při nasazení
-// analytiky doplnit; (6) identifikační údaje správce jsou v lib/site.ts (OPERATOR, ověřeno v OR 2. 10. 2026).
+// že data neopustí EU); (5) cookies – nyní jen nezbytné (přihlášení) a cookie ankety ez_voter; v localStorage jen
+// název kanceláře v šablonách, kód doporučení se do prohlížeče neukládá (R7.10); při nasazení analytiky doplnit;
+// (6) identifikační údaje správce jsou v lib/site.ts (OPERATOR, ověřeno v OR 2. 10. 2026).
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { PageHeader } from "@/components/page-header";
 import { CATALOG_DATA } from "@/content/catalog-data";
-import { PRIVACY_VERSION, PRIVACY_VERSION_LABEL } from "@/lib/legal";
+import { PRIVACY_DATE_ISO, PRIVACY_VERSION_LABEL } from "@/lib/legal";
 import { SITE, operatorLine } from "@/lib/site";
 import { ExternalLink } from "@/components/external-link";
 
-const VERSION_DATE = PRIVACY_VERSION;
+const VERSION_DATE = PRIVACY_DATE_ISO;
 const VERSION_LABEL = PRIVACY_VERSION_LABEL;
 
 export const metadata: Metadata = {

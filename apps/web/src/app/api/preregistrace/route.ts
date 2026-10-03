@@ -7,6 +7,7 @@ import { INDUSTRY_SLUGS } from "@/content/industries";
 import { DIS_OPENS, TIMELINE, timelineAt } from "@/content/facts";
 import { enqueueEmail, processOutbox } from "@/lib/server/mail";
 import { clientIp, rateLimit } from "@/lib/server/rate-limit";
+import { isJsonRequest } from "@/lib/server/request-guard";
 import { randomToken, sha256, shortCode } from "@/lib/server/tokens";
 import { issueConfirmToken, requestInterestConfirmation, statusTokenFor, unsubscribeTokenFor } from "@/lib/server/preregistration";
 import { MARKETING_CONSENT_VERSION } from "@/lib/legal";
@@ -55,6 +56,8 @@ const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_c
 const DONE = () => Response.json({ ok: true });
 
 export async function POST(req: Request) {
+  // jen JSON – cizí formulář (enctype=text/plain) by obešel CORS a limit na IP posílal z IP návštěvníků (R8.5, Д-5)
+  if (!isJsonRequest(req)) return Response.json({ error: "Neplatný požadavek." }, { status: 415 });
   const ip = clientIp(req);
   if (!rateLimit(`prereg:${ip}`, 5, 600)) {
     return Response.json({ error: "Příliš mnoho pokusů, zkuste to prosím za chvíli." }, { status: 429 });

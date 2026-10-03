@@ -2,7 +2,8 @@
  * R7.2 (рецензія №4, B N2) – konfigurace nginx nesmí otevřít uzavřené sekce (lib/launch.ts):
  *  - každá location, která chytí cestu z isClosed, má auth_basic (vlastní, nebo serverové);
  *  - location pro /api/pokladna/* má auth_basic off (pokladna posílá Bearer token);
- *  - žádná location nemá vlastní proxy_set_header (jinak ztratí serverové, mj. X-Real-IP).
+ *  - žádná location nemá vlastní proxy_set_header (jinak ztratí serverové, mj. X-Real-IP);
+ *  - /api/internal/* (cron, dis-launch) zvenku vrací 404 (R8.5, Д-7).
  * Kontroluje infra/nginx/evidujzdarma.conf a pro ukázku i plán dne otevření z open-site.md (1aec031), který měl
  * exact-location certifikátu bez hesla, a blok z B-r4, rozd. 3.
  */
@@ -32,33 +33,24 @@ function violations(conf: string): string[] {
     if (!auth || auth === "off") out.push(`${path}: bez auth_basic (location ${matchLocation(locations(server), path)?.pattern ?? "—"})`);
   }
   if (effectiveAuth(server, "/api/pokladna/x") !== "off") out.push("/api/pokladna/x: chybí auth_basic off");
+  // interní maršruty zvenku nedostupné – jinak by cron a dis-launch držel jen CRON_SECRET (R8.5, Д-7)
+  const internal = matchLocation(locations(server), "/api/internal/x");
+  if (!internal?.block.some((d: Directive) => d.name === "return" && d.args[0] === "404")) out.push(`/api/internal/x: nevrací 404 (location ${internal?.pattern ?? "—"})`);
   for (const loc of locations(server)) if (loc.block.some((d: Directive) => d.name === "proxy_set_header")) out.push(`location ${loc.pattern}: vlastní proxy_set_header`);
   return out;
 }
-
-/** Plán z open-site.md (1aec031): auth_basic z úrovně server pryč, uzavřené sekce regexem – ale exact certifikát zůstal bez hesla. */
-const planFromOpenSite = current
-  .replace(/\n\s*auth_basic "EvidujZdarma";\n\s*auth_basic_user_file [^\n]+\n/, "\n")
-  .replace(
-    "    location / {\n        proxy_pass http://127.0.0.1:3100;\n    }\n}",
-    `    location ~ ^/(pokladna|prihlaseni|kabinet|pozvanka|u|firmy|firma|provozovna|obor)(/|$) {
-        auth_basic "EvidujZdarma"; auth_basic_user_file /etc/nginx/evidujzdarma.htpasswd;
-        proxy_pass http://127.0.0.1:3100;
-    }
-    location ~ ^/api/(ucet|auth|kabinet|pozvanka)(/|$) {
-        auth_basic "EvidujZdarma"; auth_basic_user_file /etc/nginx/evidujzdarma.htpasswd;
-        proxy_pass http://127.0.0.1:3100;
-    }
-    location / {
-        proxy_pass http://127.0.0.1:3100;
-    }
-}`,
-  );
 
 /** Blok z recenze B-r4, rozd. 3 (den otevření). */
 const fromReview = readFileSync(new URL("../../../docs/tasks/2026-10-03-review-4/B-r4.md", import.meta.url), "utf8")
   .split("```nginx")[1]!
   .split("```")[0]!;
+
+/**
+ * Plán z open-site.md (1aec031): uzavřené sekce regexem a auth_basic pryč z úrovně server – ale exact-location certifikátu
+ * zůstala bez vlastního hesla. Model = blok z B-r4 bez auth_basic v `= /api/ucet/certifikat` (nezávisle na tom, jak
+ * vypadá aktuální soubor – R8.5, Д-7).
+ */
+const planFromOpenSite = fromReview.replace(/(location = \/api\/ucet\/certifikat \{\n)\s*auth_basic "EvidujZdarma";\n\s*auth_basic_user_file [^\n]+\n/, "$1");
 
 describe("R7.2 – nginx keeps the closed sections closed", () => {
   it("gate: infra/nginx/evidujzdarma.conf passes", () => {
@@ -66,13 +58,21 @@ describe("R7.2 – nginx keeps the closed sections closed", () => {
   });
 
   it("gate: the opening-day plan from open-site.md (1aec031) is caught – exact /api/ucet/certifikat would be public", () => {
-    expect(planFromOpenSite).not.toBe(current);
+    expect(planFromOpenSite).not.toBe(fromReview);
     const v = violations(planFromOpenSite);
     expect(v.some((x) => x.startsWith("/api/ucet/certifikat:"))).toBe(true);
   });
 
   it("the opening-day block from B-r4 (section 3) passes", () => {
     expect(violations(fromReview)).toEqual([]);
+  });
+
+  it("gate Д-7: /api/internal/ answers 404 from outside; a conf without that location is caught", () => {
+    const server = mainServer(parseNginx(current));
+    expect(matchLocation(locations(server), "/api/internal/x")?.block.find((d) => d.name === "return")?.args).toEqual(["404"]);
+    const without = current.replace(/\n\s*location \^~ \/api\/internal\/ \{\n\s*return 404;\n\s*\}/, "");
+    expect(without).not.toBe(current);
+    expect(violations(without).some((v) => v.startsWith("/api/internal/x:"))).toBe(true);
   });
 
   it("a location with its own proxy_set_header is caught", () => {

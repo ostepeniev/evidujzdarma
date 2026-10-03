@@ -37,6 +37,14 @@ function requestHosts(req: Request): Set<string> {
   return hosts;
 }
 
+/**
+ * Veřejný POST s JSON tělem přijme jen `application/json` (R8.5, Д-5): cizí stránka pak potřebuje CORS preflight,
+ * který neprojde, a formulář s `enctype="text/plain"` na cizím webu tělo nepošle.
+ */
+export function isJsonRequest(req: Request): boolean {
+  return (req.headers.get("content-type") ?? "").split(";")[0]!.trim().toLowerCase() === "application/json";
+}
+
 /** Požadavek z našeho původu? Bez hlaviček Origin i Sec-Fetch-Site jde o neprohlížečového klienta (cookie nenese sám). */
 export function sameOrigin(req: Request): boolean {
   const origin = req.headers.get("origin");

@@ -2,7 +2,8 @@
 // Zkontrolovat zejména: (1) omezení a vyloučení odpovědnosti s ohledem na § 2898 OZ a na uživatele-spotřebitele
 // (služba je určena podnikatelům, ale ověřit dopady § 1810 a násl. OZ); (2) závazek „jádro zdarma navždy“ v čl. 6;
 // (3) obsah přílohy SLA k Premium (dostupnost, kompenzace, doba reakce podpory) – zatím nevydána; (4) lhůty
-// v čl. 11 a 12 (30 dní na export po ukončení, 60 dní výpověď ze strany provozovatele, 30 dní oznámení změn);
+// v čl. 11 a 12 (30 dní na export po ukončení, výpověď tarifu Zdarma jen při ukončení celé služby s lhůtou nejméně
+// 6 měsíců – čl. 11.2, R7.9; 30 dní oznámení změn);
 // (5) zpracovatelská doložka dle čl. 28 GDPR je v čl. 10 – ověřit, zda stačí, nebo je třeba samostatná smlouva;
 // (6) identifikační údaje provozovatele jsou v lib/site.ts (OPERATOR, ověřeno v OR 2. 10. 2026);
 // (7) NÁVRH 3. 10. 2026 (R6.4, Б7): čl. 10.2, 10.3 a 11.3 – zrušený účet s neodeslanými ostrými tržbami nejdéle 60 dnů,
@@ -12,10 +13,10 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { PageHeader } from "@/components/page-header";
 import { FACTS } from "@/content/facts";
-import { TERMS_VERSION, TERMS_VERSION_LABEL } from "@/lib/legal";
+import { TERMS_DATE_ISO, TERMS_VERSION_LABEL } from "@/lib/legal";
 import { SITE, operatorLine } from "@/lib/site";
 
-const VERSION_DATE = TERMS_VERSION;
+const VERSION_DATE = TERMS_DATE_ISO;
 const VERSION_LABEL = TERMS_VERSION_LABEL;
 
 export const metadata: Metadata = {
