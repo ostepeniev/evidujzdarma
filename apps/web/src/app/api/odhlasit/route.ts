@@ -2,6 +2,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import { getDb, hasDatabase, schema } from "@ez/db";
 import { isUnsubscribeTokenShape, unsubscribeWhere } from "@/lib/server/preregistration";
 import { randomToken, sha256, shortCode } from "@/lib/server/tokens";
+import { SITE, operatorLine } from "@/lib/site";
 
 /**
  * Odhlášení z e-mailů. GET jen zobrazí stránku s tlačítkem (GET nesmí měnit stav – Р5),
@@ -50,7 +51,8 @@ const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&
 function page(title: string, body: string): Response {
   const html = `<!doctype html><html lang="cs"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><meta name="robots" content="noindex"><title>${title}</title>
 <body style="font-family:system-ui,sans-serif;max-width:520px;margin:15vh auto;padding:0 16px;color:#14211c;text-align:center">
-<h1>${title}</h1>${body}<p><a href="/" style="color:#0b7a57">Zpět na EvidujZdarma</a></p></body></html>`;
+<h1>${title}</h1>${body}<p><a href="/" style="color:#0b7a57">Zpět na EvidujZdarma</a></p>
+<p style="margin-top:3em;font-size:13px;color:#66756e">${esc(SITE.independenceNotice)} Provozovatel: ${esc(operatorLine())}.</p></body></html>`;
   return new Response(html, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
 }
 
