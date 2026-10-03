@@ -105,6 +105,14 @@ async function checkStaffAndRefund(accountId: string, deviceId: string, input: D
   if (total >= 0) throw new IngestRejection("INVALID_SALE", "Vratka musí mít zápornou částku");
   const original = await db.query.sales.findFirst({ where: and(eq(schema.sales.id, input.refundOf), eq(schema.sales.accountId, accountId)) });
   if (!original) throw new IngestRejection("REFUND_UNKNOWN_ORIGINAL", "Původní tržba k vratce není na serveru");
+  // vratka patří do režimu původní tržby (Р3): ostrá vratka k tržbě z Playgroundu by do FS poslala zápornou tržbu
+  // k něčemu, co ostré prostředí nikdy nedostalo – rozhodne vlastník (R7.13)
+  if (original.mode !== input.mode) {
+    throw new IngestRejection(
+      "REFUND_MODE_MISMATCH",
+      `Vratka je v režimu ${MODE_LABEL[input.mode]}, ale původní tržba byla prodána v režimu ${MODE_LABEL[original.mode as EetMode] ?? original.mode}. Pokladna ji neodešle – vyřiďte ji ručně.`,
+    );
+  }
   if (original.refundOf) throw new IngestRejection("INVALID_SALE", "Vratku nelze vrátit");
   if (-total > original.total) throw new IngestRejection("REFUND_EXCEEDS", "Vratka je vyšší než původní tržba");
   // evidovaná částka a čerpání vratky nesmí přesáhnout originál – jinak by vratka „odevidovala“ víc, než se evidovalo (R6.9)

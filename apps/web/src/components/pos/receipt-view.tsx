@@ -4,6 +4,7 @@ import QRCode from "qrcode";
 import { useEffect, useMemo, useState } from "react";
 import { PAYMENT_LABEL, deadlineFor, formatRemaining, renderReceiptText, urgency } from "@ez/fiscal-core";
 import { getSale, refundFor } from "@/lib/pos/db";
+import { refundBlockedReason } from "@/lib/pos/sale-factory";
 import { bluetoothSupported, printEscPos } from "@/lib/pos/escpos";
 import { emailReceipt, onSyncChange, resendSale, syncNow } from "@/lib/pos/sync";
 import type { LocalSale, PosConfig } from "@/lib/pos/types";
@@ -85,6 +86,8 @@ export function ReceiptView({
   if (!sale) return <p className="p-8 text-center text-muted">Načítám…</p>;
 
   const change = sale.cashReceived ? sale.cashReceived - sale.total : 0;
+  // vratka jen v režimu, ve kterém se tržba prodala (R7.13)
+  const refundBlocked = onRefund && !sale.refundOf && sale.total > 0 ? refundBlockedReason(sale, config.account.mode) : null;
   const deadline = deadlineFor(sale.soldAt);
   const pending = ["local", "queued", "sending", "failed"].includes(sale.status);
   const urg = urgency(deadline);
@@ -162,13 +165,18 @@ export function ReceiptView({
 
       <pre className="receipt-paper mx-auto w-full max-w-[22rem] overflow-x-auto rounded-2xl border border-line bg-white p-4 font-mono text-[11px] leading-snug text-ink">{text}</pre>
 
+      {refundBlocked && !refunded && (
+        <p role="note" className="no-print text-center text-sm text-ink-soft">
+          {refundBlocked}
+        </p>
+      )}
       <div className="no-print flex flex-col gap-2 sm:flex-row">
         {onBack && (
           <button type="button" className="btn-secondary flex-1" onClick={onBack}>
             ← Zpět
           </button>
         )}
-        {onRefund && !sale.refundOf && !refunded && sale.total > 0 && sale.status !== "rejected" && (
+        {onRefund && !sale.refundOf && !refunded && sale.total > 0 && sale.status !== "rejected" && !refundBlocked && (
           <button type="button" className="btn-secondary flex-1" onClick={() => onRefund(sale)}>
             Vratka
           </button>

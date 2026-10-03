@@ -25,6 +25,7 @@ export const QUARANTINE_REASON_TEXT: Record<string, string> = {
   REFUND_UNKNOWN_ORIGINAL: "Původní tržba k vratce není na serveru.",
   REFUND_DUPLICATE: "K této tržbě už vratka existuje.",
   REFUND_NOT_AUTHORIZED: "Vratku smí udělat jen vlastník nebo s jeho schválením.",
+  REFUND_MODE_MISMATCH: "Vratka je v jiném režimu, než v jakém byla prodána původní tržba – pokladna ji neodešle. Vyřiďte ji ručně.",
   UNKNOWN_STAFF: "Pokladní nepatří k tomuto účtu.",
   PRODUCTION_NOT_OPEN: "Ostré prostředí Finanční správy přijímá tržby až od 1. 11. 2026 (přechodný režim) – tržba z dřívější doby se odeslat nedá. Vyřiďte ji ručně.",
   ACCOUNT_CLOSED: "Účet je zrušený – tržba prodaná po zrušení se do FS neodešle. Vyřiďte ji ručně.",

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { getConfig, getDevice, getMeta, pruneOld, rejectedSales, setMeta, deleteMeta, unsettledSales } from "@/lib/pos/db";
-import { createLocalSale, refundInput } from "@/lib/pos/sale-factory";
+import { createLocalSale, refundBlockedReason, refundInput } from "@/lib/pos/sale-factory";
 import { DeviceRevokedError, configVersion, isConfigStale, onSyncChange, refreshConfig, startAutoSync, syncNow } from "@/lib/pos/sync";
 import type { DeviceCredentials, LocalSale, PosConfig } from "@/lib/pos/types";
 import { HistoryView, SummaryView } from "./history-view";
@@ -136,6 +136,9 @@ export function PosApp() {
       const refund = paying?.refundOf ?? null;
       let sale: LocalSale;
       if (refund) {
+        // režim účtu se mohl změnit, zatímco bylo okno vratky otevřené (R7.13)
+        const blocked = refundBlockedReason(refund, config.account.mode);
+        if (blocked) throw new Error(blocked);
         const inp = refundInput(refund);
         sale = await createLocalSale(device, config, {
           lines: inp.lines,
