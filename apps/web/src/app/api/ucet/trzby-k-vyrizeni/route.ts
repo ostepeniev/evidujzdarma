@@ -1,10 +1,11 @@
 import { z } from "zod";
-import { BLOCK_TEXT, processSale, rebuildSnapshots, requeueSales, salesNeedingAttention, salesStatus, salesWithWarnings } from "@/lib/server/fiscal";
+import { BLOCK_TEXT, correctableSales, processSale, rebuildSnapshots, requeueSales, salesNeedingAttention, salesStatus, salesWithWarnings } from "@/lib/server/fiscal";
 import { ownerRoute, parseJson } from "@/lib/server/route-helpers";
 
 /** Tržby odmítnuté Finanční správou nebo zablokované (certifikát, EIČ…) – čekají na vlastníka (R1.3). */
 export const GET = ownerRoute(async ({ accountId }) => {
   const [rows, warned] = await Promise.all([salesNeedingAttention(accountId), salesWithWarnings(accountId)]);
+  const correctable = await correctableSales(rows.filter((r) => r.status === "rejected").map((r) => r.id));
   return Response.json({
     // upozornění FS (Varovani) k přijatým tržbám za 30 dní (A Дрібне 15)
     warnings: warned.map((w) => ({
@@ -29,8 +30,8 @@ export const GET = ownerRoute(async ({ accountId }) => {
       total: r.total,
       mode: r.mode,
       deadlineAt: r.deadlineAt.toISOString(),
-      // určité odmítnutí FS → vlastník smí poslat s opraveným EIČ / číslem jednotky (R5.6; server to ověří znovu)
-      correctable: r.status === "rejected" && /^EET_[23467]:/.test(r.lastError ?? ""),
+      // určité odmítnutí FS bez nejistého pokusu → vlastník smí poslat s opraveným EIČ / číslem jednotky (R5.6, R6.10; server to ověří znovu)
+      correctable: correctable.has(r.id),
     })),
   });
 });

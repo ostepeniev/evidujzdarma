@@ -669,6 +669,52 @@ export async function requeueBlocked(accountId: string, reasons: readonly string
 /** Kódy určitého odmítnutí FS, po nichž smí vlastník opravit EIČ / jednotku ve snímku (Р3, R5.6). */
 const DEFINITE_REFUSAL = /^EET_[23467]$/;
 
+/**
+ * Pokus, který mohla FS zapsat, i když jsme odpověď nedostali nebo jí nevěříme (R6.10): síť, HTTP chyba,
+ * neověřitelná odpověď, Chyba 8, nedokončený (in_flight) nebo opožděný (stale) pokus. INTERNAL jen tehdy,
+ * když už byla zpráva připravená k odeslání (má hash požadavku) – chyba mohla nastat až po odeslání.
+ */
+function indeterminateAttempt(a: { result: string; code: string | null; requestSha256: string | null }): boolean {
+  if (a.result === "in_flight" || a.result === "stale" || a.result === "invalid") return true;
+  const code = a.code ?? "";
+  if (code === "NETWORK" || code === "INVALID_RESPONSE" || code === "EET_8" || code.startsWith("HTTP_")) return true;
+  return code === "INTERNAL" && !!a.requestSha256;
+}
+
+type AttemptBrief = { result: string; code: string | null; requestSha256: string | null };
+
+/** Pokusy tržeb od nejnovějšího. */
+async function attemptsOf(ids: string[]): Promise<Map<string, AttemptBrief[]>> {
+  const out = new Map<string, AttemptBrief[]>();
+  if (!ids.length) return out;
+  const rows = await getDb()
+    .select({ saleId: schema.saleAttempts.saleId, result: schema.saleAttempts.result, code: schema.saleAttempts.code, requestSha256: schema.saleAttempts.requestSha256 })
+    .from(schema.saleAttempts)
+    .where(inArray(schema.saleAttempts.saleId, ids))
+    .orderBy(desc(schema.saleAttempts.startedAt), desc(schema.saleAttempts.id));
+  for (const { saleId, ...a } of rows) out.set(saleId, [...(out.get(saleId) ?? []), a]);
+  return out;
+}
+
+/** Proč nejde snímek přestavět (null = smí): poslední pokus musí být určité odmítnutí a žádný pokus aktuálního snímku nejistý. */
+function rebuildRefusal(attempts: AttemptBrief[]): string | null {
+  const last = attempts[0];
+  if (!last || last.result !== "rejected" || !DEFINITE_REFUSAL.test(last.code ?? "")) return "Opravit údaje lze jen po určitém odmítnutí FS (chyba 2, 3, 4, 6 nebo 7).";
+  // pokusy aktuálního snímku = od posledního rebuildu; nejistý pokus mohla FS zapsat se starou identitou (R6.10)
+  const rebuiltAt = attempts.findIndex((a) => a.result === "rebuilt");
+  const current = rebuiltAt < 0 ? attempts : attempts.slice(0, rebuiltAt);
+  if (current.some(indeterminateAttempt)) {
+    return "Některý dřívější pokus skončil nejistě (výpadek spojení nebo neověřitelná odpověď) – Finanční správa ho mohla zapsat. Údaje ve zprávě proto nelze změnit. Tržba zůstává uložená; po opravě certifikátu ji můžete odeslat znovu se stejnými údaji.";
+  }
+  return null;
+}
+
+/** Které z odmítnutých tržeb smí vlastník poslat s opravenými údaji (tlačítko se ukáže jen u nich). */
+export async function correctableSales(ids: string[]): Promise<Set<string>> {
+  const attempts = await attemptsOf(ids);
+  return new Set(ids.filter((id) => !rebuildRefusal(attempts.get(id) ?? [])));
+}
+
 function snapshotHash(d: unknown): string {
   const keys = Object.keys((d ?? {}) as object).sort();
   return createHash("sha256").update(JSON.stringify(d, keys)).digest("hex");
@@ -691,9 +737,9 @@ export async function rebuildSnapshots(accountId: string, ids: string[]): Promis
       skipped.push({ id, reason: "Tržba není odmítnutá Finanční správou." });
       continue;
     }
-    const [last] = await db.select().from(schema.saleAttempts).where(eq(schema.saleAttempts.saleId, id)).orderBy(desc(schema.saleAttempts.startedAt)).limit(1);
-    if (!last || last.result !== "rejected" || !DEFINITE_REFUSAL.test(last.code ?? "")) {
-      skipped.push({ id, reason: "Opravit údaje lze jen po určitém odmítnutí FS (chyba 2, 3, 4, 6 nebo 7)." });
+    const refusal = rebuildRefusal((await attemptsOf([id])).get(id) ?? []);
+    if (refusal) {
+      skipped.push({ id, reason: refusal });
       continue;
     }
     const eic = acc.eic ?? acc.dic;
