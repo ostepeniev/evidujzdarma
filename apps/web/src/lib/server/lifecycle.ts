@@ -104,6 +104,13 @@ export async function closeAccount(accountId: string, opts: { confirm?: boolean 
 const DAY_MS = 86_400_000;
 
 /**
+ * Otevřená karanténa, která může být ostrá tržba: data v ostrém režimu, nebo MODE_MISMATCH na účtu v ostrém provozu –
+ * pokladna se starým nastavením prodávala skutečně, jen v předchozím režimu (R5.1, R7.15 N7). Stejná podmínka pro
+ * nastavení, e-maily, „Evidováno jinak“ i retention.
+ */
+const PRODUCTION_QUARANTINE = sql`(${schema.saleQuarantine.payload}->>'mode' = 'production' or (${schema.saleQuarantine.reasonCode} = 'MODE_MISMATCH' and exists (select 1 from ${schema.accounts} pq_acc where pq_acc.id = ${schema.saleQuarantine.accountId} and pq_acc.eet_mode = 'production')))`;
+
+/**
  * Neodeslané ostré tržby zrušeného účtu – v sales (bez POK, neoznačené „Evidováno jinak“) a v otevřené karanténě.
  * Bez limitu: počet v nastavení, v e-mailu i to, co „Evidováno jinak“ označí, musí být tentýž seznam (R7.12).
  */
@@ -124,7 +131,7 @@ export async function unsentProductionOf(accountId: string) {
   const quarantine = await db
     .select({ id: schema.saleQuarantine.id, payload: schema.saleQuarantine.payload })
     .from(schema.saleQuarantine)
-    .where(and(eq(schema.saleQuarantine.accountId, accountId), isNull(schema.saleQuarantine.resolvedAt), sql`${schema.saleQuarantine.payload}->>'mode' = 'production'`))
+    .where(and(eq(schema.saleQuarantine.accountId, accountId), isNull(schema.saleQuarantine.resolvedAt), PRODUCTION_QUARANTINE))
     .orderBy(schema.saleQuarantine.receivedAt);
   return { sales, quarantine };
 }
@@ -274,7 +281,7 @@ export async function runRetention(now = new Date()): Promise<Record<string, num
   const openProductionQuarantine = db
     .select({ x: sql`1` })
     .from(schema.saleQuarantine)
-    .where(and(eq(schema.saleQuarantine.accountId, schema.accounts.id), isNull(schema.saleQuarantine.resolvedAt), sql`${schema.saleQuarantine.payload}->>'mode' = 'production'`));
+    .where(and(eq(schema.saleQuarantine.accountId, schema.accounts.id), isNull(schema.saleQuarantine.resolvedAt), PRODUCTION_QUARANTINE));
   const unsentProduction = or(exists(unsentSales), exists(openProductionQuarantine))!;
   await count("accounts", db.delete(schema.accounts).where(or(and(expired, not(unsentProduction)), holdOver)).returning({ id: schema.accounts.id }));
   const held = await db.select({ id: schema.accounts.id }).from(schema.accounts).where(and(expired, unsentProduction));

@@ -93,7 +93,11 @@ async function checkStaffAndRefund(accountId: string, deviceId: string, input: D
   const cashier = input.staffId ? await staffRow(input.staffId) : undefined;
   if (input.staffId && !cashier) throw new IngestRejection("UNKNOWN_STAFF", "Pokladní nepatří k tomuto účtu");
   if (input.approval && !input.refundOf) throw new IngestRejection("INVALID_SALE", "Schválení vlastníkem patří jen k vratce");
-  if (!input.refundOf) return null;
+  if (!input.refundOf) {
+    // záporná platba u prodeje by do FS poslala zápornou celk_trzba (R7.15 N4); pokladna sama posílá jen kladné části
+    if (input.payments.some((p) => p.amount < 0)) throw new IngestRejection("INVALID_SALE", "Platba u prodeje nesmí být záporná");
+    return null;
+  }
 
   // Zařízení samo nemůže tvrdit, že prodává vlastník: vratka potřebuje schválení podepsané serverem (R3.10),
   // vázané na tuto tržbu a částku a použitelné jednou (R5.5)
@@ -154,9 +158,14 @@ export async function ingestSales(ctx: DeviceContext, inputs: DeviceSale[]): Pro
       const soldAtMs = Date.parse(input.soldAt);
       if (soldAtMs - Date.now() > MAX_FUTURE_MS) throw new IngestRejection("FUTURE_DATE", "Datum tržby je v budoucnosti – zkontrolujte čas v zařízení.");
       if (Date.now() - soldAtMs > MAX_PAST_MS) throw new IngestRejection("TOO_OLD", "Tržba je starší než 45 dní.");
-      // zrušený účet: pokladny smí jen dovézt tržby prodané před zrušením – drží to server, ne jen pokladna (R6.2)
+      // zrušený účet: pokladny smí jen dovézt tržby prodané před zrušením – drží to server, ne jen pokladna (R6.2).
+      // Tržba, kterou server od této pokladny už přijal (hodiny napřed, pokladna nedostala odpověď), je opakování, ne nová (R7.15 N10).
       if (account.closedAt && soldAtMs > account.closedAt.getTime()) {
-        throw new IngestRejection("ACCOUNT_CLOSED", "Účet je zrušený – tržba prodaná po zrušení se do FS neodešle.");
+        const known = await db.query.sales.findFirst({
+          where: and(eq(schema.sales.id, input.id), eq(schema.sales.accountId, account.id), eq(schema.sales.deviceId, device.id)),
+          columns: { id: true },
+        });
+        if (!known) throw new IngestRejection("ACCOUNT_CLOSED", "Účet je zrušený – tržba prodaná po zrušení se do FS neodešle.");
       }
       // Pokladna se starou konfigurací (kiosk, offline při přepnutí) nesmí po přepnutí účtu prodávat
       // v předchozím režimu – „mock“ by dostal falešný POK a do FS by nic nešlo (R5.1). Tržby prodané

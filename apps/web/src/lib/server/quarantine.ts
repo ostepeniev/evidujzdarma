@@ -61,6 +61,13 @@ export async function quarantineSale(ctx: DeviceContext, payload: unknown, reaso
     })
     .returning({ resolution: schema.saleQuarantine.resolution });
   if (!written.length && prior) return { dismissed: "Vyřízeno vlastníkem" };
+  // zrušený účet: „dokud ji nevyřídíte, Finanční správě se neodešle“ neplatí – neodešle se vůbec (R7.15 N8). Ostrá tržba se
+  // objeví v seznamu neodeslaných (souhrnné e-maily, „Evidováno jinak“) a vlastník dostane jen e-mail o ní (R7.12).
+  if (ctx.account.closedAt) {
+    const mode = (payload as { mode?: unknown }).mode;
+    if (mode === "production" || (reasonCode === "MODE_MISMATCH" && ctx.account.eetMode === "production")) await notifyClosedUnsent(ctx);
+    return null;
+  }
   for (const to of await ownerEmails(ctx.account.id)) {
     await enqueueEmail({
       to,
