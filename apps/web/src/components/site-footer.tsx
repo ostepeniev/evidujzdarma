@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { isClosed } from "@/lib/launch";
 import { SITE, operatorLine } from "@/lib/site";
 import { Logo } from "./logo";
 
@@ -68,7 +69,10 @@ export function SiteFooter() {
           <nav key={col.title} aria-label={col.title}>
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-ink">{col.title}</h2>
             <ul className="space-y-2">
-              {col.links.map((l) => (
+              {col.links
+                // uzavřené sekce (pokladna, katalog) zatím za heslem – neodkazujeme na ně (eet-open-site)
+                .filter((l) => !isClosed(l.href))
+                .map((l) => (
                 <li key={l.href}>
                   <Link href={l.href} className="text-sm text-ink-soft hover:text-brand-700">
                     {l.label}

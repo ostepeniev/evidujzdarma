@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { isClosed } from "@/lib/launch";
 import { NAV, SITE } from "@/lib/site";
 import { Logo } from "./logo";
 
@@ -40,9 +41,11 @@ export function SiteHeader() {
             ))}
           </nav>
           <div className="flex items-center gap-2">
-            <Link href="/pokladna" className="hidden rounded-lg px-3 py-2 text-[15px] font-medium text-ink-soft hover:bg-surface sm:inline-flex">
-              Pokladna
-            </Link>
+            {!isClosed("/pokladna") && (
+              <Link href="/pokladna" className="hidden rounded-lg px-3 py-2 text-[15px] font-medium text-ink-soft hover:bg-surface sm:inline-flex">
+                Pokladna
+              </Link>
+            )}
             <Link href="/#registrace" className="btn-primary px-4 py-2 text-[15px]">
               Chci zdarma
             </Link>

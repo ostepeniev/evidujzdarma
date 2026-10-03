@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/page-header";
 import { DIS_OPENS, FACTS, TIMELINE, timelineAt } from "@/content/facts";
 import { PARTNER_PLAN } from "@/content/pricing";
 import { JsonLd, faqLd } from "@/lib/jsonld";
+import { isClosed } from "@/lib/launch";
 import { SITE_URL, absoluteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -16,6 +17,10 @@ export const metadata: Metadata = {
     "Pro účetní kanceláře: hromadná kontrola IČO klientů, stav připravenosti na EET 2.0, šablony dopisů, export tržeb a 20 % z plateb klientů. Zdarma, i webináře.",
   alternates: { canonical: "/ucetni" },
 };
+
+/** Účetní kabinet je zatím za heslem spolu s pokladnou (eet-open-site) – stránka nesmí tvrdit, že funguje (inv. 10). */
+const KABINET_OPEN = !isClosed("/kabinet");
+const kabinet = (linkLabel: string) => (KABINET_OPEN ? { status: "now" as const, href: "/kabinet", linkLabel } : { status: "launch" as const });
 
 const CABINET: readonly { title: string; text: string; status: "now" | "launch"; href?: string; linkLabel?: string }[] = [
   {
@@ -35,17 +40,17 @@ const CABINET: readonly { title: string; text: string; status: "now" | "launch";
   {
     title: "Stav připravenosti klientů",
     text: "Přehledně u každého klienta: přihlášení v DIS+, oznámené evidenční jednotky, pokladní certifikát, první tržba. I u klientů s jinou pokladnou nebo s MOJE eet.",
-    status: "now", href: "/kabinet", linkLabel: "Otevřít kabinet",
+    ...kabinet("Otevřít kabinet"),
   },
   {
     title: "Pozvání klienta osobním odkazem",
     text: "Klient se přes váš odkaz zaregistruje k pokladně a vy hned vidíte jeho stav i tržby.",
-    status: "now", href: "/kabinet", linkLabel: "Otevřít kabinet",
+    ...kabinet("Otevřít kabinet"),
   },
   {
     title: "Export tržeb klientů",
     text: "CSV zdarma. Export pro Pohodu, Money S3 a ABRA připravujeme v partnerském tarifu.",
-    status: "now", href: "/kabinet", linkLabel: "Otevřít kabinet",
+    ...kabinet("Otevřít kabinet"),
   },
   {
     title: "Kalendář termínů",
@@ -73,7 +78,9 @@ const FAQ: FaqItem[] = [
   },
   {
     q: "Funguje Účetní kabinet už teď?",
-    a: "Kabinet funguje už teď: přidejte klienty podle IČO, sledujte jejich připravenost a pošlete jim pozvánku do pokladny. Kalendář termínů doplníme do konce roku.",
+    a: KABINET_OPEN
+      ? "Kabinet funguje už teď: přidejte klienty podle IČO, sledujte jejich připravenost a pošlete jim pozvánku do pokladny. Kalendář termínů doplníme do konce roku."
+      : "Kabinet spouštíme spolu s pokladnou. Hromadnou kontrolu IČO a šablony dopisů můžete používat už teď. O spuštění kabinetu vám dáme vědět – stačí zvolit to ve formuláři u webinářů.",
   },
   {
     q: "Na co mají klienti myslet nejdřív?",
@@ -152,12 +159,19 @@ export default function AccountantsPage() {
                 Účetní kabinet zdarma
               </h2>
               <p className="mt-2 max-w-3xl text-lg text-ink-soft">
-                Jedno místo pro všechny klienty: připravenost na EET, pozvánky do pokladny a export tržeb. <strong className="text-ink">Zdarma, funguje už teď.</strong>
+                Jedno místo pro všechny klienty: připravenost na EET, pozvánky do pokladny a export tržeb.{" "}
+                <strong className="text-ink">{KABINET_OPEN ? "Zdarma, funguje už teď." : "Zdarma, spouštíme spolu s pokladnou."}</strong>
               </p>
             </div>
-            <Link href="/kabinet" className="btn-primary">
-              Založit kabinet zdarma
-            </Link>
+            {KABINET_OPEN ? (
+              <Link href="/kabinet" className="btn-primary">
+                Založit kabinet zdarma
+              </Link>
+            ) : (
+              <Link href="#webinar" className="btn-primary">
+                Dát mi vědět o spuštění
+              </Link>
+            )}
           </div>
           <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {CABINET.map((c) => (

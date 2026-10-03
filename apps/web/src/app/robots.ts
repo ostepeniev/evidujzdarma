@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { CATALOG_CLOSED, CLOSED_SECTIONS } from "@/lib/launch";
 import { SITE_URL } from "@/lib/site";
 import { extraSitemaps } from "@/lib/sitemap-registry";
 
@@ -23,10 +24,12 @@ const AI_AND_SEARCH_BOTS = [
   "DuckDuckBot",
 ];
 
-const PRIVATE = ["/api/", "/pokladna/", "/ucet/", "/registrace/", "/prihlaseni"];
+// uzavřené sekce (eet-open-site) – i bez lomítka, ať robot nezkouší ani „/pokladna“
+const PRIVATE = ["/api/", "/ucet/", "/registrace/", ...CLOSED_SECTIONS.flatMap((p) => [p, `${p}/`])];
 
 export default async function robots(): Promise<MetadataRoute.Robots> {
-  const extra = await extraSitemaps();
+  // sitemapy katalogu až s otevřením katalogu
+  const extra = CATALOG_CLOSED ? [] : await extraSitemaps();
   return {
     rules: [
       { userAgent: AI_AND_SEARCH_BOTS, allow: "/", disallow: PRIVATE },
