@@ -5,12 +5,12 @@ export const TERMS_VERSION_LABEL = "3. 10. 2026";
 /** Datum platnosti podmínek pro <time dateTime> – ISO datum, ne verze s příponou (R8.5, Д-9). */
 export const TERMS_DATE_ISO = "2026-10-03";
 /** Pravidla akce Doporučte kolegu (Ц3, R7.10) – datum zveřejnění nastaví kontrolor v den otevření webu. */
-export const REFERRAL_RULES_VERSION_LABEL = "3. 10. 2026";
+export const REFERRAL_RULES_VERSION_LABEL = "7. 10. 2026";
 /** Verze zásad ochrany osobních údajů (R8.2: odhlášení z novinek ≠ zrušení předregistrace). */
-export const PRIVACY_VERSION = "2026-10-03-r8";
-export const PRIVACY_VERSION_LABEL = "3. 10. 2026";
+export const PRIVACY_VERSION = "2026-10-07-r8";
+export const PRIVACY_VERSION_LABEL = "7. 10. 2026";
 /** Datum platnosti zásad pro <time dateTime> (R8.5, Д-9). */
-export const PRIVACY_DATE_ISO = "2026-10-03";
+export const PRIVACY_DATE_ISO = "2026-10-07";
 /**
  * Verze textu marketingového souhlasu v předregistraci (prereg-form.tsx). Ukládá se jako doklad souhlasu
  * (preregistrations.consent_evidence = "souhlas:<verze>"); při změně textu zvýšit.
