@@ -108,8 +108,10 @@ const DAY_MS = 86_400_000;
  * jakákoli tržba z jiného režimu prodaná po přepnutí – pokladna se starým nastavením prodávala skutečně, jen v předchozím
  * režimu, a karanténu mohl způsobit i jiný důvod (FUTURE_DATE, TOO_OLD…; R5.1, R7.15 N7, R8.7 N13). Nečitelné datum se
  * bere jako ostré (fail-closed). Stejná podmínka pro nastavení, e-maily, „Evidováno jinak“ i retention.
+ * Převod na timestamptz jen po `pg_input_is_valid`: regulární výraz pustí i `0000-01-01T…` nebo `…T99:99:99Z` a jediná
+ * taková karanténa by jinak shodila celou retention pro všechny účty (R9.1).
  */
-const PRODUCTION_QUARANTINE = sql`(${schema.saleQuarantine.payload}->>'mode' = 'production' or exists (select 1 from ${schema.accounts} pq_acc where pq_acc.id = ${schema.saleQuarantine.accountId} and pq_acc.eet_mode = 'production' and (${schema.saleQuarantine.reasonCode} = 'MODE_MISMATCH' or case when ${schema.saleQuarantine.payload}->>'soldAt' ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.]+(Z|[+-][0-9]{2}:?[0-9]{2})$' then (${schema.saleQuarantine.payload}->>'soldAt')::timestamptz >= pq_acc.eet_mode_changed_at else true end)))`;
+const PRODUCTION_QUARANTINE = sql`(${schema.saleQuarantine.payload}->>'mode' = 'production' or exists (select 1 from ${schema.accounts} pq_acc where pq_acc.id = ${schema.saleQuarantine.accountId} and pq_acc.eet_mode = 'production' and (${schema.saleQuarantine.reasonCode} = 'MODE_MISMATCH' or case when ${schema.saleQuarantine.payload}->>'soldAt' ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.]+(Z|[+-][0-9]{2}:?[0-9]{2})$' and pg_input_is_valid(${schema.saleQuarantine.payload}->>'soldAt', 'timestamptz') then (${schema.saleQuarantine.payload}->>'soldAt')::timestamptz >= pq_acc.eet_mode_changed_at else true end)))`;
 
 /**
  * Neodeslané ostré tržby zrušeného účtu – v sales (bez POK, neoznačené „Evidováno jinak“) a v otevřené karanténě.
