@@ -87,7 +87,8 @@ describe("R7.4 – webinar interest is separate from the cash-register pre-regis
     const src = (p: string) => readFileSync(new URL(`../../src/${p}`, import.meta.url), "utf8");
     const form = src("components/accountant/webinar-form.tsx");
     // text R8.3 (рецензія №5) – platí pro webinář i kabinet
-    expect(form).toContain("E-mail a IČO použijeme jen k vyřízení vaší žádosti (webinář nebo zpráva o spuštění Účetního kabinetu). Podrobnosti najdete v");
+    // text nahradila R9.12
+    expect(form).toContain("E-mail a IČO použijeme k vyřízení vaší žádosti (webinář nebo zpráva o spuštění Účetního kabinetu); novinky vám pošleme, jen pokud zaškrtnete souhlas výše. Podrobnosti najdete v");
     expect(form).toContain("zásadách ochrany osobních údajů");
     expect(form).not.toMatch(/duplicate/);
     expect(form).not.toMatch(/souhlasíte se zpracováním/);

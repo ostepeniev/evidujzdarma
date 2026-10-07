@@ -44,7 +44,8 @@ describe("R6.1 – send in the current mode only upward", () => {
     const err = await resolveQuarantine(s.account.id, sale.id, { action: "send_current_mode" }).catch((e: unknown) => e);
     expect(err).toBeInstanceOf(HttpError);
     expect((err as HttpError).status).toBe(400);
-    expect((err as Error).message).toBe("Tržbu prodanou v ostrém režimu nelze odeslat v testovacím. Přepněte účet zpět, nebo ji vyřiďte ručně.");
+    // text nahradila R9.10 (bez kalky „prodanou“)
+    expect((err as Error).message).toBe("Tržbu z ostrého provozu nelze odeslat v režimu Playground ani v ukázkovém režimu. Přepněte účet zpět, nebo ji vyřiďte ručně.");
     await processPending();
     expect(fake.calls.filter((c) => c.mode === "mock")).toHaveLength(0);
     expect(await getDb().select().from(schema.sales).where(eq(schema.sales.mode, "mock"))).toHaveLength(0);

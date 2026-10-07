@@ -107,7 +107,8 @@ describe("R8.3 – Czech texts (verbatim from the review)", () => {
     expect(status).toContain("}. {INTEREST_NEXT[i]}");
     const webinar = src("components/accountant/webinar-form.tsx");
     expect(webinar.replace(/\s+/g, " ")).toContain(
-      'E-mail a IČO použijeme jen k vyřízení vaší žádosti (webinář nebo zpráva o spuštění Účetního kabinetu). Podrobnosti najdete v{" "} <a href="/ochrana-osobnich-udaju" className="underline"> zásadách ochrany osobních údajů </a> .',
+      // text nahradila R9.12
+      'E-mail a IČO použijeme k vyřízení vaší žádosti (webinář nebo zpráva o spuštění Účetního kabinetu); novinky vám pošleme, jen pokud zaškrtnete souhlas výše. Podrobnosti najdete v{" "} <a href="/ochrana-osobnich-udaju" className="underline"> zásadách ochrany osobních údajů </a> .',
     );
     expect(webinar).toContain("Poslali jsme vám e-mail s dalším krokem.");
     expect(src("components/prereg-form.tsx")).toContain("e-mail s dalším krokem.");
@@ -124,8 +125,8 @@ describe("R8.3 – Czech texts (verbatim from the review)", () => {
   });
 
   it("gate: the register of a closed account – 'Odebrat registraci' confirmation (N17)", () => {
-    expect(src("components/pos/pos-app.tsx")).toContain('"Tržby zůstanou uložené v zařízení. Do zrušeného účtu je už předat nejde."');
-    expect(src("components/pos/pos-app.tsx")).toMatch(/revoked\.canRegister\s*\?\s*"Zůstanou uložené, ale Finanční správě se odešlou až po nové registraci pokladny\."/);
+    // texty potvrzení s číslem 1 / 2–4 / 5+ nahradila R9.11 – jsou v lib/pos/revoked.ts, gate v test/r9-10-texts.test.ts
+    expect(src("components/pos/pos-app.tsx")).toContain("removeRegistrationPrompt(waiting, revoked.canRegister)");
     expect(revokedNotice("Účet je zrušený a pokladna je odpojená.").text).toBe("Účet je zrušený a pokladna je odpojená. Tržby, které v zařízení zůstaly, už do účtu předat nejde.");
   });
 

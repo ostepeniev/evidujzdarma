@@ -8,7 +8,7 @@ export const isInterest = (v: unknown): v is Interest => typeof v === "string" &
 export const INTEREST_LABEL: Record<Interest, string> = {
   pokladna: "předregistrace k pokladně EvidujZdarma",
   webinar: "přihláška na webinář EET 2.0 pro účetní",
-  kabinet: "zpráva o spuštění Účetního kabinetu",
+  kabinet: "zájem o Účetní kabinet",
 };
 
 /** Co adresa žádá, jako „žádost o …“ (4. pád) – e-mail s potvrzením a /registrace/zajem (R8.3). */

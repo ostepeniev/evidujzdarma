@@ -177,8 +177,8 @@ export function canSendInMode(sold: string | null | undefined, target: string): 
 /** Proč nejde tržbu odeslat v nižším režimu (text pro vlastníka). */
 export function sendDownRefused(sold: string | null | undefined): string {
   return sold === "production"
-    ? "Tržbu prodanou v ostrém režimu nelze odeslat v testovacím. Přepněte účet zpět, nebo ji vyřiďte ručně."
-    : "Tržbu prodanou v režimu Playground nelze odeslat v ukázkovém. Přepněte účet zpět, nebo ji vyřiďte ručně.";
+    ? "Tržbu z ostrého provozu nelze odeslat v režimu Playground ani v ukázkovém režimu. Přepněte účet zpět, nebo ji vyřiďte ručně."
+    : "Tržbu z režimu Playground nelze odeslat v ukázkovém režimu. Přepněte účet zpět, nebo ji vyřiďte ručně.";
 }
 
 /**
@@ -191,7 +191,7 @@ export async function resolveQuarantine(accountId: string, id: string, opts: { a
   if (!row) throw new HttpError(404, "Tržba v karanténě neexistuje");
   if (row.resolvedAt) return { ok: true as const, already: true };
   if ((opts.action === "send_current_mode" || opts.action === "was_test") && row.reasonCode !== "MODE_MISMATCH") {
-    throw new HttpError(400, "Tuto volbu lze použít jen u tržby prodané ve starém režimu.");
+    throw new HttpError(400, "Tuto volbu lze použít jen u tržby ze starého režimu.");
   }
   if (opts.action === "dismiss" || opts.action === "was_test") {
     // „byla to zkouška“: tržba se neeviduje, ale záznam s celým obsahem zůstává (R5.1)

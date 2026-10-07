@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { getConfig, getDevice, getMeta, pruneOld, rejectedSales, setMeta, deleteMeta, unsettledSales } from "@/lib/pos/db";
 import { createLocalSale, refundBlockedReason, refundInput } from "@/lib/pos/sale-factory";
-import { revokedNotice } from "@/lib/pos/revoked";
+import { removeRegistrationPrompt, revokedNotice } from "@/lib/pos/revoked";
 import { DeviceRevokedError, configVersion, isConfigStale, onSyncChange, refreshConfig, startAutoSync, syncNow } from "@/lib/pos/sync";
 import type { DeviceCredentials, LocalSale, PosConfig } from "@/lib/pos/types";
 import { HistoryView, SummaryView } from "./history-view";
@@ -207,12 +207,9 @@ export function PosApp() {
             className="mt-3 block w-full text-sm text-muted underline"
             onClick={async () => {
               // neodeslané tržby zůstanou v zařízení a odejdou po nové registraci (A r1 nové Дрібне 6) – u zrušeného účtu
-              // registrace není, tržby už do účtu nepředá (R8.3, N17)
+              // registrace není, tržby už do účtu nepředá (R8.3 N17, R9.11)
               const waiting = (await unsettledSales()).length + (await rejectedSales()).length;
-              const after = revoked.canRegister
-                ? "Zůstanou uložené, ale Finanční správě se odešlou až po nové registraci pokladny."
-                : "Tržby zůstanou uložené v zařízení. Do zrušeného účtu je už předat nejde.";
-              if (waiting && !window.confirm(`V zařízení ${waiting === 1 ? "je 1 neodeslaná tržba" : `je ${waiting} neodeslaných tržeb`}. ${after} Pokračovat?`)) return;
+              if (waiting && !window.confirm(removeRegistrationPrompt(waiting, revoked.canRegister))) return;
               await deleteMeta("device");
               await deleteMeta("config");
               location.reload();

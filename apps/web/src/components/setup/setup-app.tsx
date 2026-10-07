@@ -494,7 +494,7 @@ function ModeSection({ state, reload, hasProdCert, hasPgCert }: { state: State; 
                   } catch (e) {
                     const pending = e instanceof ApiError && e.status === 409 ? (e.data as { pending?: { mode: string; count: number; oldest: string }[] }).pending : undefined;
                     if (!pending) throw e;
-                    const list = pending.map((p) => `• ${p.count}× ${modeIn(p.mode)} (nejstarší ${new Date(p.oldest).toLocaleString("cs-CZ")})`).join("\n");
+                    const list = pending.map((p) => `• ${p.count}× tržba ${modeIn(p.mode)} (nejstarší ${new Date(p.oldest).toLocaleString("cs-CZ")})`).join("\n");
                     const ok = window.confirm(`Tyto tržby ještě nejsou vyřízené:\n${list}\n\nOdešlou se v režimu, ve kterém vznikly – přepnutí na ně nemá vliv. Přepnout režim?`);
                     if (!ok) return;
                     await call("/api/ucet/rezim", { method: "POST", json: { mode: m.v, confirm: true } });

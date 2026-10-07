@@ -63,7 +63,8 @@ describe("R7.3 – unsubscribing keeps only what blocks further e-mails (and the
   it("gate: the privacy policy says so (verbatim from the review; texts replaced by R8.2)", () => {
     const src = readFileSync(new URL("../../src/app/(site)/ochrana-osobnich-udaju/page.tsx", import.meta.url), "utf8");
     expect(src).toContain(
-      "Zrušíte-li předregistraci (odkazem „Odhlásit“ v e-mailu), ostatní údaje smažeme a ponecháme si jen e-mail, datum předregistrace a datum zrušení, abychom vám už nic neposílali (3 roky).",
+      // „Odhlásit odběr“ – název odkazu v e-mailu (R9.12)
+      "Zrušíte-li předregistraci (odkazem „Odhlásit odběr“ v e-mailu), ostatní údaje smažeme a ponecháme si jen e-mail, datum předregistrace a datum zrušení, abychom vám už nic neposílali (3 roky).",
     );
     expect(src).toContain(
       "Do odvolání souhlasu. Doklad o souhlasu a jeho odvolání (e-mail, datum a verzi textu souhlasu) uchováváme ještě 3 roky po odvolání pro případ sporu. Předregistrace po odvolání souhlasu trvá dál podle předchozího řádku.",

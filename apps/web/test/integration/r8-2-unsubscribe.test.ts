@@ -156,7 +156,8 @@ describe("R8.2 – unsubscribing from news is not cancelling the pre-registratio
     const { default: Zasady } = await import("@/app/(site)/ochrana-osobnich-udaju/page");
     const zasady = pageText(Zasady);
     expect(zasady).toContain(
-      "Zrušíte-li předregistraci (odkazem „Odhlásit“ v e-mailu), ostatní údaje smažeme a ponecháme si jen e-mail, datum předregistrace a datum zrušení, abychom vám už nic neposílali (3 roky).",
+      // „Odhlásit odběr“ – název odkazu v e-mailu (R9.12)
+      "Zrušíte-li předregistraci (odkazem „Odhlásit odběr“ v e-mailu), ostatní údaje smažeme a ponecháme si jen e-mail, datum předregistrace a datum zrušení, abychom vám už nic neposílali (3 roky).",
     );
     expect(zasady).toContain(
       "Do odvolání souhlasu. Doklad o souhlasu a jeho odvolání (e-mail, datum a verzi textu souhlasu) uchováváme ještě 3 roky po odvolání pro případ sporu. Předregistrace po odvolání souhlasu trvá dál podle předchozího řádku.",

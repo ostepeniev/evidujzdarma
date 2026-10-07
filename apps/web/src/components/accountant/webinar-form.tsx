@@ -132,7 +132,7 @@ export function WebinarForm() {
         {state.kind === "sending" ? "Odesílám…" : "Přihlásit se zdarma"}
       </button>
       <p className="text-xs leading-relaxed text-muted">
-        E-mail a IČO použijeme jen k vyřízení vaší žádosti (webinář nebo zpráva o spuštění Účetního kabinetu). Podrobnosti najdete v{" "}
+        E-mail a IČO použijeme k vyřízení vaší žádosti (webinář nebo zpráva o spuštění Účetního kabinetu); novinky vám pošleme, jen pokud zaškrtnete souhlas výše. Podrobnosti najdete v{" "}
         <a href="/ochrana-osobnich-udaju" className="underline">
           zásadách ochrany osobních údajů
         </a>
