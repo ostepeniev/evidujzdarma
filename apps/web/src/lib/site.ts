@@ -9,6 +9,8 @@ export const SITE = {
     "Bezplatná pokladna pro EET 2.0: funguje i bez signálu, až 5 uživatelů, účtenka e-mailem i QR. Nezávislá služba, není provozována Finanční správou.",
   email: "ahoj@evidujzdarma.cz",
   independenceNotice: "Nezávislá služba, není provozována Finanční správou.",
+  /** profily EvidujZdarma na sociálních sítích – sameAs v JSON-LD organizace (R8.11) */
+  social: ["https://www.facebook.com/profile.php?id=61595251222968", "https://www.linkedin.com/company/146665642/"],
 } as const;
 
 /**

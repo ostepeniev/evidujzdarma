@@ -31,6 +31,8 @@ export function organizationLd(): Ld {
     logo: absoluteUrl("/icons/512"),
     email: SITE.email,
     description: SITE.description,
+    // profily na sociálních sítích, aby je vyhledávače spojily s webem (R8.11)
+    sameAs: [...SITE.social],
     parentOrganization: {
       "@type": "Organization",
       name: OPERATOR.name,
