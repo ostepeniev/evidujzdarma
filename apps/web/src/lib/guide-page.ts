@@ -3,7 +3,7 @@ import { plainText } from "@/components/rich-text";
 import { guideModified, isIndexable } from "@/content/guides";
 import type { Guide } from "@/content/guides/types";
 import { articleLd, faqLd, howToLd } from "./jsonld";
-import { REVIEWER, absoluteUrl } from "./site";
+import { REVIEWER, REVIEWER_PROFILE, absoluteUrl } from "./site";
 import { canonicalMeta } from "./metadata";
 
 /** Metadata stránky návodu: nerevidovaný návod je noindex (Ф9). */
@@ -16,10 +16,12 @@ export function guideMetadata(g: Guide): Metadata {
   };
 }
 
-/** Kdo návod revidoval – u známé recenzentky i s funkcí a odkazem na /o-nas#odborna-revize (R8.10). */
-function reviewerOf(g: Guide): { name: string; jobTitle?: string; url?: string } | undefined {
+/** Kdo návod revidoval – u známé recenzentky i s funkcí, praxí (R10.5) a odkazem na /o-nas#odborna-revize (R8.10). */
+function reviewerOf(g: Guide): { name: string; jobTitle?: string; url?: string; description?: string } | undefined {
   if (!g.reviewedBy) return undefined;
-  return g.reviewedBy === REVIEWER.name ? { name: REVIEWER.name, jobTitle: REVIEWER.title, url: absoluteUrl(REVIEWER.path) } : { name: g.reviewedBy };
+  return g.reviewedBy === REVIEWER.name
+    ? { name: REVIEWER.name, jobTitle: REVIEWER.title, url: absoluteUrl(REVIEWER.path), description: REVIEWER_PROFILE }
+    : { name: g.reviewedBy };
 }
 
 /** Strukturovaná data návodu: Article (s revizí a obrázkem), FAQ a HowTo. */

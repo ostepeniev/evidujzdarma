@@ -16,6 +16,7 @@ function blockText(b: Block): string {
   if ("ol" in b) return b.ol.join(" ");
   if ("table" in b) return [...b.table.head, ...b.table.rows.flat()].join(" ");
   if ("note" in b) return b.note;
+  if ("quote" in b) return b.quote;
   return "";
 }
 

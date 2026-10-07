@@ -12,7 +12,9 @@ export type Block =
   | { ol: string[] }
   | { table: { head: string[]; rows: string[][]; caption?: string } }
   | { note: string; tone?: "info" | "warn" }
-  | { cta: "registrace" | "kontrola-ico" | "eet-off" | "jednotky" | "qr" | "kviz" };
+  | { cta: "registrace" | "kontrola-ico" | "eet-off" | "jednotky" | "qr" | "kviz" }
+  /** citát s podpisem (bez „—“), např. recenzentky (R10.5) */
+  | { quote: string; cite: string };
 
 export interface GuideSection {
   /** kotva pro obsah, např. "kdo-eviduje" */

@@ -14,11 +14,16 @@ export const SITE = {
 } as const;
 
 /**
- * Kdo odborně reviduje návody (Ф12, R8.10). Titul „daňová poradkyně“ je chráněný (zákon č. 523/1992 Sb.) – konstantu změní
- * kontrolor, až recenzentka potvrdí zápis v rejstříku KDP.
+ * Kdo odborně reviduje návody (Ф12, R8.10). Funkci mění jen kontrolor. Recenzentka si nepřeje, aby web uváděl její zápis
+ * v profesním rejstříku – proto ani titul, ani číslo, ani sameAs/hasCredential v JSON-LD (R10.5).
  */
 export const REVIEWER_TITLE = "účetní";
 export const REVIEWER = { name: "Helena Jeřábková", title: REVIEWER_TITLE, path: "/o-nas#odborna-revize" } as const;
+/** Praxe recenzentky – s jejím souhlasem (R10.5): text na /o-nas a description v JSON-LD. */
+export const REVIEWER_PROFILE = `${REVIEWER_TITLE} s 22 lety praxe`;
+/** Citát recenzentky (R10.5) – /o-nas a úvod kompletního průvodce. */
+export const REVIEWER_QUOTE =
+  "EET 2.0 není jen spuštění nějaké aplikace – pro každého podnikatele to znamená další každodenní rutinu. Stát sice slibuje základní aplikaci, ale ruční zadávání každé účtenky se rychle změní v bolest hlavy a bude zabírat spoustu času. Abyste se vyhnuli frontám a chybám, připravte se už teď: nejlépe hned nastavte automatizaci, která za vás papírování vyřídí na pozadí.";
 
 /**
  * Provozovatel (§ 435 OZ) – veřejné údaje z obchodního rejstříku (ARES/VR, ověřeno 2. 10. 2026).

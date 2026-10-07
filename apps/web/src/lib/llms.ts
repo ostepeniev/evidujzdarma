@@ -77,6 +77,7 @@ function blockText(b: Block): string {
   if ("ol" in b) return b.ol.map((li, i) => `${i + 1}. ${plainText(li)}`).join("\n");
   if ("table" in b) return [b.table.head.map(plainText).join(" | "), ...b.table.rows.map((r) => r.map(plainText).join(" | "))].join("\n");
   if ("note" in b) return `> ${plainText(b.note)}`;
+  if ("quote" in b) return `> „${plainText(b.quote)}“ — ${b.cite}`;
   return "";
 }
 

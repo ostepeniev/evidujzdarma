@@ -82,6 +82,15 @@ export function GuideBlock({ block }: { block: Block }) {
         <RichText text={block.note} />
       </div>
     );
+  if ("quote" in block)
+    return (
+      <figure className="my-8 border-l-4 border-brand-500 pl-5">
+        <blockquote className="m-0 text-lg italic text-ink">
+          <RichText text={block.quote} />
+        </blockquote>
+        <figcaption className="mt-2 text-base text-ink-soft">— {block.cite}</figcaption>
+      </figure>
+    );
   const cta = CTAS[block.cta];
   return (
     <div className="not-prose my-8 flex flex-col items-start gap-3 rounded-2xl border border-brand-200 bg-brand-50 p-5 sm:flex-row sm:items-center sm:justify-between">

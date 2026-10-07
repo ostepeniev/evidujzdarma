@@ -108,7 +108,7 @@ export function articleLd(a: {
   modified: string;
   author?: string;
   /** kdo text odborně revidoval (R8.10: s funkcí a odkazem na stránku o revizi) */
-  reviewer?: { name: string; jobTitle?: string; url?: string };
+  reviewer?: { name: string; jobTitle?: string; url?: string; description?: string };
 }): Ld {
   return {
     "@context": "https://schema.org",

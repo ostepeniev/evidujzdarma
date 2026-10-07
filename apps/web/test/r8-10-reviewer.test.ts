@@ -30,7 +30,9 @@ describe("R8.10 – the guides' expert reviewer", () => {
     expect(REVIEWED).toHaveLength(16);
     for (const g of REVIEWED) {
       expect(g.reviewedBy, g.slug).toBe(REVIEWER.name);
-      expect(g.changelog?.[0], g.slug).toEqual(CHANGELOG);
+      // první záznam revize; u kompletního průvodce ho R10.5 předběhl citát odbornice (týž den)
+      expect(g.changelog, g.slug).toContainEqual(CHANGELOG);
+      expect(g.changelog?.[0]?.date, g.slug).toBe("2026-10-07");
       expect(isIndexable(g), g.slug).toBe(true);
       expect(guideModified(g), g.slug).toBe("2026-10-07");
     }
@@ -55,7 +57,8 @@ describe("R8.10 – the guides' expert reviewer", () => {
     const html = renderToStaticMarkup((await GuidePage({ params: Promise.resolve({ slug: g.slug }) } as never)) as ReactElement);
     expect(html).toMatch(/Odborná revize: <a [^>]*href="\/o-nas#odborna-revize"[^>]*>Helena Jeřábková<\/a>, účetní/);
     const article = guideJsonLd(g).find((x) => x["@type"] === "Article") as Record<string, unknown> & { reviewedBy: Record<string, string>; image: string[] };
-    expect(article.reviewedBy).toEqual({ "@type": "Person", name: "Helena Jeřábková", jobTitle: "účetní", url: absoluteUrl("/o-nas#odborna-revize") });
+    // + description s praxí (R10.5)
+    expect(article.reviewedBy).toEqual({ "@type": "Person", name: "Helena Jeřábková", jobTitle: "účetní", url: absoluteUrl("/o-nas#odborna-revize"), description: "účetní s 22 lety praxe" });
     expect(article.image).toContain(absoluteUrl("/opengraph-image"));
     expect(article.dateModified).toBe("2026-10-07");
     expect(guideMetadata(g).robots).toBeUndefined();
@@ -76,7 +79,8 @@ describe("R8.10 – the guides' expert reviewer", () => {
     const text = pageText(About as FC);
     expect(text).toContain("Odborná revize");
     expect(text).toContain(
-      `Věcnou správnost návodů kontroluje Helena Jeřábková, ${REVIEWER_TITLE}. U každého zkontrolovaného návodu uvádíme, kdo ho zkontroloval. Pokud v návodu najdete chybu, napište nám na ${SITE.email}.`,
+      // text rozšířila R10.5 (22 let praxe)
+      `Věcnou správnost návodů kontroluje Helena Jeřábková, ${REVIEWER_TITLE} s 22 lety praxe. U každého zkontrolovaného návodu uvádíme, kdo ho zkontroloval. Pokud v návodu najdete chybu, napište nám na ${SITE.email}.`,
     );
     // chráněný titul se nepoužívá, dokud ho kontrolor neověří; „obraťte se na daňového poradce“ je obecná rada, ne tvrzení o revizi
     expect(text).not.toMatch(/revi\w* daňov|daňová poradkyně/i);

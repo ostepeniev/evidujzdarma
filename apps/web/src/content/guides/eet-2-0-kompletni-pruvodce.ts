@@ -1,6 +1,6 @@
 import { FACTS, SOURCES, TIMELINE, formatKc } from "../facts";
 import type { Guide } from "./types";
-import { REVIEWER } from "@/lib/site";
+import { REVIEWER, REVIEWER_QUOTE, REVIEWER_TITLE } from "@/lib/site";
 
 const surcharge = FACTS.eetOff.surchargeMonthly;
 
@@ -40,6 +40,8 @@ export const eet20KompletniPruvodce: Guide = {
         {
           note: "EvidujZdarma.cz je nezávislý web a pokladní aplikace, nikoli státní služba. Oficiální informace najdete na [eet.gov.cz](https://eet.gov.cz) a na webu Finanční správy. Každé tvrzení v tomto průvodci odkazuje na zdroj; kde Finanční správa zatím nic nezveřejnila, píšeme to otevřeně.",
         },
+        // citát recenzentky (R10.5)
+        { quote: REVIEWER_QUOTE, cite: `${REVIEWER.name}, ${REVIEWER_TITLE}` },
       ],
     },
     {
@@ -479,6 +481,7 @@ export const eet20KompletniPruvodce: Guide = {
   published: "2026-10-01",
   updated: "2026-10-03",
   changelog: [
+    { date: "2026-10-07", text: "Doplněn citát odbornice (Helena Jeřábková)." },
     { date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
     { date: "2026-10-03", text: "Opraveno podle semináře Finanční správy pro vývojáře: záloha a doplatek jsou dvě běžné platby, dárkový poukaz se eviduje jen při prodeji (jeho uplatnění není platbou) a částku určenou k čerpání a čerpání uvádí pokladna jen u kreditu." },
     {

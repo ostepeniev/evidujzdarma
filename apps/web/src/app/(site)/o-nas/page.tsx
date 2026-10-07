@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/page-header";
 import { ToolCta } from "@/components/tool-cta";
 import { FACTS, FACTS_UPDATED, SOURCES } from "@/content/facts";
 import { JsonLd } from "@/lib/jsonld";
-import { OPERATOR, REVIEWER, REVIEWER_TITLE, SITE, SITE_URL, absoluteUrl } from "@/lib/site";
+import { OPERATOR, REVIEWER, REVIEWER_PROFILE, REVIEWER_QUOTE, REVIEWER_TITLE, SITE, SITE_URL, absoluteUrl } from "@/lib/site";
 import { ExternalLink } from "@/components/external-link";
 import { canonicalMeta } from "@/lib/metadata";
 
@@ -129,13 +129,19 @@ export default function AboutPage() {
               Odborná revize
             </h2>
             <p className="mt-4 text-[17px] leading-relaxed text-ink-soft">
-              Věcnou správnost návodů kontroluje {REVIEWER.name}, {REVIEWER_TITLE}. U každého zkontrolovaného návodu uvádíme, kdo ho
-              zkontroloval. Pokud v návodu najdete chybu, napište nám na{" "}
+              Věcnou správnost návodů kontroluje {REVIEWER.name}, {REVIEWER_PROFILE}. U každého zkontrolovaného návodu uvádíme, kdo
+              ho zkontroloval. Pokud v návodu najdete chybu, napište nám na{" "}
               <a href={`mailto:${SITE.email}`} className="font-medium text-brand-700 underline underline-offset-4">
                 {SITE.email}
               </a>
               .
             </p>
+            <figure className="mt-6 border-l-4 border-brand-500 pl-5">
+              <blockquote className="text-lg italic leading-relaxed text-ink">{REVIEWER_QUOTE}</blockquote>
+              <figcaption className="mt-2 text-base text-ink-soft">
+                — {REVIEWER.name}, {REVIEWER_TITLE}
+              </figcaption>
+            </figure>
           </section>
 
           <section aria-labelledby="zmeny">
