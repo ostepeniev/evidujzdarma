@@ -1,5 +1,6 @@
 import { FACTS, SOURCES, TIMELINE, formatKc } from "../facts";
 import type { Guide } from "./types";
+import { REVIEWER } from "@/lib/site";
 
 const surcharge = FACTS.eetOff.surchargeMonthly;
 
@@ -478,11 +479,12 @@ export const eet20KompletniPruvodce: Guide = {
   published: "2026-10-01",
   updated: "2026-10-03",
   changelog: [
+    { date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
     { date: "2026-10-03", text: "Opraveno podle semináře Finanční správy pro vývojáře: záloha a doplatek jsou dvě běžné platby, dárkový poukaz se eviduje jen při prodeji (jeho uplatnění není platbou) a částku určenou k čerpání a čerpání uvádí pokladna jen u kreditu." },
     {
       date: "2026-10-01",
       text: "Opraveno podle schváleného znění zákona: evidovat se musí od 1. 1. 2027, evidovat se musí od prvního dne bez výjimky pro leden; test pokladny přesunut na prosinec 2026. Doplněno: žádná hranice 50 000 Kč pro příležitostné tržby, pravidla EET OFF během roku, oznamování všech evidenčních jednotek a podmínky slevy na dani až 5 000 Kč.",
     },
   ],
-  reviewedBy: null,
+  reviewedBy: REVIEWER.name,
 };

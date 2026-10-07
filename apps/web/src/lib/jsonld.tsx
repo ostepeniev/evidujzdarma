@@ -107,7 +107,8 @@ export function articleLd(a: {
   published: string;
   modified: string;
   author?: string;
-  reviewer?: string;
+  /** kdo text odborně revidoval (R8.10: s funkcí a odkazem na stránku o revizi) */
+  reviewer?: { name: string; jobTitle?: string; url?: string };
 }): Ld {
   return {
     "@context": "https://schema.org",
@@ -118,8 +119,10 @@ export function articleLd(a: {
     datePublished: a.published,
     dateModified: a.modified,
     inLanguage: "cs-CZ",
+    // PNG 1200 × 630 (R8.10) – Google pro článek chce obrázek široký aspoň 1200 px
+    image: [absoluteUrl("/opengraph-image")],
     author: a.author ? { "@type": "Person", name: a.author } : { "@id": `${SITE_URL}/#organization` },
-    ...(a.reviewer ? { reviewedBy: { "@type": "Person", name: a.reviewer } } : {}),
+    ...(a.reviewer ? { reviewedBy: { "@type": "Person", ...a.reviewer } } : {}),
     publisher: { "@id": `${SITE_URL}/#organization` },
   };
 }

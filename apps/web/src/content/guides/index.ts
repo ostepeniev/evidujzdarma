@@ -52,3 +52,11 @@ export function getGuide(slug: string): Guide | undefined {
 export function isIndexable(g: Guide): boolean {
   return !!g.reviewedBy || process.env.GUIDES_INDEX_UNREVIEWED === "1";
 }
+
+/**
+ * Kdy se návod naposledy změnil: pozdější z `updated` a nejnovějšího záznamu historie změn (i revize je změna stránky –
+ * R8.10). Pro sitemap (lastmod), JSON-LD dateModified a „Aktualizováno“; datum ověření faktů (FACTS_UPDATED) se tím nemění.
+ */
+export function guideModified(g: Guide): string {
+  return [g.updated, ...(g.changelog ?? []).map((c) => c.date)].reduce((a, b) => (b > a ? b : a));
+}

@@ -14,6 +14,13 @@ export const SITE = {
 } as const;
 
 /**
+ * Kdo odborně reviduje návody (Ф12, R8.10). Titul „daňová poradkyně“ je chráněný (zákon č. 523/1992 Sb.) – konstantu změní
+ * kontrolor, až recenzentka potvrdí zápis v rejstříku KDP.
+ */
+export const REVIEWER_TITLE = "účetní";
+export const REVIEWER = { name: "Helena Jeřábková", title: REVIEWER_TITLE, path: "/o-nas#odborna-revize" } as const;
+
+/**
  * Provozovatel (§ 435 OZ) – veřejné údaje z obchodního rejstříku (ARES/VR, ověřeno 2. 10. 2026).
  * Jsou v kódu, ne v env: musí být na webu, v podmínkách i v každém e-mailu vždy (Р9).
  */

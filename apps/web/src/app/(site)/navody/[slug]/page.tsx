@@ -6,9 +6,11 @@ import { GuideBlock } from "@/components/guide-blocks";
 import { PageHeader } from "@/components/page-header";
 import { RichText, plainText } from "@/components/rich-text";
 import { ToolCta } from "@/components/tool-cta";
-import { GUIDES, getGuide, isIndexable } from "@/content/guides";
+import { GUIDES, getGuide, guideModified } from "@/content/guides";
 import { CATEGORY_LABEL } from "@/content/guides/types";
-import { JsonLd, articleLd, faqLd, howToLd } from "@/lib/jsonld";
+import { guideJsonLd, guideMetadata } from "@/lib/guide-page";
+import { JsonLd } from "@/lib/jsonld";
+import { REVIEWER } from "@/lib/site";
 import { ExternalLink } from "@/components/external-link";
 
 export const dynamicParams = false;
@@ -20,14 +22,7 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps<"/navody/[slug]">): Promise<Metadata> {
   const { slug } = await params;
   const g = getGuide(slug);
-  if (!g) return {};
-  return {
-    title: g.title,
-    description: g.description,
-    alternates: { canonical: `/navody/${g.slug}` },
-    robots: isIndexable(g) ? undefined : { index: false, follow: true },
-    openGraph: { type: "article", title: g.h1 ?? g.title, description: g.description, modifiedTime: g.updated, publishedTime: g.published },
-  };
+  return g ? guideMetadata(g) : {};
 }
 
 const dateCs = (iso: string) => new Date(iso).toLocaleDateString("cs-CZ", { day: "numeric", month: "long", year: "numeric" });
@@ -38,19 +33,8 @@ export default async function GuidePage({ params }: PageProps<"/navody/[slug]">)
   if (!g) notFound();
   const path = `/navody/${g.slug}`;
   const related = g.related.map(getGuide).filter((x): x is NonNullable<typeof x> => !!x);
-  const ld = [
-    articleLd({
-      title: g.h1 ?? g.title,
-      description: g.description,
-      path,
-      published: g.published,
-      modified: g.updated,
-      author: g.author,
-      reviewer: g.reviewedBy ?? undefined,
-    }),
-    ...(g.faq?.length ? [faqLd(g.faq.map((f) => ({ q: f.q, a: plainText(f.a) })))] : []),
-    ...(g.howTo ? [howToLd(g.howTo)] : []),
-  ];
+  const ld = guideJsonLd(g);
+  const modified = guideModified(g);
 
   return (
     <>
@@ -65,9 +49,21 @@ export default async function GuidePage({ params }: PageProps<"/navody/[slug]">)
         <p className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted">
           <span>{CATEGORY_LABEL[g.category]}</span>
           <span>
-            Aktualizováno: <time dateTime={g.updated}>{dateCs(g.updated)}</time>
+            Aktualizováno: <time dateTime={modified}>{dateCs(modified)}</time>
           </span>
-          {g.reviewedBy ? <span>Odborná revize: {g.reviewedBy}</span> : <span>Před odbornou revizí</span>}
+          {g.reviewedBy === REVIEWER.name ? (
+            <span>
+              Odborná revize:{" "}
+              <Link href={REVIEWER.path} className="underline underline-offset-2">
+                {REVIEWER.name}
+              </Link>
+              , {REVIEWER.title}
+            </span>
+          ) : g.reviewedBy ? (
+            <span>Odborná revize: {g.reviewedBy}</span>
+          ) : (
+            <span>Před odbornou revizí</span>
+          )}
         </p>
       </PageHeader>
 

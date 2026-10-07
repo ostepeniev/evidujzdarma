@@ -1,5 +1,6 @@
 import { FACTS, SOURCES } from "../facts";
 import type { Guide } from "./types";
+import { REVIEWER } from "@/lib/site";
 
 export const musimVydavatUctenku: Guide = {
   slug: "musim-vydavat-uctenku",
@@ -141,10 +142,11 @@ export const musimVydavatUctenku: Guide = {
   published: "2026-10-01",
   updated: "2026-10-01",
   changelog: [
+    { date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
     {
       date: "2026-10-01",
       text: "Upřesněno podle Finanční správy: uvedení POK na dokladu je dobrovolné.",
     },
   ],
-  reviewedBy: null,
+  reviewedBy: REVIEWER.name,
 };

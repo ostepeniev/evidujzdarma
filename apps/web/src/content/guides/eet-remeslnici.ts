@@ -1,5 +1,6 @@
 import { FACTS, SOURCES, formatKc } from "../facts";
 import type { Guide } from "./types";
+import { REVIEWER } from "@/lib/site";
 
 export const eetRemeslnici: Guide = {
   slug: "eet-remeslnici",
@@ -146,11 +147,12 @@ export const eetRemeslnici: Guide = {
   published: "2026-10-01",
   updated: "2026-10-03",
   changelog: [
+    { date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
     { date: "2026-10-03", text: "Opraveno podle semináře Finanční správy pro vývojáře: záloha a doplatek jsou dvě běžné platby, dárkový poukaz se eviduje jen při prodeji (jeho uplatnění není platbou) a částku určenou k čerpání a čerpání uvádí pokladna jen u kreditu." },
     {
       date: "2026-10-01",
       text: "Opraveno podle schváleného znění zákona: evidovat se musí od 1. 1. 2027, ne od 1. 2. 2027; test pokladny doporučujeme v prosinci 2026 místo lednového pilotního provozu.",
     },
   ],
-  reviewedBy: null,
+  reviewedBy: REVIEWER.name,
 };

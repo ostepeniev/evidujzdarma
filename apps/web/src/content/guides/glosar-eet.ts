@@ -1,5 +1,6 @@
 import { FACTS, SOURCES, formatKc } from "../facts";
 import type { Guide } from "./types";
+import { REVIEWER } from "@/lib/site";
 
 export const glosarEet: Guide = {
   slug: "glosar-eet",
@@ -230,11 +231,12 @@ export const glosarEet: Guide = {
   published: "2026-10-01",
   updated: "2026-10-03",
   changelog: [
+    { date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
     { date: "2026-10-03", text: "Opraveno podle semináře Finanční správy pro vývojáře: záloha a doplatek jsou dvě běžné platby, dárkový poukaz se eviduje jen při prodeji (jeho uplatnění není platbou) a částku určenou k čerpání a čerpání uvádí pokladna jen u kreditu." },
     {
       date: "2026-10-01",
       text: "Opraveno podle schváleného znění zákona: evidovat se musí od 1. 1. 2027, a to i v lednu. Doplněny pojmy účinnost zákona a ojedinělá tržba a to, že POK na dokladu není povinný.",
     },
   ],
-  reviewedBy: null,
+  reviewedBy: REVIEWER.name,
 };

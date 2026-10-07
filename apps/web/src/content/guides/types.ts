@@ -54,6 +54,6 @@ export interface Guide {
   updated: string;
   changelog?: { date: string; text: string }[];
   author?: string;
-  /** jméno daňového poradce po revizi; do té doby null */
+  /** kdo návod odborně revidoval (REVIEWER.name, R8.10); do té doby null = noindex (Ф9) */
   reviewedBy: string | null;
 }

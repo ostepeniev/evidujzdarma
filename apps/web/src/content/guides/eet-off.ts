@@ -1,5 +1,6 @@
 import { FACTS, SOURCES, formatKc } from "../facts";
 import type { Guide } from "./types";
+import { REVIEWER } from "@/lib/site";
 
 const surcharge = FACTS.eetOff.surchargeMonthly;
 const band1 = FACTS.pausal[2027].band1;
@@ -186,10 +187,11 @@ export const eetOff: Guide = {
   published: "2026-10-01",
   updated: "2026-10-01",
   changelog: [
+    { date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
     {
       date: "2026-10-01",
       text: "Opraveno podle schváleného znění zákona: evidence bez EET OFF platí od 1. 1. 2027, ne od 1. 2. 2027. Doplněna pravidla pro zahájení podnikání v průběhu roku, překročení 1 mil. Kč a odhlášení.",
     },
   ],
-  reviewedBy: null,
+  reviewedBy: REVIEWER.name,
 };

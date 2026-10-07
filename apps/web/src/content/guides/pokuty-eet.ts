@@ -1,5 +1,6 @@
 import { FACTS, SOURCES, formatKc } from "../facts";
 import type { Guide } from "./types";
+import { REVIEWER } from "@/lib/site";
 
 export const pokutyEet: Guide = {
   slug: "pokuty-eet",
@@ -145,10 +146,11 @@ export const pokutyEet: Guide = {
   published: "2026-10-01",
   updated: "2026-10-01",
   changelog: [
+    { date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
     {
       date: "2026-10-01",
       text: "Opraveno podle schváleného znění zákona: povinnost evidovat i pokuta až 500 000 Kč platí od 1. 1. 2027, tedy i v lednu; test pokladny doporučujeme v prosinci 2026.",
     },
   ],
-  reviewedBy: null,
+  reviewedBy: REVIEWER.name,
 };

@@ -1,5 +1,6 @@
 import { FACTS, SOURCES } from "../facts";
 import type { Guide } from "./types";
+import { REVIEWER } from "@/lib/site";
 
 export const eetBezInternetu: Guide = {
   slug: "eet-bez-internetu",
@@ -84,10 +85,11 @@ export const eetBezInternetu: Guide = {
   published: "2026-10-01",
   updated: "2026-10-02",
   changelog: [
+    { date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
     {
       date: "2026-10-01",
       text: "Opraveno podle schváleného znění zákona: pravidlo 48 hodin platí od 1. 1. 2027, ne až od 1. 2. 2027. Doplněno, jak dlouho pokladna čeká na odpověď a které tržby se posílají znovu.",
     },
   ],
-  reviewedBy: null,
+  reviewedBy: REVIEWER.name,
 };

@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/page-header";
 import { ToolCta } from "@/components/tool-cta";
 import { FACTS, FACTS_UPDATED, SOURCES } from "@/content/facts";
 import { JsonLd } from "@/lib/jsonld";
-import { OPERATOR, SITE, SITE_URL, absoluteUrl } from "@/lib/site";
+import { OPERATOR, REVIEWER, REVIEWER_TITLE, SITE, SITE_URL, absoluteUrl } from "@/lib/site";
 import { ExternalLink } from "@/components/external-link";
 
 export const metadata: Metadata = {
@@ -28,8 +28,8 @@ const PRINCIPLES = [
     text: "Všechna tvrzení o EET 2.0 (termíny, částky, podmínky) vedeme na jednom místě a ke každému uvádíme oficiální zdroj – nejčastěji eet.gov.cz, Finanční správu nebo Ministerstvo financí.",
   },
   {
-    title: "Revize daňovým poradcem",
-    text: "Návody a texty nástrojů procházejí revizí daňového poradce. Jeho jméno a evidenční číslo zde uvedeme po dokončení první revize.",
+    title: "Odborná revize",
+    text: "Návody před zveřejněním k vyhledávání kontroluje odbornice – kdo to je, uvádíme níže v části Odborná revize.",
   },
   {
     title: "Datum ověření",
@@ -119,6 +119,21 @@ export default function AboutPage() {
                 {SITE.email}
               </a>{" "}
               – opravu zapíšeme do přehledu změn níže.
+            </p>
+          </section>
+
+          {/* R8.10 (Ф12): kdo reviduje návody – text doslovně ze zadání; odkaz sem vede z každého zkontrolovaného návodu */}
+          <section id="odborna-revize" aria-labelledby="odborna-revize-h" className="scroll-mt-24">
+            <h2 id="odborna-revize-h" className="text-2xl font-bold tracking-tight sm:text-3xl">
+              Odborná revize
+            </h2>
+            <p className="mt-4 text-[17px] leading-relaxed text-ink-soft">
+              Věcnou správnost návodů kontroluje {REVIEWER.name}, {REVIEWER_TITLE}. U každého zkontrolovaného návodu uvádíme, kdo ho
+              zkontroloval. Pokud v návodu najdete chybu, napište nám na{" "}
+              <a href={`mailto:${SITE.email}`} className="font-medium text-brand-700 underline underline-offset-4">
+                {SITE.email}
+              </a>
+              .
             </p>
           </section>
 

@@ -1,5 +1,6 @@
 import { FACTS, SOURCES, formatKc } from "../facts";
 import type { Guide } from "./types";
+import { REVIEWER } from "@/lib/site";
 
 export const eet20VsEet10: Guide = {
   slug: "eet-2-0-vs-eet-1-0",
@@ -178,11 +179,12 @@ export const eet20VsEet10: Guide = {
   published: "2026-10-01",
   updated: "2026-10-03",
   changelog: [
+    { date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
     { date: "2026-10-03", text: "Opraveno podle semináře Finanční správy pro vývojáře: záloha a doplatek jsou dvě běžné platby, dárkový poukaz se eviduje jen při prodeji (jeho uplatnění není platbou) a částku určenou k čerpání a čerpání uvádí pokladna jen u kreditu." },
     {
       date: "2026-10-01",
       text: "Opraveno podle schváleného znění zákona: EET 2.0 se eviduje naostro od 1. 1. 2027, zákon výjimku pro leden nestanoví. Doplněno, že uvádět POK na dokladu není povinné.",
     },
   ],
-  reviewedBy: null,
+  reviewedBy: REVIEWER.name,
 };

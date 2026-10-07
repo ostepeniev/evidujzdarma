@@ -247,7 +247,7 @@ Returns: evidenced ('yes'|'no'|'uncertain'), explanation, note, sources, guide u
     },
     async (args): Promise<ToolResult> => {
       const c = classifyPayment(args.payment, args.in_person);
-      // odkaz na návod jen po revizi daňovým poradcem (Ф9)
+      // odkaz na návod jen po odborné revizi (Ф9)
       const guidePath = publicGuidePath(c.guide_url_path.replace(/^\/navody\//, ""));
       const url = guidePath ? absoluteUrl(guidePath) : null;
       const label = c.evidenced === "yes" ? "Eviduje se" : c.evidenced === "no" ? "Neeviduje se" : "Nejisté – ověřte";
@@ -353,7 +353,7 @@ Args:
   - limit (1-10, default 5).
   - response_format ('markdown'|'json').
 
-Returns: results [{slug, title, description, updated, reviewed, url}]. Use eet_get_guide with the slug to read the full text. 'reviewed' = checked by a tax adviser.`,
+Returns: results [{slug, title, description, updated, reviewed, url}]. Use eet_get_guide with the slug to read the full text. 'reviewed' = checked by our expert reviewer (see https://evidujzdarma.cz/o-nas#odborna-revize).`,
       inputSchema: z
         .object({
           query: z.string().min(2).max(200).describe("Search keywords"),
@@ -370,7 +370,7 @@ Returns: results [{slug, title, description, updated, reviewed, url}]. Use eet_g
         return toolError(
           available.length
             ? `Pro „${args.query}“ jsme nic nenašli. Zkuste jiná slova (česky), nebo rovnou eet_get_guide s jedním ze slugů: ${available.join(", ")}.`
-            : `Návody zatím čekají na odbornou revizi daňovým poradcem a strojově je nevydáváme. Ověřená fakta s prameny vrací eet_get_facts.`,
+            : `Návody zatím čekají na odbornou revizi a strojově je nevydáváme. Ověřená fakta s prameny vrací eet_get_facts.`,
         );
       }
       const md = [`# Návody k EET 2.0: „${args.query}“`, ...hits.map((h) => `- **${h.title}** (slug: \`${h.slug}\`) – ${h.description} ${h.url}`)].join("\n\n");
@@ -385,7 +385,7 @@ Returns: results [{slug, title, description, updated, reviewed, url}]. Use eet_g
       description: `Return the full text of one EvidujZdarma guide (Czech, Markdown) including FAQ and sources, by slug from eet_search_guides.
 
 Args:
-  - slug (string): a slug returned by eet_search_guides. Only guides reviewed by a tax adviser are available.
+  - slug (string): a slug returned by eet_search_guides. Only guides that passed expert review are available.
   - response_format ('markdown'|'json').
 
 Returns: slug, title, url, updated, reviewed, text (truncated at 25,000 characters).`,
@@ -403,12 +403,12 @@ Returns: slug, title, url, updated, reviewed, text (truncated at 25,000 characte
         const available = publicGuides().map((x) => x.slug);
         return toolError(
           // požadovaný slug neopakujeme – u nerevidovaného návodu by to byl odkaz na něj (Ф9)
-          `Takový návod není k dispozici: neexistuje, nebo ještě čeká na odbornou revizi daňovým poradcem. ${available.length ? `Dostupné slugy: ${available.join(", ")}.` : "Ověřená fakta s prameny vrací eet_get_facts."}`,
+          `Takový návod není k dispozici: neexistuje, nebo ještě čeká na odbornou revizi. ${available.length ? `Dostupné slugy: ${available.join(", ")}.` : "Ověřená fakta s prameny vrací eet_get_facts."}`,
         );
       }
       const text = guideText(g);
       const hit = toHit(g);
-      const note = hit.reviewed ? "" : "\n\n_Návod zatím čeká na odbornou revizi daňovým poradcem._";
+      const note = hit.reviewed ? "" : "\n\n_Návod zatím čeká na odbornou revizi._";
       return respond({ ...hit, url: absoluteUrl(`/navody/${g.slug}`), text }, `${text}${note}`, args.response_format as ResponseFormat);
     },
   );

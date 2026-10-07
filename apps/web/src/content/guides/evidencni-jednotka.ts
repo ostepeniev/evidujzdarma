@@ -1,5 +1,6 @@
 import { FACTS, SOURCES } from "../facts";
 import type { Guide } from "./types";
+import { REVIEWER } from "@/lib/site";
 
 export const evidencniJednotka: Guide = {
   slug: "evidencni-jednotka",
@@ -170,10 +171,11 @@ export const evidencniJednotka: Guide = {
   published: "2026-10-01",
   updated: "2026-10-01",
   changelog: [
+    { date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
     {
       date: "2026-10-01",
       text: "Opraveno podle schváleného znění zákona: evidovat se musí od 1. 1. 2027, a to i v lednu. Doplněno, že se oznamují všechny jednotky včetně těch bez evidovaných tržeb.",
     },
   ],
-  reviewedBy: null,
+  reviewedBy: REVIEWER.name,
 };

@@ -1,5 +1,6 @@
 import { FACTS, SOURCES, formatKc } from "../facts";
 import type { Guide } from "./types";
+import { REVIEWER } from "@/lib/site";
 
 const p26 = FACTS.pausal[2026];
 const p27 = FACTS.pausal[2027];
@@ -173,10 +174,11 @@ export const eetAPausalniDan: Guide = {
   published: "2026-10-01",
   updated: "2026-10-01",
   changelog: [
+    { date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
     {
       date: "2026-10-01",
       text: "Opraveno podle schváleného znění zákona: paušalisté bez EET OFF evidují od 1. 1. 2027, ne od 1. 2. 2027. Doplněna pravidla EET OFF během roku (zahájení podnikání, překročení 1 mil. Kč, odhlášení).",
     },
   ],
-  reviewedBy: null,
+  reviewedBy: REVIEWER.name,
 };

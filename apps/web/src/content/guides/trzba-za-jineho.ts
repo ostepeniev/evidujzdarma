@@ -1,5 +1,6 @@
 import { SOURCES } from "../facts";
 import type { Guide } from "./types";
+import { REVIEWER } from "@/lib/site";
 
 export const trzbaZaJineho: Guide = {
   slug: "trzba-za-jineho",
@@ -121,6 +122,9 @@ export const trzbaZaJineho: Guide = {
   related: ["koho-se-eet-tyka", "evidencni-jednotka", "eet-kadernictvi-kosmetika"],
   published: "2026-10-01",
   updated: "2026-10-01",
-  changelog: [{ date: "2026-10-01", text: "Opraveno podle schváleného znění zákona: evidovat se musí od 1. 1. 2027, ne od 1. 2. 2027." }],
-  reviewedBy: null,
+  changelog: [
+    { date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
+    { date: "2026-10-01", text: "Opraveno podle schváleného znění zákona: evidovat se musí od 1. 1. 2027, ne od 1. 2. 2027." },
+  ],
+  reviewedBy: REVIEWER.name,
 };

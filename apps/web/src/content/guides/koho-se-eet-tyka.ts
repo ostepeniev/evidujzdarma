@@ -1,5 +1,6 @@
 import { FACTS, SOURCES, formatKc } from "../facts";
 import type { Guide } from "./types";
+import { REVIEWER } from "@/lib/site";
 
 export const kohoSeEetTyka: Guide = {
   slug: "koho-se-eet-tyka",
@@ -169,10 +170,11 @@ export const kohoSeEetTyka: Guide = {
   published: "2026-10-01",
   updated: "2026-10-02",
   changelog: [
+    { date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
     {
       date: "2026-10-01",
       text: "Opraveno podle schváleného znění zákona: povinnost evidovat platí od 1. 1. 2027, ne od 1. 2. 2027. Doplněno, že výjimka pro příležitostné tržby do 50 000 Kč v zákoně není.",
     },
   ],
-  reviewedBy: null,
+  reviewedBy: REVIEWER.name,
 };

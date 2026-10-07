@@ -1,14 +1,24 @@
 /**
- * Ф9 (R4) – návody bez revize daňovým poradcem nevydává žádný strojový kanál: ani llms.txt, ani MCP.
+ * Ф9 (R4) – návody bez odborné revize nevydává žádný strojový kanál: ani llms.txt, ani MCP.
  * Žádný nástroj MCP nevrátí slug ani odkaz na nerevidovaný návod; po revizi (příznak) se návod objeví sám.
+ * Od R8.10 jsou všechny dosavadní návody revidované – test je proto vede jako nerevidované (stav před revizí),
+ * aby mechanismus zůstal ověřený i pro nové koncepty (C1).
  */
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { mapRzp, mapSubject } from "@ez/cz";
 import { GUIDES, isIndexable } from "@/content/guides";
 import { ARES_FIXTURES } from "@/lib/server/ares-fixtures";
 import { createEetMcpServer, type McpDeps } from "@/lib/mcp/server";
+
+// všechny návody jako před revizí (R8.10) – getGuide i GUIDES musí vidět totéž
+vi.mock("@/content/guides", async (orig) => {
+  const real = await orig<typeof import("@/content/guides")>();
+  const GUIDES = real.GUIDES.map((g) => ({ ...g, reviewedBy: null }));
+  const bySlug = new Map(GUIDES.map((g) => [g.slug, g]));
+  return { ...real, GUIDES, getGuide: (slug: string) => bySlug.get(slug) };
+});
 
 // eet_check_ico s fixturou ARES (ne null) – jinak by gate neviděl checklist s odkazy (R6.5)
 const deps: McpDeps = {

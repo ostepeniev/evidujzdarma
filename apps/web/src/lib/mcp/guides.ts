@@ -1,6 +1,6 @@
 /** Vyhledávání v návodech pro MCP (jednoduché skórování bez externího indexu – návodů jsou desítky). */
 import { plainText } from "@/components/rich-text";
-import { GUIDES, getGuide, isIndexable } from "@/content/guides";
+import { GUIDES, getGuide, guideModified, isIndexable } from "@/content/guides";
 import type { Block, Guide } from "@/content/guides/types";
 
 const fold = (s: string) =>
@@ -43,7 +43,7 @@ function count(hay: string, needle: string): number {
 }
 
 /**
- * Návody, které smí strojové kanály vydat (Ф9): jen po revizi daňovým poradcem (isIndexable, stejně jako
+ * Návody, které smí strojové kanály vydat (Ф9): jen po odborné revizi (isIndexable, stejně jako
  * llms.txt). Rozhoduje se při každém dotazu, takže po revizi se návod objeví bez restartu.
  */
 export function publicGuides(): Guide[] {
@@ -78,5 +78,5 @@ export function searchGuides(query: string, limit: number): GuideHit[] {
 }
 
 export function toHit(g: Guide, score = 0): GuideHit {
-  return { slug: g.slug, title: g.h1 ?? g.title, description: g.description, updated: g.updated, reviewed: !!g.reviewedBy, score };
+  return { slug: g.slug, title: g.h1 ?? g.title, description: g.description, updated: guideModified(g), reviewed: !!g.reviewedBy, score };
 }
