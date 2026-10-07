@@ -20,6 +20,8 @@
 ## 2. Які платежі евідуються
 - [ ] Переказ на місці без QR-коду (наприклад, з телефону біля каси).
 - [ ] Dobírka (за вторинними джерелами не евідується).
+- [ ] **C1, гайд `eet-eshop-dobirka`:** dobírka, яку вибирає dopravce (kurýr, pošta, výdejní místo dopravce) і потім переказує продавцю, — евідується чи ні? Те саме для оплати на výdejním místě третьої сторони (Zásilkovna тощо). У гайді зараз «zatím není jisté»; коли буде відповідь, змінити таблицю, розділ «Dobírka» і FAQ гайду, а також рядок у `kontaktni-platba`.
+- [ ] **C1, гайд `eet-eshop-dobirka`:** vlastní rozvoz (zaměstnanec prodávajícího přijme hotovost/kartu při doručení) — kontaktní platba; яку evidenční jednotku для нього оголошувати (dopravní prostředek, poplatník sám, provozovna, звідки rozvoz)?
 - [ ] Stravenky (паперові / картки).
 - [ ] Використання zálohy, оплаченої переказом.
 - [ ] Повертальна kauce (ubytování, půjčovny).
@@ -50,6 +52,7 @@
 - [ ] Чи потрібна письмова форма pověření.
 
 ## 7. DIS+ та одиниці
+- [ ] **C1, гайд `eet-trhy-stanky`:** stánek, з яким продавець їздить по різних trzích, — одна mobilní provozovna чи окрема одиниця на кожен trh? У гайді зараз «Finanční správa zatím podrobně nepopsala».
 - [ ] Точні назви меню / плиток у DIS+, способи входу. Після 1. 11. 2026 додати скриншоти в гайд `jak-aktivovat-dis-a-certifikat`.
 - [ ] Відкликання сертифіката.
 - [x] Чи оголошувати одиниці, де немає евідованих тржб — так, якщо є хоча б одна з евідованими (за вторинними джерелами; підтвердити).

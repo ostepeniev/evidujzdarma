@@ -16,6 +16,9 @@ import { REVIEWER, REVIEWER_TITLE, SITE, absoluteUrl } from "@/lib/site";
 import { pageText } from "./helpers/render-text";
 
 const CHANGELOG = { date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." };
+/** koncepty z C1 – před revizí (gate v c1-draft-guides.test.ts); revize R8.10 se týkala 16 návodů před nimi */
+const C1_DRAFTS = new Set(["pokladna-v-mobilu-zdarma", "eet-trhy-stanky", "eet-eshop-dobirka"]);
+const REVIEWED = GUIDES.filter((g) => !C1_DRAFTS.has(g.slug));
 
 describe("R8.10 – the guides' expert reviewer", () => {
   it("gate: REVIEWER constants", () => {
@@ -24,8 +27,8 @@ describe("R8.10 – the guides' expert reviewer", () => {
   });
 
   it("gate: all 16 guides reviewed, logged on 2026-10-07, indexable; lastmod = the latest changelog entry", () => {
-    expect(GUIDES).toHaveLength(16);
-    for (const g of GUIDES) {
+    expect(REVIEWED).toHaveLength(16);
+    for (const g of REVIEWED) {
       expect(g.reviewedBy, g.slug).toBe(REVIEWER.name);
       expect(g.changelog?.[0], g.slug).toEqual(CHANGELOG);
       expect(isIndexable(g), g.slug).toBe(true);
@@ -36,14 +39,14 @@ describe("R8.10 – the guides' expert reviewer", () => {
   it("gate: sitemap and llms.txt list all 16 guides; sitemap lastmod is the changelog date, not the build date", async () => {
     const { default: sitemap } = await import("@/app/sitemap");
     const entries = sitemap();
-    for (const g of GUIDES) {
+    for (const g of REVIEWED) {
       const e = entries.find((x) => x.url === absoluteUrl(`/navody/${g.slug}`));
       expect(e, g.slug).toBeTruthy();
       expect(e!.lastModified, g.slug).toBe("2026-10-07");
     }
     const { llmsTxt } = await import("@/lib/llms");
     const navody = llmsTxt().split("## Návody")[1]!.split("\n## ")[0]!;
-    for (const g of GUIDES) expect(navody, g.slug).toContain(absoluteUrl(`/navody/${g.slug}`));
+    for (const g of REVIEWED) expect(navody, g.slug).toContain(absoluteUrl(`/navody/${g.slug}`));
   });
 
   it("gate: the guide page links the reviewer to /o-nas#odborna-revize; JSON-LD has reviewedBy url + jobTitle and a PNG image", async () => {
