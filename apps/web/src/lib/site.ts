@@ -1,12 +1,28 @@
+import { isClosed } from "./launch";
+
 export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://evidujzdarma.cz").replace(/\/$/, "");
+
+/**
+ * Popis služby – jediné místo (R10.2): dokud je /pokladna zavřená, mluví o pokladně v budoucím čase, aby web netvrdil,
+ * že už funguje. Po otevření (odebrání z CLOSED_SECTIONS) se sám vrátí přítomný čas. `site` = SITE.description (meta,
+ * patička, JSON-LD organizace), `home` = meta popis úvodní stránky.
+ */
+export const SERVICE_COPY = isClosed("/pokladna")
+  ? {
+      site: "Bezplatnou pokladnu pro EET 2.0 připravujeme: bude fungovat i bez signálu, pro až 5 uživatelů, s účtenkou e-mailem i QR. Nezávislá služba, není provozována Finanční správou.",
+      home: "EET 2.0 od roku 2027: zkontrolujte podle IČO, zda se vás týká, a předregistrujte se k bezplatné pokladně. Bude fungovat i offline, pro až 5 uživatelů, s účtenkou e-mailem i QR.",
+    }
+  : {
+      site: "Bezplatná pokladna pro EET 2.0: funguje i bez signálu, až 5 uživatelů, účtenka e-mailem i QR. Nezávislá služba, není provozována Finanční správou.",
+      home: "EET 2.0 od roku 2027: zkontrolujte podle IČO, zda se vás týká, a předregistrujte se k bezplatné pokladně. Funguje i offline, až 5 uživatelů, účtenka e-mailem i QR.",
+    };
 
 export const SITE = {
   name: "EvidujZdarma",
   domain: "evidujzdarma.cz",
   url: SITE_URL,
   tagline: "Evidence tržeb EET 2.0 zdarma",
-  description:
-    "Bezplatná pokladna pro EET 2.0: funguje i bez signálu, až 5 uživatelů, účtenka e-mailem i QR. Nezávislá služba, není provozována Finanční správou.",
+  description: SERVICE_COPY.site,
   email: "ahoj@evidujzdarma.cz",
   independenceNotice: "Nezávislá služba, není provozována Finanční správou.",
   /** profily EvidujZdarma na sociálních sítích – sameAs v JSON-LD organizace (R8.11) */
