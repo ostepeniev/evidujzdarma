@@ -2,6 +2,7 @@ import { and, eq, inArray, isNull } from "drizzle-orm";
 import { getDb, hasDatabase, schema } from "@ez/db";
 import { MARKETING_TEMPLATES } from "@/lib/server/mail";
 import { isUnsubscribeTokenShape, parseUnsubscribe, type UnsubscribeScope } from "@/lib/server/preregistration";
+import { NOT_CONSENT_PROOF } from "@/lib/server/prereg-proof";
 import { randomToken, sha256, shortCode } from "@/lib/server/tokens";
 import { SITE, operatorLine } from "@/lib/site";
 
@@ -18,7 +19,8 @@ type Outcome = "news" | "cancelled";
 async function findRow(token: string | null) {
   const parsed = token && hasDatabase() ? parseUnsubscribe(token) : null;
   if (!parsed) return null;
-  const row = await getDb().query.preregistrations.findFirst({ where: parsed.where });
+  // doklad o odvolaném souhlasu se odkazem nezruší – jinak by z něj „Zrušit“ udělal novou 3letou blokaci (R9.3)
+  const row = await getDb().query.preregistrations.findFirst({ where: and(parsed.where, NOT_CONSENT_PROOF) });
   return row ? { row, scope: parsed.scope } : null;
 }
 

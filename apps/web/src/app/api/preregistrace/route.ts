@@ -10,6 +10,7 @@ import { clientIp, rateLimit } from "@/lib/server/rate-limit";
 import { isJsonRequest } from "@/lib/server/request-guard";
 import { randomToken, sha256, shortCode } from "@/lib/server/tokens";
 import { issueConfirmToken, requestInterestConfirmation, statusTokenFor, unsubscribeTokenFor } from "@/lib/server/preregistration";
+import { NOT_CONSENT_PROOF } from "@/lib/server/prereg-proof";
 import { MARKETING_CONSENT_VERSION } from "@/lib/legal";
 import { lookupCompany } from "@/lib/server/ares";
 import { assess } from "@/lib/eet-assessment";
@@ -126,9 +127,10 @@ export async function POST(req: Request) {
 
   const row = inserted[0];
   if (!row) {
-    // E-mail už je registrovaný — neprozrazujeme detaily, jen pošleme připomenutí.
+    // E-mail už je registrovaný — neprozrazujeme detaily, jen pošleme připomenutí. Doklad o odvolaném souhlasu sem nepatří:
+    // unikátní index ho nezahrnuje, takže s ním adresa založí novou předregistraci výše (R9.3)
     const existing = await db.query.preregistrations.findFirst({
-      where: sql`lower(${schema.preregistrations.email}) = ${body.email}`,
+      where: and(sql`lower(${schema.preregistrations.email}) = ${body.email}`, NOT_CONSENT_PROOF),
     });
     // Cizí záznam bez ověření neměníme – ani UTM (Д3-9). Odhlášené adrese nic neposíláme – o e-mail ji může
     // požádat kdokoli (Д3-9). Odpověď je pro všechny stejná.

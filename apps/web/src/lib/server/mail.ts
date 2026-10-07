@@ -5,6 +5,7 @@ import { getDb, hasDatabase, schema } from "@ez/db";
 import { renderEmail, type EmailTemplate } from "@/lib/emails";
 import { isClosed } from "@/lib/launch";
 import { safeError } from "./log";
+import { NOT_CONSENT_PROOF } from "./prereg-proof";
 
 /** Obchodní sdělení – odejde jen s potvrzeným e-mailem (DOI), souhlasem a bez odhlášení v okamžiku odeslání (Р5). */
 export const MARKETING_TEMPLATES: ReadonlySet<EmailTemplate> = new Set<EmailTemplate>(["dis-launch"]);
@@ -20,7 +21,8 @@ async function blockedReason(template: EmailTemplate, to: string): Promise<strin
   if (!MARKETING_TEMPLATES.has(template) && !WAITLIST_TEMPLATES.has(template)) return null;
   // „Pokladna je připravena“ jen po skutečném otevření pokladny – jinak by odkaz vedl na heslo (R7.6)
   if (template === "app-ready" && isClosed("/pokladna")) return NOT_LAUNCHED;
-  const p = await getDb().query.preregistrations.findFirst({ where: sql`lower(${schema.preregistrations.email}) = lower(${to})` });
+  // doklad o odvolaném souhlasu není předregistrace – adresa s ním je pro e-maily neznámá (R9.3)
+  const p = await getDb().query.preregistrations.findFirst({ where: and(sql`lower(${schema.preregistrations.email}) = lower(${to})`, NOT_CONSENT_PROOF) });
   if (!p?.confirmedAt) return "UNCONFIRMED";
   if (p.unsubscribedAt) return "UNSUBSCRIBED";
   if (MARKETING_TEMPLATES.has(template) && !p.marketingConsent) return "NO_CONSENT";

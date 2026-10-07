@@ -7,8 +7,7 @@ import { SITE_URL } from "@/lib/site";
 export async function POST(req: Request) {
   const form = await req.formData().catch(() => null);
   const token = String(form?.get("token") ?? "");
-  await confirmPreregistration(token);
-  // po DOI může odejít potvrzení dalšího zájmu (R8.4)
-  after(() => processOutbox(5));
+  // po DOI může odejít potvrzení dalšího zájmu (R8.4); neplatný token outbox nebudí – POST je bez přihlášení a limitu (R9.4)
+  if (await confirmPreregistration(token)) after(() => processOutbox(5));
   return new Response(null, { status: 303, headers: { location: `${SITE_URL}/registrace/potvrzeni?token=${encodeURIComponent(token)}` } });
 }

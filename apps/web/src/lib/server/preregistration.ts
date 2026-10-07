@@ -4,6 +4,7 @@ import { getDb, hasDatabase, schema } from "@ez/db";
 import { timelineAt } from "@/content/facts";
 import { isInterest, type Interest } from "@/lib/interests";
 import { enqueueEmail } from "./mail";
+import { isConsentProof } from "./prereg-proof";
 import { hmac, randomToken, safeEqual, sha256 } from "./tokens";
 
 const TOKEN_RE = /^[A-Za-z0-9_-]{20,64}$/;
@@ -71,11 +72,12 @@ async function byToken(token: string) {
   if (signed) {
     if (!safeEqual(token, statusTokenFor(signed[1]!))) return null;
     const row = await getDb().query.preregistrations.findFirst({ where: eq(schema.preregistrations.id, signed[1]!) });
-    return row?.confirmedAt ? row : null;
+    // doklad o odvolaném souhlasu má confirmed_at, ale předregistrace to už není (R9.3)
+    return row?.confirmedAt && !isConsentProof(row) ? row : null;
   }
   if (!TOKEN_RE.test(token)) return null;
   const row = await getDb().query.preregistrations.findFirst({ where: eq(schema.preregistrations.confirmTokenHash, sha256(token)) });
-  if (!row) return null;
+  if (!row || isConsentProof(row)) return null;
   // nepotvrzený odkaz po 30 dnech neplatí (nový přijde po opětovném vyplnění formuláře)
   if (!row.confirmedAt && (!row.confirmTokenIssuedAt || Date.now() - row.confirmTokenIssuedAt.getTime() > CONFIRM_TOKEN_TTL_MS)) return null;
   return row;
@@ -130,7 +132,7 @@ async function interestByToken(token: string) {
   // nepotvrzený odkaz platí 30 dní, jako potvrzení předregistrace
   if (!interest.confirmedAt && Date.now() - interest.requestedAt.getTime() > CONFIRM_TOKEN_TTL_MS) return null;
   const prereg = await db.query.preregistrations.findFirst({ where: eq(schema.preregistrations.id, interest.preregistrationId) });
-  if (!prereg || prereg.unsubscribedAt) return null;
+  if (!prereg || prereg.unsubscribedAt || isConsentProof(prereg)) return null;
   return { interest, campaign: interest.campaign as Interest, prereg };
 }
 

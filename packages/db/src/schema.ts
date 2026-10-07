@@ -64,7 +64,11 @@ export const preregistrations = pgTable(
     createdAt: createdAt(),
   },
   (t) => [
-    uniqueIndex("prereg_email_uq").on(sql`lower(${t.email})`),
+    // doklad o odvolaném souhlasu (bez data odkazu i odhlášení) do unikátnosti nepatří: adresa po něm může založit novou
+    // předregistraci a doklad zůstane (R9.3); živá předregistrace i záznam-blokace jsou na adresu nejvýš jednou
+    uniqueIndex("prereg_email_uq")
+      .on(sql`lower(${t.email})`)
+      .where(sql`${t.confirmTokenIssuedAt} is not null or ${t.unsubscribedAt} is not null`),
     uniqueIndex("prereg_referral_uq").on(t.referralCode),
     index("prereg_confirm_hash_idx").on(t.confirmTokenHash),
     index("prereg_unsub_hash_idx").on(t.unsubscribeTokenHash),
