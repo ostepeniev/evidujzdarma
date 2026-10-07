@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { ToolCta } from "@/components/tool-cta";
-import { GUIDES } from "@/content/guides";
+import { GUIDES, guideModified, isIndexable } from "@/content/guides";
 import { CATEGORY_LABEL, type GuideCategory } from "@/content/guides/types";
 import { canonicalMeta } from "@/lib/metadata";
 
@@ -37,7 +37,7 @@ export default function GuidesIndex() {
           <span className="shrink-0 font-semibold text-brand-700">Přečíst →</span>
         </Link>
         {ORDER.map((cat) => {
-          const items = GUIDES.filter((g) => g.category === cat);
+          const items = GUIDES.filter((g) => g.category === cat && isIndexable(g)); // koncepty před revizí jen přímým odkazem (рецензія №7)
           if (!items.length) return null;
           return (
             <section key={cat} className="mb-12" aria-labelledby={`cat-${cat}`}>
@@ -50,7 +50,7 @@ export default function GuidesIndex() {
                     <Link href={`/navody/${g.slug}`} className="card block h-full transition-colors hover:border-brand-200">
                       <p className="text-lg font-semibold text-ink">{g.h1 ?? g.title}</p>
                       <p className="mt-2 text-[15px] text-ink-soft">{g.description}</p>
-                      <p className="mt-3 text-sm text-muted">Aktualizováno {new Date(g.updated).toLocaleDateString("cs-CZ")}</p>
+                      <p className="mt-3 text-sm text-muted">Aktualizováno {new Date(guideModified(g)).toLocaleDateString("cs-CZ")}</p>
                     </Link>
                   </li>
                 ))}

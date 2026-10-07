@@ -1,9 +1,13 @@
 import Link from "next/link";
 import type { Block } from "@/content/guides/types";
+import { isClosed } from "@/lib/launch";
 import { RichText } from "./rich-text";
 
 const CTAS = {
-  registrace: { text: "Pokladna pro EET 2.0 zdarma – funguje i bez signálu.", href: "/#registrace", label: "Začít evidovat zdarma" },
+  // dokud je pokladna zavřená, nesmí CTA tvrdit, že už funguje (рецензія №7, B-I5)
+  registrace: isClosed("/pokladna")
+    ? { text: "Pokladnu pro EET 2.0 zdarma připravujeme – bude fungovat i bez signálu.", href: "/#registrace", label: "Předregistrovat zdarma" }
+    : { text: "Pokladna pro EET 2.0 zdarma – funguje i bez signálu.", href: "/#registrace", label: "Začít evidovat zdarma" },
   "kontrola-ico": { text: "Týká se vás EET? Zjistěte to podle IČO za 10 vteřin.", href: "/kontrola-ico", label: "Zkontrolovat IČO" },
   "eet-off": { text: "Vyplatí se vám přirážka místo evidence?", href: "/kalkulacka-eet-off", label: "Spočítat EET OFF" },
   jednotky: { text: "Které evidenční jednotky oznámit v DIS+?", href: "/evidencni-jednotky", label: "Spustit průvodce" },

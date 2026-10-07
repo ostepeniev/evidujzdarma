@@ -7,7 +7,9 @@ type OpenGraph = NonNullable<Metadata["openGraph"]>;
  * Společná og: pole z kořenového layoutu. Next slučuje openGraph mělce – stránka, která ho nastaví, přepíše celý objekt
  * z layoutu, takže je musí nést sama.
  */
-export const OG_DEFAULTS = { type: "website", locale: "cs_CZ", siteName: SITE.name } as const;
+/** Obrázek z app/opengraph-image.tsx – Next ho přidává jen kořenové vrstvě, stránka s vlastním openGraph ho musí nést sama (рецензія №7). */
+export const OG_IMAGE = { url: "/opengraph-image", width: 1200, height: 630, alt: `${SITE.name} – evidence tržeb EET 2.0` };
+export const OG_DEFAULTS = { type: "website" as const, locale: "cs_CZ", siteName: SITE.name, images: [OG_IMAGE] };
 
 /**
  * Kanonická adresa stránky a og:url z jedné cesty, aby se nerozešly (R9.13): Facebook bere og:url jako adresu příspěvku,

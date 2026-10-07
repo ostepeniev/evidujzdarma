@@ -164,11 +164,20 @@ docker compose run --rm migrate   # відновить права ролі evidu
 
 ## 7. Після запуску (SEO / GEO)
 
-- [ ] Google Search Console і **Bing Webmaster Tools** (ChatGPT-пошук спирається на індекс Bing): додайте `sitemap.xml`.
-- [ ] Seznam Webmaster (seznam.cz — важливий пошук у ЧР).
-- [ ] Перевірте, що `robots.txt` дозволяє GPTBot, ClaudeBot, PerplexityBot, Google-Extended.
+- [x] Google Search Console (3. 10.), Seznam Webmaster (4. 10.), Bing Webmaster Tools (7. 10., файл `BingSiteAuth.xml` віддає nginx).
+- [x] `robots.txt` дозволяє GPTBot, OAI-SearchBot, ClaudeBot, Claude-SearchBot, PerplexityBot, Google-Extended, SeznamBot.
 - [ ] Каталог: `CATALOG_INDEX_REGIONS=51`. Почніть з KV-краю, потім поступово додавайте краї.
-- [ ] Гайди: після рецензії daňovým poradcem заповніть `reviewedBy` у файлі гайду. Тоді гайд індексується.
+- [x] Гайди: після рецензії Хеленою (Ф12) у файлі гайду `reviewedBy: REVIEWER.name` і запис у changelog — тоді гайд індексується. Посаду (`REVIEWER_TITLE`) змінює лише контролер.
+
+**IndexNow після кожного деплою** (Seznam пересилає в Bing та інших; Google не підтримує). З будь-якого checkout репозиторію з Node ≥ 22.12, не з Docker-образу:
+
+```bash
+pnpm --filter web indexnow -- --since <дата попереднього деплою>   # змінені за lastmod
+pnpm --filter web indexnow -- --url https://evidujzdarma.cz/o-nas  # окрема сторінка
+pnpm --filter web indexnow -- --all                                 # усе з sitemap
+```
+
+Перед першим запуском перевірте, що `https://evidujzdarma.cz/<ключ>.txt` віддає рівно ключ (`apps/web/public/`).
 
 ## 8. Наш прод: наявний сервер з nginx (Т7)
 

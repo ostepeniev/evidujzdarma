@@ -30,7 +30,7 @@ const PRINCIPLES = [
   },
   {
     title: "Odborná revize",
-    text: "Návody před zveřejněním k vyhledávání kontroluje odbornice – kdo to je, uvádíme níže v části Odborná revize.",
+    text: "Návody kontroluje odbornice dřív, než je zpřístupníme vyhledávačům a AI asistentům. Kdo to je, uvádíme níže v části Odborná revize.",
   },
   {
     title: "Datum ověření",
