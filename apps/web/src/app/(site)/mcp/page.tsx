@@ -5,12 +5,13 @@ import { PageHeader } from "@/components/page-header";
 import { ToolCta } from "@/components/tool-cta";
 import { JsonLd, faqLd } from "@/lib/jsonld";
 import { absoluteUrl } from "@/lib/site";
+import { canonicalMeta } from "@/lib/metadata";
 
 export const metadata: Metadata = {
   title: "EET 2.0 pro AI asistenty – MCP server zdarma",
   description:
     "Připojte Claude, ChatGPT, Cursor nebo VS Code k nástrojům EvidujZdarma: kontrola IČO, kalkulačka EET OFF, které platby se evidují, ověřená fakta, návody a stav EET. Veřejný MCP server zdarma, bez registrace.",
-  alternates: { canonical: "/mcp" },
+  ...canonicalMeta("/mcp"),
 };
 
 const ENDPOINT = absoluteUrl("/api/mcp");

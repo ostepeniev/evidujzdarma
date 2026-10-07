@@ -9,6 +9,7 @@ import { CatalogSearch } from "@/components/catalog/search-form";
 import { PageHeader } from "@/components/page-header";
 import { ToolCta } from "@/components/tool-cta";
 import { catalogDataDate, findFirmSlug, foundingMonths, indexRegions, regionCounts, searchFirmsByName, type FirmListItem } from "@/lib/server/catalog";
+import { canonicalMeta } from "@/lib/metadata";
 
 export async function generateMetadata({ searchParams }: PageProps<"/firmy">): Promise<Metadata> {
   const { q } = await searchParams;
@@ -16,7 +17,7 @@ export async function generateMetadata({ searchParams }: PageProps<"/firmy">): P
     title: "Katalog firem a provozoven – EET 2.0 podle IČO",
     description:
       "Firmy a provozovny z veřejných registrů ARES a RŽP s orientační EET relevancí podle oboru. Jen ověřené údaje z registrů, bez vymyšlených popisů. Vyhledávejte podle IČO nebo názvu.",
-    alternates: { canonical: "/firmy" },
+    ...canonicalMeta("/firmy"),
     robots: q ? { index: false, follow: true } : undefined,
   };
 }

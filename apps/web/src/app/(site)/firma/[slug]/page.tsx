@@ -16,6 +16,7 @@ import { JsonLd } from "@/lib/jsonld";
 import { loadFirmPage } from "@/lib/server/firm-page";
 import { clientIpFromHeaders } from "@/lib/server/rate-limit";
 import { ExternalLink } from "@/components/external-link";
+import { canonicalMeta } from "@/lib/metadata";
 
 // Stránky firem se renderují pro každý požadavek a neukládají se do ISR cache na disk: miliony
 // platných IČO by ji jinak mohly zaplnit (R3.3). Data z DB jsou levná, živé dotazy do ARES mají limit na IP.
@@ -41,7 +42,7 @@ export async function generateMetadata({ params }: PageProps<"/firma/[slug]">): 
   return {
     title: `${firm.name} – IČO ${firm.ico}`,
     description: `${parts.join(" · ")}. Údaje z veřejných registrů k ${dateCs(firm.source.date)} a orientační EET relevance podle oboru.`,
-    alternates: { canonical: firmPath(firm) },
+    ...canonicalMeta(firmPath(firm)),
     robots: firm.index ? undefined : { index: false, follow: true },
   };
 }

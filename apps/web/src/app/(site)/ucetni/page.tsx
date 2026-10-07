@@ -9,12 +9,13 @@ import { PARTNER_PLAN } from "@/content/pricing";
 import { JsonLd, faqLd } from "@/lib/jsonld";
 import { isClosed } from "@/lib/launch";
 import { ExternalLink } from "@/components/external-link";
+import { canonicalMeta } from "@/lib/metadata";
 
 export const metadata: Metadata = {
   title: "EET 2.0 pro účetní – kabinet a partnerství",
   description:
     "Pro účetní kanceláře: hromadná kontrola IČO klientů, stav připravenosti na EET 2.0, šablony dopisů, export tržeb a 20 % z plateb klientů. Zdarma, i webináře.",
-  alternates: { canonical: "/ucetni" },
+  ...canonicalMeta("/ucetni"),
 };
 
 /** Účetní kabinet je zatím za heslem spolu s pokladnou (eet-open-site) – stránka nesmí tvrdit, že funguje (inv. 10). */

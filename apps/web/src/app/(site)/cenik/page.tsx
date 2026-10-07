@@ -8,12 +8,13 @@ import { RichText } from "@/components/rich-text";
 import { ADDONS, PARTNER_PLAN, PLANS, PRICING_FAQ, PRICING_NOTICE, PRICING_UPDATED } from "@/content/pricing";
 import { JsonLd, PRODUCT_IMAGES, faqLd, offerAvailability } from "@/lib/jsonld";
 import { SITE_URL, absoluteUrl } from "@/lib/site";
+import { canonicalMeta } from "@/lib/metadata";
 
 export const metadata: Metadata = {
   title: "Ceník – pokladna EET 2.0 zdarma navždy",
   description:
     "Pokladna pro EET 2.0 zdarma navždy: offline režim, 5 uživatelů, 3 evidenční jednotky, doklad e-mailem i CSV. Premium za 149 Kč/měsíc (připravujeme) přidá SMS účtenky a exporty",
-  alternates: { canonical: "/cenik" },
+  ...canonicalMeta("/cenik"),
 };
 
 function offerLd(o: { name: string; price: number; monthly?: boolean; from?: boolean; description: string }) {

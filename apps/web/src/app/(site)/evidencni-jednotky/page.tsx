@@ -7,12 +7,13 @@ import { FACTS, SOURCES } from "@/content/facts";
 import { JsonLd, faqLd } from "@/lib/jsonld";
 import { FactsVerified } from "@/components/facts-verified";
 import { ExternalLink } from "@/components/external-link";
+import { canonicalMeta } from "@/lib/metadata";
 
 export const metadata: Metadata = {
   title: "Průvodce evidenčními jednotkami EET 2.0",
   description:
     "Které evidenční jednotky oznámit v DIS+? Stálá a mobilní provozovna, automat, web, vozidlo i podnikání bez provozovny. Interaktivní průvodce k EET 2.0 zdarma.",
-  alternates: { canonical: "/evidencni-jednotky" },
+  ...canonicalMeta("/evidencni-jednotky"),
 };
 
 const FAQ = [

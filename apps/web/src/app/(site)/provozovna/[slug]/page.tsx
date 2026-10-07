@@ -11,6 +11,7 @@ import { SourceNote } from "@/components/catalog/source-note";
 import { PageHeader } from "@/components/page-header";
 import { JsonLd } from "@/lib/jsonld";
 import { getEstablishmentPage, type EstablishmentPage } from "@/lib/server/catalog";
+import { canonicalMeta } from "@/lib/metadata";
 
 // Renderuje se pro každý požadavek, bez ISR cache na disku (R3.3).
 export const dynamic = "force-dynamic";
@@ -38,7 +39,7 @@ export async function generateMetadata({ params }: PageProps<"/provozovna/[slug]
   return {
     title: `${title(p)} – IČP ${est.icp}`,
     description: `Provozovna IČP ${est.icp}${est.city ? `, ${est.city}` : ""}. Provozovatel ${p.firm.name}, IČO ${p.firm.ico}. Údaje ze živnostenského rejstříku k ${dateCs(p.firm.source.date)}.`,
-    alternates: { canonical: establishmentPath(est) },
+    ...canonicalMeta(establishmentPath(est)),
     robots: p.index ? undefined : { index: false, follow: true },
   };
 }

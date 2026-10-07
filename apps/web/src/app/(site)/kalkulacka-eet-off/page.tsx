@@ -7,12 +7,13 @@ import { FACTS, SOURCES, formatKc } from "@/content/facts";
 import { JsonLd, faqLd } from "@/lib/jsonld";
 import { FactsVerified } from "@/components/facts-verified";
 import { ExternalLink } from "@/components/external-link";
+import { canonicalMeta } from "@/lib/metadata";
 
 export const metadata: Metadata = {
   title: "Kalkulačka EET OFF 2027 – vyplatí se přirážka?",
   description:
     "Spočítejte, zda se vám vyplatí EET OFF: přirážka 1 400 Kč měsíčně (16 800 Kč ročně) k paušální dani místo evidence tržeb. Pro OSVČ v 1. pásmu s příjmy do 1 mil. Kč, i když začínáte v průběhu roku. Oznámení do 11. 1. 2027.",
-  alternates: { canonical: "/kalkulacka-eet-off" },
+  ...canonicalMeta("/kalkulacka-eet-off"),
 };
 
 const FAQ = [

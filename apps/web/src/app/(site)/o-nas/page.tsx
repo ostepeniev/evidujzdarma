@@ -6,12 +6,13 @@ import { FACTS, FACTS_UPDATED, SOURCES } from "@/content/facts";
 import { JsonLd } from "@/lib/jsonld";
 import { OPERATOR, REVIEWER, REVIEWER_TITLE, SITE, SITE_URL, absoluteUrl } from "@/lib/site";
 import { ExternalLink } from "@/components/external-link";
+import { canonicalMeta } from "@/lib/metadata";
 
 export const metadata: Metadata = {
   title: "O nás a kontakt",
   description:
     "Kdo stojí za EvidujZdarma: nezávislá služba firmy Swipe Scape s.r.o., ne Finanční správy. Jak ověřujeme fakta o EET 2.0, kde ukládáme data a jak nás kontaktovat",
-  alternates: { canonical: "/o-nas" },
+  ...canonicalMeta("/o-nas"),
 };
 
 /** Změny faktů a obsahu viditelné pro čtenáře (nejnovější nahoře). */

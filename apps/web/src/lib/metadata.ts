@@ -1,0 +1,19 @@
+import type { Metadata } from "next";
+import { SITE } from "./site";
+
+type OpenGraph = NonNullable<Metadata["openGraph"]>;
+
+/**
+ * Společná og: pole z kořenového layoutu. Next slučuje openGraph mělce – stránka, která ho nastaví, přepíše celý objekt
+ * z layoutu, takže je musí nést sama.
+ */
+export const OG_DEFAULTS = { type: "website", locale: "cs_CZ", siteName: SITE.name } as const;
+
+/**
+ * Kanonická adresa stránky a og:url z jedné cesty, aby se nerozešly (R9.13): Facebook bere og:url jako adresu příspěvku,
+ * takže sdílený odkaz na /cenik se nesmí ukázat jako úvodní stránka. Kořenový layout og:url nemá – stránka bez kanonické
+ * adresy ho nezdědí. `openGraph` = pole navíc (type „article“, title, modifiedTime…); url přepsat nejde.
+ */
+export function canonicalMeta(path: string, openGraph?: OpenGraph): Pick<Metadata, "alternates" | "openGraph"> {
+  return { alternates: { canonical: path }, openGraph: { ...OG_DEFAULTS, ...openGraph, url: path } as OpenGraph };
+}

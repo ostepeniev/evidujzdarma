@@ -6,12 +6,13 @@ import { ToolCta } from "@/components/tool-cta";
 import { SOURCES } from "@/content/facts";
 import { JsonLd, faqLd } from "@/lib/jsonld";
 import { ExternalLink } from "@/components/external-link";
+import { canonicalMeta } from "@/lib/metadata";
 
 export const metadata: Metadata = {
   title: "Generátor QR platby zdarma (SPAYD)",
   description:
     "Vytvořte QR kód pro platbu na účet během pár sekund. Formát QR Platba (SPAYD) čtou všechny české bankovní aplikace. Zdarma, bez registrace, data neopouštějí váš prohlížeč.",
-  alternates: { canonical: "/qr-platba" },
+  ...canonicalMeta("/qr-platba"),
 };
 
 const FAQ = [

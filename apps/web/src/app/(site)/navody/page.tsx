@@ -4,12 +4,13 @@ import { PageHeader } from "@/components/page-header";
 import { ToolCta } from "@/components/tool-cta";
 import { GUIDES } from "@/content/guides";
 import { CATEGORY_LABEL, type GuideCategory } from "@/content/guides/types";
+import { canonicalMeta } from "@/lib/metadata";
 
 export const metadata: Metadata = {
   title: "Návody k EET 2.0 – vše o evidenci tržeb od roku 2027",
   description:
     "Srozumitelné návody k EET 2.0: koho se týká, co se eviduje, evidenční jednotky, DIS+ a certifikát, EET OFF, pokuty a práce bez internetu. Se zdroji a datem aktualizace.",
-  alternates: { canonical: "/navody" },
+  ...canonicalMeta("/navody"),
 };
 
 const ORDER: GuideCategory[] = ["zaklady", "povinnosti", "prakticke", "obory", "novinky"];

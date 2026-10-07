@@ -6,6 +6,7 @@ import { ToolCta } from "@/components/tool-cta";
 import { MYTHS, MYTHS_UPDATED } from "@/content/myths";
 import { JsonLd, articleLd, faqLd } from "@/lib/jsonld";
 import { ExternalLink } from "@/components/external-link";
+import { canonicalMeta } from "@/lib/metadata";
 
 const PATH = "/co-se-o-eet-pise-spatne";
 const TITLE = "Co se o EET 2.0 píše špatně";
@@ -15,8 +16,7 @@ const DESCRIPTION =
 export const metadata: Metadata = {
   title: `${TITLE} – omyly a fakta`,
   description: DESCRIPTION,
-  alternates: { canonical: PATH },
-  openGraph: { type: "article", title: TITLE, description: DESCRIPTION, modifiedTime: MYTHS_UPDATED },
+  ...canonicalMeta(PATH, { type: "article", title: TITLE, description: DESCRIPTION, modifiedTime: MYTHS_UPDATED }),
 };
 
 const dateCs = (iso: string) => new Date(iso).toLocaleDateString("cs-CZ", { day: "numeric", month: "numeric", year: "numeric" });

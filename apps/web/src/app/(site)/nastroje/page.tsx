@@ -6,12 +6,13 @@ import { FACTS_UPDATED } from "@/content/facts";
 import { JsonLd } from "@/lib/jsonld";
 import { SITE_URL, absoluteUrl } from "@/lib/site";
 import { ExternalLink } from "@/components/external-link";
+import { canonicalMeta } from "@/lib/metadata";
 
 export const metadata: Metadata = {
   title: "Nástroje k EET 2.0 zdarma",
   description:
     "Bezplatné nástroje k EET 2.0: kontrola IČO, kvíz Musím evidovat?, kalkulačka EET OFF, průvodce evidenčními jednotkami, QR platba a hromadná kontrola pro účetní.",
-  alternates: { canonical: "/nastroje" },
+  ...canonicalMeta("/nastroje"),
 };
 
 const TOOLS = [

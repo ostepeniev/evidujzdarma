@@ -6,12 +6,13 @@ import { PageHeader } from "@/components/page-header";
 import { FACTS, FACTS_UPDATED } from "@/content/facts";
 import { JsonLd, faqLd } from "@/lib/jsonld";
 import { absoluteUrl } from "@/lib/site";
+import { canonicalMeta } from "@/lib/metadata";
 
 export const metadata: Metadata = {
   title: "Hromadná kontrola IČO pro účetní (EET)",
   description:
     "Zkontrolujte klienty najednou: vložte IČO nebo nahrajte CSV a zjistěte, koho se pravděpodobně týká EET 2.0 a kdo může zvolit EET OFF. Zdarma, s exportem.",
-  alternates: { canonical: "/ucetni/hromadna-kontrola" },
+  ...canonicalMeta("/ucetni/hromadna-kontrola"),
 };
 
 const FAQ: FaqItem[] = [

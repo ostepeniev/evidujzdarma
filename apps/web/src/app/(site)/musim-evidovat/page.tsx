@@ -6,12 +6,13 @@ import { Quiz } from "@/components/tools/quiz";
 import { FACTS } from "@/content/facts";
 import { JsonLd, faqLd } from "@/lib/jsonld";
 import { FactsVerified } from "@/components/facts-verified";
+import { canonicalMeta } from "@/lib/metadata";
 
 export const metadata: Metadata = {
   title: "Musím evidovat tržby? Kvíz k EET 2.0 (6 otázek)",
   description:
     "Zjistěte za minutu, zda musíte od roku 2027 evidovat tržby v EET 2.0, zda máte výjimku nebo můžete zvolit EET OFF. Kvíz se zdroji z eet.gov.cz, zdarma a bez registrace.",
-  alternates: { canonical: "/musim-evidovat" },
+  ...canonicalMeta("/musim-evidovat"),
 };
 
 const FAQ = [

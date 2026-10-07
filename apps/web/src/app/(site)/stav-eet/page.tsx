@@ -9,6 +9,7 @@ import { STATUS_LABEL, SLOW_MS, type ProbeStatus } from "@/lib/fs-status";
 import { JsonLd, faqLd } from "@/lib/jsonld";
 import { statusSummary, type EnvSummary } from "@/lib/server/fs-monitor";
 import { ExternalLink } from "@/components/external-link";
+import { canonicalMeta } from "@/lib/metadata";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,7 @@ export const metadata: Metadata = {
   title: "Je EET dole? Stav systému evidence tržeb",
   description:
     "Funguje EET právě teď? Nezávislé měření dostupnosti rozhraní Finanční správy pro evidenci tržeb každých 5 minut: aktuální stav, odezva, dostupnost za 30 dní a historie výpadků.",
-  alternates: { canonical: "/stav-eet" },
+  ...canonicalMeta("/stav-eet"),
 };
 
 const ENV_INFO: Record<EnvSummary["environment"], { title: string; host: string; note: string }> = {

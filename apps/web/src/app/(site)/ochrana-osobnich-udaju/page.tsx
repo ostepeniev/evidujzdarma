@@ -15,6 +15,7 @@ import { CATALOG_DATA } from "@/content/catalog-data";
 import { PRIVACY_DATE_ISO, PRIVACY_VERSION_LABEL } from "@/lib/legal";
 import { SITE, operatorLine } from "@/lib/site";
 import { ExternalLink } from "@/components/external-link";
+import { canonicalMeta } from "@/lib/metadata";
 
 const VERSION_DATE = PRIVACY_DATE_ISO;
 const VERSION_LABEL = PRIVACY_VERSION_LABEL;
@@ -23,7 +24,7 @@ export const metadata: Metadata = {
   title: "Ochrana osobních údajů (GDPR)",
   description:
     "Jak EvidujZdarma zpracovává osobní údaje: předregistrace, marketing jen se souhlasem, data pokladny, katalog firem z veřejných registrů, doby uložení a práva.",
-  alternates: { canonical: "/ochrana-osobnich-udaju" },
+  ...canonicalMeta("/ochrana-osobnich-udaju"),
 };
 
 const PURPOSES: readonly { purpose: string; data: string; basis: string; retention: string }[] = [

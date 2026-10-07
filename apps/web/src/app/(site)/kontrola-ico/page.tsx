@@ -12,6 +12,7 @@ import { headers } from "next/headers";
 import { lookupCompany, type CompanyLookup } from "@/lib/server/ares";
 import { clientIpFromHeaders, rateLimit } from "@/lib/server/rate-limit";
 import { FactsVerified } from "@/components/facts-verified";
+import { canonicalMeta } from "@/lib/metadata";
 
 export async function generateMetadata({ searchParams }: PageProps<"/kontrola-ico">): Promise<Metadata> {
   const { ico } = await searchParams;
@@ -19,7 +20,7 @@ export async function generateMetadata({ searchParams }: PageProps<"/kontrola-ic
     title: "EET kontrola podle IČO – týká se mě EET 2.0?",
     description:
       "Zadejte IČO a zjistěte, zda se vás týká EET 2.0, kolik provozoven máte v živnostenském rejstříku a zda můžete využít EET OFF. Zdarma, bez registrace, z dat ARES.",
-    alternates: { canonical: "/kontrola-ico" },
+    ...canonicalMeta("/kontrola-ico"),
     // Výsledky pro konkrétní IČO neindexujeme (tenký duplicitní obsah) — indexuje se katalog firem.
     robots: ico ? { index: false, follow: true } : undefined,
   };

@@ -71,7 +71,8 @@ describe("C Дрібне 16, 18, 20, 21", () => {
   it("gate: guides lead, canonical inheritance, Oznámení, EET OFF eligibility", () => {
     expect(src("app/(site)/navody/page.tsx")).not.toContain("s odkazy na zákon");
     expect(src("app/layout.tsx")).not.toMatch(/canonical\s*:/);
-    expect(src("app/(site)/page.tsx")).toMatch(/canonical: "\/"/);
+    // canonical i og:url z jednoho helperu (R9.13)
+    expect(src("app/(site)/page.tsx")).toContain('canonicalMeta("/")');
     expect(src("app/(site)/kalkulacka-eet-off/page.tsx")).toContain("Oznámení do 11. 1. 2027.");
     expect(calculateEetOff({ band: 0, income: 500_000 } as never)).toMatchObject({ eligible: false, reason: "EET OFF je jen pro fyzické osoby v 1. pásmu paušálního režimu." });
   });

@@ -12,12 +12,13 @@ import { FACTS_UPDATED } from "@/content/facts";
 import { POLLS } from "@/content/polls";
 import { JsonLd, faqLd, softwareApplicationLd } from "@/lib/jsonld";
 import { ExternalLink } from "@/components/external-link";
+import { canonicalMeta } from "@/lib/metadata";
 
 export const metadata: Metadata = {
   title: { absolute: "Evidence tržeb EET 2.0 zdarma – pokladna i bez signálu | EvidujZdarma" },
   description:
     "EET 2.0 od roku 2027: zkontrolujte podle IČO, zda se vás týká, a předregistrujte se k bezplatné pokladně. Funguje i offline, až 5 uživatelů, účtenka e-mailem i QR.",
-  alternates: { canonical: "/" },
+  ...canonicalMeta("/"),
 };
 
 // Odpočet a "nejbližší termín" se mění denně.

@@ -3,11 +3,12 @@ import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { REFERRAL_RULES_VERSION_LABEL } from "@/lib/legal";
 import { SITE, operatorLine } from "@/lib/site";
+import { canonicalMeta } from "@/lib/metadata";
 
 export const metadata: Metadata = {
   title: "Pravidla akce Doporučte kolegu",
   description: "Pravidla akce Doporučte kolegu: kdo se může zapojit, kdy získáte Premium na 3 měsíce zdarma a jak dlouho akce trvá.",
-  alternates: { canonical: "/pravidla-doporuceni" },
+  ...canonicalMeta("/pravidla-doporuceni"),
 };
 
 /** Pravidla akce „Doporučte kolegu“ (rozhodnutí Ц3, рецензія №4 R7.10) – text doslovně z recenze. */

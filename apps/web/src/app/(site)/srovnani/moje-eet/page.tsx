@@ -7,6 +7,7 @@ import { ToolCta } from "@/components/tool-cta";
 import { FACTS, FACTS_UPDATED, SOURCES } from "@/content/facts";
 import { JsonLd, articleLd, faqLd } from "@/lib/jsonld";
 import { ExternalLink } from "@/components/external-link";
+import { canonicalMeta } from "@/lib/metadata";
 
 const TITLE = "EvidujZdarma vs. MOJE eet: férové srovnání";
 const DESCRIPTION =
@@ -15,8 +16,7 @@ const DESCRIPTION =
 export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
-  alternates: { canonical: "/srovnani/moje-eet" },
-  openGraph: { type: "article", title: TITLE, description: DESCRIPTION, url: "/srovnani/moje-eet" },
+  ...canonicalMeta("/srovnani/moje-eet", { type: "article", title: TITLE, description: DESCRIPTION }),
 };
 
 const PUBLISHED = "2026-10-01";

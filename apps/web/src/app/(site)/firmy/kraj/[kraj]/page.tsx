@@ -11,6 +11,7 @@ import { ListSource } from "@/components/catalog/list-source";
 import { PageHeader } from "@/components/page-header";
 import { ToolCta } from "@/components/tool-cta";
 import { PER_PAGE, isIndexRegion, listFirms, catalogDataDate } from "@/lib/server/catalog";
+import { canonicalMeta } from "@/lib/metadata";
 
 // Stránkování a filtr přes searchParams → renderuje se na vyžádání (dotazy jdou po indexu region_code).
 
@@ -27,7 +28,7 @@ export async function generateMetadata({ params, searchParams }: PageProps<"/fir
   return {
     title: `Firmy ${kraj.locative}${page > 1 ? ` – strana ${page}` : ""} | Katalog firem`,
     description: `Seznam firem a podnikatelů ${kraj.locative} z veřejných registrů s orientační EET relevancí podle oboru činnosti. Údaje z ARES a RES ČSÚ.`,
-    alternates: { canonical: krajPath(kraj.slug, { page }) },
+    ...canonicalMeta(krajPath(kraj.slug, { page })),
     robots: index ? undefined : { index: false, follow: true },
   };
 }

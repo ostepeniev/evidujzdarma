@@ -5,13 +5,14 @@ import { ObjectionForm } from "@/components/catalog/objection-form";
 import { PageHeader } from "@/components/page-header";
 import { CATALOG_DATA } from "@/content/catalog-data";
 import { SITE } from "@/lib/site";
+import { canonicalMeta } from "@/lib/metadata";
 
 export async function generateMetadata({ searchParams }: PageProps<"/namitka">): Promise<Metadata> {
   const sp = await searchParams;
   return {
     title: "Námitka a oprava údajů v katalogu firem",
     description: "Nesouhlasíte se zveřejněním údajů z veřejných registrů nebo jsou nepřesné? Podejte námitku podle čl. 21 GDPR nebo žádost o opravu. Odpovíme do 30 dnů.",
-    alternates: { canonical: "/namitka" },
+    ...canonicalMeta("/namitka"),
     robots: sp.ico || sp.icp ? { index: false, follow: false } : undefined,
   };
 }

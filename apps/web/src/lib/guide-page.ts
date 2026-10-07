@@ -4,15 +4,15 @@ import { guideModified, isIndexable } from "@/content/guides";
 import type { Guide } from "@/content/guides/types";
 import { articleLd, faqLd, howToLd } from "./jsonld";
 import { REVIEWER, absoluteUrl } from "./site";
+import { canonicalMeta } from "./metadata";
 
 /** Metadata stránky návodu: nerevidovaný návod je noindex (Ф9). */
 export function guideMetadata(g: Guide): Metadata {
   return {
     title: g.title,
     description: g.description,
-    alternates: { canonical: `/navody/${g.slug}` },
+    ...canonicalMeta(`/navody/${g.slug}`, { type: "article", title: g.h1 ?? g.title, description: g.description, modifiedTime: guideModified(g), publishedTime: g.published }),
     robots: isIndexable(g) ? undefined : { index: false, follow: true },
-    openGraph: { type: "article", title: g.h1 ?? g.title, description: g.description, modifiedTime: guideModified(g), publishedTime: g.published },
   };
 }
 

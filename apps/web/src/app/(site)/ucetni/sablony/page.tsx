@@ -3,12 +3,13 @@ import Link from "next/link";
 import { LetterTemplates } from "@/components/accountant/letter-templates";
 import { PageHeader } from "@/components/page-header";
 import { FACTS_UPDATED } from "@/content/facts";
+import { canonicalMeta } from "@/lib/metadata";
 
 export const metadata: Metadata = {
   title: "Šablony dopisů klientům k EET 2.0",
   description:
     "Hotové dopisy pro účetní: úvod do EET 2.0, rozhodnutí o EET OFF, podklady k evidenčním jednotkám a kontrola před začátkem evidence. Doplňte kancelář a kopírujte.",
-  alternates: { canonical: "/ucetni/sablony" },
+  ...canonicalMeta("/ucetni/sablony"),
 };
 
 export default function LetterTemplatesPage() {

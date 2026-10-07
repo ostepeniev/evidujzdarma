@@ -15,6 +15,7 @@ import { PageHeader } from "@/components/page-header";
 import { FACTS } from "@/content/facts";
 import { TERMS_DATE_ISO, TERMS_VERSION_LABEL } from "@/lib/legal";
 import { SITE, operatorLine } from "@/lib/site";
+import { canonicalMeta } from "@/lib/metadata";
 
 const VERSION_DATE = TERMS_DATE_ISO;
 const VERSION_LABEL = TERMS_VERSION_LABEL;
@@ -23,7 +24,7 @@ export const metadata: Metadata = {
   title: "Obchodní podmínky",
   description:
     "Obchodní podmínky EvidujZdarma: co pokladna pro EET 2.0 zajišťuje, za co odpovídá podnikatel, tarify Zdarma a Premium, data a certifikáty v EU, ukončení služby.",
-  alternates: { canonical: "/podminky" },
+  ...canonicalMeta("/podminky"),
 };
 
 function operatorIdentity(): string {

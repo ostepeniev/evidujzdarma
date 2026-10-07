@@ -7,6 +7,7 @@ import { formatCount, isMonthParam, monthLabel, monthPath, pageParam } from "@/c
 import { ListSource } from "@/components/catalog/list-source";
 import { PageHeader } from "@/components/page-header";
 import { PER_PAGE, foundingMonths, indexRegions, listFirms, todayIso, catalogDataDate } from "@/lib/server/catalog";
+import { canonicalMeta } from "@/lib/metadata";
 
 function regionsLabel(): string {
   const names = indexRegions()
@@ -27,7 +28,7 @@ export async function generateMetadata({ params, searchParams }: PageProps<"/fir
   return {
     title: `Nové firmy – ${monthLabel(mesic)}${page > 1 ? ` (strana ${page})` : ""}`,
     description: `Firmy a podnikatelé založení v období ${monthLabel(mesic)} (${regionsLabel()}) podle data vzniku v registru. EET 2.0 platí od 1. 1. 2027 – připravte se rovnou.`,
-    alternates: { canonical: monthPath(mesic, page) },
+    ...canonicalMeta(monthPath(mesic, page)),
     robots: total > 0 ? undefined : { index: false, follow: true },
   };
 }

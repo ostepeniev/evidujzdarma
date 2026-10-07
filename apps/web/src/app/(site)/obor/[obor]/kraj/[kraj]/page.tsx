@@ -10,6 +10,7 @@ import { ListSource } from "@/components/catalog/list-source";
 import { PageHeader } from "@/components/page-header";
 import { ToolCta } from "@/components/tool-cta";
 import { PER_PAGE, isIndexRegion, listFirms, catalogDataDate } from "@/lib/server/catalog";
+import { canonicalMeta } from "@/lib/metadata";
 
 function resolve(oborSlug: string, krajSlug: string) {
   const industry = catalogIndustry(oborSlug);
@@ -27,7 +28,7 @@ export async function generateMetadata({ params, searchParams }: PageProps<"/obo
   return {
     title: `${industry.label} ${kraj.locative} – EET 2.0${page > 1 ? ` (strana ${page})` : ""}`,
     description: `${industry.label} ${kraj.locative}: subjekty z veřejných registrů (ARES, RES ČSÚ) podle oboru CZ-NACE a co pro obor znamená EET 2.0 od 1. 1. 2027.`,
-    alternates: { canonical: oborKrajPath(industry.slug, kraj.slug, page) },
+    ...canonicalMeta(oborKrajPath(industry.slug, kraj.slug, page)),
     robots: isIndexRegion(kraj.code) && total > 0 ? undefined : { index: false, follow: true },
   };
 }
