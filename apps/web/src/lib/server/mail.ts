@@ -7,7 +7,11 @@ import { isClosed } from "@/lib/launch";
 import { safeError } from "./log";
 import { NOT_CONSENT_PROOF } from "./prereg-proof";
 
-/** Obchodní sdělení – odejde jen s potvrzeným e-mailem (DOI), souhlasem a bez odhlášení v okamžiku odeslání (Р5). */
+/**
+ * Obchodní sdělení – odejde jen s potvrzeným e-mailem (DOI), souhlasem a bez odhlášení v okamžiku odeslání (Р5).
+ * E-maily k webináři a Účetnímu kabinetu (termín, zpráva o spuštění) sem nepatří: jsou to odpovědi na žádost
+ * z předregistrace a stránka odhlášení po „Odhlásit jen novinky“ slibuje, že přijdou dál (varianta B, R9.7, R10.4).
+ */
 export const MARKETING_TEMPLATES: ReadonlySet<EmailTemplate> = new Set<EmailTemplate>(["dis-launch"]);
 /** E-maily k čekací listině (včasný přístup) – jen potvrzeným a neodhlášeným adresám. */
 const WAITLIST_TEMPLATES: ReadonlySet<EmailTemplate> = new Set<EmailTemplate>(["app-ready"]);
