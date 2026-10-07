@@ -1,5 +1,5 @@
 import "server-only";
-import { and, eq, exists, gte, inArray, isNotNull, isNull, lt, lte, ne, not, notExists, notInArray, or, sql } from "drizzle-orm";
+import { and, eq, exists, gte, inArray, isNotNull, isNull, lt, ne, not, notExists, notInArray, or, sql } from "drizzle-orm";
 import { getDb, schema } from "@ez/db";
 import { RETENTION } from "@/lib/legal";
 import { HttpError } from "./auth";
@@ -153,7 +153,9 @@ export type UnsentSeen = { count: number; lastAt: string | null };
  */
 export function unsentView(unsent: Awaited<ReturnType<typeof unsentProductionOf>>) {
   const count = unsent.sales.length + unsent.quarantine.length;
-  const last = Math.max(0, ...unsent.sales.map((s) => s.receivedAt.getTime()), ...unsent.quarantine.map((q) => q.updatedAt.getTime()));
+  // reduce, ne Math.max(...rows): spread desítek tisíc argumentů končí RangeError (R9.5)
+  const latest = (acc: number, d: Date) => Math.max(acc, d.getTime());
+  const last = unsent.quarantine.map((q) => q.updatedAt).reduce(latest, unsent.sales.map((s) => s.receivedAt).reduce(latest, 0));
   return {
     ids: count <= SETTLE_IDS_LIMIT ? [...unsent.sales.map((s) => s.id), ...unsent.quarantine.map((q) => q.id)] : null,
     sales: unsent.sales.slice(0, SHOWN_SALES).map((s) => ({ id: s.id, soldAt: s.soldAt.toISOString(), total: s.total, registerId: s.registerId, sequence: s.sequence })),
@@ -241,11 +243,14 @@ export async function settleElsewhere(
   const actor = opts.actor.slice(0, 200);
   const message = `vlastník ${actor}: evidováno jinak (zrušený účet)`;
   const lastSeen = new Date(lastAt);
+  // `lastSeen` má milisekundy (JS Date), received_at/updated_at z now() mikrosekundy – bez zaokrouhlení by nejnovější
+  // řádek „přišel později“ a vlastník by potvrzoval dvakrát (R9.2)
+  const seenBy = (col: typeof schema.sales.receivedAt | typeof schema.saleQuarantine.updatedAt) => sql`date_trunc('milliseconds', ${col}) <= ${lastSeen}`;
   return db.transaction(async (tx) => {
     // jen potvrzený seznam: u id přesně ta id, u `seen` jen přijaté do času posledního, který vlastník viděl
     const salesWhere = opts.ids
       ? inArray(schema.sales.id, unsent.sales.map((s) => s.id))
-      : and(eq(schema.sales.mode, "production"), notInArray(schema.sales.status, ["confirmed", "not_required"]), lte(schema.sales.receivedAt, lastSeen));
+      : and(eq(schema.sales.mode, "production"), notInArray(schema.sales.status, ["confirmed", "not_required"]), seenBy(schema.sales.receivedAt));
     const settled = unsent.sales.length
       ? await tx
           .update(schema.sales)
@@ -267,7 +272,7 @@ export async function settleElsewhere(
             from ${schema.sales} where ${schema.sales.accountId} = ${accountId} and ${schema.sales.settledElsewhereAt} = ${now}`,
       );
     }
-    const quarantineWhere = opts.ids ? inArray(schema.saleQuarantine.id, unsent.quarantine.map((q) => q.id)) : and(PRODUCTION_QUARANTINE, lte(schema.saleQuarantine.updatedAt, lastSeen));
+    const quarantineWhere = opts.ids ? inArray(schema.saleQuarantine.id, unsent.quarantine.map((q) => q.id)) : and(PRODUCTION_QUARANTINE, seenBy(schema.saleQuarantine.updatedAt));
     const dismissed = unsent.quarantine.length
       ? await tx
           .update(schema.saleQuarantine)
