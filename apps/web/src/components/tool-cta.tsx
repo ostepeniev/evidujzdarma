@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SERVICE_COPY } from "@/lib/site";
 
 /** Každý nástroj končí výzvou k akci (princip: každá stránka vede k akci). */
 export function ToolCta({ title = "Předregistrujte se zdarma", text }: { title?: string; text?: string }) {
@@ -6,7 +7,7 @@ export function ToolCta({ title = "Předregistrujte se zdarma", text }: { title?
     <aside className="mt-12 rounded-2xl bg-brand-700 p-8 text-white sm:p-10">
       <h2 className="text-2xl font-bold sm:text-3xl">{title}</h2>
       <p className="mt-2 max-w-2xl text-lg text-brand-100">
-        {text ?? "Pokladna pro EET 2.0 zdarma navždy: funguje i bez signálu, až 5 uživatelů, účtenka e-mailem i QR."}
+        {text ?? SERVICE_COPY.toolCta}
       </p>
       <div className="mt-6 flex flex-wrap gap-3">
         <Link href="/#registrace" className="btn bg-white text-brand-700 hover:bg-brand-50">

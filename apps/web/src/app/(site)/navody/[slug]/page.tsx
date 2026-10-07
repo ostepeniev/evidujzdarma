@@ -10,7 +10,7 @@ import { GUIDES, getGuide, guideModified } from "@/content/guides";
 import { CATEGORY_LABEL } from "@/content/guides/types";
 import { guideJsonLd, guideMetadata } from "@/lib/guide-page";
 import { JsonLd } from "@/lib/jsonld";
-import { REVIEWER } from "@/lib/site";
+import { REVIEWER, SERVICE_COPY } from "@/lib/site";
 import { ExternalLink } from "@/components/external-link";
 
 export const dynamicParams = false;
@@ -158,7 +158,7 @@ export default async function GuidePage({ params }: PageProps<"/navody/[slug]">)
             </div>
             <div className="rounded-2xl bg-brand-700 p-5 text-white">
               <p className="font-semibold">Pokladna pro EET 2.0 zdarma</p>
-              <p className="mt-1 text-sm text-brand-100">Funguje i bez signálu, až 5 uživatelů.</p>
+              <p className="mt-1 text-sm text-brand-100">{SERVICE_COPY.guideSidebar}</p>
               <Link href="/#registrace" className="btn mt-4 w-full bg-white py-2 text-brand-700 hover:bg-brand-50">
                 Chci zdarma
               </Link>

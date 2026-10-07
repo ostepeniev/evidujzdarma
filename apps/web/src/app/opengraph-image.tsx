@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "EvidujZdarma – evidence tržeb EET 2.0 zdarma, funguje i bez signálu";
+export const alt = "EvidujZdarma – evidence tržeb EET 2.0 zdarma, i bez signálu";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -21,7 +21,7 @@ export default function OgImage() {
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           <div style={{ fontSize: 78, fontWeight: 800, color: "#14211c", lineHeight: 1.05 }}>Evidence tržeb EET 2.0 zdarma</div>
-          <div style={{ fontSize: 38, color: "#3d4b45" }}>Bezplatná pokladna pro EET 2.0, která funguje i bez signálu.</div>
+          <div style={{ fontSize: 38, color: "#3d4b45" }}>Bezplatná pokladna pro EET 2.0 – i bez signálu.</div>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 26, color: "#66756e" }}>
           <span>evidujzdarma.cz</span>

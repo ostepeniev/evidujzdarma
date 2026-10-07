@@ -93,7 +93,7 @@ export default function AboutPage() {
             <p>
               Od roku 2027 se vrací evidence tržeb. Pro kadeřnici, stánkaře nebo řemeslníka to znamená nové povinnosti, nové
               pojmy a rozhodování, zda a jakou pokladnu pořídit. Chceme, aby odpověď byla jednoduchá: zjistit si zdarma, zda se
-              vás evidence týká, a když ano, evidovat v pokladně, která je zdarma navždy a funguje i bez signálu.
+              vás evidence týká, a když ano, evidovat v naší pokladně – zdarma navždy a i bez signálu.
             </p>
             <p>
               Vydělávat budeme na placených doplňcích, které si každý může, ale nemusí zapnout (připravujeme je) – například SMS účtenky, export do

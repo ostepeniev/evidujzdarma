@@ -7,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "EvidujZdarma – pokladna pro EET 2.0",
     short_name: "Pokladna",
-    description: "Bezplatná pokladna pro evidenci tržeb EET 2.0. Funguje i bez signálu.",
+    description: "Bezplatná pokladna pro evidenci tržeb EET 2.0 – i bez signálu.",
     id: start,
     start_url: start,
     scope: "/",

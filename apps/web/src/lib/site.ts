@@ -3,18 +3,30 @@ import { isClosed } from "./launch";
 export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://evidujzdarma.cz").replace(/\/$/, "");
 
 /**
- * Popis služby – jediné místo (R10.2): dokud je /pokladna zavřená, mluví o pokladně v budoucím čase, aby web netvrdil,
- * že už funguje. Po otevření (odebrání z CLOSED_SECTIONS) se sám vrátí přítomný čas. `site` = SITE.description (meta,
- * patička, JSON-LD organizace), `home` = meta popis úvodní stránky.
+ * Popis služby – jediné místo (R10.2, R11): dokud je /pokladna zavřená, mluví o pokladně v budoucím čase, aby web
+ * netvrdil, že už funguje. Po otevření (odebrání z CLOSED_SECTIONS) se sám vrátí přítomný čas.
+ *  - `site` = SITE.description (meta, patička, JSON-LD organizace), `home` = meta popis úvodní stránky;
+ *  - `hero` = podtitul úvodní stránky, `toolCta` = výchozí text ToolCta, `guideSidebar` = boční panel návodu,
+ *    `calculatorCta` = ToolCta kalkulačky EET OFF, `compareCta` = ToolCta srovnání s MOJE eet.
  */
 export const SERVICE_COPY = isClosed("/pokladna")
   ? {
       site: "Bezplatnou pokladnu pro EET 2.0 připravujeme: bude fungovat i bez signálu, pro až 5 uživatelů, s účtenkou e-mailem i QR. Nezávislá služba, není provozována Finanční správou.",
       home: "EET 2.0 od roku 2027: zkontrolujte podle IČO, zda se vás týká, a předregistrujte se k bezplatné pokladně. Bude fungovat i offline, pro až 5 uživatelů, s účtenkou e-mailem i QR.",
+      hero: "Bezplatná pokladna pro EET 2.0, která bude fungovat i bez signálu.",
+      toolCta: "Pokladnu pro EET 2.0 připravujeme: zdarma navždy, i bez signálu, pro až 5 uživatelů, s účtenkou e-mailem i QR.",
+      guideSidebar: "Připravujeme: i bez signálu, pro až 5 uživatelů.",
+      calculatorCta: "Rozhodli jste se evidovat? Pokladnu EvidujZdarma připravujeme – zdarma navždy a i bez signálu. Předregistrujte se už teď.",
+      compareCta: "Zkontrolujte své IČO za 10 vteřin, nebo se rovnou předregistrujte k bezplatné pokladně, která bude fungovat i bez signálu.",
     }
   : {
       site: "Bezplatná pokladna pro EET 2.0: funguje i bez signálu, až 5 uživatelů, účtenka e-mailem i QR. Nezávislá služba, není provozována Finanční správou.",
       home: "EET 2.0 od roku 2027: zkontrolujte podle IČO, zda se vás týká, a předregistrujte se k bezplatné pokladně. Funguje i offline, až 5 uživatelů, účtenka e-mailem i QR.",
+      hero: "Bezplatná pokladna pro EET 2.0, která funguje i bez signálu.",
+      toolCta: "Pokladna pro EET 2.0 zdarma navždy: funguje i bez signálu, až 5 uživatelů, účtenka e-mailem i QR.",
+      guideSidebar: "Funguje i bez signálu, až 5 uživatelů.",
+      calculatorCta: "Rozhodli jste se evidovat? Pokladna EvidujZdarma je zdarma navždy, funguje i bez signálu a zvládne ji každý za 15 minut.",
+      compareCta: "Zkontrolujte své IČO za 10 vteřin, nebo se rovnou předregistrujte k bezplatné pokladně, která funguje i bez signálu.",
     };
 
 export const SITE = {

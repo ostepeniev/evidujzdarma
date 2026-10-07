@@ -8,6 +8,7 @@ import { JsonLd, faqLd } from "@/lib/jsonld";
 import { FactsVerified } from "@/components/facts-verified";
 import { ExternalLink } from "@/components/external-link";
 import { canonicalMeta } from "@/lib/metadata";
+import { SERVICE_COPY } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Kalkulačka EET OFF 2027 – vyplatí se přirážka?",
@@ -80,7 +81,7 @@ export default function EetOffPage() {
           </p>
           <FactsVerified />
         </section>
-        <ToolCta text="Rozhodli jste se evidovat? Pokladna EvidujZdarma je zdarma navždy, funguje i bez signálu a zvládne ji každý za 15 minut." />
+        <ToolCta text={SERVICE_COPY.calculatorCta} />
       </div>
     </>
   );

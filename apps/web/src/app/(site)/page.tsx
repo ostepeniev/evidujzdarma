@@ -26,7 +26,7 @@ export const revalidate = 3600;
 
 const BENEFITS = [
   { title: "Prodej na 3 dotyky", text: "Částka nebo tlačítko zboží → způsob platby → hotovo. Na účtence může být i kód POK od Finanční správy (není povinný)." },
-  { title: "Funguje i bez signálu", text: "Tržby se uloží v zařízení a odešlou se samy, jakmile je připojení. Hlídáme lhůtu pro dodatečné odeslání." },
+  { title: "I bez signálu", text: "Tržby se uloží v zařízení a odešlou se samy, jakmile bude připojení. Lhůtu pro dodatečné odeslání pohlídáme." },
   { title: "Až 5 uživatelů zdarma", text: "Každá pokladní má vlastní PIN, vy vidíte všechny tržby a denní přehled." },
   { title: "Účtenka papírově i digitálně", text: "Tisk na Bluetooth tiskárnu, e-mail nebo QR kód na displeji. Odkaz v SMS připravujeme." },
   { title: "Pro účetní", text: "Export CSV zdarma, hromadná kontrola IČO a přehled připravenosti všech klientů." },
@@ -47,7 +47,7 @@ export default function HomePage() {
               Evidence tržeb EET 2.0 <span className="text-brand-600">zdarma</span>.
             </h1>
             <p className="mt-5 text-xl leading-relaxed text-ink-soft sm:text-2xl">
-              Bezplatná pokladna pro EET 2.0, která funguje i bez signálu.
+              {SERVICE_COPY.hero}
             </p>
             <div className="mt-8 max-w-2xl">
               <IcoQuickCheck />

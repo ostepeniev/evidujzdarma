@@ -8,6 +8,7 @@ import { FACTS, FACTS_UPDATED, SOURCES } from "@/content/facts";
 import { JsonLd, articleLd, faqLd } from "@/lib/jsonld";
 import { ExternalLink } from "@/components/external-link";
 import { canonicalMeta } from "@/lib/metadata";
+import { SERVICE_COPY } from "@/lib/site";
 
 const TITLE = "EvidujZdarma vs. MOJE eet: férové srovnání";
 const DESCRIPTION =
@@ -231,7 +232,7 @@ export default function CompareMojeEetPage() {
           <Faq items={FAQ} />
           <ToolCta
             title="Nevíte, zda vůbec musíte evidovat?"
-            text="Zkontrolujte své IČO za 10 vteřin, nebo se rovnou předregistrujte k bezplatné pokladně, která funguje i bez signálu."
+            text={SERVICE_COPY.compareCta}
           />
         </section>
       </div>
