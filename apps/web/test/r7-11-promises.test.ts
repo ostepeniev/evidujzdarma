@@ -34,9 +34,10 @@ describe("R7.11 – promises and the address of a sole trader", () => {
     expect(pricing).not.toMatch(/odešle sama do 48 hodin/);
   });
 
-  it("gate M3: the pre-registration success says an unsubscribed address gets no e-mail (verbatim)", () => {
+  // text nahradila R9.8 (рецензія №6): po R8.2 dostane e-mail i ten, kdo se odhlásil jen z novinek
+  it("gate M3: the pre-registration success says a cancelled pre-registration gets no e-mail (verbatim, R9.8)", () => {
     const form = src("components/prereg-form.tsx");
-    expect(form).toContain("Pokud jste se dříve z našich e-mailů odhlásili, e-mail vám nepřijde – napište nám na {SITE.email}.");
+    expect(form).toContain("Pokud jste dříve předregistraci zrušili, e-mail vám nepřijde – napište nám na {SITE.email}.");
   });
 
   it("gate M5: /api/ico for a natural person returns only city and region – no street", async () => {

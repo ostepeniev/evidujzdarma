@@ -96,9 +96,17 @@ export async function lookupPreregistration(token: string) {
     .select({ value: count() })
     .from(schema.preregistrations)
     .where(and(eq(schema.preregistrations.referredBy, row.referralCode), sql`${schema.preregistrations.confirmedAt} is not null`));
-  // potvrzená adresa: jen potvrzené zájmy; nepotvrzená: jen ty, které potvrdí její DOI (bez vlastního tokenu) – zájem,
-  // který k adrese přidal někdo jiný, se na stránce stavu neukáže, dokud ho vlastník nepotvrdí (R8.4, Д-2)
-  const asked = await db
+  const interests = await ownInterests(row);
+  return { confirmed: !!row.confirmedAt, position: before + 1, referralCode: row.referralCode, referrals, interests };
+}
+
+/**
+ * Zájmy, které adresa vidí jako své – stránka stavu i odhlášení (R9.7). Potvrzená adresa: jen potvrzené zájmy; nepotvrzená:
+ * jen ty, které potvrdí její DOI (bez vlastního tokenu) – zájem, který k adrese přidal někdo jiný, se neukáže, dokud ho
+ * vlastník nepotvrdí (R8.4, Д-2).
+ */
+export async function ownInterests(row: { id: string; confirmedAt: Date | null }): Promise<Interest[]> {
+  const asked = await getDb()
     .select({ campaign: schema.preregistrationInterests.campaign })
     .from(schema.preregistrationInterests)
     .where(
@@ -107,8 +115,7 @@ export async function lookupPreregistration(token: string) {
         row.confirmedAt ? isNotNull(schema.preregistrationInterests.confirmedAt) : isNull(schema.preregistrationInterests.confirmTokenHash),
       ),
     );
-  const interests = asked.map((i) => i.campaign).filter(isInterest);
-  return { confirmed: !!row.confirmedAt, position: before + 1, referralCode: row.referralCode, referrals, interests };
+  return asked.map((i) => i.campaign).filter(isInterest);
 }
 
 /** „Pokladna je připravena“ – jen pro předregistraci k pokladně (R7.4, Z3), po potvrzení e-mailu. */

@@ -183,7 +183,7 @@ function Success() {
       <h3 className="text-2xl font-bold text-ink">Hotovo! Zkontrolujte e-mail</h3>
       <p className="text-ink-soft">Poslali jsme vám EET plán a odkaz pro potvrzení e-mailu. Po potvrzení uvidíte své pořadí na včasný přístup a odkaz pro pozvání kolegů.</p>
       <p className="text-sm text-muted">Pokud už u nás tento e-mail máte, poslali jsme vám e-mail s dalším krokem.</p>
-      <p className="text-sm text-muted">Pokud jste se dříve z našich e-mailů odhlásili, e-mail vám nepřijde – napište nám na {SITE.email}.</p>
+      <p className="text-sm text-muted">Pokud jste dříve předregistraci zrušili, e-mail vám nepřijde – napište nám na {SITE.email}.</p>
     </div>
   );
 }

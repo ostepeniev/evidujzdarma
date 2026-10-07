@@ -1,7 +1,8 @@
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import { getDb, hasDatabase, schema } from "@ez/db";
+import { INTERESTS, INTEREST_NEXT, isForPos, type Interest } from "@/lib/interests";
 import { MARKETING_TEMPLATES } from "@/lib/server/mail";
-import { isUnsubscribeTokenShape, parseUnsubscribe, type UnsubscribeScope } from "@/lib/server/preregistration";
+import { isUnsubscribeTokenShape, ownInterests, parseUnsubscribe, type UnsubscribeScope } from "@/lib/server/preregistration";
 import { NOT_CONSENT_PROOF } from "@/lib/server/prereg-proof";
 import { randomToken, sha256, shortCode } from "@/lib/server/tokens";
 import { SITE, operatorLine } from "@/lib/site";
@@ -102,6 +103,21 @@ function page(title: string, body: string): Response {
   return new Response(html, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
 }
 
+/**
+ * Co zůstane po „Odhlásit jen novinky“ – slib jen toho, co opravdu přijde (R9.7): A = app-ready ve frontě (odkaz na pokladnu),
+ * B = potvrzené zájmy mimo pokladnu (její slib platí jen s A – app-ready mohl už odejít), C = nic z toho.
+ */
+async function newsNote(row: Row, interests: readonly Interest[]): Promise<string> {
+  const [appReady] = await getDb()
+    .select({ id: schema.emailOutbox.id })
+    .from(schema.emailOutbox)
+    .where(and(eq(schema.emailOutbox.dedupeKey, `app-ready:${row.id}`), eq(schema.emailOutbox.status, "queued")))
+    .limit(1);
+  if (appReady) return "Předregistrace zůstane: pošleme vám odkaz, až pokladnu spustíme.";
+  const next = row.confirmedAt ? INTERESTS.filter((i) => i !== "pokladna" && interests.includes(i)) : [];
+  return next.length ? `Předregistrace zůstane. ${next.map((i) => INTEREST_NEXT[i]).join(" ")}` : "Předregistrace zůstane. Dál vám pošleme jen e-maily, které se jí týkají.";
+}
+
 const TITLE = "Odhlášení z e-mailů";
 const BUTTON = "background:#0b7a57;color:#fff;border:0;padding:12px 20px;border-radius:10px;font-weight:600;font-size:16px;cursor:pointer";
 const BUTTON_SECONDARY = "background:#fff;color:#14211c;border:1px solid #c9d3cd;padding:12px 20px;border-radius:10px;font-weight:600;font-size:16px;cursor:pointer";
@@ -117,17 +133,32 @@ export async function GET(req: Request) {
   if (!found) return page("Odkaz je neplatný", "<p>Odkaz pro odhlášení je neplatný nebo neúplný.</p>");
   const { row } = found;
   if (row.unsubscribedAt) return page(TITLE, `<p>${esc(RESULT.cancelled)}</p>`);
+  const interests = await ownInterests(row);
+  // pořadí a odkaz pro pozvání má jen předregistrace k pokladně – jako na stránce stavu (R9.9)
+  const forPos = isForPos(interests);
   if (row.marketingConsent) {
     return page(
       TITLE,
       `<p>Můžete se odhlásit jen z novinek k EET, nebo zrušit celou předregistraci.</p>
-${choice(token, "news", "Odhlásit jen novinky", "Předregistrace zůstane: pošleme vám odkaz, až pokladnu spustíme.", BUTTON)}
-${choice(token, "all", "Zrušit předregistraci", "Přijdete o pořadí na včasný přístup, odkaz pro pozvání kolegů a přihlášky (webinář, kabinet). E-mail si ponecháme jen proto, abychom vám už nic neposílali.", BUTTON_SECONDARY)}`,
+${choice(token, "news", "Odhlásit jen novinky", await newsNote(row, interests), BUTTON)}
+${choice(
+  token,
+  "all",
+  "Zrušit předregistraci",
+  forPos
+    ? "Přijdete o pořadí na včasný přístup, odkaz pro pozvání kolegů a přihlášky (webinář, kabinet). E-mail si ponecháme jen proto, abychom vám už nic neposílali."
+    : "Přijdete o přihlášky (webinář, kabinet). E-mail si ponecháme jen proto, abychom vám už nic neposílali.",
+  BUTTON_SECONDARY,
+)}`,
     );
   }
   return page(
     TITLE,
-    `<p>Posíláme vám jen e-maily k vaší předregistraci. Odhlášením ji zrušíte: přijdete o pořadí na včasný přístup, odkaz pro pozvání kolegů a přihlášky (webinář, kabinet). E-mail si ponecháme jen proto, abychom vám už nic neposílali.</p>
+    `<p>${
+      forPos
+        ? "Posíláme vám jen e-maily k vaší předregistraci. Odhlášením ji zrušíte: přijdete o pořadí na včasný přístup, odkaz pro pozvání kolegů a přihlášky (webinář, kabinet). E-mail si ponecháme jen proto, abychom vám už nic neposílali."
+        : "Posíláme vám jen e-maily k vaší předregistraci. Odhlášením ji zrušíte i s přihláškami (webinář, kabinet). E-mail si ponecháme jen proto, abychom vám už nic neposílali."
+    }</p>
 <form method="post" action="/api/odhlasit?token=${esc(encodeURIComponent(token))}"><input type="hidden" name="action" value="all">
 <button type="submit" style="${BUTTON}">Zrušit předregistraci</button></form>`,
   );

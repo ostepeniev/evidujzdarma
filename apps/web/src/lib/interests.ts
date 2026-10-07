@@ -18,6 +18,9 @@ export const INTEREST_REQUEST: Record<Interest, string> = {
   kabinet: "o zprávu o spuštění Účetního kabinetu",
 };
 
+/** Předregistrace k pokladně (pořadí, odkaz pro pozvání kolegů) – i záznam bez zájmů ze starší verze formuláře (R7.4, R9.9). */
+export const isForPos = (interests: readonly Interest[]): boolean => interests.length === 0 || interests.includes("pokladna");
+
 /** Co pošleme po potvrzení. */
 export const INTEREST_NEXT: Record<Interest, string> = {
   pokladna: "Až pokladnu spustíme, pošleme vám odkaz.",

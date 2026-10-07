@@ -58,7 +58,7 @@ export function WebinarForm() {
         {/* nová i už známá adresa dostane e-mail s odkazem k potvrzení – text platí pro obě (R7.4) */}
         <h3 className="text-xl font-bold text-ink">Zkontrolujte prosím e-mail</h3>
         <p className="text-ink-soft">Poslali jsme vám e-mail s dalším krokem. {INTEREST_NEXT[state.campaign]}</p>
-        <p className="text-sm text-muted">Pokud jste se dříve z našich e-mailů odhlásili, e-mail vám nepřijde – napište nám na {SITE.email}.</p>
+        <p className="text-sm text-muted">Pokud jste dříve předregistraci zrušili, e-mail vám nepřijde – napište nám na {SITE.email}.</p>
       </div>
     );
   }

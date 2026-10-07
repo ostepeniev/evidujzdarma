@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { INTEREST_LABEL, INTEREST_NEXT } from "@/lib/interests";
+import { INTEREST_LABEL, INTEREST_NEXT, isForPos } from "@/lib/interests";
 import { lookupPreregistration } from "@/lib/server/preregistration";
 import { SITE_URL } from "@/lib/site";
 import { CopyLink } from "@/components/copy-link";
@@ -12,7 +12,7 @@ export default async function ConfirmPage({ searchParams }: PageProps<"/registra
   // Stránka jen čte stav; potvrzení proběhne až tlačítkem (POST) – odkaz v e-mailu nic nemění (Р5).
   const result = typeof token === "string" ? await lookupPreregistration(token) : null;
   // přihláška na webinář nebo zájem o kabinet není předregistrace k pokladně – stránka to nesmí tvrdit (R7.4)
-  const forPos = !result || result.interests.length === 0 || result.interests.includes("pokladna");
+  const forPos = !result || isForPos(result.interests);
   const other = result?.interests.filter((i) => i !== "pokladna") ?? [];
 
   return (
