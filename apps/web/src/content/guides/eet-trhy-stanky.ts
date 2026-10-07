@@ -74,7 +74,7 @@ export const eetTrhyStanky: Guide = {
               ["Objednávka zaplacená předem převodem, u stánku ji zákazník jen vyzvedne", "Ne"],
               ["Objednávka, kterou zákazník zaplatí až při vyzvednutí u stánku", "**Ano**"],
             ],
-            caption: "Rozhoduje, zda zákazník platí při osobním kontaktu s vámi, ne způsob platby.",
+            caption: "Rozhoduje, zda zákazník platí při osobním kontaktu s vámi nebo ve vaší provozovně, ne způsob platby.",
           },
         },
         {
@@ -87,7 +87,7 @@ export const eetTrhyStanky: Guide = {
       heading: "Sezónní a nárazový prodej",
       blocks: [
         {
-          p: "Evidujete vždy, když na trhu přijímáte kontaktní platby – i když prodáváte jen několik víkendů v roce. Pevnou hranici, pod kterou by se malý nebo sezónní prodej neevidoval, zákon nemá.",
+          p: "Evidujete vždy, když na trhu přijímáte kontaktní platby – i když prodáváte jen několik víkendů v roce. Výjimkou jsou činnosti, které zákon vyjímá (např. prodej kaprů před Vánoci), a režim EET OFF. Pevnou hranici, pod kterou by se malý nebo sezónní prodej neevidoval, zákon nemá.",
         },
         { h3: "Ojedinělá tržba (§ 7)" },
         { p: FACTS.whoMust.occasional },
@@ -137,8 +137,8 @@ export const eetTrhyStanky: Guide = {
     description: "Od oznámení stánku v DIS+ po prodej bez signálu.",
     steps: [
       { name: "Oznamte stánek", text: `Od ${DIS.dateLabel} se v DIS+ přihlaste k evidenci tržeb a stánek oznamte jako mobilní provozovnu.` },
-      { name: "Vydejte certifikát", text: "Pokladní certifikát si vydáte zdarma v DIS+ a nahrajete ho do pokladny v mobilu nebo tabletu." },
-      { name: "Vyzkoušejte prodej bez signálu", text: "Ještě před sezónou si v pokladně vyzkoušejte prodej v režimu letadlo a odeslání fronty po návratu signálu." },
+      { name: "Vygenerujte pokladní certifikát", text: "Pokladní certifikát si zdarma vygenerujete v DIS+ a nahrajete ho do pokladny v mobilu nebo tabletu." },
+      { name: "Vyzkoušejte prodej bez signálu", text: "Ještě před sezónou si v pokladně vyzkoušejte prodej v režimu Letadlo a odeslání fronty po návratu signálu." },
       { name: "Na trhu evidujte", text: "Od 1. 1. 2027 evidujte každou hotovostní, kartovou i QR platbu přijatou u stánku." },
       { name: "Odešlete frontu do 48 hodin", text: "Po trhu otevřete pokladnu na místě se signálem; neodeslané tržby musí odejít nejpozději do 48 hodin od přijetí platby." },
     ],

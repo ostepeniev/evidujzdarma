@@ -9,9 +9,9 @@ export const eetEshopDobirka: Guide = {
   title: "EET 2.0 a e-shop: dobírka, osobní odběr a karta",
   h1: "EET 2.0 a e-shop: dobírka, osobní odběr a platba kartou",
   description:
-    "Platby přes platební bránu a převodem se v EET 2.0 neevidují. Co od 1. 1. 2027 platí pro osobní odběr, platbu kartou při převzetí a pro dobírku přes dopravce.",
+    "Platby přes platební bránu a převodem předem se v EET 2.0 neevidují. Co od 1. 1. 2027 platí pro osobní odběr, platbu kartou při převzetí a pro dobírku.",
   lead:
-    "Platby, které zákazník e-shopu pošle **na dálku** – přes platební bránu, převodem nebo QR kódem z webu – se v EET 2.0 neevidují. Od **1. 1. 2027** evidujete jen to, co zákazník zaplatí osobně, typicky při osobním odběru na prodejně nebo výdejním místě. U dobírky vybrané dopravcem zatím není jisté, jak ji Finanční správa posoudí.",
+    "Platby, které zákazník e-shopu pošle **na dálku** – přes platební bránu, převodem nebo QR kódem z webu – se v EET 2.0 neevidují. Od **1. 1. 2027** evidujete jen to, co zákazník zaplatí osobně, typicky při osobním odběru na vaší prodejně nebo vašem výdejním místě. U dobírky vybrané dopravcem zatím není jisté, jak ji Finanční správa posoudí.",
   summary: [
     "Platební brána, převod předem a QR kód zaplacený z domova se neevidují.",
     "Platba hotově, kartou nebo QR kódem při osobním odběru se eviduje.",
@@ -36,7 +36,7 @@ export const eetEshopDobirka: Guide = {
               ["Vlastní rozvoz: zákazník zaplatí vašemu řidiči hotově nebo kartou", "**Ano**"],
               ["Dobírka vybraná dopravcem", "Zatím není jisté"],
             ],
-            caption: "Rozhoduje, zda zákazník platí při osobním kontaktu s vámi, ne kde si zboží objednal.",
+            caption: "Rozhoduje, zda zákazník platí při osobním kontaktu s vámi nebo ve vaší provozovně, ne kde si zboží objednal.",
           },
         },
       ],
@@ -82,7 +82,7 @@ export const eetEshopDobirka: Guide = {
           p: `${FACTS.whoMust.summary} E-shop, který přijímá jen platby na dálku, proto evidovat nemusí.`,
         },
         {
-          p: `Přijímáte-li i osobní platby – na prodejně, na výdejním místě nebo při vlastním rozvozu –, oznamujete v DIS+ od **${DIS.dateLabel}** evidenční jednotky. ${FACTS.units.allUnits} K typům jednotek patří i internetová stránka.`,
+          p: `Přijímáte-li i osobní platby – na prodejně, na vlastním výdejním místě nebo při vlastním rozvozu –, oznamujete v DIS+ od **${DIS.dateLabel}** evidenční jednotky. ${FACTS.units.allUnits} K typům jednotek patří i internetová stránka.`,
         },
         { p: "Jak jednotky založit a kolik jich potřebujete, popisuje návod [Evidenční jednotka v EET 2.0: co to je a jak ji oznámit](/navody/evidencni-jednotka)." },
         { cta: "jednotky" },
@@ -105,7 +105,7 @@ export const eetEshopDobirka: Guide = {
     },
     {
       q: "Potřebuje e-shop pokladnu?",
-      a: "Jen pokud přijímá osobní platby – na prodejně, na výdejním místě nebo při vlastním rozvozu. E-shop jen s platbami na dálku evidovat nemusí.",
+      a: "Jen pokud přijímá osobní platby – na prodejně, na vlastním výdejním místě nebo při vlastním rozvozu (k dobírce viz výše). E-shop jen s platbami na dálku evidovat nemusí.",
     },
   ],
   howTo: {
@@ -115,7 +115,7 @@ export const eetEshopDobirka: Guide = {
       { name: "Projděte způsoby platby", text: "Rozdělte je na platby na dálku (brána, převod, QR z webu) a platby při osobním kontaktu (osobní odběr, vlastní rozvoz)." },
       { name: "Bez osobních plateb nic neevidujete", text: "E-shop, který přijímá jen platby na dálku, evidovat nemusí." },
       { name: "Přihlaste se v DIS+", text: `Máte-li osobní platby, od ${DIS.dateLabel} se v DIS+ přihlaste k evidenci tržeb a oznamte všechny evidenční jednotky.` },
-      { name: "Připravte pokladnu", text: "Vydejte si pokladní certifikát a nastavte pokladnu na prodejně, na výdejním místě nebo u řidiče." },
+      { name: "Připravte pokladnu", text: "Vygenerujte si pokladní certifikát a nastavte pokladnu na prodejně, na vlastním výdejním místě nebo u řidiče." },
       { name: "Evidujte osobní platby", text: "Od 1. 1. 2027 evidujte každou platbu přijatou při osobním odběru nebo při doručení vlastním rozvozem." },
     ],
   },
