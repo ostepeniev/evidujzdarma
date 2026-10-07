@@ -382,6 +382,21 @@ export async function runRetention(now = new Date()): Promise<Record<string, num
     out.preregistrationsToConsentProof = proofs.length;
     await count("preregistrations", db.delete(schema.preregistrations).where(and(termOver, not(proofDue!))).returning({ id: schema.preregistrations.id }));
   }
+  // Doklad o odvolaném souhlasu (zmenšená předregistrace, R8.2): 3 roky po odvolání souhlasu – bez ohledu na termOver.
+  // Kdo si mezitím založil účet, termOver nesplní, a doklad by jinak zůstal navždy (R10.3 M3).
+  await count(
+    "consentProofs",
+    db
+      .delete(schema.preregistrations)
+      .where(
+        and(
+          isNull(schema.preregistrations.confirmTokenIssuedAt),
+          isNull(schema.preregistrations.unsubscribedAt),
+          lt(schema.preregistrations.marketingConsentWithdrawnAt, addMonths(now, -12 * RETENTION.consentProofYears)),
+        ),
+      )
+      .returning({ id: schema.preregistrations.id }),
+  );
   // Doklad o odvolaném souhlasu: 3 roky po odhlášení
   await count(
     "unsubscribed",

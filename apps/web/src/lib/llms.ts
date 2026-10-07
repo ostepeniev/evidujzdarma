@@ -1,7 +1,7 @@
 import { isClosed } from "@/lib/launch";
 import { plainText } from "@/components/rich-text";
 import { FACTS, FACTS_UPDATED, TIMELINE } from "@/content/facts";
-import { GUIDES, isIndexable } from "@/content/guides";
+import { GUIDES, guideModified, isIndexable } from "@/content/guides";
 import { MYTHS, MYTHS_UPDATED } from "@/content/myths";
 import type { Block, Guide } from "@/content/guides/types";
 import { OPERATOR, SITE, absoluteUrl } from "./site";
@@ -84,7 +84,8 @@ function blockText(b: Block): string {
 export function guideText(g: Guide): string {
   return [
     `# ${g.h1 ?? g.title}`,
-    `URL: ${absoluteUrl(`/navody/${g.slug}`)} · Aktualizováno: ${g.updated}`,
+    // poslední změna stránky (i revize), stejně jako sitemap a JSON-LD (R10.3 M1)
+    `URL: ${absoluteUrl(`/navody/${g.slug}`)} · Aktualizováno: ${guideModified(g)}`,
     "",
     plainText(g.lead),
     "",
