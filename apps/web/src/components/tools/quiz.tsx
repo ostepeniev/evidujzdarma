@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { trackEvent } from "@/components/analytics-beacon";
 import { FACTS, SOURCES, formatKc, type Source } from "@/content/facts";
 import { ExternalLink } from "@/components/external-link";
 
@@ -151,6 +152,11 @@ export function Quiz() {
   const step = path.filter((p) => p.startsWith("q")).length;
   const question = Q[current];
   const result = R[current];
+
+  // trychtýř (R15.1): kvíz došel k výsledku
+  useEffect(() => {
+    if (result) trackEvent("quiz_done");
+  }, [result]);
 
   return (
     <div className="card mx-auto max-w-2xl p-6 sm:p-8">

@@ -5,6 +5,7 @@ import { isValidIco, normalizeIco } from "@ez/cz";
 import { getDb, hasDatabase, schema } from "@ez/db";
 import { INDUSTRY_SLUGS } from "@/content/industries";
 import { DIS_OPENS, TIMELINE, timelineAt } from "@/content/facts";
+import { recordEvent } from "@/lib/server/analytics";
 import { enqueueEmail, processOutbox } from "@/lib/server/mail";
 import { clientIp, rateLimit } from "@/lib/server/rate-limit";
 import { isJsonRequest } from "@/lib/server/request-guard";
@@ -176,6 +177,8 @@ export async function POST(req: Request) {
   }
 
   await db.insert(schema.preregistrationInterests).values({ preregistrationId: row.id, campaign: body.interest }).onConflictDoNothing();
+  // trychtýř (R15.1): jen počet nových předregistrací za den, bez osobních údajů
+  await recordEvent(req.headers, "prereg_submitted", now);
   await enqueueEmail({
     to: body.email,
     template: "prereg-confirm",

@@ -10,8 +10,8 @@ import { SITE_URL } from "@/lib/site";
 /** Strop těla požadavku API – stejný jako limit reverse proxy. Certifikát má vlastní, nižší limit. */
 export const API_BODY_LIMIT = 1024 * 1024;
 
-/** API přihlášené session cookie (vlastník, účetní, přihlášení) – tady platí kontrola původu. */
-export const COOKIE_API = /^\/api\/(ucet|kabinet|pozvanka|auth)(\/|$)/;
+/** API přihlášené session cookie (vlastník, účetní, přihlášení, adminský kabinet) – tady platí kontrola původu. */
+export const COOKIE_API = /^\/api\/(ucet|kabinet|pozvanka|auth|admin)(\/|$)/;
 
 const READ_ONLY = new Set(["GET", "HEAD", "OPTIONS"]);
 /** Trasy, kam posílá data obyčejný HTML formulář na našich stránkách (původ se kontroluje i tak). */

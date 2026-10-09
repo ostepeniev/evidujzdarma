@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { trackEvent } from "@/components/analytics-beacon";
 import { calculateEetOff, DEFAULT_INPUT, type Band, type EetOffInput } from "@/lib/eet-off";
 import { FACTS } from "@/content/facts";
 
@@ -59,7 +60,15 @@ function NumberField({
 export function EetOffCalculator() {
   const [input, setInput] = useState<EetOffInput>(DEFAULT_INPUT);
   const r = useMemo(() => calculateEetOff(input), [input]);
-  const set = <K extends keyof EetOffInput>(k: K, v: EetOffInput[K]) => setInput((s) => ({ ...s, [k]: v }));
+  const used = useRef(false);
+  const set = <K extends keyof EetOffInput>(k: K, v: EetOffInput[K]) => {
+    // trychtýř (R15.1): první úprava vstupu = kalkulačka použita (jednou za návštěvu stránky)
+    if (!used.current) {
+      used.current = true;
+      trackEvent("calculator_used");
+    }
+    setInput((s) => ({ ...s, [k]: v }));
+  };
 
   return (
     <div className="grid gap-8 lg:grid-cols-[1fr_1fr]">

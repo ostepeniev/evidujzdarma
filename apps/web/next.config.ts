@@ -41,7 +41,7 @@ const nextConfig: NextConfig = {
       { source: "/:path*", headers: securityHeaders },
       // globální CSP; citlivé stránky mají přísnou CSP s nonce z src/proxy.ts (R3.9)
       ...(process.env.NODE_ENV === "production"
-        ? [{ source: "/((?!pokladna|u/|prihlaseni|kabinet|pozvanka/).*)", headers: [{ key: "Content-Security-Policy", value: csp }] }]
+        ? [{ source: "/((?!pokladna|u/|prihlaseni|kabinet|pozvanka/|admin).*)", headers: [{ key: "Content-Security-Policy", value: csp }] }]
         : []),
       {
         source: "/sw.js",

@@ -26,7 +26,8 @@ const AI_AND_SEARCH_BOTS = [
 
 // Uzavřené sekce (eet-open-site): „/pokladna$“ přesně a „/pokladna/“ vše pod. Disallow je prefix (RFC 9309),
 // takže samotné „/u“ by zakázalo i „/ucetni“ (R7.1).
-const PRIVATE = ["/api/", "/ucet/", "/registrace/", ...CLOSED_SECTIONS.flatMap((p) => [`${p}$`, `${p}/`])];
+// adminský kabinet (R15.2) – „Disallow: /admin“
+const PRIVATE = ["/api/", "/ucet/", "/registrace/", "/admin", ...CLOSED_SECTIONS.flatMap((p) => [`${p}$`, `${p}/`])];
 
 export default async function robots(): Promise<MetadataRoute.Robots> {
   // sitemapy katalogu až s otevřením katalogu

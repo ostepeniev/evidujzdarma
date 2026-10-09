@@ -10,6 +10,7 @@ import { ToolCta } from "@/components/tool-cta";
 import { FACTS } from "@/content/facts";
 import { JsonLd, faqLd } from "@/lib/jsonld";
 import { headers } from "next/headers";
+import { recordEvent } from "@/lib/server/analytics";
 import { lookupCompany, type CompanyLookup } from "@/lib/server/ares";
 import { clientIpFromHeaders, rateLimit } from "@/lib/server/rate-limit";
 import { FactsVerified } from "@/components/facts-verified";
@@ -56,11 +57,15 @@ export default async function IcoCheckPage({ searchParams }: PageProps<"/kontrol
       prefillIco = ico;
       try {
         // živé dotazy do ARES z této stránky omezujeme i na IP (R3.11)
-        if (!rateLimit(`ico-page:${clientIpFromHeaders(await headers())}`, 30, 60)) throw new Error("rate");
+        const h = await headers();
+        if (!rateLimit(`ico-page:${clientIpFromHeaders(h)}`, 30, 60)) throw new Error("rate");
         result = await lookupCompany(ico);
         if (!result) {
           error = "Subjekt s tímto IČO jsme v ARES nenašli.";
           prefillIco = null;
+        } else {
+          // trychtýř (R15.1): kontrola IČO s výsledkem – jen počet za den
+          await recordEvent(h, "ico_check");
         }
       } catch (e) {
         error =

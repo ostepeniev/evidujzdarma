@@ -445,6 +445,12 @@ export async function runRetention(now = new Date()): Promise<Record<string, num
       .where(or(lt(schema.loginTokens.expiresAt, ago(now, DAY)), and(isNotNull(schema.loginTokens.usedAt), lt(schema.loginTokens.usedAt, ago(now, DAY)))))
       .returning({ id: schema.loginTokens.tokenHash }),
   );
+  // Měření návštěvnosti: souhrnná čísla 25 měsíců (R15.1); den je pražský, porovnává se datum
+  const analyticsFrom = addMonths(now, -RETENTION.analyticsMonths).toISOString().slice(0, 10);
+  await count(
+    "analytics",
+    db.delete(schema.analyticsDaily).where(lt(schema.analyticsDaily.day, analyticsFrom)).returning({ day: schema.analyticsDaily.day }),
+  );
   // Mezipaměť ARES: 24 hodin
   await count("aresCache", db.delete(schema.aresCache).where(lt(schema.aresCache.fetchedAt, ago(now, RETENTION.aresCacheHours * 3_600_000))).returning({ key: schema.aresCache.key }));
   return out;

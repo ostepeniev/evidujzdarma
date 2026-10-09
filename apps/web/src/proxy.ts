@@ -2,11 +2,11 @@ import { NextResponse, type NextRequest } from "next/server";
 import { COOKIE_API, guardApiRequest } from "@/lib/server/request-guard";
 
 /**
- * Přísná CSP s nonce pro citlivé stránky (R3.9): pokladna, účtenky, přihlášení, kabinet a pozvánky.
+ * Přísná CSP s nonce pro citlivé stránky (R3.9): pokladna, účtenky, přihlášení, kabinet, pozvánky a adminský kabinet (R15.2).
  * Bez 'unsafe-inline' ve script-src a bez možnosti vložit stránku do rámu. Ostatní stránky mají
  * globální CSP z next.config.ts (statické stránky nonce mít nemohou).
  */
-export const STRICT_CSP_PATHS = ["/pokladna", "/u/", "/prihlaseni", "/kabinet", "/pozvanka/"] as const;
+export const STRICT_CSP_PATHS = ["/pokladna", "/u/", "/prihlaseni", "/kabinet", "/pozvanka/", "/admin"] as const;
 
 const isStrict = (path: string) => STRICT_CSP_PATHS.some((p) => (p.endsWith("/") ? path.startsWith(p) : path === p || path.startsWith(`${p}/`)));
 
@@ -58,14 +58,14 @@ export const config = {
   matcher: [
     "/api/:path*",
     {
-      source: "/(pokladna|u|prihlaseni|kabinet|pozvanka)/:path*",
+      source: "/(pokladna|u|prihlaseni|kabinet|pozvanka|admin)/:path*",
       missing: [
         { type: "header", key: "next-router-prefetch" },
         { type: "header", key: "purpose", value: "prefetch" },
       ],
     },
     {
-      source: "/(pokladna|prihlaseni|kabinet)",
+      source: "/(pokladna|prihlaseni|kabinet|admin)",
       missing: [
         { type: "header", key: "next-router-prefetch" },
         { type: "header", key: "purpose", value: "prefetch" },

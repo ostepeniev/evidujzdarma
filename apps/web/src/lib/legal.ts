@@ -6,8 +6,8 @@ export const TERMS_VERSION_LABEL = "3. 10. 2026";
 export const TERMS_DATE_ISO = "2026-10-03";
 /** Pravidla akce Doporučte kolegu (Ц3, R7.10) – datum zveřejnění nastaví kontrolor v den otevření webu. */
 export const REFERRAL_RULES_VERSION_LABEL = "7. 10. 2026";
-/** Verze zásad ochrany osobních údajů (R8.2: odhlášení z novinek ≠ zrušení předregistrace). */
-export const PRIVACY_VERSION = "2026-10-07-r9";
+/** Verze zásad ochrany osobních údajů (R8.2: odhlášení z novinek ≠ zrušení předregistrace; R15.3: měření návštěvnosti). */
+export const PRIVACY_VERSION = "2026-10-r15";
 export const PRIVACY_VERSION_LABEL = "7. 10. 2026";
 /** Datum platnosti zásad pro <time dateTime> (R8.5, Д-9). */
 export const PRIVACY_DATE_ISO = "2026-10-07";
@@ -35,5 +35,7 @@ export const RETENTION = {
   closedSummaryDays: [0, 30, 55] as readonly number[],
   emailLogDays: 90,
   sessionDays: 90,
+  /** souhrnná čísla měření návštěvnosti (R15.1, zásady „Měření návštěvnosti“) */
+  analyticsMonths: 25,
   aresCacheHours: 24,
 } as const;

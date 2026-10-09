@@ -190,16 +190,21 @@ export async function confirmInterest(token: string): Promise<boolean> {
  * včasný přístup k pokladně (o který si uživatel řekl) a s marketingovým souhlasem i informace k DIS+.
  */
 export async function confirmPreregistration(token: string): Promise<boolean> {
+  return (await confirmPreregistrationResult(token)) !== null;
+}
+
+/** Jako confirmPreregistration, ale rozliší první potvrzení („confirmed“) od už potvrzené adresy („already“) – trychtýř R15.1. */
+export async function confirmPreregistrationResult(token: string): Promise<"confirmed" | "already" | null> {
   const row = await byToken(token);
-  if (!row) return false;
-  if (row.confirmedAt) return true;
+  if (!row) return null;
+  if (row.confirmedAt) return "already";
   const db = getDb();
   const updated = await db
     .update(schema.preregistrations)
     .set({ confirmedAt: new Date() })
     .where(and(eq(schema.preregistrations.id, row.id), isNull(schema.preregistrations.confirmedAt)))
     .returning({ id: schema.preregistrations.id });
-  if (!updated.length) return true;
+  if (!updated.length) return "already";
   const now = new Date();
   // DOI potvrdí i zájem podaný spolu s předregistrací (bez vlastního tokenu) – R7.4
   const confirmed = await db
@@ -219,7 +224,7 @@ export async function confirmPreregistration(token: string): Promise<boolean> {
     .where(and(eq(schema.preregistrationInterests.preregistrationId, row.id), isNull(schema.preregistrationInterests.confirmedAt), isNotNull(schema.preregistrationInterests.confirmTokenHash)));
   for (const p of pending) if (isInterest(p.campaign)) await requestInterestConfirmation(row, p.campaign, now);
   // e-mail ke spuštění DIS+ už se neplánuje podle kalendáře – tvrdí fakt o FS, spouští ho ručně provozovatel (R7.6)
-  return true;
+  return "confirmed";
 }
 
 /**

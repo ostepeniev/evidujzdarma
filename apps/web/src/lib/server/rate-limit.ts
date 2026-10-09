@@ -10,7 +10,8 @@ export function rateLimit(key: string, limit: number, perSeconds: number): boole
   const now = Date.now();
   const refill = limit / (perSeconds * 1000);
   const b = buckets.get(key) ?? { tokens: limit, updated: now };
-  b.tokens = Math.min(limit, b.tokens + (now - b.updated) * refill);
+  // hodiny jdoucí pozpátku (korekce NTP) nesmí kbelík vyprázdnit
+  b.tokens = Math.min(limit, b.tokens + Math.max(0, now - b.updated) * refill);
   b.updated = now;
   const allowed = b.tokens >= 1;
   if (allowed) b.tokens -= 1;

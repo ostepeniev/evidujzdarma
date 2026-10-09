@@ -61,6 +61,10 @@ export const preregistrations = pgTable(
     /** záznam-blokace jazyk nemá (R8.2, Д-6) */
     locale: varchar("locale", { length: 5 }).default("cs"),
     utm: jsonb("utm").$type<Record<string, string>>(),
+    /** adminský kabinet (R15.2): new | contacted | registered | not_interested */
+    crmStatus: varchar("crm_status", { length: 16 }).notNull().default("new"),
+    /** adminský kabinet (R15.2): poznámka provozovatele */
+    crmNote: text("crm_note"),
     createdAt: createdAt(),
   },
   (t) => [
@@ -716,4 +720,38 @@ export const pollVotes = pgTable(
     createdAt: createdAt(),
   },
   (t) => [uniqueIndex("poll_votes_uq").on(t.poll, t.voterHash), index("poll_votes_poll_choice").on(t.poll, t.choice)],
+);
+
+/* ────────────────────────────── Měření návštěvnosti a adminský kabinet (R15) ────────────────────────────── */
+
+/**
+ * Souhrnná čísla za den (R15.1) – žádná IP, User-Agent ani otisk: unikátní návštěvníky počítá server v paměti
+ * (denní sůl) a sem jde jen výsledné číslo. metric: page (key = cesta) | site ("") | ref (doména zdroje) |
+ * device (mobile/tablet/desktop) | event (událost trychtýře). Uchovává se 25 měsíců (runRetention).
+ */
+export const analyticsDaily = pgTable(
+  "analytics_daily",
+  {
+    day: date("day", { mode: "string" }).notNull(),
+    metric: varchar("metric", { length: 12 }).notNull(),
+    key: varchar("key", { length: 200 }).notNull(),
+    views: integer("views").notNull().default(0),
+    visitors: integer("visitors").notNull().default(0),
+    secondsSum: bigint("seconds_sum", { mode: "number" }).notNull().default(0),
+    secondsCount: integer("seconds_count").notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.day, t.metric, t.key] })],
+);
+
+/** Kdo a kdy si v adminském kabinetu zobrazil stránku s osobními údaji (R15.2). */
+export const adminAudit = pgTable(
+  "admin_audit",
+  {
+    id: bigint("id", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+    email: varchar("email", { length: 254 }).notNull(),
+    page: varchar("page", { length: 200 }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index("admin_audit_created").on(t.createdAt)],
 );

@@ -5,7 +5,7 @@
 // podnikatele) a potřebu zpracovatelské smlouvy dle čl. 28 GDPR v obchodních podmínkách; (4) doplnit jména
 // zpracovatelů (hosting v EU, doručování e-mailů, později platební partner a poskytovatel AI přehledu – u AI ověřit,
 // že data neopustí EU); (5) cookies – nyní jen nezbytné (přihlášení) a cookie ankety ez_voter; v localStorage jen
-// název kanceláře v šablonách, kód doporučení se do prohlížeče neukládá (R7.10); při nasazení analytiky doplnit;
+// název kanceláře v šablonách, kód doporučení se do prohlížeče neukládá (R7.10); měření návštěvnosti bez cookies (R15.3);
 // (6) identifikační údaje správce jsou v lib/site.ts (OPERATOR, ověřeno v OR 2. 10. 2026).
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -228,15 +228,26 @@ const SECTIONS: readonly { id: string; title: string; body: ReactNode }[] = [
     id: "cookies",
     title: "Cookies a úložiště v prohlížeči",
     body: (
-      <p>
-        Používáme jen nezbytné cookies pro přihlášení do účtu. Pokud přijdete přes odkaz s doporučením, kód doporučení
-        odešleme jen spolu s formulářem předregistrace; do prohlížeče ho neukládáme. Když hlasujete v anketě, uložíme
-        náhodný identifikátor do cookie <code>ez_voter</code> (platnost 1 rok), aby z jednoho prohlížeče šel jen jeden hlas;
-        u hlasu ukládáme jen jeho otisk, ne IP adresu ani jméno (oprávněný zájem na férovém výsledku ankety, čl. 6 odst. 1
-        písm. f) GDPR). Analytické ani reklamní cookies nepoužíváme; kdybychom to změnili, nejdřív vás požádáme o souhlas.
-        Název kanceláře, který vyplníte v šablonách dopisů pro klienty, zůstává jen ve vašem prohlížeči a na server ho
-        neposíláme.
-      </p>
+      <>
+        <p>
+          Používáme jen nezbytné cookies pro přihlášení do účtu. Pokud přijdete přes odkaz s doporučením, kód doporučení
+          odešleme jen spolu s formulářem předregistrace; do prohlížeče ho neukládáme. Když hlasujete v anketě, uložíme
+          náhodný identifikátor do cookie <code>ez_voter</code> (platnost 1 rok), aby z jednoho prohlížeče šel jen jeden hlas;
+          u hlasu ukládáme jen jeho otisk, ne IP adresu ani jméno (oprávněný zájem na férovém výsledku ankety, čl. 6 odst. 1
+          písm. f) GDPR). Analytické ani reklamní cookies nepoužíváme; kdybychom to změnili, nejdřív vás požádáme o souhlas.
+          Název kanceláře, který vyplníte v šablonách dopisů pro klienty, zůstává jen ve vašem prohlížeči a na server ho
+          neposíláme.
+        </p>
+        {/* R15.3 – doslovně */}
+        <p id="mereni-navstevnosti">
+          <strong>Měření návštěvnosti.</strong> Abychom věděli, které stránky lidem pomáhají, počítáme návštěvy webu vlastním
+          nástrojem na našem serveru. Nepoužíváme cookies ani jiné ukládání do vašeho zařízení a vaši IP adresu neukládáme: z IP
+          adresy a typu prohlížeče se po dobu jednoho dne vypočítá anonymní otisk, který se o půlnoci zahodí. Uchováváme jen
+          souhrnná čísla za den (počet zobrazení stránek, počet návštěvníků, odkud přišli a z jakého typu zařízení) po dobu 25
+          měsíců. Pokud máte v prohlížeči zapnutý signál Do Not Track nebo Global Privacy Control, nepočítáme vás vůbec. Právním
+          základem je náš oprávněný zájem na zlepšování webu.
+        </p>
+      </>
     ),
   },
   {
