@@ -16,7 +16,7 @@ const ENV_LABEL: Record<CertEnvironment, string> = { production: "ostrý", playg
 /** Tolerance rozdílu hodin při kontrole „platný od“. */
 const CLOCK_SKEW_MS = 5 * 60_000;
 
-/** Účet v ostrém provozu s certifikátem z neprodukční CA EET (R12.2, текст z рецензії №9). */
+/** Účet v ostrém provozu s certifikátem z neprodukční CA EET (R12.2, doslovně z рецензії №9). */
 export const CA_EET_TEST_ENV_MESSAGE = "Certifikát je z testovacího prostředí EET. Pro ostrý provoz si vygenerujte certifikát v produkčním DIS+.";
 
 /**
