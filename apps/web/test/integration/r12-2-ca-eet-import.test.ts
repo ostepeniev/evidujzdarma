@@ -1,6 +1,7 @@
 /**
  * R12.2 (рецензія №9, доповнення №10) – při nahrání .p12 se ověří řetězec CA EET (podpis list → SubCA → Root).
- *  - účet v ostrém provozu přijme jen řetězec `prod`; zkušební, testovací a Playground → chyba doslovně;
+ *  - účet v ostrém provozu přijme řetězec `prod`; zkušební, testovací a Playground s OID ostrého certifikátu → chyba
+ *    doslovně (celá tabulka řetězec × Policy OID a Playground pro ověření – r13-ca-eet-production.test.ts);
  *  - vydavatel, který v CA EET není → beze změny;
  *  - účet v režimu Playground / ukázkovém → jako dosud, žádné nové odmítnutí.
  * Řetězce jsou syntetické (vytvořené v testu); caEetIssuer se volá se syntetickými kotvami místo oficiálních.
@@ -52,13 +53,12 @@ describe("R12.2 – CA EET chain on .p12 upload", () => {
     expect(r.environment).toBe("production");
   });
 
-  it("gate: a production account refuses zkušební, testovací and Playground chains (verbatim message)", async () => {
+  it("gate: a production account refuses zkušební, testovací and Playground chains with a production OID (verbatim message)", async () => {
     const s = await seedAccount({ mode: "production" });
     for (const env of ["zkus", "test", "playground"] as const) {
-      // i s OID ostrého certifikátu: rozhoduje ověřený řetězec
+      // i s OID ostrého certifikátu: rozhoduje ověřený řetězec (Playground s OID Playground se přijme – R13.1)
       expect(await outcome(importCertificate(s.account.id, { file: p12(ca[env].sub), password: "x" })), env).toBe(`400 ${TEST_ENV_MESSAGE}`);
     }
-    expect(await outcome(importCertificate(s.account.id, { file: p12(ca.playground.sub, PG_OID), password: "x" }))).toBe(`400 ${TEST_ENV_MESSAGE}`);
   });
 
   it("gate: an issuer outside CA EET → behaviour unchanged (accepted by the policy OID)", async () => {

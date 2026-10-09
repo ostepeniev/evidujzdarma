@@ -18,11 +18,15 @@ const CLOCK_SKEW_MS = 5 * 60_000;
 
 /** Účet v ostrém provozu s certifikátem z neprodukční CA EET (R12.2, doslovně z рецензії №9). */
 export const CA_EET_TEST_ENV_MESSAGE = "Certifikát je z testovacího prostředí EET. Pro ostrý provoz si vygenerujte certifikát v produkčním DIS+.";
+/** Jméno vydavatele z CA EET, ale podpis řetězce nesedí (R13.2, doslovně z рецензії №11). */
+export const CA_EET_FORGED_MESSAGE =
+  "Certifikát se nepodařilo ověřit: jeho podpis neodpovídá certifikační autoritě EET. Nahrajte soubor .p12 tak, jak jste ho stáhli z DIS+, nebo si v DIS+ vygenerujte nový certifikát.";
 
 /**
  * Import .p12 – fail-closed (R1.9): bez EIČ v certifikátu, s jiným EIČ než účet, s nesouhlasem
  * prostředí nebo mimo platnost se nic neuloží. Výměna certifikátu je atomická.
- * Účet v ostrém provozu přijme jen certifikát z produkční CA EET – ověřený podpisem řetězce (R12.2).
+ * Účet v ostrém provozu přijme z CA EET (ověřeno podpisem řetězce, R12.2) produkční certifikát a Playground certifikát
+ * s Policy OID Playground – ten jen pro ověření (R13.1).
  */
 export async function importCertificate(accountId: string, input: { file: Buffer; password: string; expected?: CertEnvironment }) {
   let cert;
@@ -41,19 +45,21 @@ export async function importCertificate(accountId: string, input: { file: Buffer
   if (!account) throw new HttpError(404, "Účet neexistuje");
   if (account.closedAt) throw new HttpError(400, "Účet je zrušený.");
 
-  // CA EET (R12.2): ostrý účet jen s řetězcem `prod`, ověřeným podpisem list → SubCA → Root. Vydavatel mimo CA EET
-  // → jako dosud (rozhoduje Policy OID níže); Playground a ukázkový režim beze změny.
-  if (accountMode(account) === "production") {
-    const ca = caEetIssuer(cert.certificatePem);
-    if (ca.environment && ca.environment !== "prod") throw new HttpError(400, CA_EET_TEST_ENV_MESSAGE);
-    // jméno vydavatele CA EET bez platného podpisu – certifikát nepochází od CA EET
-    if (!ca.environment && ca.nameMatch) {
-      throw new HttpError(400, "Certifikát se nepodařilo ověřit u certifikační autority EET. Stáhněte z DIS+ znovu celý soubor .p12.");
-    }
-  }
-
   // prostředí podle Policy OID pokladního certifikátu (produkce 3.1.2, Playground 3.1.5; R5.9), ne podle názvu vydavatele
   const environment = certificateEnvironment(cert.info.policies);
+
+  // CA EET (R12.2, R13.1): ostrý účet – řetězec ověřený podpisem list → SubCA → Root × Policy OID:
+  //  prod → jako dosud; playground s OID Playground → uloží se jako playground pro ověření (ostré tržby ho nepoužijí);
+  //  playground s jiným OID, zkušební a testovací → odmítnout. Vydavatel mimo CA EET → jako dosud (rozhoduje Policy OID);
+  //  Playground a ukázkový režim beze změny.
+  if (accountMode(account) === "production") {
+    const ca = caEetIssuer(cert.certificatePem);
+    const allowed = ca.environment === "prod" || (ca.environment === "playground" && environment === "playground");
+    if (ca.environment && !allowed) throw new HttpError(400, CA_EET_TEST_ENV_MESSAGE);
+    // jméno vydavatele CA EET bez platného podpisu – certifikát nepochází od CA EET
+    if (!ca.environment && ca.nameMatch) throw new HttpError(400, CA_EET_FORGED_MESSAGE);
+  }
+
   if (!environment) {
     throw new HttpError(400, "Certifikát nemá politiku pokladního certifikátu EET 2.0. Nahrajte pokladní certifikát vydaný v DIS+ (ostrý nebo pro Playground).");
   }
