@@ -2,6 +2,7 @@
  * Načtení certifikátu pro evidenci tržeb z PKCS#12 (.p12 / .pfx).
  * Server-only (node-forge + node:crypto).
  */
+import { generateKeyPairSync } from "node:crypto";
 import { createRequire } from "node:module";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -281,8 +282,10 @@ export function createTestP12(opts: {
   policyOid?: string | null;
   /** atribut serialNumber v subjektu (R6.12: EIČ se z něj nebere) */
   subjectSerialNumber?: string;
+  /** vydavatel z createTestCa (R12.2) – jinak self-signed se jménem issuerCommonName */
+  signer?: TestCaCert;
 }): Buffer {
-  const keys = forge.pki.rsa.generateKeyPair(2048);
+  const keys = testKeys();
   const cert = forge.pki.createCertificate();
   cert.publicKey = keys.publicKey;
   cert.serialNumber = "01" + forge.util.bytesToHex(forge.random.getBytesSync(8));
@@ -290,7 +293,9 @@ export function createTestP12(opts: {
   cert.validity.notAfter = opts.notAfter ?? new Date(Date.now() + (opts.days ?? 365) * 86_400_000);
   const attrs = [{ name: "commonName", value: opts.commonName }, { name: "countryName", value: "CZ" }, ...(opts.subjectSerialNumber ? [{ name: "serialNumber", value: opts.subjectSerialNumber }] : [])];
   cert.setSubject(attrs);
-  cert.setIssuer([{ name: "commonName", value: opts.issuerCommonName ?? "EvidujZdarma TEST CA" }]);
+  const signer = opts.signer ? { cert: forge.pki.certificateFromPem(opts.signer.certPem), key: forge.pki.privateKeyFromPem(opts.signer.keyPem) } : null;
+  if (signer) cert.setIssuer(signer.cert.subject.attributes);
+  else cert.setIssuer([{ name: "commonName", value: opts.issuerCommonName ?? "EvidujZdarma TEST CA" }]);
   if (opts.policyOid) {
     const { asn1 } = forge;
     const policy = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
@@ -298,7 +303,53 @@ export function createTestP12(opts: {
     ]);
     cert.setExtensions([{ id: OID_CERT_POLICIES, value: policy }]);
   }
-  cert.sign(keys.privateKey, forge.md.sha256.create());
+  cert.sign(signer?.key ?? keys.privateKey, forge.md.sha256.create());
   const p12 = forge.pkcs12.toPkcs12Asn1(keys.privateKey, [cert], opts.password, { algorithm: "3des" });
   return Buffer.from(forge.asn1.toDer(p12).getBytes(), "binary");
+}
+
+/** Klíče pro testovací certifikáty – node:crypto (rychlejší než forge), převedené do forge. */
+function testKeys(): { privateKey: forge.pki.rsa.PrivateKey; publicKey: forge.pki.rsa.PublicKey } {
+  const { privateKey, publicKey } = generateKeyPairSync("rsa", {
+    modulusLength: 2048,
+    publicKeyEncoding: { type: "spki", format: "pem" },
+    privateKeyEncoding: { type: "pkcs1", format: "pem" },
+  });
+  return { privateKey: forge.pki.privateKeyFromPem(privateKey) as forge.pki.rsa.PrivateKey, publicKey: forge.pki.publicKeyFromPem(publicKey) as forge.pki.rsa.PublicKey };
+}
+
+/** Testovací CA: certifikát a klíč v PEM – jen v paměti testu, nikdy v repozitáři. */
+export interface TestCaCert {
+  certPem: string;
+  keyPem: string;
+}
+
+/**
+ * Syntetický řetězec Root → SubCA pro testy kontroly CA EET (R12.2). Klíče vznikají při každém volání; skutečné
+ * certifikáty FS ani jejich klíče se v testech nepoužívají.
+ */
+export function createTestCa(opts: { rootName: string; subName: string; days?: number }): { root: TestCaCert; sub: TestCaCert } {
+  const days = opts.days ?? 3650;
+  const make = (name: string, issuer: { cert: forge.pki.Certificate; key: forge.pki.rsa.PrivateKey } | null): { cert: forge.pki.Certificate; key: forge.pki.rsa.PrivateKey } => {
+    const keys = testKeys();
+    const cert = forge.pki.createCertificate();
+    cert.publicKey = keys.publicKey;
+    cert.serialNumber = "02" + forge.util.bytesToHex(forge.random.getBytesSync(8));
+    cert.validity.notBefore = new Date(Date.now() - 86_400_000);
+    cert.validity.notAfter = new Date(Date.now() + days * 86_400_000);
+    const subject = [{ name: "commonName", value: name }, { name: "countryName", value: "CZ" }];
+    cert.setSubject(subject);
+    cert.setIssuer(issuer ? issuer.cert.subject.attributes : subject);
+    cert.setExtensions([
+      { name: "basicConstraints", cA: true, critical: true },
+      { name: "keyUsage", keyCertSign: true, cRLSign: true, critical: true },
+      { name: "subjectKeyIdentifier" },
+    ]);
+    cert.sign(issuer?.key ?? keys.privateKey, forge.md.sha256.create());
+    return { cert, key: keys.privateKey };
+  };
+  const root = make(opts.rootName, null);
+  const sub = make(opts.subName, root);
+  const pem = (x: { cert: forge.pki.Certificate; key: forge.pki.rsa.PrivateKey }): TestCaCert => ({ certPem: forge.pki.certificateToPem(x.cert), keyPem: forge.pki.privateKeyToPem(x.key) });
+  return { root: pem(root), sub: pem(sub) };
 }

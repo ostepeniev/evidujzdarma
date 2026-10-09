@@ -4,3 +4,5 @@ export * from "./p12.ts";
 export * from "./signer.ts";
 export * from "./eet2/client.ts";
 export * from "./eet2/response.ts";
+export * from "./eet2/ca-eet.ts";
+export * from "./eet2/ca-eet-anchors.ts";

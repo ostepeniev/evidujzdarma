@@ -51,6 +51,10 @@ Zdroj: https://eet.gov.cz/cs/pro-vyvojare/dokumenty-ke-stazeni (soubory `/assets
 staženo kontrolorem 9. 10. 2026 po oznámení FS (Informační e-mail č. 6 z 8. 10. 2026; stahování bylo 8. 10.
 dočasně nefunkční). Všechny soubory jsou PEM. Řetězec SubCA → Root ověřen `openssl verify` pro všechna čtyři prostředí.
 
+V kódu jsou vložené jako konstanty v `src/eet2/ca-eet-anchors.ts` (konce řádků LF); shodu se soubory, SHA-256 z této
+tabulky a podpis SubCA → Root hlídá `test/r12-2-ca-eet.test.ts`. Při nahrání .p12 je používá `caEetIssuer`
+(`src/eet2/ca-eet.ts`): účet v ostrém provozu přijme jen řetězec `prod` (R12.2).
+
 Testovací přílohy v `../test/fixtures/`:
 
 - `official-request-CZ00000019.xml` – oficiální veřejný vzorek podepsané zprávy (konformační test kanonikalizace a podpisu),

@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { getDb, schema } from "@ez/db";
 import { buildSale, certificateEnvironment } from "@ez/fiscal-core";
-import { CertificateError, parseP12Safe } from "@ez/fiscal-core/server";
+import { CertificateError, caEetIssuer, parseP12Safe } from "@ez/fiscal-core/server";
 import { HttpError } from "./auth";
 import { notifyOwners } from "./account";
 import { rateLimit } from "./rate-limit";
@@ -16,9 +16,13 @@ const ENV_LABEL: Record<CertEnvironment, string> = { production: "ostrý", playg
 /** Tolerance rozdílu hodin při kontrole „platný od“. */
 const CLOCK_SKEW_MS = 5 * 60_000;
 
+/** Účet v ostrém provozu s certifikátem z neprodukční CA EET (R12.2, текст z рецензії №9). */
+export const CA_EET_TEST_ENV_MESSAGE = "Certifikát je z testovacího prostředí EET. Pro ostrý provoz si vygenerujte certifikát v produkčním DIS+.";
+
 /**
  * Import .p12 – fail-closed (R1.9): bez EIČ v certifikátu, s jiným EIČ než účet, s nesouhlasem
  * prostředí nebo mimo platnost se nic neuloží. Výměna certifikátu je atomická.
+ * Účet v ostrém provozu přijme jen certifikát z produkční CA EET – ověřený podpisem řetězce (R12.2).
  */
 export async function importCertificate(accountId: string, input: { file: Buffer; password: string; expected?: CertEnvironment }) {
   let cert;
@@ -33,6 +37,21 @@ export async function importCertificate(accountId: string, input: { file: Buffer
   if (cert.info.validFrom.getTime() > now + CLOCK_SKEW_MS) throw new HttpError(400, `Certifikát platí až od ${cert.info.validFrom.toLocaleString("cs-CZ", { timeZone: "Europe/Prague" })}.`);
   if (!cert.info.dic) throw new HttpError(400, "Z certifikátu nejde zjistit EIČ (DIČ). Nahrajte pokladní certifikát vydaný v DIS+.");
 
+  const account = await getDb().query.accounts.findFirst({ where: eq(schema.accounts.id, accountId) });
+  if (!account) throw new HttpError(404, "Účet neexistuje");
+  if (account.closedAt) throw new HttpError(400, "Účet je zrušený.");
+
+  // CA EET (R12.2): ostrý účet jen s řetězcem `prod`, ověřeným podpisem list → SubCA → Root. Vydavatel mimo CA EET
+  // → jako dosud (rozhoduje Policy OID níže); Playground a ukázkový režim beze změny.
+  if (accountMode(account) === "production") {
+    const ca = caEetIssuer(cert.certificatePem);
+    if (ca.environment && ca.environment !== "prod") throw new HttpError(400, CA_EET_TEST_ENV_MESSAGE);
+    // jméno vydavatele CA EET bez platného podpisu – certifikát nepochází od CA EET
+    if (!ca.environment && ca.nameMatch) {
+      throw new HttpError(400, "Certifikát se nepodařilo ověřit u certifikační autority EET. Stáhněte z DIS+ znovu celý soubor .p12.");
+    }
+  }
+
   // prostředí podle Policy OID pokladního certifikátu (produkce 3.1.2, Playground 3.1.5; R5.9), ne podle názvu vydavatele
   const environment = certificateEnvironment(cert.info.policies);
   if (!environment) {
@@ -42,9 +61,6 @@ export async function importCertificate(accountId: string, input: { file: Buffer
     throw new HttpError(400, `Tento certifikát je ${ENV_LABEL[environment]}, ne ${ENV_LABEL[input.expected]}. Vydavatel: ${cert.info.issuer}.`);
   }
 
-  const account = await getDb().query.accounts.findFirst({ where: eq(schema.accounts.id, accountId) });
-  if (!account) throw new HttpError(404, "Účet neexistuje");
-  if (account.closedAt) throw new HttpError(400, "Účet je zrušený.");
   const accountEic = account.eic ?? account.dic;
   if (accountEic && cert.info.dic !== accountEic) {
     throw new HttpError(400, `Certifikát patří EIČ ${cert.info.dic}, ale u účtu je ${accountEic}. Zkontrolujte EIČ v nastavení.`);
