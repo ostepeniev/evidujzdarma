@@ -1,4 +1,5 @@
 import type { FaqItem } from "@/components/faq";
+import { SERVICE_COPY } from "@/lib/site";
 import { FACTS, formatKc } from "./facts";
 
 export const WHO_MUST: readonly { title: string; text: string; tone: "yes" | "maybe" | "no"; href?: string; linkLabel?: string }[] = [
@@ -58,7 +59,7 @@ export const LANDING_FAQ: readonly FaqItem[] = [
   },
   {
     q: "Co když nemám signál?",
-    a: `${FACTS.offline.summary} Naše pokladna tržbu uloží v zařízení, odešle ji sama, jakmile je spojení, a ukazuje, kolik času do konce lhůty zbývá.`,
+    a: `${FACTS.offline.summary} ${SERVICE_COPY.offlineFaq}`,
   },
   {
     q: "Musím vydávat účtenku?",

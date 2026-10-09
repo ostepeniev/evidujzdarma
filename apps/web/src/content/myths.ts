@@ -6,6 +6,7 @@
  * shrnutí zdrojů (co říká zákon / FS) a náš komentář (názor, vždy označený).
  * Fakta se berou z facts.ts, aby se při změně opravila všude.
  */
+import { SERVICE_COPY } from "@/lib/site";
 import { FACTS, SOURCES, type Source } from "./facts";
 
 export interface Myth {
@@ -95,7 +96,7 @@ export const MYTHS: readonly Myth[] = [
     seenIn: "Některé komerční blogy o pokladnách.",
     truth:
       "Finanční správa zveřejnila rozhraní SOAP (verze v4) se schématem XSD a WSDL. Každá zpráva se podepisuje pokladním certifikátem (WS-Security, RSA-SHA256). Certifikát si zdarma vygenerujete v DIS+.",
-    comment: "Pro podnikatele je to detail – důležité je, že bez certifikátu z DIS+ evidovat nejde. Naše pokladna podpis řeší sama, certifikát jen nahrajete.",
+    comment: SERVICE_COPY.certificateComment,
     action: { text: "Jak získat pokladní certifikát.", href: "/navody/jak-aktivovat-dis-a-certifikat", label: "Návod: DIS+ a certifikát" },
     sources: [SOURCES.dokumenty, SOURCES.vyvojari],
     asOf: "2026-10-01",

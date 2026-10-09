@@ -1,6 +1,6 @@
 import { FACTS, SOURCES } from "../facts";
 import type { Guide } from "./types";
-import { REVIEWER } from "@/lib/site";
+import { REVIEWER, SERVICE_COPY } from "@/lib/site";
 
 export const eetBezInternetu: Guide = {
   slug: "eet-bez-internetu",
@@ -43,7 +43,8 @@ export const eetBezInternetu: Guide = {
           ],
         },
         {
-          note: "Pokladna EvidujZdarma ukazuje u každé neodeslané tržby, kolik času do konce lhůty zbývá, a upozorní vás dřív, než lhůta vyprší.",
+          // čas slovesa podle stavu pokladny (R12.1) – fakta stejná, nová revize ani záznam v historii nejsou potřeba
+          note: SERVICE_COPY.offlineNote,
         },
       ],
     },

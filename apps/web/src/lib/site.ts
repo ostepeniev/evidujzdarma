@@ -7,7 +7,9 @@ export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://evidujzdar
  * netvrdil, že už funguje. Po otevření (odebrání z CLOSED_SECTIONS) se sám vrátí přítomný čas.
  *  - `site` = SITE.description (meta, patička, JSON-LD organizace), `home` = meta popis úvodní stránky;
  *  - `hero` = podtitul úvodní stránky, `toolCta` = výchozí text ToolCta, `guideSidebar` = boční panel návodu,
- *    `calculatorCta` = ToolCta kalkulačky EET OFF, `compareCta` = ToolCta srovnání s MOJE eet.
+ *    `calculatorCta` = ToolCta kalkulačky EET OFF, `compareCta` = ToolCta srovnání s MOJE eet;
+ *  - `compareIntro` = odstavec nad srovnáním na úvodní stránce, `offlineFaq` = věta za FACTS.offline.summary ve FAQ
+ *    „Co když nemám signál?“, `offlineNote` = note v návodu eet-bez-internetu, `certificateComment` = komentář v myths.ts (R12.1).
  */
 export const SERVICE_COPY = isClosed("/pokladna")
   ? {
@@ -18,6 +20,12 @@ export const SERVICE_COPY = isClosed("/pokladna")
       guideSidebar: "Připravujeme: i bez signálu, pro až 5 uživatelů.",
       calculatorCta: "Rozhodli jste se evidovat? Pokladnu EvidujZdarma připravujeme – zdarma navždy a i bez signálu. Předregistrujte se už teď.",
       compareCta: "Zkontrolujte své IČO za 10 vteřin, nebo se rovnou předregistrujte k bezplatné pokladně, která bude fungovat i bez signálu.",
+      compareIntro:
+        "Státní aplikace MOJE eet je dobrá volba pro nejmenší podnikatele. Naše pokladna navíc bude umět prodávat bez signálu, tisknout na tiskárnu a posílat účtenky e-mailem; nástroje pro účetní nabízíme už teď. Tyto funkce MOJE eet podle dosud zveřejněných informací nemá.",
+      offlineFaq: "Naše pokladna bude tržbu ukládat v zařízení, odešle ji sama, jakmile bude spojení, a ukáže, kolik času do konce lhůty zbývá.",
+      offlineNote:
+        "Pokladna EvidujZdarma, kterou připravujeme, bude u každé neodeslané tržby ukazovat, kolik času do konce lhůty zbývá, a upozorní vás dřív, než lhůta vyprší.",
+      certificateComment: "Pro podnikatele je to detail – důležité je, že bez certifikátu z DIS+ evidovat nejde. Naše pokladna bude podpis řešit sama, certifikát jen nahrajete.",
     }
   : {
       site: "Bezplatná pokladna pro EET 2.0: funguje i bez signálu, až 5 uživatelů, účtenka e-mailem i QR. Nezávislá služba, není provozována Finanční správou.",
@@ -27,6 +35,11 @@ export const SERVICE_COPY = isClosed("/pokladna")
       guideSidebar: "Funguje i bez signálu, až 5 uživatelů.",
       calculatorCta: "Rozhodli jste se evidovat? Pokladna EvidujZdarma je zdarma navždy, funguje i bez signálu a zvládne ji každý za 15 minut.",
       compareCta: "Zkontrolujte své IČO za 10 vteřin, nebo se rovnou předregistrujte k bezplatné pokladně, která funguje i bez signálu.",
+      compareIntro:
+        "Státní aplikace MOJE eet je dobrá volba pro nejmenší podnikatele. My navíc nabízíme práci bez signálu, tiskárny, účtenky e-mailem a nástroje pro účetní – funkce, které MOJE eet podle dosud zveřejněných informací nemá.",
+      offlineFaq: "Naše pokladna tržbu uloží v zařízení, odešle ji sama, jakmile je spojení, a ukazuje, kolik času do konce lhůty zbývá.",
+      offlineNote: "Pokladna EvidujZdarma ukazuje u každé neodeslané tržby, kolik času do konce lhůty zbývá, a upozorní vás dřív, než lhůta vyprší.",
+      certificateComment: "Pro podnikatele je to detail – důležité je, že bez certifikátu z DIS+ evidovat nejde. Naše pokladna podpis řeší sama, certifikát jen nahrajete.",
     };
 
 export const SITE = {

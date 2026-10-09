@@ -111,8 +111,7 @@ export default function HomePage() {
           Férové srovnání se státní aplikací MOJE eet
         </h2>
         <p className="mt-2 max-w-3xl text-lg text-ink-soft">
-          Státní aplikace MOJE eet je dobrá volba pro nejmenší podnikatele. My navíc nabízíme práci bez signálu, tiskárny, účtenky
-          e-mailem a nástroje pro účetní – funkce, které MOJE eet podle dosud zveřejněných informací nemá.
+          {SERVICE_COPY.compareIntro}
         </p>
         <div className="mt-8">
           <ComparisonTable />
