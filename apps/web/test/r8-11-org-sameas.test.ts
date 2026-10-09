@@ -12,7 +12,8 @@ const LINKEDIN = "https://www.linkedin.com/company/146665642/";
 describe("R8.11 – Organization sameAs", () => {
   it("gate: organizationLd() contains both profile links", async () => {
     const { organizationLd } = await import("@/lib/jsonld");
-    expect(organizationLd().sameAs).toEqual([FACEBOOK, LINKEDIN]);
+    // R14.6 přidal Instagram a Threads (hlídá r14-conversion.test.ts)
+    expect(organizationLd().sameAs).toEqual(expect.arrayContaining([FACEBOOK, LINKEDIN]));
   });
 
   it("gate: the JSON-LD rendered in the layout carries them", async () => {

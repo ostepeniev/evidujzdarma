@@ -5,6 +5,7 @@
  * a web je tak i označuje. Jádro pokladny je zdarma navždy — to se nemění.
  * Placené funkce spouštíme později než bezplatnou pokladnu.
  */
+import { WHY_FREE_FAQ } from "./why-free";
 
 export const PRICING_UPDATED = "2026-10-01";
 
@@ -174,6 +175,8 @@ export const FEATURE_MATRIX: readonly { feature: string; free: boolean | string;
 ];
 
 export const PRICING_FAQ = [
+  // R14.1: táž otázka jako blok na úvodní stránce, karty 1–3 jedním odstavcem
+  WHY_FREE_FAQ,
   {
     q: "Je bezplatný tarif opravdu zdarma navždy?",
     a: "Ano. Evidence tržeb, práce bez signálu, až 5 uživatelů, 3 evidenční jednotky, doklad e-mailem a QR kódem, denní přehled, export CSV a QR platba zůstanou zdarma. Nejde o zkušební verzi a nevyžadujeme platební kartu.",

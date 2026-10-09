@@ -7,18 +7,20 @@ import { PollWidget } from "@/components/poll-widget";
 import { PreregForm } from "@/components/prereg-form";
 import { PosPreview } from "@/components/pos-preview";
 import { Countdown, Timeline } from "@/components/timeline";
+import { WhyFree } from "@/components/why-free";
 import { LANDING_FAQ, WHO_MUST } from "@/content/landing";
 import { FACTS_UPDATED } from "@/content/facts";
 import { POLLS } from "@/content/polls";
 import { JsonLd, faqLd, softwareApplicationLd } from "@/lib/jsonld";
 import { ExternalLink } from "@/components/external-link";
-import { canonicalMeta } from "@/lib/metadata";
+import { HOME_URL, homeMeta } from "@/lib/metadata";
 import { SERVICE_COPY } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: { absolute: "Evidence tržeb EET 2.0 zdarma – pokladna i bez signálu | EvidujZdarma" },
   description: SERVICE_COPY.home,
-  ...canonicalMeta("/"),
+  // canonical a og:url s koncovým lomítkem jako v sitemap – vypisuje je stránka sama (R14.7, lib/metadata.ts)
+  ...homeMeta(),
 };
 
 // Odpočet a "nejbližší termín" se mění denně.
@@ -36,6 +38,8 @@ const BENEFITS = [
 export default function HomePage() {
   return (
     <>
+      <link rel="canonical" href={HOME_URL} />
+      <meta property="og:url" content={HOME_URL} />
       <JsonLd data={[softwareApplicationLd(), faqLd(LANDING_FAQ)]} />
 
       {/* Hero */}
@@ -64,6 +68,9 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Proč zdarma (R14.1) – pod prvním obrazovkou, před srovnáním s MOJE eet */}
+      <WhyFree />
 
       {/* Timeline */}
       <section className="container-page py-16" aria-labelledby="terminy">

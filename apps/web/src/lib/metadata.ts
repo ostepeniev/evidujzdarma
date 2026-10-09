@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { SITE } from "./site";
+import { SITE, absoluteUrl } from "./site";
 
 type OpenGraph = NonNullable<Metadata["openGraph"]>;
 
@@ -18,4 +18,16 @@ export const OG_DEFAULTS = { type: "website" as const, locale: "cs_CZ", siteName
  */
 export function canonicalMeta(path: string, openGraph?: OpenGraph): Pick<Metadata, "alternates" | "openGraph"> {
   return { alternates: { canonical: path }, openGraph: { ...OG_DEFAULTS, ...openGraph, url: path } as OpenGraph };
+}
+
+/**
+ * Adresa úvodní stránky – stejná v canonical, og:url i v sitemap (R14.7). Next u cesty „/“ koncové lomítko vždy zahodí
+ * (resolveAbsoluteUrlWithPathname vrací origin), proto úvodní stránka canonical a og:url nebere z metadat, ale vypíše je
+ * sama jako <link>/<meta> (React je přesune do <head>).
+ */
+export const HOME_URL = absoluteUrl("/");
+
+/** og: pole úvodní stránky – bez url, to vypisuje stránka (HOME_URL). */
+export function homeMeta(): Pick<Metadata, "openGraph"> {
+  return { openGraph: { ...OG_DEFAULTS } };
 }

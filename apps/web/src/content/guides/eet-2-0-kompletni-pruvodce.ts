@@ -7,8 +7,8 @@ const surcharge = FACTS.eetOff.surchargeMonthly;
 export const eet20KompletniPruvodce: Guide = {
   slug: "eet-2-0-kompletni-pruvodce",
   category: "zaklady",
-  title: "EET 2.0 v roce 2027: kompletní průvodce",
-  h1: "EET 2.0 v roce 2027: kompletní průvodce pro podnikatele",
+  title: "Co je EET 2.0: kompletní průvodce na rok 2027",
+  h1: "Co je EET 2.0 a co udělat do 1. 1. 2027",
   description:
     "Vše o EET 2.0 na jednom místě: od kdy platí, koho se týká, co se eviduje, EET OFF, DIS+ a certifikát, pokuty, účtenky a výběr pokladny. Stav k 1. 10. 2026.",
   lead: `EET 2.0 je nová elektronická evidence tržeb. Zákon platí od **1. 1. 2027** a evidovat se musí od prvního dne – „pilotní“ leden není zákonná výjimka. Týká se OSVČ i firem, které přijímají platby osobně – hotově, kartou nebo QR kódem. Účtenka povinná není, pokuta může dosáhnout ${formatKc(FACTS.penalties.max)}. Paušalisté v 1. pásmu se mohou vyvázat přes EET OFF.`,

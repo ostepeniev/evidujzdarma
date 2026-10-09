@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { isValidIco } from "@ez/cz/ico";
 import { SITE } from "@/lib/site";
 import { INDUSTRIES } from "@/content/industries";
 
@@ -26,8 +27,26 @@ function readUtm(): Record<string, string> | undefined {
   return Object.keys(out).length ? out : undefined;
 }
 
+/** IČO z adresy úvodní stránky (/?ico=): jen platné IČO o 8 číslicích, cokoli jiného se ignoruje (R14.2). */
+export function icoFromSearch(search: string): string {
+  const v = new URLSearchParams(search).get("ico") ?? "";
+  return /^\d{8}$/.test(v) && isValidIco(v) ? v : "";
+}
+
+/** Pole, která jsou v rozbalovacím bloku „Upřesnit…“ (R14.3) – při chybě u nich se blok otevře. */
+const OPTIONAL_FIELDS = ["establishments", "industry", "needs"];
+
 export function PreregForm({ defaultIco = "" }: { defaultIco?: string }) {
   const [state, setState] = useState<State>({ kind: "idle" });
+  const [ico, setIco] = useState(defaultIco);
+
+  // úvodní stránka je statická – IČO z ?ico= se doplní až v prohlížeči (R14.2)
+  useEffect(() => {
+    if (!defaultIco) {
+      const fromUrl = icoFromSearch(window.location.search);
+      if (fromUrl) setIco(fromUrl);
+    }
+  }, [defaultIco]);
 
   /** Kód doporučení jen z adresy v okamžiku odeslání – do prohlížeče se neukládá (R7.10, Z6). */
   function refFromUrl(): string | undefined {
@@ -95,48 +114,63 @@ export function PreregForm({ defaultIco = "" }: { defaultIco?: string }) {
             id="pr-ico"
             name="ico"
             inputMode="numeric"
-            defaultValue={defaultIco}
+            value={ico}
+            onChange={(e) => setIco(e.target.value)}
             className="input"
             placeholder="8 číslic"
             aria-invalid={err?.field === "ico"}
           />
         </div>
-        <div>
-          <label htmlFor="pr-est" className="label">
-            Počet provozoven
-          </label>
-          <select id="pr-est" name="establishments" className="input" defaultValue="">
-            <option value="">Vyberte…</option>
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4 a více</option>
-          </select>
-        </div>
-        <div className="sm:col-span-2">
-          <label htmlFor="pr-ind" className="label">
-            Obor
-          </label>
-          <select id="pr-ind" name="industry" className="input" defaultValue="">
-            <option value="">Vyberte obor…</option>
-            {INDUSTRIES.map((i) => (
-              <option key={i.slug} value={i.slug}>
-                {i.label}
-              </option>
-            ))}
-          </select>
-        </div>
       </div>
 
-      <fieldset className="space-y-2">
-        <legend className="label">S čím chcete pomoct?</legend>
-        {NEEDS.map((n) => (
-          <label key={n.value} className="flex items-center gap-3 text-[15px] text-ink">
-            <input type="checkbox" name="needs" value={n.value} className="h-5 w-5 rounded accent-brand-600" />
-            {n.label}
-          </label>
-        ))}
-      </fieldset>
+      {/* nepovinná upřesnění – data a validace beze změny, jen schovaná (R14.3) */}
+      <details className="group rounded-xl border border-line px-4 py-3" open={OPTIONAL_FIELDS.includes(err?.field ?? "") || undefined}>
+        <summary className="cursor-pointer list-none text-[15px] font-medium text-ink [&::-webkit-details-marker]:hidden">
+          <span aria-hidden="true" className="mr-2 inline-block text-brand-600 transition-transform group-open:rotate-90">
+            ›
+          </span>
+          Upřesnit, s čím pomoct (nepovinné)
+        </summary>
+        <div className="mt-4 space-y-5">
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div>
+              <label htmlFor="pr-est" className="label">
+                Počet provozoven
+              </label>
+              <select id="pr-est" name="establishments" className="input" defaultValue="">
+                <option value="">Vyberte…</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4 a více</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor="pr-ind" className="label">
+                Obor
+              </label>
+              <select id="pr-ind" name="industry" className="input" defaultValue="">
+                <option value="">Vyberte obor…</option>
+                {INDUSTRIES.map((i) => (
+                  <option key={i.slug} value={i.slug}>
+                    {i.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <fieldset className="space-y-2">
+            <legend className="label">S čím chcete pomoct?</legend>
+            {NEEDS.map((n) => (
+              <label key={n.value} className="flex items-center gap-3 text-[15px] text-ink">
+                <input type="checkbox" name="needs" value={n.value} className="h-5 w-5 rounded accent-brand-600" />
+                {n.label}
+              </label>
+            ))}
+          </fieldset>
+        </div>
+      </details>
 
       {/* honeypot */}
       <div aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 overflow-hidden">

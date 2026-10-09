@@ -29,8 +29,8 @@ async function resolved(m: Metadata, pathname: string) {
   return { ogUrl: og?.url ? String(og.url) : null, canonical: alt?.canonical?.url ? String(alt.canonical.url) : null };
 }
 
+// úvodní stránka canonical a og:url vypisuje sama s koncovým lomítkem (R14.7) – hlídá r14-conversion.test.ts
 const PAGES: [string, () => Promise<Metadata>][] = [
-  ["/", async () => (await import("@/app/(site)/page")).metadata],
   ["/cenik", async () => (await import("@/app/(site)/cenik/page")).metadata],
   ["/kalkulacka-eet-off", async () => (await import("@/app/(site)/kalkulacka-eet-off/page")).metadata],
   [`/navody/${GUIDES[0]!.slug}`, async () => guideMetadata(GUIDES[0]!)],
@@ -49,7 +49,7 @@ describe("R9.13 – og:url equals the canonical URL", () => {
     const m = await load();
     expect((m.openGraph as { url?: unknown }).url).toBe((m.alternates as { canonical?: unknown }).canonical);
     const r = await resolved(m, path);
-    expect(r.canonical).toBe(path === "/" ? SITE_URL : `${SITE_URL}${path}`);
+    expect(r.canonical).toBe(`${SITE_URL}${path}`);
     expect(r.ogUrl).toBe(r.canonical);
     expect(m.openGraph).toMatchObject({ locale: "cs_CZ", siteName: SITE.name });
     expect((m.openGraph as { type?: string }).type).toMatch(/^(website|article)$/);

@@ -5,6 +5,7 @@ import { Faq } from "@/components/faq";
 import { IcoQuickCheck } from "@/components/ico-quick-check";
 import { IcoResult } from "@/components/ico-result";
 import { PageHeader } from "@/components/page-header";
+import { PreregForm } from "@/components/prereg-form";
 import { ToolCta } from "@/components/tool-cta";
 import { FACTS } from "@/content/facts";
 import { JsonLd, faqLd } from "@/lib/jsonld";
@@ -46,15 +47,21 @@ export default async function IcoCheckPage({ searchParams }: PageProps<"/kontrol
 
   let result: CompanyLookup | null = null;
   let error: string | null = null;
+  /** IČO pro formulář předregistrace (R14.2): každý výsledek kromě „IČO neexistuje“ (neplatné nebo v ARES není) */
+  let prefillIco: string | null = null;
   if (icoParam) {
     if (!ico || !isValidIco(ico)) {
       error = "Zadané IČO není platné. IČO má 8 číslic a poslední z nich je kontrolní.";
     } else {
+      prefillIco = ico;
       try {
         // živé dotazy do ARES z této stránky omezujeme i na IP (R3.11)
         if (!rateLimit(`ico-page:${clientIpFromHeaders(await headers())}`, 30, 60)) throw new Error("rate");
         result = await lookupCompany(ico);
-        if (!result) error = "Subjekt s tímto IČO jsme v ARES nenašli.";
+        if (!result) {
+          error = "Subjekt s tímto IČO jsme v ARES nenašli.";
+          prefillIco = null;
+        }
       } catch (e) {
         error =
           e instanceof Error && e.message === "rate"
@@ -95,6 +102,15 @@ export default async function IcoCheckPage({ searchParams }: PageProps<"/kontrol
               </Link>
               .
             </p>
+          )}
+          {prefillIco && (
+            <section className="card mt-10 p-6 shadow-sm sm:p-8" aria-labelledby="predregistrace-h">
+              <h2 id="predregistrace-h" className="text-2xl font-bold">
+                Chcete evidovat zdarma?
+              </h2>
+              <p className="mb-6 mt-2 text-ink-soft">Předregistrujte se k bezplatné pokladně. IČO {prefillIco} už máme vyplněné.</p>
+              <PreregForm defaultIco={prefillIco} />
+            </section>
           )}
           <section className="mt-14">
             <h2 className="mb-6 text-2xl font-bold">Časté otázky</h2>

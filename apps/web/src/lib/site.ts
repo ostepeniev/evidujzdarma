@@ -26,6 +26,8 @@ export const SERVICE_COPY = isClosed("/pokladna")
       offlineNote:
         "Pokladna EvidujZdarma, kterou připravujeme, bude u každé neodeslané tržby ukazovat, kolik času do konce lhůty zbývá, a upozorní vás dřív, než lhůta vyprší.",
       certificateComment: "Pro podnikatele je to detail – důležité je, že bez certifikátu z DIS+ evidovat nejde. Naše pokladna bude podpis řešit sama, certifikát jen nahrajete.",
+      /** tlačítko bloku „Proč je to zdarma?“ a tlačítka dole na telefonu (R14.1, R14.5) */
+      startCta: { label: "Předregistrovat se zdarma", href: "/#registrace" },
     }
   : {
       site: "Bezplatná pokladna pro EET 2.0: funguje i bez signálu, až 5 uživatelů, účtenka e-mailem i QR. Nezávislá služba, není provozována Finanční správou.",
@@ -40,6 +42,7 @@ export const SERVICE_COPY = isClosed("/pokladna")
       offlineFaq: "Naše pokladna tržbu uloží v zařízení, odešle ji sama, jakmile je spojení, a ukazuje, kolik času do konce lhůty zbývá.",
       offlineNote: "Pokladna EvidujZdarma ukazuje u každé neodeslané tržby, kolik času do konce lhůty zbývá, a upozorní vás dřív, než lhůta vyprší.",
       certificateComment: "Pro podnikatele je to detail – důležité je, že bez certifikátu z DIS+ evidovat nejde. Naše pokladna podpis řeší sama, certifikát jen nahrajete.",
+      startCta: { label: "Začít zdarma", href: "/#registrace" },
     };
 
 export const SITE = {
@@ -51,7 +54,13 @@ export const SITE = {
   email: "ahoj@evidujzdarma.cz",
   independenceNotice: "Nezávislá služba, není provozována Finanční správou.",
   /** profily EvidujZdarma na sociálních sítích – sameAs v JSON-LD organizace (R8.11) */
-  social: ["https://www.facebook.com/profile.php?id=61595251222968", "https://www.linkedin.com/company/146665642/"],
+  social: [
+    "https://www.facebook.com/profile.php?id=61595251222968",
+    "https://www.linkedin.com/company/146665642/",
+    // R14.6
+    "https://www.instagram.com/evidujzdarma/",
+    "https://www.threads.com/@evidujzdarma",
+  ],
 } as const;
 
 /**
