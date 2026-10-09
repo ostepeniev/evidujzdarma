@@ -204,6 +204,19 @@ describe("R14.6 – sameAs", () => {
   });
 });
 
+describe("R14.9 – SoftwareApplication on the home page", () => {
+  it("gate: the home page JSON-LD has audience and featureList verbatim (no aggregateRating, no phone)", async () => {
+    const html = await homeHtml();
+    const ld = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].flatMap((m) => JSON.parse(m[1]!) as Record<string, unknown>[]);
+    const app = ld.find((x) => x["@type"] === "SoftwareApplication")!;
+    expect(app.audience).toEqual({ "@type": "BusinessAudience", audienceType: "OSVČ a malé firmy v České republice" });
+    expect(app.featureList).toEqual(["Evidence tržeb EET 2.0", "Práce bez signálu", "Až 5 uživatelů a 3 evidenční jednotky", "Účtenka e-mailem i QR kódem"]);
+    expect(app).not.toHaveProperty("aggregateRating");
+    expect(app).not.toHaveProperty("telephone");
+    expect(app).toMatchObject({ name: "EvidujZdarma – pokladna pro EET 2.0", applicationCategory: "BusinessApplication", inLanguage: "cs-CZ" });
+  });
+});
+
 describe("R14.7 – sitemap lastmod and the home page address", () => {
   /** Sloučená metadata kořenového layoutu a stránky funkcí accumulateMetadata z Next (jako při renderu). */
   async function merged(page: Metadata, pathname: string) {

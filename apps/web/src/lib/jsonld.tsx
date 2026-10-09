@@ -72,6 +72,9 @@ export function softwareApplicationLd(): Ld {
     inLanguage: "cs-CZ",
     offers: { "@type": "Offer", price: "0", priceCurrency: "CZK", availability: offerAvailability(true) },
     publisher: { "@id": `${SITE_URL}/#organization` },
+    // R14.9 – doslovně; aggregateRating ani telefon ne (recenze zatím nejsou, česká linka není)
+    audience: { "@type": "BusinessAudience", audienceType: "OSVČ a malé firmy v České republice" },
+    featureList: ["Evidence tržeb EET 2.0", "Práce bez signálu", "Až 5 uživatelů a 3 evidenční jednotky", "Účtenka e-mailem i QR kódem"],
   };
 }
 
