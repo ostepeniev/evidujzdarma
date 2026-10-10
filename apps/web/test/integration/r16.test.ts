@@ -122,12 +122,13 @@ describe("R16.3 – admin audit retention", () => {
 });
 
 describe("R16.4 – the phone button hides over any pre-registration form", () => {
-  it("gate: MobileCta observes forms with data-prereg-form (not #registrace); PreregForm carries the attribute", async () => {
+  it("gate: MobileCta observes forms with data-prereg-form (not #registrace); PreregForm (its wrapper) carries the attribute", async () => {
     const src = readFileSync(new URL("../../src/components/mobile-cta.tsx", import.meta.url), "utf8");
     expect(src).toMatch(/querySelectorAll\("\[data-prereg-form\]"\)/);
     expect(src).toMatch(/IntersectionObserver/);
     expect(src).not.toMatch(/getElementById\("registrace"\)/);
     const { PreregForm } = await import("@/components/prereg-form");
-    expect(renderToStaticMarkup(createElement(PreregForm))).toMatch(/<form[^>]*data-prereg-form="true"/);
+    // R17.6: atribut na stabilním obalu kolem formuláře i poděkování
+    expect(renderToStaticMarkup(createElement(PreregForm))).toMatch(/<div data-prereg-form="true"><form/);
   });
 });

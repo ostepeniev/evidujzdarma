@@ -85,12 +85,9 @@ export function PreregForm({ defaultIco = "" }: { defaultIco?: string }) {
     }
   }
 
-  if (state.kind === "done") return <Success />;
-
   const err = state.kind === "error" ? state : null;
-  return (
-    // data-prereg-form: tlačítko dole na telefonu se nad formulářem schová (R16.4)
-    <form onSubmit={onSubmit} className="space-y-5" noValidate data-prereg-form="true">
+  const form = (
+    <form onSubmit={onSubmit} className="space-y-5" noValidate>
       <div className="grid gap-5 sm:grid-cols-2">
         <div className="sm:col-span-2">
           <label htmlFor="pr-email" className="label">
@@ -207,6 +204,9 @@ export function PreregForm({ defaultIco = "" }: { defaultIco?: string }) {
       </p>
     </form>
   );
+  // stabilní obal formuláře i poděkování: tlačítko dole na telefonu se nad ním schová (R16.4) a neztratí ho ani po
+  // odeslání – MobileCta sbírá [data-prereg-form] jen při montování (R17.6)
+  return <div data-prereg-form="true">{state.kind === "done" ? <Success /> : form}</div>;
 }
 
 function Success() {
