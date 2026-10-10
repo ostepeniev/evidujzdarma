@@ -19,6 +19,7 @@ export const STATIC_PAGES: readonly { path: string; title: string; priority: num
   { path: "/ucetni", title: "EvidujZdarma pro účetní", priority: 0.7, changeFrequency: "monthly", modified: "2026-10-03" },
   { path: "/ucetni/hromadna-kontrola", title: "Hromadná kontrola IČO pro účetní", priority: 0.7, changeFrequency: "monthly", modified: "2026-10-01" },
   { path: "/ucetni/sablony", title: "Šablony dopisů klientům k EET 2.0", priority: 0.5, changeFrequency: "monthly", modified: "2026-10-01" },
+  { path: "/ukazka", title: "Ukázka pokladny EvidujZdarma", priority: 0.7, changeFrequency: "monthly", modified: "2026-10-10" },
   { path: "/cenik", title: "Ceník", priority: 0.6, changeFrequency: "monthly", modified: "2026-10-09" },
   { path: "/o-nas", title: "O nás a kontakt", priority: 0.4, changeFrequency: "monthly", modified: "2026-10-07" },
   { path: "/podminky", title: "Obchodní podmínky", priority: 0.2, changeFrequency: "monthly" },

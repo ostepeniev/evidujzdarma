@@ -60,6 +60,10 @@ export default function HomePage() {
               <p className="mt-3 text-sm text-muted">
                 Zdarma a bez registrace. Údaje bereme z veřejného registru ARES.
               </p>
+              {/* druhé tlačítko prvního obrazovky – ukázka pokladny bez registrace (R17.5) */}
+              <Link href="/ukazka" className="btn-secondary mt-4">
+                Vyzkoušet ukázku pokladny
+              </Link>
             </div>
             <div className="mt-8">
               <Countdown />

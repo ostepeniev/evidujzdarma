@@ -86,6 +86,12 @@ export default function PricingPage() {
         <p role="note" className="mx-auto max-w-3xl rounded-2xl border border-sun-300 bg-sun-100 p-4 text-[15px] text-ink sm:p-5">
           <strong>Předběžný ceník.</strong> <RichText text={PRICING_NOTICE} />
         </p>
+        {/* ukázka pokladny bez registrace (R17.5) */}
+        <p className="mx-auto mt-4 max-w-3xl text-center">
+          <Link href="/ukazka" className="btn-secondary">
+            Vyzkoušet ukázku pokladny
+          </Link>
+        </p>
 
         <section aria-labelledby="tarify" className="mt-10">
           <h2 id="tarify" className="sr-only">
