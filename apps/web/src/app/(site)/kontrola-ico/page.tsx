@@ -10,6 +10,7 @@ import { ToolCta } from "@/components/tool-cta";
 import { FACTS } from "@/content/facts";
 import { JsonLd, faqLd } from "@/lib/jsonld";
 import { headers } from "next/headers";
+import { assess } from "@/lib/eet-assessment";
 import { recordEvent } from "@/lib/server/analytics";
 import { lookupCompany, type CompanyLookup } from "@/lib/server/ares";
 import { clientIpFromHeaders, rateLimit } from "@/lib/server/rate-limit";
@@ -48,7 +49,7 @@ export default async function IcoCheckPage({ searchParams }: PageProps<"/kontrol
 
   let result: CompanyLookup | null = null;
   let error: string | null = null;
-  /** IČO pro formulář předregistrace (R14.2): každý výsledek kromě „IČO neexistuje“ (neplatné nebo v ARES není) */
+  /** IČO pro formulář předregistrace (R14.2): každý výsledek kromě „IČO neexistuje“ (neplatné, v ARES není) a zaniklého subjektu (R16.2) */
   let prefillIco: string | null = null;
   if (icoParam) {
     if (!ico || !isValidIco(ico)) {
@@ -66,6 +67,8 @@ export default async function IcoCheckPage({ searchParams }: PageProps<"/kontrol
         } else {
           // trychtýř (R15.1): kontrola IČO s výsledkem – jen počet za den
           await recordEvent(h, "ico_check");
+          // zaniklý subjekt evidovat nebude – formulář předregistrace bez smyslu (R16.2)
+          if (assess(result.subject, result.rzp).verdict === "dissolved") prefillIco = null;
         }
       } catch (e) {
         error =

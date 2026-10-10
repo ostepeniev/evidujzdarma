@@ -185,13 +185,14 @@ describe("R14.5 – sticky button on the phone", () => {
     expect(html).not.toContain(CTA.closed);
   });
 
-  it("gate: on marketing pages only – the (site) layout has it, the app layout (pokladna, kabinet, přihlášení) not; hides when #registrace is in view", async () => {
+  it("gate: on marketing pages only – the (site) layout has it, the app layout (pokladna, kabinet, přihlášení) not; hides when a pre-registration form is in view", async () => {
     const { default: SiteLayout } = await import("@/app/(site)/layout");
     expect(renderToStaticMarkup(createElement(SiteLayout as FC<{ children: null }>, { children: null }))).toContain("data-mobile-cta");
     expect(readFileSync(new URL("../src/app/(app)/layout.tsx", import.meta.url), "utf8")).not.toMatch(/MobileCta/);
     const src = readFileSync(new URL("../src/components/mobile-cta.tsx", import.meta.url), "utf8");
     expect(src).toMatch(/IntersectionObserver/);
-    expect(src).toMatch(/getElementById\("registrace"\)/);
+    // R16.4: kterýkoli formulář předregistrace, ne jen #registrace (hlídá r16.test.ts)
+    expect(src).toMatch(/querySelectorAll\("\[data-prereg-form\]"\)/);
   });
 });
 

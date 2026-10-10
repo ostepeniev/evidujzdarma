@@ -5,18 +5,26 @@ import { useEffect, useState } from "react";
 import { SERVICE_COPY } from "@/lib/site";
 
 /**
- * Tlačítko připnuté dole na telefonu (< 640 px) na marketingových stránkách (R14.5). Schová se, když je formulář
- * #registrace vidět; pod obsahem je místo na jeho výšku, aby nepřekrylo patičku ani odkazy. Odkaz – dosažitelný
+ * Tlačítko připnuté dole na telefonu (< 640 px) na marketingových stránkách (R14.5). Schová se, když je vidět kterýkoli
+ * formulář předregistrace (data-prereg-form, R16.4); pod obsahem je místo na jeho výšku, aby nepřekrylo patičku ani odkazy. Odkaz – dosažitelný
  * klávesnicí. Text a cíl ze SERVICE_COPY (isClosed("/pokladna")).
  */
 export function MobileCta() {
   const [formInView, setFormInView] = useState(false);
 
+  // jakýkoli formulář předregistrace na stránce (úvodní stránka, /kontrola-ico…) – R16.4
   useEffect(() => {
-    const form = document.getElementById("registrace");
-    if (!form || typeof IntersectionObserver === "undefined") return;
-    const io = new IntersectionObserver((entries) => setFormInView(entries.some((e) => e.isIntersecting)));
-    io.observe(form);
+    const forms = document.querySelectorAll("[data-prereg-form]");
+    if (!forms.length || typeof IntersectionObserver === "undefined") return;
+    const visible = new Set<Element>();
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (e.isIntersecting) visible.add(e.target);
+        else visible.delete(e.target);
+      }
+      setFormInView(visible.size > 0);
+    });
+    forms.forEach((f) => io.observe(f));
     return () => io.disconnect();
   }, []);
 

@@ -451,6 +451,11 @@ export async function runRetention(now = new Date()): Promise<Record<string, num
     "analytics",
     db.delete(schema.analyticsDaily).where(lt(schema.analyticsDaily.day, analyticsFrom)).returning({ day: schema.analyticsDaily.day }),
   );
+  // Audit adminského kabinetu: 24 měsíců (R16.3)
+  await count(
+    "adminAudit",
+    db.delete(schema.adminAudit).where(lt(schema.adminAudit.createdAt, addMonths(now, -RETENTION.adminAuditMonths))).returning({ id: schema.adminAudit.id }),
+  );
   // Mezipaměť ARES: 24 hodin
   await count("aresCache", db.delete(schema.aresCache).where(lt(schema.aresCache.fetchedAt, ago(now, RETENTION.aresCacheHours * 3_600_000))).returning({ key: schema.aresCache.key }));
   return out;

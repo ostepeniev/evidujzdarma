@@ -37,5 +37,7 @@ export const RETENTION = {
   sessionDays: 90,
   /** souhrnná čísla měření návštěvnosti (R15.1, zásady „Měření návštěvnosti“) */
   analyticsMonths: 25,
+  /** záznamy o zobrazení osobních údajů v adminském kabinetu (R16.3) */
+  adminAuditMonths: 24,
   aresCacheHours: 24,
 } as const;

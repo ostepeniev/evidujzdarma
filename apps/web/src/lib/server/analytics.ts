@@ -3,6 +3,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { gte, sql } from "drizzle-orm";
 import { getDb, schema } from "@ez/db";
 import { SITE_URL } from "@/lib/site";
+import { sitePages } from "@/lib/site-pages";
 import { clientIpFromHeaders } from "./rate-limit";
 
 /**
@@ -10,7 +11,7 @@ import { clientIpFromHeaders } from "./rate-limit";
  *  - Unikátní návštěvník za den = sha256(denní sůl + IP + User-Agent). Sůl je náhodná, jen v paměti a mění se o půlnoci
  *    (Praha); otisky jsou jen v paměti aktuálního dne. Do DB jdou jen čísla po dnech (analytics_daily).
  *  - Boti, DNT: 1 a Sec-GPC: 1 se nepočítají vůbec – ani zobrazení, ani události trychtýře.
- *  - Jen marketingové stránky; bez měst, zemí, celých adres odkazujících stránek a query.
+ *  - Jen stránky z rejstříku webu (sitemap.xml, R16.1); bez měst, zemí, celých adres odkazujících stránek a query.
  * Restart serveru během dne vygeneruje novou sůl – tentýž člověk se ten den může započítat dvakrát (horní odhad).
  */
 
@@ -23,9 +24,6 @@ export type FunnelEvent = (typeof FUNNEL_EVENTS)[number];
 /** Události, které smí poslat prohlížeč; ostatní počítá server ve svých obslužných rutinách. */
 export const CLIENT_EVENTS: readonly FunnelEvent[] = ["quiz_done", "calculator_used"];
 
-/** Cesty, které se neměří (aplikace, API, adminský kabinet, přihlášení). */
-const NOT_MARKETING = ["/api", "/pokladna", "/kabinet", "/admin", "/prihlaseni", "/u", "/pozvanka", "/ucet"];
-const PATH_RE = /^\/[a-z0-9\-._~/%]*$/i;
 export const MAX_SECONDS = 1800;
 /** strop otisků v paměti za den – ochrana paměti; nad ním se další návštěvníci už nerozlišují */
 const MAX_HASHES = 200_000;
@@ -38,9 +36,19 @@ export function countable(h: Headers): boolean {
   return true;
 }
 
-export function isMarketingPath(path: string): boolean {
-  if (path.length > 200 || !PATH_RE.test(path)) return false;
-  return !NOT_MARKETING.some((p) => path === p || path.startsWith(`${p}/`));
+let tracked: Set<string> | null = null;
+
+/**
+ * Měřené cesty = rejstřík stránek webu, týž zdroj jako sitemap.xml (R16.1). Jiná cesta (vymyšlená, 404, návod mimo
+ * sitemap, aplikace, API, admin) se nezapíše – podvržený beacon tak nemůže zakládat řádky s libovolnou adresou.
+ */
+export function trackedPaths(): ReadonlySet<string> {
+  tracked ??= new Set(sitePages().map((p) => p.path));
+  return tracked;
+}
+
+export function isTrackedPath(path: string): boolean {
+  return trackedPaths().has(path);
 }
 
 export function deviceType(ua: string): "mobile" | "tablet" | "desktop" {
@@ -105,7 +113,7 @@ async function bump(day: string, metric: string, key: string, inc: { views?: num
 
 /** Zobrazení stránky (z beaconu). */
 export async function recordView(h: Headers, input: { path: string; ref?: unknown }, now = new Date()): Promise<boolean> {
-  if (!countable(h) || !isMarketingPath(input.path)) return false;
+  if (!countable(h) || !isTrackedPath(input.path)) return false;
   const day = pragueDay(now);
   await bump(day, "page", input.path, { views: 1, visitors: firstVisit(`page:${input.path}`, h, now) ? 1 : 0 });
   await bump(day, "site", "", { views: 1, visitors: firstVisit("site", h, now) ? 1 : 0 });
@@ -117,7 +125,7 @@ export async function recordView(h: Headers, input: { path: string; ref?: unknow
 
 /** Čas na stránce (z beaconu při skrytí stránky): sekundy 0–1800; `first` = první hlášení k tomuto zobrazení. */
 export async function recordTime(h: Headers, input: { path: string; seconds: unknown; first: boolean }, now = new Date()): Promise<boolean> {
-  if (!countable(h) || !isMarketingPath(input.path)) return false;
+  if (!countable(h) || !isTrackedPath(input.path)) return false;
   const n = Number(input.seconds);
   const seconds = Number.isFinite(n) ? Math.min(Math.max(Math.round(n), 0), MAX_SECONDS) : 0;
   await bump(pragueDay(now), "page", input.path, { secondsSum: seconds, secondsCount: input.first ? 1 : 0 });

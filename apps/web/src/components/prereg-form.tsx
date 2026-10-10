@@ -89,7 +89,8 @@ export function PreregForm({ defaultIco = "" }: { defaultIco?: string }) {
 
   const err = state.kind === "error" ? state : null;
   return (
-    <form onSubmit={onSubmit} className="space-y-5" noValidate>
+    // data-prereg-form: tlačítko dole na telefonu se nad formulářem schová (R16.4)
+    <form onSubmit={onSubmit} className="space-y-5" noValidate data-prereg-form="true">
       <div className="grid gap-5 sm:grid-cols-2">
         <div className="sm:col-span-2">
           <label htmlFor="pr-email" className="label">
