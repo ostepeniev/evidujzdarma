@@ -9,6 +9,7 @@ import type { DeviceCredentials, PosConfig } from "@/lib/pos/types";
 import { FACTS } from "@/content/facts";
 import { pragueToday } from "@/lib/prague-time";
 import { ApiError, call, UNIT_TYPE_LABEL, type AccountStateDto } from "./api";
+import { AresCard, aresOutcome, isCompleteIco, type AresOutcome } from "./ares-card";
 import { modeIn } from "@/lib/modes";
 
 const MODE_LABEL: Record<string, string> = { mock: "ukázkový", playground: "Playground", production: "ostrý provoz" };
@@ -165,9 +166,11 @@ export function SetupApp({ initial }: { initial: State }) {
 
 function CompanySection({ state, onSaved }: { state: State; onSaved: (s: State) => void }) {
   const acc = state.account;
+  /** účet ještě není a předregistrace se stejným e-mailem má IČO (R17.3) */
+  const preregIco = !acc ? (state.preregIco ?? null) : null;
   const [form, setForm] = useState({
     name: acc?.name ?? "",
-    ico: acc?.ico ?? "",
+    ico: acc?.ico ?? preregIco ?? "",
     dic: acc?.dic ?? "",
     eic: acc?.eic && acc.eic !== acc.dic ? acc.eic : "",
     vatPayer: acc?.vatPayer ?? false,
@@ -178,19 +181,41 @@ function CompanySection({ state, onSaved }: { state: State; onSaved: (s: State) 
     acceptTerms: false,
   });
   const { busy, error, run } = useAction();
-  const [lookup, setLookup] = useState<string | null>(null);
   const set = (k: keyof typeof form, v: string | boolean) => setForm((f) => ({ ...f, [k]: v }));
+  // karta ARES (R17.3): načtení, výsledek a volba „Ano“ / „Vyplnit ručně“
+  const [ares, setAres] = useState<{ loading: boolean; ico: string | null; outcome: AresOutcome | null }>({ loading: false, ico: null, outcome: null });
+  const [decided, setDecided] = useState<"ares" | "manual" | null>(null);
 
-  async function fromAres() {
-    setLookup("Hledám v ARES…");
+  async function fromAres(raw: string = form.ico) {
+    const ico = raw.replace(/\s+/g, "");
+    setAres({ loading: true, ico, outcome: null });
+    setDecided(null);
     try {
-      const data = await call<{ subject: { name: string; dic: string | null; vatPayer: boolean } }>(`/api/ico/${form.ico.replace(/\s+/g, "")}`);
-      setForm((f) => ({ ...f, name: data.subject.name, dic: data.subject.dic ?? f.dic, vatPayer: data.subject.vatPayer }));
-      setLookup(`Načteno z ARES: ${data.subject.name}`);
-    } catch (e) {
-      setLookup(e instanceof Error ? e.message : "Nenalezeno");
+      const res = await fetch(`/api/ico/${ico}`, { cache: "no-store" });
+      setAres({ loading: false, ico, outcome: aresOutcome(res.status, await res.json().catch(() => ({}))) });
+    } catch {
+      setAres({ loading: false, ico, outcome: { kind: "error", message: "Registr ARES se nepodařilo načíst. Zkontrolujte připojení." } });
     }
   }
+  // IČO z předregistrace: ARES hned načíst
+  useEffect(() => {
+    if (preregIco && isCompleteIco(preregIco)) void fromAres(preregIco);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- jen při prvním zobrazení
+  }, []);
+  /** po zadání platného IČO (8 číslic) se ARES načte sám; tlačítko ARES zůstává */
+  function onIco(v: string) {
+    set("ico", v);
+    if (isCompleteIco(v) && v.replace(/\s+/g, "") !== ares.ico) void fromAres(v);
+  }
+  function applyAres() {
+    if (ares.outcome?.kind === "found") {
+      const s = ares.outcome.subject;
+      setForm((f) => ({ ...f, name: s.name, dic: s.dic ?? f.dic, vatPayer: s.vatPayer }));
+    }
+    setDecided("ares");
+  }
+  // nový účet: dokud čeká karta ARES na odpověď „Je to vaše firma?“, syrová pole nejsou vidět
+  const showFields = !!acc || decided !== null || !(ares.loading || ares.outcome?.kind === "found");
 
   return (
     <Section id="firma" step={1} title="Firma" done={!!acc} lead="Údaje se tisknou na účtenku. DIČ / EIČ je identifikace pro Finanční správu.">
@@ -213,86 +238,96 @@ function CompanySection({ state, onSaved }: { state: State; onSaved: (s: State) 
             IČO
           </label>
           <div className="flex gap-2">
-            <input id="f-ico" className="input" inputMode="numeric" value={form.ico} onChange={(e) => set("ico", e.target.value)} />
-            <button type="button" className="btn-secondary shrink-0 px-3" onClick={fromAres} disabled={form.ico.replace(/\D/g, "").length < 6}>
+            <input id="f-ico" className="input" inputMode="numeric" value={form.ico} onChange={(e) => onIco(e.target.value)} />
+            <button type="button" className="btn-secondary shrink-0 px-3" onClick={() => void fromAres()} disabled={form.ico.replace(/\D/g, "").length < 6}>
               ARES
             </button>
           </div>
-          {lookup && <p className="mt-1 text-sm text-muted">{lookup}</p>}
+          {ares.loading && <p className="mt-1 text-sm text-muted">Hledám v ARES…</p>}
         </div>
-        <div>
-          <label htmlFor="f-name" className="label">
-            Název / jméno *
-          </label>
-          <input id="f-name" className="input" required value={form.name} onChange={(e) => set("name", e.target.value)} />
-        </div>
-        <div>
-          <label htmlFor="f-dic" className="label">
-            DIČ
-          </label>
-          <input id="f-dic" className="input" placeholder="CZ12345678" value={form.dic} onChange={(e) => set("dic", e.target.value)} />
-        </div>
-        <div>
-          <label htmlFor="f-eic" className="label">
-            EIČ pro EET <span className="font-normal text-muted">(jen pokud se liší od DIČ)</span>
-          </label>
-          <input id="f-eic" className="input" placeholder="CZ…" value={form.eic} onChange={(e) => set("eic", e.target.value)} />
-        </div>
-        <div>
-          <label htmlFor="f-iban" className="label">
-            Číslo účtu pro QR platby
-          </label>
-          <input id="f-iban" className="input" placeholder="123456789/0100 nebo IBAN" value={form.iban} onChange={(e) => set("iban", e.target.value)} />
-        </div>
-        {!acc && (
-          <div>
-            <label htmlFor="f-owner" className="label">
-              Vaše jméno v pokladně
-            </label>
-            <input id="f-owner" className="input" placeholder="např. Jana" value={form.ownerName} onChange={(e) => set("ownerName", e.target.value)} />
+        {(preregIco || ares.outcome) && (
+          <div className="space-y-2 sm:col-span-2">
+            {preregIco && form.ico.replace(/\s+/g, "") === preregIco && <p className="text-sm text-muted">IČO jsme doplnili z vaší předregistrace.</p>}
+            {ares.outcome && decided === null && <AresCard outcome={ares.outcome} onUse={applyAres} onManual={() => setDecided("manual")} />}
           </div>
         )}
-        <div className="sm:col-span-2">
-          <label htmlFor="f-footer" className="label">
-            Patička účtenky
-          </label>
-          <input id="f-footer" className="input" placeholder="Děkujeme za návštěvu!" value={form.receiptFooter} onChange={(e) => set("receiptFooter", e.target.value)} />
-        </div>
-        <label className="flex items-center gap-3 sm:col-span-2">
-          <input type="checkbox" checked={form.vatPayer} onChange={(e) => set("vatPayer", e.target.checked)} className="h-5 w-5 accent-brand-600" />
-          Jsem plátce DPH (na účtence se zobrazí rozpis DPH)
-        </label>
-        <div className="sm:col-span-2">
-          <label className="flex items-center gap-3">
-            <input type="checkbox" checked={form.receiptShowPok} onChange={(e) => set("receiptShowPok", e.target.checked)} className="h-5 w-5 accent-brand-600" />
-            Uvádět na účtence potvrzovací kód (POK)
-          </label>
-          <p className="mt-1 pl-8 text-sm text-muted">
-            {FACTS.confirmation.onReceipt} S kódem zákazník vidí, že tržba prošla evidencí; bez něj je účtenka kratší. V pokladně i v exportu POK zůstává vždy.
-          </p>
-        </div>
-        {!acc && (
-          <label className="flex items-start gap-3 text-[15px] text-ink-soft sm:col-span-2">
-            <input type="checkbox" required checked={form.acceptTerms} onChange={(e) => set("acceptTerms", e.target.checked)} className="mt-1 h-5 w-5 shrink-0 accent-brand-600" />
-            <span>
-              Souhlasím s{" "}
-              <a href="/podminky" target="_blank" className="underline">
-                obchodními podmínkami
-              </a>
-              . Jak zpracováváme osobní údaje, popisují{" "}
-              <a href="/ochrana-osobnich-udaju" target="_blank" className="underline">
-                zásady ochrany osobních údajů
-              </a>
-              .
-            </span>
-          </label>
+        {showFields && (
+          <>
+            <div>
+              <label htmlFor="f-name" className="label">
+                Název / jméno *
+              </label>
+              <input id="f-name" className="input" required value={form.name} onChange={(e) => set("name", e.target.value)} />
+            </div>
+            <div>
+              <label htmlFor="f-dic" className="label">
+                DIČ
+              </label>
+              <input id="f-dic" className="input" placeholder="CZ12345678" value={form.dic} onChange={(e) => set("dic", e.target.value)} />
+            </div>
+            <div>
+              <label htmlFor="f-eic" className="label">
+                EIČ pro EET <span className="font-normal text-muted">(jen pokud se liší od DIČ)</span>
+              </label>
+              <input id="f-eic" className="input" placeholder="CZ…" value={form.eic} onChange={(e) => set("eic", e.target.value)} />
+            </div>
+            <div>
+              <label htmlFor="f-iban" className="label">
+                Číslo účtu pro QR platby
+              </label>
+              <input id="f-iban" className="input" placeholder="123456789/0100 nebo IBAN" value={form.iban} onChange={(e) => set("iban", e.target.value)} />
+            </div>
+            {!acc && (
+              <div>
+                <label htmlFor="f-owner" className="label">
+                  Vaše jméno v pokladně
+                </label>
+                <input id="f-owner" className="input" placeholder="např. Jana" value={form.ownerName} onChange={(e) => set("ownerName", e.target.value)} />
+              </div>
+            )}
+            <div className="sm:col-span-2">
+              <label htmlFor="f-footer" className="label">
+                Patička účtenky
+              </label>
+              <input id="f-footer" className="input" placeholder="Děkujeme za návštěvu!" value={form.receiptFooter} onChange={(e) => set("receiptFooter", e.target.value)} />
+            </div>
+            <label className="flex items-center gap-3 sm:col-span-2">
+              <input type="checkbox" checked={form.vatPayer} onChange={(e) => set("vatPayer", e.target.checked)} className="h-5 w-5 accent-brand-600" />
+              Jsem plátce DPH (na účtence se zobrazí rozpis DPH)
+            </label>
+            <div className="sm:col-span-2">
+              <label className="flex items-center gap-3">
+                <input type="checkbox" checked={form.receiptShowPok} onChange={(e) => set("receiptShowPok", e.target.checked)} className="h-5 w-5 accent-brand-600" />
+                Uvádět na účtence potvrzovací kód (POK)
+              </label>
+              <p className="mt-1 pl-8 text-sm text-muted">
+                {FACTS.confirmation.onReceipt} S kódem zákazník vidí, že tržba prošla evidencí; bez něj je účtenka kratší. V pokladně i v exportu POK zůstává vždy.
+              </p>
+            </div>
+            {!acc && (
+              <label className="flex items-start gap-3 text-[15px] text-ink-soft sm:col-span-2">
+                <input type="checkbox" required checked={form.acceptTerms} onChange={(e) => set("acceptTerms", e.target.checked)} className="mt-1 h-5 w-5 shrink-0 accent-brand-600" />
+                <span>
+                  Souhlasím s{" "}
+                  <a href="/podminky" target="_blank" className="underline">
+                    obchodními podmínkami
+                  </a>
+                  . Jak zpracováváme osobní údaje, popisují{" "}
+                  <a href="/ochrana-osobnich-udaju" target="_blank" className="underline">
+                    zásady ochrany osobních údajů
+                  </a>
+                  .
+                </span>
+              </label>
+            )}
+            <div className="sm:col-span-2">
+              <button type="submit" className="btn-primary" disabled={busy}>
+                {busy ? "Ukládám…" : acc ? "Uložit změny" : "Pokračovat"}
+              </button>
+              <ErrorText error={error} />
+            </div>
+          </>
         )}
-        <div className="sm:col-span-2">
-          <button type="submit" className="btn-primary" disabled={busy}>
-            {busy ? "Ukládám…" : acc ? "Uložit změny" : "Pokračovat"}
-          </button>
-          <ErrorText error={error} />
-        </div>
       </form>
     </Section>
   );

@@ -19,7 +19,7 @@ export function limitsFor(plan: string) {
 export async function accountState(user: CurrentUser) {
   const db = getDb();
   const owner = user.memberships.find((m) => m.role === "owner" && m.accountKind === "business");
-  if (!owner) return { user: { email: user.email }, account: null };
+  if (!owner) return { user: { email: user.email }, account: null, preregIco: await preregIcoOf(user.email) };
   const account = (await db.query.accounts.findFirst({ where: eq(schema.accounts.id, owner.accountId) }))!;
   const [units, staff, catalog, devices, certificates, salesCount] = await Promise.all([
     db.select().from(schema.evidenceUnits).where(eq(schema.evidenceUnits.accountId, account.id)).orderBy(asc(schema.evidenceUnits.createdAt)),
@@ -69,6 +69,17 @@ export async function accountState(user: CurrentUser) {
     accountants: await linkedAccountants(account.id),
     closure: account.closedAt ? await closureState(account.id, account.closedAt) : null,
   };
+}
+
+/** IČO z předregistrace se stejným e-mailem (bez ohledu na velikost písmen) – krok „Firma“ ho doplní (R17.3). */
+async function preregIcoOf(email: string): Promise<string | null> {
+  const [row] = await getDb()
+    .select({ ico: schema.preregistrations.ico })
+    .from(schema.preregistrations)
+    .where(and(sql`lower(${schema.preregistrations.email}) = lower(${email})`, sql`${schema.preregistrations.ico} is not null`))
+    .orderBy(desc(schema.preregistrations.createdAt))
+    .limit(1);
+  return row?.ico ?? null;
 }
 
 /** Stav zrušeného účtu pro nastavení (Б7, R6.4): kdy nejpozději smažeme data a co ještě čeká. */
