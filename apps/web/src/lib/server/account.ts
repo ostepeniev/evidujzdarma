@@ -71,6 +71,27 @@ export async function accountState(user: CurrentUser) {
   };
 }
 
+/**
+ * Odkud účet přišel (R17.4, K9): z předregistrace se stejným e-mailem (bez ohledu na velikost písmen) převezme
+ * utm_source/medium/campaign, datum předregistrace a zda přišla přes doporučení. Bez předregistrace null.
+ */
+async function acquisitionOf(email: string): Promise<(typeof schema.accounts.$inferInsert)["acquisition"]> {
+  const [p] = await getDb()
+    .select({ utm: schema.preregistrations.utm, createdAt: schema.preregistrations.createdAt, referredBy: schema.preregistrations.referredBy })
+    .from(schema.preregistrations)
+    .where(sql`lower(${schema.preregistrations.email}) = lower(${email})`)
+    .orderBy(asc(schema.preregistrations.createdAt))
+    .limit(1);
+  if (!p) return null;
+  return {
+    utm_source: p.utm?.utm_source ?? null,
+    utm_medium: p.utm?.utm_medium ?? null,
+    utm_campaign: p.utm?.utm_campaign ?? null,
+    preregistered_at: p.createdAt.toISOString(),
+    referred: !!p.referredBy,
+  };
+}
+
 /** IČO z předregistrace se stejným e-mailem (bez ohledu na velikost písmen) – krok „Firma“ ho doplní (R17.3). */
 async function preregIcoOf(email: string): Promise<string | null> {
   const [row] = await getDb()
@@ -179,9 +200,11 @@ export async function upsertAccount(user: CurrentUser, input: z.infer<typeof Acc
     return owner.accountId;
   }
   if (input.acceptTerms !== true) throw new HttpError(400, "Pro založení účtu je potřeba souhlasit s obchodními podmínkami.");
+  const acquisition = await acquisitionOf(user.email);
   return db.transaction(async (tx) => {
     await tx.update(schema.users).set({ termsVersion: TERMS_VERSION, termsAcceptedAt: new Date() }).where(eq(schema.users.id, user.id));
-    const [acc] = await tx.insert(schema.accounts).values({ ...values, kind: "business" }).returning({ id: schema.accounts.id });
+    // zdroj návštěvy jen jednou, při založení (R17.4); úprava údajů účtu ho nemění
+    const [acc] = await tx.insert(schema.accounts).values({ ...values, kind: "business", acquisition }).returning({ id: schema.accounts.id });
     await tx.insert(schema.memberships).values({ accountId: acc!.id, userId: user.id, role: "owner" });
     await tx.insert(schema.staff).values({ accountId: acc!.id, name: input.ownerName ?? "Vlastník", role: "owner" });
     return acc!.id;

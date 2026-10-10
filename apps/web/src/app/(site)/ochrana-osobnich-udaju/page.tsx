@@ -44,7 +44,8 @@ const PURPOSES: readonly { purpose: string; data: string; basis: string; retenti
   },
   {
     purpose: "Účet a provoz pokladny",
-    data: "E-mail a jméno uživatele, údaje firmy (název, IČO, DIČ), jména pokladních, evidenční jednotky, pokladní certifikát, tržby, doklady.",
+    // R17.4 – doslovně
+    data: "E-mail a jméno uživatele, údaje firmy (název, IČO, DIČ), jména pokladních, evidenční jednotky, pokladní certifikát, tržby, doklady. Pokud jste se předregistrovali, převezmeme z předregistrace i zdroj návštěvy (UTM) – na základě oprávněného zájmu zjistit, které cesty k nám fungují (čl. 6 odst. 1 písm. f) GDPR).",
     basis: "Plnění smlouvy – čl. 6 odst. 1 písm. b) GDPR; u placených tarifů také právní povinnost (účetní a daňové doklady) – písm. c).",
     retention:
       "Po dobu trvání účtu a 30 dnů po jeho zrušení (na export), potom údaje smažeme. Obsahuje-li zrušený účet ostré tržby, které nebyly odeslány Finanční správě, uchováme ho nejdéle 60 dnů od zrušení, abyste je mohli vyřídit; dříve, pokud je v nastavení označíte jako evidované jinak. Účetní doklady k platbám po dobu stanovenou zákonem.",
@@ -70,7 +71,7 @@ const PURPOSES: readonly { purpose: string; data: string; basis: string; retenti
   },
   {
     purpose: "Měření návštěvnosti webu",
-    data: "Souhrnná čísla za den: zobrazení stránek, počet návštěvníků, průměrný čas na stránce, doména webu, ze kterého jste přišli, typ zařízení a počet použití nástrojů (např. kontroly IČO). Z IP adresy a typu prohlížeče se v paměti serveru počítá anonymní otisk; IP adresu ani otisk neukládáme.",
+    data: "Souhrnná čísla za den: zobrazení stránek, počet návštěvníků, průměrný čas na stránce, doména webu, ze kterého jste přišli, typ zařízení, označení kampaně z odkazu (UTM) a počet použití nástrojů (např. kontroly IČO). Z IP adresy a typu prohlížeče se v paměti serveru počítá anonymní otisk; IP adresu ani otisk neukládáme.",
     basis: "Oprávněný zájem – čl. 6 odst. 1 písm. f) GDPR: zlepšování webu.",
     retention: "Souhrnná čísla 25 měsíců. Otisk se o půlnoci zahodí.",
   },

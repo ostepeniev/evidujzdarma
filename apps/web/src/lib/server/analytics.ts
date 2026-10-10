@@ -11,7 +11,8 @@ import { clientIpFromHeaders } from "./rate-limit";
  *  - Unikátní návštěvník za den = sha256(denní sůl + IP + User-Agent). Sůl je náhodná, jen v paměti a mění se o půlnoci
  *    (Praha); otisky jsou jen v paměti aktuálního dne. Do DB jdou jen čísla po dnech (analytics_daily).
  *  - Boti, DNT: 1 a Sec-GPC: 1 se nepočítají vůbec – ani zobrazení, ani události trychtýře.
- *  - Jen stránky z rejstříku webu (sitemap.xml, R16.1); bez měst, zemí, celých adres odkazujících stránek a query.
+ *  - Jen stránky z rejstříku webu (sitemap.xml, R16.1); bez měst, zemí, celých adres odkazujících stránek a query;
+ *    z adresy jen označení kampaně utm_source/medium/campaign (R17.4).
  * Restart serveru během dne vygeneruje novou sůl – tentýž člověk se ten den může započítat dvakrát (horní odhad).
  */
 
@@ -112,7 +113,22 @@ async function bump(day: string, metric: string, key: string, inc: { views?: num
 }
 
 /** Zobrazení stránky (z beaconu). */
-export async function recordView(h: Headers, input: { path: string; ref?: unknown }, now = new Date()): Promise<boolean> {
+/** Jeden parametr UTM: malými písmeny, [a-z0-9._-], 1–40 znaků; jinak se zahodí (R17.4). */
+function utmPart(v: unknown): string | null {
+  if (typeof v !== "string") return null;
+  const x = v.toLowerCase();
+  return /^[a-z0-9._-]{1,40}$/.test(x) ? x : null;
+}
+
+/** Klíč metriky utm „source/medium/campaign“ (chybějící parametr „-“); bez jediného platného parametru null (R17.4). */
+export function utmKey(input: unknown): string | null {
+  if (!input || typeof input !== "object" || Array.isArray(input)) return null;
+  const u = input as Record<string, unknown>;
+  const parts = [utmPart(u.s), utmPart(u.m), utmPart(u.c)];
+  return parts.some(Boolean) ? parts.map((p) => p ?? "-").join("/") : null;
+}
+
+export async function recordView(h: Headers, input: { path: string; ref?: unknown; utm?: unknown }, now = new Date()): Promise<boolean> {
   if (!countable(h) || !isTrackedPath(input.path)) return false;
   const day = pragueDay(now);
   await bump(day, "page", input.path, { views: 1, visitors: firstVisit(`page:${input.path}`, h, now) ? 1 : 0 });
@@ -120,6 +136,9 @@ export async function recordView(h: Headers, input: { path: string; ref?: unknow
   await bump(day, "device", deviceType(h.get("user-agent") ?? ""), { views: 1 });
   const ref = referrerDomain(input.ref);
   if (ref) await bump(day, "ref", ref, { views: 1 });
+  // označení kampaně z odkazu (K9) – jen počty za den, v prohlížeči se nic neukládá
+  const utm = utmKey(input.utm);
+  if (utm) await bump(day, "utm", utm, { views: 1, visitors: firstVisit(`utm:${utm}`, h, now) ? 1 : 0 });
   return true;
 }
 
@@ -148,6 +167,8 @@ export interface TrafficReport {
   daily: { day: string; views: number; visitors: number }[];
   pages: { path: string; views: number; visitors: number; avgSeconds: number | null }[];
   referrers: { domain: string; views: number }[];
+  /** označení kampaní (R17.4): source/medium/campaign */
+  utm: { key: string; views: number; visitors: number }[];
   devices: { device: string; views: number }[];
   events: Record<FunnelEvent, number>;
   visitors: number;
@@ -184,6 +205,7 @@ export async function trafficReport(days: number, now = new Date()): Promise<Tra
     daily,
     pages: sum("page").map((p) => ({ path: p.key, views: p.views, visitors: p.visitors, avgSeconds: p.secondsCount ? Math.round(p.secondsSum / p.secondsCount) : null })),
     referrers: sum("ref").map((r) => ({ domain: r.key, views: r.views })),
+    utm: sum("utm").map((r) => ({ key: r.key, views: r.views, visitors: r.visitors })),
     devices: sum("device").map((d) => ({ device: d.key, views: d.views })),
     events,
     visitors: daily.reduce((a, d) => a + d.visitors, 0),

@@ -173,6 +173,17 @@ export const accounts = pgTable(
     /** kdy se režim naposledy změnil – tržba v jiném režimu prodaná po tomto čase jde do karantény (R5.1) */
     eetModeChangedAt: timestamp("eet_mode_changed_at", { withTimezone: true }).notNull().defaultNow(),
     referredByAccountantId: uuid("referred_by_accountant_id"),
+    /**
+     * Odkud účet přišel (R17.4, K9): jednou při založení z předregistrace se stejným e-mailem, dál se nemění;
+     * bez předregistrace null.
+     */
+    acquisition: jsonb("acquisition").$type<{
+      utm_source: string | null;
+      utm_medium: string | null;
+      utm_campaign: string | null;
+      preregistered_at: string;
+      referred: boolean;
+    } | null>(),
     /** účet zrušen vlastníkem – data cron smaže po 30 dnech (podmínky čl. 11.3) */
     closedAt: timestamp("closed_at", { withTimezone: true }),
     createdAt: createdAt(),

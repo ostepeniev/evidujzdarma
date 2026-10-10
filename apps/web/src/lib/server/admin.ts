@@ -112,6 +112,9 @@ export async function updatePreregCrm(id: string, input: { status: PreregStatus;
   return rows.length > 0;
 }
 
+const NO_UTM = "без мітки";
+const NO_PREREG = "без передреєстрації";
+
 export interface AdminAccount {
   id: string;
   createdAt: Date;
@@ -121,6 +124,31 @@ export interface AdminAccount {
   hasCertificate: boolean;
   units: number;
   firstProductionSale: Date | null;
+  plan: string;
+  /** zdroj z předregistrace (R17.4): „source / medium / campaign“, „bez мітки“, nebo null bez předregistrace */
+  source: string | null;
+  /** klíč souhrnu podle zdroje: utm_source, „bez мітки“, „без передреєстрації“ */
+  sourceGroup: string;
+}
+
+export interface SourceSummary {
+  source: string;
+  accounts: number;
+  withProductionSale: number;
+  premium: number;
+}
+
+/** Souhrn účtů podle zdroje (R17.4): účty / s první ostrou tržbou / Premium. */
+export function summarizeBySource(rows: AdminAccount[]): SourceSummary[] {
+  const m = new Map<string, SourceSummary>();
+  for (const r of rows) {
+    const s = m.get(r.sourceGroup) ?? { source: r.sourceGroup, accounts: 0, withProductionSale: 0, premium: 0 };
+    s.accounts++;
+    if (r.firstProductionSale) s.withProductionSale++;
+    if (r.plan === "premium") s.premium++;
+    m.set(r.sourceGroup, s);
+  }
+  return [...m.values()].sort((a, b) => b.accounts - a.accounts || a.source.localeCompare(b.source));
 }
 
 /** Účty pokladny (bez účetních kanceláří a zrušených): režim, aktivní certifikát, jednotky, první ostrá tržba. */
@@ -133,14 +161,26 @@ export async function listAccounts(): Promise<AdminAccount[]> {
       name: a.name,
       ico: a.ico,
       mode: a.eetMode,
-      hasCertificate: sql<boolean>`exists (select 1 from ${schema.certificates} c where c.account_id = ${a.id} and c.revoked_at is null)`,
-      units: sql<number>`(select count(*)::int from ${schema.evidenceUnits} u where u.account_id = ${a.id})`,
-      firstProductionSale: sql<Date | null>`(select min(s.sold_at) from ${schema.sales} s where s.account_id = ${a.id} and s.mode = 'production')`,
+      // „accounts.id“ výslovně: ${a.id} se v dotazu nad jednou tabulkou vypíše jen jako "id" a v poddotazu by se
+      // navázalo na tabulku poddotazu (c.id, u.id, s.id) – sloupce pak byly vždy prázdné
+      hasCertificate: sql<boolean>`exists (select 1 from ${schema.certificates} c where c.account_id = accounts.id and c.revoked_at is null)`,
+      units: sql<number>`(select count(*)::int from ${schema.evidenceUnits} u where u.account_id = accounts.id)`,
+      firstProductionSale: sql<Date | null>`(select min(s.sold_at) from ${schema.sales} s where s.account_id = accounts.id and s.mode = 'production')`,
+      plan: a.plan,
+      acquisition: a.acquisition,
     })
     .from(a)
     .where(sql`${a.kind} = 'business' and ${a.closedAt} is null`)
     .orderBy(desc(a.createdAt));
-  return rows.map((r) => ({ ...r, firstProductionSale: r.firstProductionSale ? new Date(r.firstProductionSale) : null }));
+  return rows.map(({ acquisition: q, ...r }) => {
+    const utm = q ? [q.utm_source, q.utm_medium, q.utm_campaign].filter(Boolean).join(" / ") : "";
+    return {
+      ...r,
+      firstProductionSale: r.firstProductionSale ? new Date(r.firstProductionSale) : null,
+      source: q ? utm || NO_UTM : null,
+      sourceGroup: q ? (q.utm_source ?? NO_UTM) : NO_PREREG,
+    };
+  });
 }
 
 /** Buňka CSV: uvozovky, a vzorec (= + - @ na začátku) se zneškodní apostrofem – tabulkový procesor ho nespustí. */

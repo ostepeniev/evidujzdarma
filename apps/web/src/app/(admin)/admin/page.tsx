@@ -100,6 +100,39 @@ export default async function AdminOverview({ searchParams }: PageProps<"/admin"
         </section>
         <div className="space-y-8">
           <Breakdown title="Джерела переходів" rows={r.referrers.map((x) => ({ key: x.domain, views: x.views }))} empty="Лише прямі заходи." />
+          <section className="card overflow-x-auto" aria-labelledby="utm">
+            <h2 id="utm" className="text-xl font-semibold">
+              Мітки (UTM)
+            </h2>
+            {r.utm.length ? (
+              <table className="mt-3 w-full text-left text-[15px]">
+                <thead className="text-muted">
+                  <tr>
+                    <th scope="col" className="py-1 pr-3 font-medium">
+                      Мітка
+                    </th>
+                    <th scope="col" className="py-1 pr-3 text-right font-medium">
+                      Перегляди
+                    </th>
+                    <th scope="col" className="py-1 text-right font-medium">
+                      Відвідувачі
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {r.utm.slice(0, 30).map((u) => (
+                    <tr key={u.key} className="border-t border-line">
+                      <td className="py-1.5 pr-3 font-mono text-sm">{u.key}</td>
+                      <td className="py-1.5 pr-3 text-right tabular-nums">{nf(u.views)}</td>
+                      <td className="py-1.5 text-right tabular-nums">{nf(u.visitors)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p className="mt-3 text-muted">Ще немає переходів з мітками.</p>
+            )}
+          </section>
           <Breakdown title="Пристрої" rows={r.devices.map((x) => ({ key: DEVICE[x.device] ?? x.device, views: x.views }))} empty="Ще немає даних." />
         </div>
       </div>
