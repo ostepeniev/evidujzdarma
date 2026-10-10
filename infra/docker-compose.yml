@@ -26,6 +26,8 @@ x-app-env: &app-env
   GUIDES_INDEX_UNREVIEWED: ${GUIDES_INDEX_UNREVIEWED:-0}
   FS_PROBE_INTERVAL_SEC: ${FS_PROBE_INTERVAL_SEC:-300}
   FS_MONITOR: ${FS_MONITOR:-1}
+  # adminský kabinet /admin (R15.2): e-maily oddělené čárkou; prázdné = /admin vrací 404 všem
+  ADMIN_EMAILS: ${ADMIN_EMAILS:-}
 
 services:
   postgres:
