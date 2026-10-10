@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { isValidIco } from "@ez/cz/ico";
+import { icoParam } from "@/lib/ico-param";
 import { SITE } from "@/lib/site";
 import { INDUSTRIES } from "@/content/industries";
 
@@ -29,8 +29,7 @@ function readUtm(): Record<string, string> | undefined {
 
 /** IČO z adresy úvodní stránky (/?ico=): jen platné IČO o 8 číslicích, cokoli jiného se ignoruje (R14.2). */
 export function icoFromSearch(search: string): string {
-  const v = new URLSearchParams(search).get("ico") ?? "";
-  return /^\d{8}$/.test(v) && isValidIco(v) ? v : "";
+  return icoParam(new URLSearchParams(search).get("ico")) ?? "";
 }
 
 /** Pole, která jsou v rozbalovacím bloku „Upřesnit…“ (R14.3) – při chybě u nich se blok otevře. */

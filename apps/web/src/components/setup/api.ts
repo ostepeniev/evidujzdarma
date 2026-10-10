@@ -27,6 +27,8 @@ export interface AccountStateDto {
   user: { email: string };
   /** účet ještě není: IČO z předregistrace se stejným e-mailem (R17.3) */
   preregIco?: string | null;
+  /** IČO z kontroly IČO (?ico= v adrese nastavení, R18.1) – má přednost před předregistrací */
+  checkIco?: string | null;
   account: null | {
     id: string;
     name: string;

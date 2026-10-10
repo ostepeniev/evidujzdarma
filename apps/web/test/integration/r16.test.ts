@@ -15,6 +15,8 @@ import { createTestDb, type TestDb } from "../helpers/test-db";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: () => {}, replace: () => {}, refresh: () => {}, prefetch: () => {} }) }));
 vi.mock("next/headers", () => ({ headers: async () => new Headers({ "user-agent": "Mozilla/5.0", "x-real-ip": "198.51.100.61" }) }));
+// formulář předregistrace je stav „pokladna zavřená“ – simulovaný ze skutečných seznamů (R17.2), po otevření R18.1
+vi.mock("@/lib/launch", async (orig) => (await import("../helpers/launch")).launchAs(await orig(), "closed"));
 // zaniklý subjekt: fixture 12345679 s datem zániku pod jiným (platným) IČO
 vi.mock("@/lib/server/ares", async (orig) => {
   const real = await orig<typeof import("@/lib/server/ares")>();

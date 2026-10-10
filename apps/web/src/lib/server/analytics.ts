@@ -1,6 +1,6 @@
 import "server-only";
 import { createHash, randomBytes } from "node:crypto";
-import { gte, sql } from "drizzle-orm";
+import { and, eq, gte, sql } from "drizzle-orm";
 import { getDb, schema } from "@ez/db";
 import { SITE_URL } from "@/lib/site";
 import { sitePages } from "@/lib/site-pages";
@@ -79,12 +79,39 @@ export function referrerDomain(input: unknown): string | null {
   return host;
 }
 
-let state: { day: string; salt: Buffer; seen: Set<string> } | null = null;
+/** Nejvýš tolik nových klíčů utm za den (R18.2) – štítky jsou volný text, skript by jinak zakládal řádky bez omezení. */
+export const UTM_DAILY_KEYS = 300;
+
+/** Stav dne jen v paměti: sůl, otisky a klíče utm zapsané dnes; o pražské půlnoci se zahodí. */
+let state: { day: string; salt: Buffer; seen: Set<string>; utmKeys: Set<string> } | null = null;
+
+function today(now: Date) {
+  const day = pragueDay(now);
+  if (!state || state.day !== day) state = { day, salt: randomBytes(32), seen: new Set(), utmKeys: new Set() };
+  return state;
+}
+
+/** Smí se dnes zapsat štítek utm? Známý ano; nový jen do UTM_DAILY_KEYS. Po restartu (prázdná paměť) se nad limitem
+ *  ověří v DB, zda řádek dne už existuje – ten se počítá dál. */
+async function utmAllowed(key: string, now: Date): Promise<boolean> {
+  const s = today(now);
+  if (s.utmKeys.has(key)) return true;
+  if (s.utmKeys.size >= UTM_DAILY_KEYS) {
+    const t = schema.analyticsDaily;
+    const [row] = await getDb()
+      .select({ key: t.key })
+      .from(t)
+      .where(and(eq(t.day, s.day), eq(t.metric, "utm"), eq(t.key, key)))
+      .limit(1);
+    if (!row) return false;
+  }
+  s.utmKeys.add(key);
+  return true;
+}
 
 /** Nový návštěvník tohoto dne pro daný rozsah (celý web / stránka)? */
 function firstVisit(scope: string, h: Headers, now: Date): boolean {
-  const day = pragueDay(now);
-  if (!state || state.day !== day) state = { day, salt: randomBytes(32), seen: new Set() };
+  const state = today(now);
   const hash = createHash("sha256")
     .update(state.salt)
     .update(`${clientIpFromHeaders(h)}\n${h.get("user-agent") ?? ""}\n${scope}`)
@@ -138,7 +165,7 @@ export async function recordView(h: Headers, input: { path: string; ref?: unknow
   if (ref) await bump(day, "ref", ref, { views: 1 });
   // označení kampaně z odkazu (K9) – jen počty za den, v prohlížeči se nic neukládá
   const utm = utmKey(input.utm);
-  if (utm) await bump(day, "utm", utm, { views: 1, visitors: firstVisit(`utm:${utm}`, h, now) ? 1 : 0 });
+  if (utm && (await utmAllowed(utm, now))) await bump(day, "utm", utm, { views: 1, visitors: firstVisit(`utm:${utm}`, h, now) ? 1 : 0 });
   return true;
 }
 

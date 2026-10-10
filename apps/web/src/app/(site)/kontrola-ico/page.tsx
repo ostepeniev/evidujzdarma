@@ -6,6 +6,8 @@ import { IcoQuickCheck } from "@/components/ico-quick-check";
 import { IcoResult } from "@/components/ico-result";
 import { PageHeader } from "@/components/page-header";
 import { PreregForm } from "@/components/prereg-form";
+import { LoginForm } from "@/components/pos/login-form";
+import { isClosed } from "@/lib/launch";
 import { ToolCta } from "@/components/tool-cta";
 import { FACTS } from "@/content/facts";
 import { JsonLd, faqLd } from "@/lib/jsonld";
@@ -111,15 +113,25 @@ export default async function IcoCheckPage({ searchParams }: PageProps<"/kontrol
               .
             </p>
           )}
-          {prefillIco && (
-            <section className="card mt-10 p-6 shadow-sm sm:p-8" aria-labelledby="predregistrace-h">
-              <h2 id="predregistrace-h" className="text-2xl font-bold">
-                Chcete evidovat zdarma?
-              </h2>
-              <p className="mb-6 mt-2 text-ink-soft">Předregistrujte se k bezplatné pokladně. IČO {prefillIco} už máme vyplněné.</p>
-              <PreregForm defaultIco={prefillIco} />
-            </section>
-          )}
+          {prefillIco &&
+            (isClosed("/pokladna") ? (
+              <section className="card mt-10 p-6 shadow-sm sm:p-8" aria-labelledby="predregistrace-h">
+                <h2 id="predregistrace-h" className="text-2xl font-bold">
+                  Chcete evidovat zdarma?
+                </h2>
+                <p className="mb-6 mt-2 text-ink-soft">Předregistrujte se k bezplatné pokladně. IČO {prefillIco} už máme vyplněné.</p>
+                <PreregForm defaultIco={prefillIco} />
+              </section>
+            ) : (
+              // po otevření pokladny přihlášení; IČO jde do kroku „Firma“ v nastavení pokladny (R18.1)
+              <section className="card mt-10 p-6 shadow-sm sm:p-8" aria-labelledby="predregistrace-h" data-prereg-form="true">
+                <h2 id="predregistrace-h" className="text-2xl font-bold">
+                  Začněte evidovat zdarma
+                </h2>
+                <p className="mt-2 text-ink-soft">Zadejte e-mail a pošleme vám odkaz. IČO {prefillIco} doplníme do nastavení pokladny.</p>
+                <LoginForm redirectTo={`/pokladna/nastaveni?ico=${prefillIco}`} />
+              </section>
+            ))}
           <section className="mt-14">
             <h2 className="mb-6 text-2xl font-bold">Časté otázky</h2>
             <Faq items={FAQ} />

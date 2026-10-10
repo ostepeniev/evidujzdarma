@@ -166,11 +166,11 @@ export function SetupApp({ initial }: { initial: State }) {
 
 function CompanySection({ state, onSaved }: { state: State; onSaved: (s: State) => void }) {
   const acc = state.account;
-  /** účet ještě není a předregistrace se stejným e-mailem má IČO (R17.3) */
-  const preregIco = !acc ? (state.preregIco ?? null) : null;
+  /** nový účet: IČO z kontroly IČO (?ico=, R18.1), jinak z předregistrace se stejným e-mailem (R17.3) */
+  const prefill = acc ? null : state.checkIco ? { ico: state.checkIco, from: "check" as const } : state.preregIco ? { ico: state.preregIco, from: "prereg" as const } : null;
   const [form, setForm] = useState({
     name: acc?.name ?? "",
-    ico: acc?.ico ?? preregIco ?? "",
+    ico: acc?.ico ?? prefill?.ico ?? "",
     dic: acc?.dic ?? "",
     eic: acc?.eic && acc.eic !== acc.dic ? acc.eic : "",
     vatPayer: acc?.vatPayer ?? false,
@@ -197,9 +197,9 @@ function CompanySection({ state, onSaved }: { state: State; onSaved: (s: State) 
       setAres({ loading: false, ico, outcome: { kind: "error", message: "Registr ARES se nepodařilo načíst. Zkontrolujte připojení." } });
     }
   }
-  // IČO z předregistrace: ARES hned načíst
+  // doplněné IČO (kontrola IČO / předregistrace): ARES hned načíst
   useEffect(() => {
-    if (preregIco && isCompleteIco(preregIco)) void fromAres(preregIco);
+    if (prefill && isCompleteIco(prefill.ico)) void fromAres(prefill.ico);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- jen při prvním zobrazení
   }, []);
   /** po zadání platného IČO (8 číslic) se ARES načte sám; tlačítko ARES zůstává */
@@ -245,9 +245,11 @@ function CompanySection({ state, onSaved }: { state: State; onSaved: (s: State) 
           </div>
           {ares.loading && <p className="mt-1 text-sm text-muted">Hledám v ARES…</p>}
         </div>
-        {(preregIco || ares.outcome) && (
+        {(prefill || ares.outcome) && (
           <div className="space-y-2 sm:col-span-2">
-            {preregIco && form.ico.replace(/\s+/g, "") === preregIco && <p className="text-sm text-muted">IČO jsme doplnili z vaší předregistrace.</p>}
+            {prefill && form.ico.replace(/\s+/g, "") === prefill.ico && (
+              <p className="text-sm text-muted">{prefill.from === "check" ? "IČO jsme doplnili z kontroly IČO." : "IČO jsme doplnili z vaší předregistrace."}</p>
+            )}
             {ares.outcome && decided === null && <AresCard outcome={ares.outcome} onUse={applyAres} onManual={() => setDecided("manual")} />}
           </div>
         )}
