@@ -5,6 +5,8 @@ import { Faq } from "@/components/faq";
 import { IcoQuickCheck } from "@/components/ico-quick-check";
 import { PollWidget } from "@/components/poll-widget";
 import { PreregForm } from "@/components/prereg-form";
+import { LoginForm } from "@/components/pos/login-form";
+import { isClosed } from "@/lib/launch";
 import { PosPreview } from "@/components/pos-preview";
 import { Countdown, Timeline } from "@/components/timeline";
 import { WhyFree } from "@/components/why-free";
@@ -161,46 +163,63 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Pre-registration */}
-      <section id="registrace" className="container-page scroll-mt-24 py-16" aria-labelledby="registrace-h">
-        <div className="grid gap-10 lg:grid-cols-[1fr_1fr]">
-          <div>
-            <h2 id="registrace-h" className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Předregistrace k pokladně zdarma
-            </h2>
-            <p className="mt-3 text-lg text-ink-soft">Pošleme vám osobní EET plán podle vašeho IČO a termínů a dáme vědět, jakmile bude pokladna připravená.</p>
-            <ul className="mt-6 space-y-3 text-[17px]">
-              {[
-                { t: "Osobní checklist: co udělat od 1. 11., do 1. 12. a do 1. 1." },
-                { t: "Návod k DIS+ a certifikátu krok za krokem" },
-                { t: "Včasný přístup k pokladně podle pořadí" },
-                // akce má pravidla (Ц3, R7.10)
-                { t: "Za pozvaného kolegu Premium na 3 měsíce pro oba", rules: true },
-              ].map(({ t, rules }) => (
-                <li key={t} className="flex gap-3">
-                  <span aria-hidden="true" className="text-brand-600">
-                    ✓
-                  </span>
-                  <span>
-                    {t}
-                    {rules && (
-                      <>
-                        {" "}
-                        <Link href="/pravidla-doporuceni" className="text-base text-muted underline underline-offset-2">
-                          Pravidla akce
-                        </Link>
-                      </>
-                    )}
-                  </span>
-                </li>
-              ))}
-            </ul>
+      {/* Pre-registration – po otevření pokladny přihlášení, účet se založí při prvním přihlášení (R17.2) */}
+      {isClosed("/pokladna") ? (
+        <section id="registrace" className="container-page scroll-mt-24 py-16" aria-labelledby="registrace-h">
+          <div className="grid gap-10 lg:grid-cols-[1fr_1fr]">
+            <div>
+              <h2 id="registrace-h" className="text-3xl font-bold tracking-tight sm:text-4xl">
+                Předregistrace k pokladně zdarma
+              </h2>
+              <p className="mt-3 text-lg text-ink-soft">Pošleme vám osobní EET plán podle vašeho IČO a termínů a dáme vědět, jakmile bude pokladna připravená.</p>
+              <ul className="mt-6 space-y-3 text-[17px]">
+                {[
+                  { t: "Osobní checklist: co udělat od 1. 11., do 1. 12. a do 1. 1." },
+                  { t: "Návod k DIS+ a certifikátu krok za krokem" },
+                  { t: "Včasný přístup k pokladně podle pořadí" },
+                  // akce má pravidla (Ц3, R7.10)
+                  { t: "Za pozvaného kolegu Premium na 3 měsíce pro oba", rules: true },
+                ].map(({ t, rules }) => (
+                  <li key={t} className="flex gap-3">
+                    <span aria-hidden="true" className="text-brand-600">
+                      ✓
+                    </span>
+                    <span>
+                      {t}
+                      {rules && (
+                        <>
+                          {" "}
+                          <Link href="/pravidla-doporuceni" className="text-base text-muted underline underline-offset-2">
+                            Pravidla akce
+                          </Link>
+                        </>
+                      )}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="card p-6 shadow-sm sm:p-8">
+              <PreregForm />
+            </div>
           </div>
-          <div className="card p-6 shadow-sm sm:p-8">
-            <PreregForm />
+        </section>
+      ) : (
+        <section id="registrace" className="container-page scroll-mt-24 py-16" aria-labelledby="registrace-h">
+          <div className="grid gap-10 lg:grid-cols-[1fr_1fr]">
+            <div>
+              <h2 id="registrace-h" className="text-3xl font-bold tracking-tight sm:text-4xl">
+                Začněte evidovat zdarma
+              </h2>
+              <p className="mt-3 text-lg text-ink-soft">Zadejte e-mail a pošleme vám odkaz. Účet založíme při prvním přihlášení – heslo si pamatovat nemusíte.</p>
+            </div>
+            {/* data-prereg-form: tlačítko dole na telefonu se nad přihlášením schová (R16.4) */}
+            <div className="card p-6 shadow-sm sm:p-8" data-prereg-form="true">
+              <LoginForm redirectTo="/pokladna/nastaveni" />
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* FAQ */}
       <section className="container-prose py-16" aria-labelledby="faq">

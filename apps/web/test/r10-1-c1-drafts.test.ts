@@ -1,9 +1,12 @@
 /**
  * R10.1 (рецензія №7, B) – koncepty C1 před revizí Heleny: fakta a jazyk (texty doslovně z recenze).
  */
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { FACTS } from "@/content/facts";
 import { getGuide } from "@/content/guides";
+
+// zavřená pokladna simulovaná ze skutečných seznamů – commit otevření 2. 11. test nerozbije (R17.2)
+vi.mock("@/lib/launch", async (orig) => (await import("./helpers/launch")).launchAs(await orig(), "closed"));
 
 const json = (slug: string) => JSON.stringify(getGuide(slug));
 const blocksText = (slug: string) =>

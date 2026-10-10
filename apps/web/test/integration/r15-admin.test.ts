@@ -12,6 +12,9 @@ import { NextRequest } from "next/server";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { createTestDb, type TestDb } from "../helpers/test-db";
 
+// zavřená pokladna simulovaná ze skutečných seznamů – commit otevření 2. 11. test nerozbije (R17.2)
+vi.mock("@/lib/launch", async (orig) => (await import("../helpers/launch")).launchAs(await orig(), "closed"));
+
 let sessionToken: string | null = null;
 vi.mock("next/headers", () => ({
   cookies: async () => ({ get: (n: string) => (n === "ez_session" && sessionToken ? { value: sessionToken } : undefined) }),

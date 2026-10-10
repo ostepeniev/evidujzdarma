@@ -12,7 +12,8 @@ import { describe, expect, it, vi } from "vitest";
 const launch = vi.hoisted(() => ({ posOpen: false }));
 vi.mock("@/lib/launch", async (orig) => {
   const real = await orig<typeof import("@/lib/launch")>();
-  return { ...real, isClosed: (p: string) => (p === "/pokladna" && launch.posOpen ? false : real.isClosed(p)) };
+  // stav pokladny řídí test, ne skutečný seznam – commit otevření 2. 11. test nerozbije (R17.2)
+  return { ...real, isClosed: (p: string) => (p === "/pokladna" ? !launch.posOpen : real.isClosed(p)) };
 });
 
 const { default: PricingPage } = await import("@/app/(site)/cenik/page");

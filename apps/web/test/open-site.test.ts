@@ -2,10 +2,13 @@
  * eet-open-site (docs/tasks/2026-10-03-open-site.md): veřejný je obsah, nástroje a předregistrace. Pokladna,
  * přihlášení, Účetní kabinet, pozvánky, účtenky a katalog firem zůstávají za heslem (nginx), dokud je neotevře
  * rozhodnutí (právník, LIA). Web na ně neodkazuje, robots.txt je zakazuje a sitemapy je neobsahují.
+ * R17.2: testy čtou skutečné CLOSED_SECTIONS (commit otevření pokladny 2. 11. je nerozbije); stav „zavřeno“ tam,
+ * kde na něm test stojí, si nasimulují (helpers/launch.ts).
  */
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { POS_SECTIONS, mockLaunch } from "./helpers/launch";
 
 vi.mock("@/lib/sitemap-registry", () => ({ extraSitemaps: async () => ["/firma/sitemap/0.xml", "/provozovna/sitemap/0.xml"] }));
 
@@ -15,11 +18,20 @@ const { default: sitemap } = await import("@/app/sitemap");
 const { SiteFooter } = await import("@/components/site-footer");
 const { SiteHeader } = await import("@/components/site-header");
 
-const CLOSED = ["/pokladna", "/prihlaseni", "/kabinet", "/pozvanka", "/u", "/firmy", "/firma", "/provozovna", "/obor"];
+const CATALOG = ["/firmy", "/firma", "/provozovna", "/obor"];
+const CLOSED: readonly string[] = launch.CLOSED_SECTIONS;
 const hrefs = (html: string) => [...html.matchAll(/href="([^"]+)"/g)].map((m) => m[1]!);
 
+afterEach(() => {
+  vi.doUnmock("@/lib/launch");
+  vi.resetModules();
+});
+
 describe("eet-open-site – what stays closed", () => {
-  it("the closed list is exactly the app and the catalog; /ucetni is not caught by /u", () => {
+  it("the closed list is the app (until 2. 11.) and the catalog; /ucetni is not caught by /u", () => {
+    // katalog čeká na LIA; kromě něj smí být zavřené jen sekce pokladny
+    for (const p of CATALOG) expect(CLOSED, p).toContain(p);
+    for (const p of CLOSED) expect([...CATALOG, ...POS_SECTIONS], p).toContain(p);
     for (const p of CLOSED) {
       expect(launch.isClosed(p), p).toBe(true);
       expect(launch.isClosed(`${p}/x`), p).toBe(true);
@@ -48,6 +60,7 @@ describe("eet-open-site – what stays closed", () => {
   });
 
   it("gate: /ucetni does not link to the closed cabinet nor claim it works already", async () => {
+    mockLaunch("closed");
     const { default: Ucetni } = await import("@/app/(site)/ucetni/page");
     const html = renderToStaticMarkup(createElement(Ucetni));
     expect(hrefs(html).filter((h) => h.startsWith("/kabinet"))).toEqual([]);

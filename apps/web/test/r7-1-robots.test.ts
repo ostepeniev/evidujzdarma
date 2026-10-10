@@ -3,8 +3,11 @@
  * „Disallow: /u“ chytal i /ucetni. Uzavřené sekce se zakazují jako „/u$“ (přesně) a „/u/“ (vše pod).
  */
 import { describe, expect, it, vi } from "vitest";
+import { mockLaunch } from "./helpers/launch";
 
 vi.mock("@/lib/sitemap-registry", () => ({ extraSitemaps: async () => [] }));
+// zavřená pokladna (do 2. 11.) simulovaná ze skutečných seznamů – commit otevření test nerozbije (R17.2)
+mockLaunch("closed");
 const { default: robots } = await import("@/app/robots");
 const { STATIC_PAGES } = await import("@/lib/static-pages");
 

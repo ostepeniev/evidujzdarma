@@ -11,6 +11,7 @@ import { createElement, type FC, type ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { Metadata } from "next";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { mockLaunch } from "./helpers/launch";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: () => {}, replace: () => {}, refresh: () => {}, prefetch: () => {} }),
@@ -46,20 +47,17 @@ const WHY = {
 };
 const CTA = { closed: "Předregistrovat se zdarma", open: "Začít zdarma" };
 
-const openRegister = () =>
-  vi.doMock("@/lib/launch", async (orig) => {
-    const real = await orig<typeof import("@/lib/launch")>();
-    return { ...real, isClosed: (p: string) => (p === "/pokladna" ? false : real.isClosed(p)) };
-  });
+const openRegister = () => mockLaunch("open");
 
 async function homeHtml() {
   const { default: Home } = await import("@/app/(site)/page");
   return renderToStaticMarkup(createElement(Home as FC));
 }
 
+// zavřená pokladna simulovaná ze skutečných seznamů – commit otevření 2. 11. testy nerozbije (R17.2)
+mockLaunch("closed");
 afterEach(() => {
-  vi.doUnmock("@/lib/launch");
-  vi.resetModules();
+  mockLaunch("closed");
   delete process.env.ARES_MOCK;
 });
 
@@ -81,7 +79,8 @@ describe("R14.1 – „Proč je to zdarma?“ on the home page", () => {
     vi.resetModules();
     openRegister();
     const { SERVICE_COPY } = await import("@/lib/site");
-    expect(SERVICE_COPY.startCta).toEqual({ label: CTA.open, href: "/#registrace" });
+    // po otevření vede na přihlášení (R17.2)
+    expect(SERVICE_COPY.startCta).toEqual({ label: CTA.open, href: "/prihlaseni" });
     const html = await homeHtml();
     const block = html.slice(html.indexOf(WHY.title), html.indexOf("Férové srovnání"));
     expect(block).toContain(`>${CTA.open}</a>`);

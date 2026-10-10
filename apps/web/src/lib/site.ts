@@ -42,7 +42,8 @@ export const SERVICE_COPY = isClosed("/pokladna")
       offlineFaq: "Naše pokladna tržbu uloží v zařízení, odešle ji sama, jakmile je spojení, a ukazuje, kolik času do konce lhůty zbývá.",
       offlineNote: "Pokladna EvidujZdarma ukazuje u každé neodeslané tržby, kolik času do konce lhůty zbývá, a upozorní vás dřív, než lhůta vyprší.",
       certificateComment: "Pro podnikatele je to detail – důležité je, že bez certifikátu z DIS+ evidovat nejde. Naše pokladna podpis řeší sama, certifikát jen nahrajete.",
-      startCta: { label: "Začít zdarma", href: "/#registrace" },
+      // po otevření pokladny vede rovnou na přihlášení – účet se založí při prvním přihlášení (R17.2)
+      startCta: { label: "Začít zdarma", href: "/prihlaseni" },
     };
 
 export const SITE = {

@@ -7,6 +7,7 @@ import { join } from "node:path";
 import { createElement, type FC, type ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { mockLaunch } from "./helpers/launch";
 
 // úvodní stránka má klientský formulář s useRouter – pro statický render stačí atrapa
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: () => {}, replace: () => {}, refresh: () => {}, prefetch: () => {} }) }));
@@ -48,9 +49,10 @@ async function renderPages() {
   return out;
 }
 
+// zavřená pokladna simulovaná ze skutečných seznamů – commit otevření 2. 11. testy nerozbije (R17.2)
+mockLaunch("closed");
 afterEach(() => {
-  vi.doUnmock("@/lib/launch");
-  vi.resetModules();
+  mockLaunch("closed");
 });
 
 describe("R11 – no present tense about the register while /pokladna is closed", () => {
@@ -79,11 +81,7 @@ describe("R11 – no present tense about the register while /pokladna is closed"
   });
 
   it("open (mock) – today's texts come back", async () => {
-    vi.resetModules();
-    vi.doMock("@/lib/launch", async (orig) => {
-      const real = await orig<typeof import("@/lib/launch")>();
-      return { ...real, isClosed: (p: string) => (p === "/pokladna" ? false : real.isClosed(p)) };
-    });
+    mockLaunch("open");
     const { SERVICE_COPY } = await import("@/lib/site");
     expect(SERVICE_COPY).toMatchObject(OPEN);
     const pages = await renderPages();

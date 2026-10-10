@@ -8,6 +8,7 @@ import { join } from "node:path";
 import { createElement, type FC, type ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { mockLaunch } from "./helpers/launch";
 import { FACTS } from "@/content/facts";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: () => {}, replace: () => {}, refresh: () => {}, prefetch: () => {} }) }));
@@ -48,9 +49,10 @@ async function publicTexts() {
   return out;
 }
 
+// zavřená pokladna simulovaná ze skutečných seznamů – commit otevření 2. 11. testy nerozbije (R17.2)
+mockLaunch("closed");
 afterEach(() => {
-  vi.doUnmock("@/lib/launch");
-  vi.resetModules();
+  mockLaunch("closed");
 });
 
 describe("R12.1 – the last present-tense texts about the register", () => {
@@ -67,11 +69,7 @@ describe("R12.1 – the last present-tense texts about the register", () => {
   });
 
   it("open (mock) – today's texts come back", async () => {
-    vi.resetModules();
-    vi.doMock("@/lib/launch", async (orig) => {
-      const real = await orig<typeof import("@/lib/launch")>();
-      return { ...real, isClosed: (p: string) => (p === "/pokladna" ? false : real.isClosed(p)) };
-    });
+    mockLaunch("open");
     const { SERVICE_COPY } = await import("@/lib/site");
     expect(SERVICE_COPY).toMatchObject(OPEN);
     const pages = await publicTexts();

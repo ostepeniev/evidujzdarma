@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { LoginForm } from "@/components/pos/login-form";
 import { Logo } from "@/components/logo";
+import { isClosed } from "@/lib/launch";
 
-export const metadata: Metadata = { title: "Přihlášení" };
+export const metadata: Metadata = { title: isClosed("/pokladna") ? "Přihlášení" : "Přihlášení a registrace" };
 
 export default async function LoginPage({ searchParams }: PageProps<"/prihlaseni">) {
   const { chyba, redirect } = await searchParams;
@@ -14,8 +15,18 @@ export default async function LoginPage({ searchParams }: PageProps<"/prihlaseni
         <Logo />
       </Link>
       <div className="card mt-8 w-full max-w-sm p-6 sm:p-8">
-        <h1 className="text-2xl font-bold">Přihlášení</h1>
-        <p className="mt-2 text-[15px] text-ink-soft">Pošleme vám odkaz pro přihlášení. Žádné heslo si nemusíte pamatovat.</p>
+        {/* po otevření pokladny (R17.2) je to i registrace – účet se založí při prvním přihlášení */}
+        {isClosed("/pokladna") ? (
+          <>
+            <h1 className="text-2xl font-bold">Přihlášení</h1>
+            <p className="mt-2 text-[15px] text-ink-soft">Pošleme vám odkaz pro přihlášení. Žádné heslo si nemusíte pamatovat.</p>
+          </>
+        ) : (
+          <>
+            <h1 className="text-2xl font-bold">Přihlášení a registrace</h1>
+            <p className="mt-2 text-[15px] text-ink-soft">Zadejte e-mail a pošleme vám odkaz. Pokud u nás účet ještě nemáte, založíme ho. Heslo si pamatovat nemusíte.</p>
+          </>
+        )}
         {chyba === "odkaz" && (
           <p role="alert" className="mt-4 rounded-xl bg-danger-50 p-3 text-[15px] text-danger-600">
             Odkaz vypršel nebo už byl použit. Pošleme nový.

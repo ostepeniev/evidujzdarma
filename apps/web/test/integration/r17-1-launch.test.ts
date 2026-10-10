@@ -10,6 +10,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { createElement, type FC } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { mockLaunch } from "../helpers/launch";
 import { createTestDb, type TestDb } from "../helpers/test-db";
 
 vi.mock("next/server", async (orig) => ({ ...(await orig<typeof import("next/server")>()), after: () => {} }));
@@ -20,9 +21,10 @@ beforeAll(async () => {
 }, 60_000);
 afterAll(async () => t?.close());
 beforeEach(async () => t.reset());
+// zavřená pokladna simulovaná ze skutečných seznamů – commit otevření 2. 11. testy nerozbije (R17.2)
+mockLaunch("closed");
 afterEach(() => {
-  vi.doUnmock("@/lib/launch");
-  vi.resetModules();
+  mockLaunch("closed");
 });
 
 const sqlRaw = (text: string) => sql.raw(text.replace(/--> statement-breakpoint/g, ""));
@@ -92,11 +94,7 @@ describe("R17.1 – launch date 2. 11. 2026", () => {
   });
 
   it("gate: the guide note – open (verbatim)", async () => {
-    vi.resetModules();
-    vi.doMock("@/lib/launch", async (orig) => {
-      const real = await orig<typeof import("@/lib/launch")>();
-      return { ...real, isClosed: (p: string) => (p === "/pokladna" ? false : real.isClosed(p)) };
-    });
+    mockLaunch("open");
     expect(await noteOf()).toEqual([NOTE_OPEN]);
   });
 });

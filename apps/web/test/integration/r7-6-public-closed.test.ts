@@ -14,6 +14,9 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 import { isClosed } from "@/lib/launch";
 import { createTestDb, type TestDb } from "../helpers/test-db";
 
+// zavřená pokladna simulovaná ze skutečných seznamů – commit otevření 2. 11. test nerozbije (R17.2)
+vi.mock("@/lib/launch", async (orig) => (await import("../helpers/launch")).launchAs(await orig(), "closed"));
+
 vi.mock("next/server", async (orig) => ({ ...(await orig<typeof import("next/server")>()), after: () => {} }));
 
 let t: TestDb;
