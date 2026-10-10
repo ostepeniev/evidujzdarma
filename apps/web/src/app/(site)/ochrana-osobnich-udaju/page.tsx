@@ -69,6 +69,12 @@ const PURPOSES: readonly { purpose: string; data: string; basis: string; retenti
     retention: "3 roky od vyřízení.",
   },
   {
+    purpose: "Měření návštěvnosti webu",
+    data: "Souhrnná čísla za den: zobrazení stránek, počet návštěvníků, průměrný čas na stránce, doména webu, ze kterého jste přišli, typ zařízení a počet použití nástrojů (např. kontroly IČO). Z IP adresy a typu prohlížeče se v paměti serveru počítá anonymní otisk; IP adresu ani otisk neukládáme.",
+    basis: "Oprávněný zájem – čl. 6 odst. 1 písm. f) GDPR: zlepšování webu.",
+    retention: "Souhrnná čísla 25 měsíců. Otisk se o půlnoci zahodí.",
+  },
+  {
     purpose: "Bezpečnost a ochrana před zneužitím",
     data: "IP adresa a technické údaje o požadavku (např. pro omezení počtu dotazů), přihlašovací relace.",
     basis: "Oprávněný zájem – čl. 6 odst. 1 písm. f) GDPR: zabezpečení služby.",

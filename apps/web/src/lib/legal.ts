@@ -8,9 +8,9 @@ export const TERMS_DATE_ISO = "2026-10-03";
 export const REFERRAL_RULES_VERSION_LABEL = "7. 10. 2026";
 /** Verze zásad ochrany osobních údajů (R8.2: odhlášení z novinek ≠ zrušení předregistrace; R15.3: měření návštěvnosti). */
 export const PRIVACY_VERSION = "2026-10-r15";
-export const PRIVACY_VERSION_LABEL = "7. 10. 2026";
+export const PRIVACY_VERSION_LABEL = "10. 10. 2026";
 /** Datum platnosti zásad pro <time dateTime> (R8.5, Д-9). */
-export const PRIVACY_DATE_ISO = "2026-10-07";
+export const PRIVACY_DATE_ISO = "2026-10-10";
 /**
  * Verze textu marketingového souhlasu v předregistraci (prereg-form.tsx). Ukládá se jako doklad souhlasu
  * (preregistrations.consent_evidence = "souhlas:<verze>"); při změně textu zvýšit.

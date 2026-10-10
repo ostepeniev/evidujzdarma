@@ -62,7 +62,7 @@ describe("R8.5 – rest of B", () => {
   it("gate Д-9: <time dateTime> on the legal pages is an ISO date", async () => {
     const { TERMS_DATE_ISO, PRIVACY_DATE_ISO } = await import("@/lib/legal");
     expect(TERMS_DATE_ISO).toBe("2026-10-03");
-    expect(PRIVACY_DATE_ISO).toBe("2026-10-07");
+    expect(PRIVACY_DATE_ISO).toBe("2026-10-10");
     const Z = (await import("@/app/(site)/ochrana-osobnich-udaju/page")).default as FC;
     const P = (await import("@/app/(site)/podminky/page")).default as FC;
     const values = [renderToStaticMarkup(createElement(Z)), renderToStaticMarkup(createElement(P))].flatMap((h) => [...h.matchAll(/<time dateTime="([^"]+)"/g)].map((m) => m[1]!));
