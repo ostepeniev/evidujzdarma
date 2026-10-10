@@ -246,6 +246,13 @@
       "when": 1791582366151,
       "tag": "0034_analytics_admin",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1791632518240,
+      "tag": "0035_app_ready_launch",
+      "breakpoints": true
     }
   ]
 }

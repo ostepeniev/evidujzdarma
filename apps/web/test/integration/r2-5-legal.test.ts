@@ -110,12 +110,12 @@ describe("R2.5 – legal texts match the code", () => {
     await db.insert(schema.emailOutbox).values({ to: "x@example.cz", template: "notice", status: "sent", sendAfter: old, createdAt: old });
     await db.insert(schema.aresCache).values({ key: "subject:12345679", payload: {}, fetchedAt: old });
 
-    // launch 1. 12. 2026 + 12 měsíců
-    await runRetention(new Date("2027-11-30T00:00:00Z"));
+    // spuštění 2. 11. 2026 (R17.1) + 12 měsíců
+    await runRetention(new Date("2027-10-31T00:00:00Z"));
     expect((await db.select().from(schema.preregistrations)).map((p) => p.email).sort()).toEqual(["consent@example.cz", "noconsent@example.cz", "unsub@example.cz"]);
     expect(await db.select().from(schema.emailOutbox)).toHaveLength(0); // 90 dnů
     expect(await db.select().from(schema.aresCache)).toHaveLength(0); // 24 h
-    await runRetention(new Date("2027-12-02T00:00:00Z"));
+    await runRetention(new Date("2027-11-03T00:00:00Z"));
     expect((await db.select().from(schema.preregistrations)).map((p) => p.email).sort()).toEqual(["consent@example.cz", "unsub@example.cz"]);
     await runRetention(new Date("2029-10-02T00:00:00Z")); // 3 roky po odhlášení a po vyřízení námitky
     expect((await db.select().from(schema.preregistrations)).map((p) => p.email)).toEqual(["consent@example.cz"]);

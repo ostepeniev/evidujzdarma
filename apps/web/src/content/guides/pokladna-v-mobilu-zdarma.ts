@@ -1,3 +1,4 @@
+import { isClosed } from "@/lib/launch";
 import { FACTS, SOURCES, timelineAt } from "../facts";
 import type { Guide } from "./types";
 
@@ -61,7 +62,10 @@ export const pokladnaVMobiluZdarma: Guide = {
           p: "Ceny a funkce se liší a „zdarma“ často znamená jen základní verzi. Vždy si ověřte, co je v ceně a co je placený doplněk.",
         },
         {
-          note: "Pokladnu EvidujZdarma připravujeme: zdarma pro až 5 uživatelů a 3 evidenční jednotky, s prodejem bez signálu a dodatečným odesláním do 48 hodin. Spustit ji plánujeme 1. 12. 2026, předregistrovat se můžete už teď.",
+          // spuštění 2. 11. 2026 (R17.1) – po otevření pokladny přítomný čas
+          note: isClosed("/pokladna")
+            ? "Pokladnu EvidujZdarma připravujeme: zdarma pro až 5 uživatelů a 3 evidenční jednotky, s prodejem bez signálu a dodatečným odesláním do 48 hodin. Spouštíme ji 2. 11. 2026, předregistrovat se můžete už teď."
+            : "Pokladna EvidujZdarma je zdarma pro až 5 uživatelů a 3 evidenční jednotky, s prodejem bez signálu a dodatečným odesláním do 48 hodin. Začít můžete hned.",
         },
       ],
     },

@@ -33,7 +33,7 @@ const PURPOSES: readonly { purpose: string; data: string; basis: string; retenti
     data: "E-mail, nepovinně IČO a název firmy z ARES, obor, počet provozoven, co potřebujete (platební terminál, tiskárna, pomoc s DIS+), kód doporučení, zdroj návštěvy (UTM), u webinářů a Účetního kabinetu, o co máte zájem.",
     basis: "Provedení opatření před uzavřením smlouvy na vaši žádost – čl. 6 odst. 1 písm. b) GDPR.",
     retention:
-      "Do spuštění pokladny (1. 12. 2026) a poté nejvýše 12 měsíců od spuštění, nebo od registrace, pokud proběhla později – pokud si nezaložíte účet ani neudělíte souhlas s novinkami; dříve na vaši žádost. Předregistraci, kterou jste nepotvrdili odkazem z e-mailu, smažeme do 90 dnů od posledního zaslaného odkazu. Zrušíte-li předregistraci (odkazem „Odhlásit odběr“ v e-mailu), ostatní údaje smažeme a ponecháme si jen e-mail, datum předregistrace a datum zrušení, abychom vám už nic neposílali (3 roky).",
+      "Do spuštění pokladny (2. 11. 2026) a poté nejvýše 12 měsíců od spuštění, nebo od registrace, pokud proběhla později – pokud si nezaložíte účet ani neudělíte souhlas s novinkami; dříve na vaši žádost. Předregistraci, kterou jste nepotvrdili odkazem z e-mailu, smažeme do 90 dnů od posledního zaslaného odkazu. Zrušíte-li předregistraci (odkazem „Odhlásit odběr“ v e-mailu), ostatní údaje smažeme a ponecháme si jen e-mail, datum předregistrace a datum zrušení, abychom vám už nic neposílali (3 roky).",
   },
   {
     purpose: "Novinky k EET a nabídky e-mailem",

@@ -1,7 +1,7 @@
 import "server-only";
 import { and, count, eq, isNotNull, isNull, lt, sql, type SQL } from "drizzle-orm";
 import { getDb, hasDatabase, schema } from "@ez/db";
-import { timelineAt } from "@/content/facts";
+import { RETENTION } from "@/lib/legal";
 import { isInterest, type Interest } from "@/lib/interests";
 import { enqueueEmail } from "./mail";
 import { isConsentProof } from "./prereg-proof";
@@ -121,7 +121,8 @@ export async function ownInterests(row: { id: string; confirmedAt: Date | null }
 /** „Pokladna je připravena“ – jen pro předregistraci k pokladně (R7.4, Z3), po potvrzení e-mailu. */
 async function scheduleAppReady(row: { id: string; email: string }) {
   const now = new Date();
-  const appAt = new Date(`${timelineAt("2026-12-01").date}T08:00:00+01:00`);
+  // den spuštění pokladny v 8:00 Praha (R17.1); dokud je /pokladna zavřená, mail.ts e-mail jen odkládá (NOT_LAUNCHED)
+  const appAt = new Date(`${RETENTION.launch}T08:00:00+01:00`);
   await enqueueEmail({
     to: row.email,
     template: "app-ready",

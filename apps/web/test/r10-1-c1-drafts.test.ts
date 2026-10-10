@@ -29,8 +29,9 @@ describe("R10.1 – pokladna-v-mobilu-zdarma", () => {
     expect(blocksText("pokladna-v-mobilu-zdarma")).toContain(
       "Pokud potřebujete víc evidenčních jednotek nebo pokladních, případně jistotu prodeje bez signálu a exportu pro účetní (u MOJE eet je Finanční správa zatím nezveřejnila), porovnejte ji s nezávislými pokladnami – například v našem [srovnání EvidujZdarma a MOJE eet](/srovnani/moje-eet), které uvádí jen zveřejněné údaje.",
     );
-    expect(json("pokladna-v-mobilu-zdarma")).toContain("Spustit ji plánujeme 1. 12. 2026");
-    expect(json("pokladna-v-mobilu-zdarma")).not.toContain("Spouštíme ji");
+    // R17.1: datum spuštění je pevné (2. 11. 2026), text doslovně z рецензії – hlídá r17-1-launch.test.ts
+    expect(json("pokladna-v-mobilu-zdarma")).toContain("Spouštíme ji 2. 11. 2026");
+    expect(json("pokladna-v-mobilu-zdarma")).not.toContain("1. 12. 2026, předregistrovat");
   });
 
   it("gate: FAQ about invoices (verbatim)", () => {

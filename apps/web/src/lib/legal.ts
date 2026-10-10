@@ -20,7 +20,7 @@ export const MARKETING_CONSENT_VERSION = "2026-09-20";
 /** Doby uložení ze zásad – vykonává je cron (lib/server/lifecycle.ts → runRetention). */
 export const RETENTION = {
   /** spuštění pokladny – od něj běží 12 měsíců pro předregistrace bez účtu a bez souhlasu */
-  launch: "2026-12-01",
+  launch: "2026-11-02",
   preregistrationMonths: 12,
   /** nepotvrzená předregistrace (bez DOI) – od posledního potvrzovacího odkazu */
   unconfirmedPreregistrationDays: 90,
