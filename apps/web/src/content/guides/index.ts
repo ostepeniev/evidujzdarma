@@ -4,6 +4,7 @@ import { eet20VsEet10 } from "./eet-2-0-vs-eet-1-0";
 import { eetAPausalniDan } from "./eet-a-pausalni-dan";
 import { eetBezInternetu } from "./eet-bez-internetu";
 import { eetEshopDobirka } from "./eet-eshop-dobirka";
+import { eetGastronomie } from "./eet-gastronomie";
 import { eetKadernictviKosmetika } from "./eet-kadernictvi-kosmetika";
 import { eetOff } from "./eet-off";
 import { eetRemeslnici } from "./eet-remeslnici";
@@ -39,6 +40,7 @@ export const GUIDES: readonly Guide[] = [
   eetUbytovani,
   eetRemeslnici,
   eetKadernictviKosmetika,
+  eetGastronomie,
   eetTrhyStanky,
   eetEshopDobirka,
   eet20VsEet10,
