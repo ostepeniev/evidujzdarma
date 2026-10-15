@@ -1,0 +1,9 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "cz.evidujzdarma/eet",
+  "title": "EvidujZdarma – EET 2.0 (Czech sales registration)",
+  "description": "Czech EET 2.0 from 1 Jan 2027: check an IČO, classify payments, EET OFF cost, cited facts.",
+  "version": "1.0.0",
+  "websiteUrl": "https://evidujzdarma.cz/mcp",
+  "remotes": [{ "type": "streamable-http", "url": "https://evidujzdarma.cz/api/mcp" }]
+}
