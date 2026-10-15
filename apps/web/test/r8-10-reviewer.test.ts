@@ -32,9 +32,11 @@ describe("R8.10 – the guides' expert reviewer", () => {
       expect(g.reviewedBy, g.slug).toBe(REVIEWER.name);
       // první záznam revize; u kompletního průvodce ho R10.5 předběhl citát odbornice (týž den)
       expect(g.changelog, g.slug).toContainEqual(CHANGELOG);
-      expect(g.changelog?.[0]?.date, g.slug).toBe("2026-10-07");
+      // pozdější úpravy (např. S1 15. 10.: číslo zákona 180/2026 Sb.) přidávají novější záznam nahoru
+      const latest = g.changelog?.[0]?.date ?? "";
+      expect(latest >= "2026-10-07", g.slug).toBe(true);
       expect(isIndexable(g), g.slug).toBe(true);
-      expect(guideModified(g), g.slug).toBe("2026-10-07");
+      expect(guideModified(g), g.slug).toBe(latest);
     }
   });
 
@@ -44,7 +46,7 @@ describe("R8.10 – the guides' expert reviewer", () => {
     for (const g of REVIEWED) {
       const e = entries.find((x) => x.url === absoluteUrl(`/navody/${g.slug}`));
       expect(e, g.slug).toBeTruthy();
-      expect(e!.lastModified, g.slug).toBe("2026-10-07");
+      expect(e!.lastModified, g.slug).toBe(g.changelog![0]!.date);
     }
     const { llmsTxt } = await import("@/lib/llms");
     const navody = llmsTxt().split("## Návody")[1]!.split("\n## ")[0]!;
@@ -60,7 +62,7 @@ describe("R8.10 – the guides' expert reviewer", () => {
     // + description s praxí (R10.5)
     expect(article.reviewedBy).toEqual({ "@type": "Person", name: "Helena Jeřábková", jobTitle: "účetní", url: absoluteUrl("/o-nas#odborna-revize"), description: "účetní s 22 lety praxe" });
     expect(article.image).toContain(absoluteUrl("/opengraph-image"));
-    expect(article.dateModified).toBe("2026-10-07");
+    expect(article.dateModified).toBe(g.changelog![0]!.date);
     expect(guideMetadata(g).robots).toBeUndefined();
   });
 

@@ -30,6 +30,8 @@ export function organizationLd(): Ld {
     // Google bere jako logo bitmapu, ne SVG (R8.9)
     logo: absoluteUrl("/icons/512"),
     email: SITE.email,
+    // S1: kontakt jako ContactPoint (český jazyk), ne jen holý e-mail
+    contactPoint: { "@type": "ContactPoint", contactType: "customer support", email: SITE.email, availableLanguage: ["cs"] },
     description: SITE.description,
     // profily na sociálních sítích, aby je vyhledávače spojily s webem (R8.11)
     sameAs: [...SITE.social],
@@ -38,7 +40,15 @@ export function organizationLd(): Ld {
       name: OPERATOR.name,
       identifier: OPERATOR.ico,
       taxID: OPERATOR.dic,
-      address: OPERATOR.address,
+      vatID: OPERATOR.dic,
+      // S1: strukturovaná adresa sídla (dřív řetězec)
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: "Chebská 38/5",
+        addressLocality: "Karlovy Vary",
+        postalCode: "360 06",
+        addressCountry: "CZ",
+      },
     },
   };
 }
@@ -52,11 +62,7 @@ export function websiteLd(): Ld {
     url: SITE_URL,
     inLanguage: "cs-CZ",
     publisher: { "@id": `${SITE_URL}/#organization` },
-    potentialAction: {
-      "@type": "SearchAction",
-      target: `${SITE_URL}/kontrola-ico?ico={ico}`,
-      "query-input": "required name=ico",
-    },
+    // SearchAction odstraněno (S1): Google sitelinks search box zrušil a kontrola IČO není vyhledávání na webu
   };
 }
 
@@ -64,6 +70,8 @@ export function softwareApplicationLd(): Ld {
   return {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
+    // jedna entita aplikace pro / i /cenik (S1)
+    "@id": `${SITE_URL}/#app`,
     name: "EvidujZdarma – pokladna pro EET 2.0",
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web, Android, iOS, Windows, macOS",
@@ -124,7 +132,8 @@ export function articleLd(a: {
     inLanguage: "cs-CZ",
     // PNG 1200 × 630 (R8.10) – Google pro článek chce obrázek široký aspoň 1200 px
     image: [absoluteUrl("/opengraph-image")],
-    author: a.author ? { "@type": "Person", name: a.author } : { "@id": `${SITE_URL}/#organization` },
+    // S1: autor přímo v uzlu (dřív jen @id na uzel v jiném <script>)
+    author: a.author ? { "@type": "Person", name: a.author } : { "@type": "Organization", "@id": `${SITE_URL}/#organization`, name: SITE.name, url: SITE_URL },
     ...(a.reviewer ? { reviewedBy: { "@type": "Person", ...a.reviewer } } : {}),
     publisher: { "@id": `${SITE_URL}/#organization` },
   };

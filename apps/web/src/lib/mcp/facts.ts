@@ -36,7 +36,7 @@ export function factItem(topic: FactTopic): FactItem {
       return {
         topic,
         title: "Zákon o evidenci tržeb (EET 2.0)",
-        text: `${FACTS.law.name}, ${FACTS.law.printNo}. Podepsán ${FACTS.law.signedOn}, účinnost od ${FACTS.law.effectiveFrom} (${FACTS.law.sections.effect}). Číslo ve Sbírce zákonů zatím nebylo zveřejněno.`,
+        text: `${FACTS.law.name}, ${FACTS.law.sbNo} (${FACTS.law.printNo}). Podepsán ${FACTS.law.signedOn}, ve Sbírce zákonů zpřístupněn 7. 10. 2026, účinnost od ${FACTS.law.effectiveFrom} (${FACTS.law.sections.effect}).`,
         sources: [...FACTS.law.sources],
       };
     case "timeline":

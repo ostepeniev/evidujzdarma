@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { preload } from "react-dom";
 import "./globals.css";
 import { SITE, SITE_URL } from "@/lib/site";
 import { JsonLd, organizationLd, websiteLd } from "@/lib/jsonld";
@@ -27,7 +28,11 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
+/** Písmo s diakritikou (latin-ext) i základní latinka – text nad ohybem je potřebuje hned (S1, LCP). */
+const FONTS = ["/fonts/v1/inter-latin-wght-normal.woff2", "/fonts/v1/inter-latin-ext-wght-normal.woff2"];
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
+  for (const href of FONTS) preload(href, { as: "font", type: "font/woff2", crossOrigin: "anonymous" });
   return (
     <html lang="cs" className="h-full antialiased">
       <body className="flex min-h-full flex-col">

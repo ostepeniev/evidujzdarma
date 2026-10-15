@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { RelatedGuides } from "@/components/related-guides";
 import { Faq } from "@/components/faq";
 import { PageHeader } from "@/components/page-header";
 import { QrGenerator } from "@/components/qr-generator";
@@ -66,6 +67,7 @@ export default function QrPage() {
             ))}
           </p>
         </section>
+        <RelatedGuides slugs={["kontaktni-platba", "musim-vydavat-uctenku", "koho-se-eet-tyka"]} className="mx-auto mt-14 max-w-5xl" />
         <ToolCta text="V pokladně EvidujZdarma se QR kód na přesnou částku zobrazí jedním dotykem a platba se rovnou zapíše do denního přehledu." />
       </div>
     </>

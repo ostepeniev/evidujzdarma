@@ -17,7 +17,8 @@ mockLaunch("closed");
 const SRC = new URL("../src/", import.meta.url).pathname;
 const text = (h: string) => h.replace(/<[^>]+>/g, " ").replace(/&#x27;|&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, "&").replace(/&nbsp;| /g, " ").replace(/\s+/g, " ");
 const T = {
-  title: "Ukázka pokladny EvidujZdarma",
+  // S1 (controller, 15. 10.): titulek s „EET 2.0“ a „zdarma“
+  title: "Ukázka pokladny pro EET 2.0 zdarma – bez registrace",
   h1: "Vyzkoušejte si pokladnu bez registrace",
   band: "Ukázka. Nic se neukládá ani neodesílá Finanční správě.",
   receipt: "Ukázka – účtenka nebyla odeslána Finanční správě",

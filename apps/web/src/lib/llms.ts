@@ -4,7 +4,7 @@ import { FACTS, FACTS_UPDATED, TIMELINE } from "@/content/facts";
 import { GUIDES, guideModified, isIndexable } from "@/content/guides";
 import { MYTHS, MYTHS_UPDATED } from "@/content/myths";
 import type { Block, Guide } from "@/content/guides/types";
-import { OPERATOR, SITE, absoluteUrl } from "./site";
+import { OPERATOR, SITE, absoluteUrl, REVIEWER } from "./site";
 import { STATIC_PAGES } from "./static-pages";
 
 function indexedGuides() {
@@ -63,6 +63,9 @@ export function llmsTxt(): string {
     `- [Je EET dole? Stav systému evidence tržeb](${absoluteUrl("/stav-eet")}): nezávislé měření dostupnosti rozhraní EET každých 5 minut, historie výpadků; strojově na ${absoluteUrl("/api/stav-eet")}.`,
     `- [MCP server pro AI asistenty](${absoluteUrl("/mcp")}): veřejný MCP server (Streamable HTTP, bez přihlášení) na ${absoluteUrl("/api/mcp")} – nástroje eet_check_ico, eet_calculate_eet_off, eet_classify_payment, eet_get_facts, eet_list_misconceptions, eet_search_guides, eet_get_guide, eet_get_fs_status.`,
     `- [Srovnání s MOJE eet](${absoluteUrl("/srovnani/moje-eet")})`,
+    `- [Ukázka pokladny bez registrace](${absoluteUrl("/ukazka")}): prodej, platba a účtenka v prohlížeči; nic se neukládá ani neodesílá.`,
+    `- [Všechny návody](${absoluteUrl("/navody")}) a [všechny nástroje](${absoluteUrl("/nastroje")})`,
+    `- [O nás a odborná revize](${absoluteUrl("/o-nas")}): kdo web provozuje, jak ověřujeme fakta a kdo návody reviduje.`,
     `- [Ceník](${absoluteUrl("/cenik")}): evidence tržeb zdarma navždy; Premium 149 Kč/měsíc.`,
     `- [Pro účetní](${absoluteUrl("/ucetni")})`,
     `- [Kompletní text návodů pro AI](${absoluteUrl("/llms-full.txt")})`,
@@ -85,7 +88,7 @@ export function guideText(g: Guide): string {
   return [
     `# ${g.h1 ?? g.title}`,
     // poslední změna stránky (i revize), stejně jako sitemap a JSON-LD (R10.3 M1)
-    `URL: ${absoluteUrl(`/navody/${g.slug}`)} · Aktualizováno: ${guideModified(g)}`,
+    `URL: ${absoluteUrl(`/navody/${g.slug}`)} · Aktualizováno: ${guideModified(g)}${g.reviewedBy ? ` · Odborná revize: ${g.reviewedBy === REVIEWER.name ? `${REVIEWER.name}, ${REVIEWER.title}` : g.reviewedBy}` : ""}`,
     "",
     plainText(g.lead),
     "",

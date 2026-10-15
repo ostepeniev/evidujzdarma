@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { RelatedGuides } from "@/components/related-guides";
 import Link from "next/link";
 import { isValidIco, normalizeIco } from "@ez/cz";
 import { Faq } from "@/components/faq";
@@ -137,6 +138,11 @@ export default async function IcoCheckPage({ searchParams }: PageProps<"/kontrol
             <Faq items={FAQ} />
             <FactsVerified className="mt-4 text-sm text-muted" />
           </section>
+          <RelatedGuides
+            slugs={["koho-se-eet-tyka", "kontaktni-platba", "evidencni-jednotka", "eet-2-0-kompletni-pruvodce"]}
+            title="Co dál: návody k EET 2.0"
+            className="mt-14"
+          />
           <ToolCta />
         </div>
       </div>

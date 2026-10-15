@@ -37,8 +37,8 @@ export default function MythsPage() {
         ]}
         lead={
           <>
-            Kolem EET 2.0 koluje řada tvrzení z doby, kdy zákon ještě nebyl schválený, nebo z první EET. Porovnali jsme je se schváleným zněním zákona
-            (sněmovní tisk 189) a s informacemi Finanční správy. U každého rozporu najdete zdroj, datum stavu a co máte udělat.
+            Kolem EET 2.0 koluje řada tvrzení z doby, kdy zákon ještě nebyl schválený, nebo z první EET. Porovnali jsme je se zákonem
+            č. 180/2026 Sb. a s informacemi Finanční správy. U každého rozporu najdete zdroj, datum stavu a co máte udělat.
           </>
         }
       >

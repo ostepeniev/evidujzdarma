@@ -68,15 +68,16 @@ export const kohoSeEetTyka: Guide = {
         { p: FACTS.whoMust.exemptions },
         {
           table: {
-            head: ["Oblast", "Co je vyjmuto", "Zdroj informace"],
+            head: ["Oblast", "Co je vyjmuto", "Kde v zákoně"],
             rows: [
-              ["Doprava", "Část osobní železniční dopravy, jízdné placené ve vozidlech pravidelné hromadné dopravy, obchodní letecká doprava", "eet.gov.cz, rozbory zákona"],
-              ["Pošta", "Poštovní služby držitele poštovní licence", "eet.gov.cz, rozbory zákona"],
-              ["Hazard", "Provozování hazardních her", "eet.gov.cz, rozbory zákona"],
-              ["Energie a voda", "Licencované dodávky energií, dodávky vody a odvádění odpadních vod", "eet.gov.cz, rozbory zákona"],
-              ["Finance", "Nebankovní spotřebitelské úvěry; tržby vybraných finančních institucí a veřejnoprávních subjektů", "eet.gov.cz, rozbory zákona"],
-              ["Spolky a neziskovky", "Drobná vedlejší podnikatelská činnost veřejně prospěšných poplatníků; akce v rámci hlavní činnosti (ples, slavnost) nejsou podnikáním", "Finanční správa (limity zatím nezveřejněny)"],
-              ["Automaty", "Prodejní automaty; samoobslužná zařízení mimo provozovnu jen na hotovost, pokud evidence není prakticky možná", "Rozbory zákona"],
+              ["Doprava", "Osobní železniční přeprava, platby ve vozidlech pravidelné hromadné přepravy osob a na palubě letadel, obchodní letecká doprava", "§ 12 odst. 1"],
+              ["Pošta", "Tržby držitele poštovní licence a poštovní služby", "§ 11 odst. 1, § 12 odst. 1"],
+              ["Hazard", "Hazardní hry", "§ 12 odst. 2"],
+              ["Energie a voda", "Podnikání v energetice na základě licence, vodovody a kanalizace na základě povolení", "§ 12 odst. 2"],
+              ["Finance a veřejný sektor", "Banky, pojišťovny, investiční společnosti, nebankovní spotřebitelské úvěry, platební instituce; stát, obce, příspěvkové organizace", "§ 11, § 12 odst. 2"],
+              ["Spolky a neziskovky", "Drobná vedlejší podnikatelská činnost veřejně prospěšných poplatníků; akce v rámci hlavní činnosti (ples, slavnost) nejsou podnikáním", "§ 12 odst. 1 (limity Finanční správa zatím nezveřejnila)"],
+              ["Automaty", "Prodejní automaty; samoobslužná zařízení mimo provozovnu, pokud evidence není ani s přiměřenými náklady možná", "§ 13 odst. 2–4"],
+              ["Další", "Veřejné toalety; prodej sladkovodních ryb od 18. do 24. 12. v provozovně, která v tu dobu prodává jen je", "§ 13 odst. 5"],
             ],
             caption: "Výjimka se vztahuje jen na danou činnost. Kdo má vedle ní i jiné tržby, eviduje je.",
           },
@@ -85,7 +86,7 @@ export const kohoSeEetTyka: Guide = {
           p: "Výjimka je vždy **věcná**: týká se jen konkrétní činnosti, ne podnikatele jako celku. Pokud provozujete například hernu a vedle ní bar, tržby z baru evidujete.",
         },
         {
-          note: "Výčet výjimek vychází z informací Finanční správy a z rozborů schváleného zákona. Přesné znění zákona ve Sbírce zákonů jsme k 1. 10. 2026 neověřili. Pokud vaše činnost leží na hraně výjimky (automaty, spolky, doprava), ověřte si to na [eet.gov.cz](https://eet.gov.cz) nebo u daňového poradce.",
+          note: "Výčet jsme 15. 10. 2026 ověřili podle zákona č. 180/2026 Sb. (§ 11–13). Pokud vaše činnost leží na hraně výjimky (samoobslužná zařízení, spolky, doprava), ověřte si to na [eet.gov.cz](https://eet.gov.cz) nebo u daňového poradce.",
           tone: "warn",
         },
       ],
@@ -156,6 +157,7 @@ export const kohoSeEetTyka: Guide = {
     },
   ],
   sources: [
+    SOURCES.zakonUplne,
     SOURCES.kdoMusi,
     SOURCES.mfPredstavuje,
     SOURCES.fsVladaSchvalila,
@@ -170,6 +172,7 @@ export const kohoSeEetTyka: Guide = {
   published: "2026-10-01",
   updated: "2026-10-02",
   changelog: [
+    { date: "2026-10-15", text: "Výčet vyjmutých činností ověřen podle zákona č. 180/2026 Sb. (§ 11–13): doplněny veřejné toalety, upřesněny automaty a prodej ryb před Vánoci." },
     { date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
     {
       date: "2026-10-01",

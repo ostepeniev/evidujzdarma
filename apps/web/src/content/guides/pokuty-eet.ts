@@ -32,7 +32,7 @@ export const pokutyEet: Guide = {
               ["Nesplnění oznamovacích povinností (evidenční jednotky)", "Obecná pokuta podle daňového řádu", "Podle rozborů zákona se neřeší zvláštní sankcí EET."],
               ["Nevydání účtenky", "Podle zákona o EET nic", "Účtenka není povinná; doklad na žádost ale ukládá zákon o ochraně spotřebitele."],
             ],
-            caption: `Stav k 1. 10. 2026 podle schváleného znění zákona (${FACTS.law.printNo}, ${FACTS.law.sections.penalty}) a dostupných rozborů. Číslo zákona ve Sbírce zákonů zatím nebylo zveřejněno.`,
+            caption: `Stav k 15. 10. 2026 podle zákona ${FACTS.law.sbNo} (${FACTS.law.sections.penalty} a ${FACTS.law.sections.obstruction}) a dostupných rozborů.`,
           },
         },
         {
@@ -141,11 +141,12 @@ export const pokutyEet: Guide = {
       a: `Může. Zákon je účinný od 1. 1. 2027 a výjimku pro leden nestanoví, pokuta až ${formatKc(FACTS.penalties.max)} tedy platí od prvního dne. Finanční správa v lednu počítá s pilotním režimem a chce se zaměřit na metodickou podporu; jak bude postupovat při kontrolách, oficiálně stanoveno není. Evidujte od 1. 1. 2027 a pokladnu si odlaďte už v prosinci.`,
     },
   ],
-  sources: [SOURCES.pokuty, SOURCES.psp, SOURCES.podnikatelPrehled, SOURCES.harmonogram, SOURCES.prakticke, SOURCES.fsPlayground, SOURCES.srovnani],
+  sources: [SOURCES.zakonUplne, SOURCES.pokuty, SOURCES.psp, SOURCES.podnikatelPrehled, SOURCES.harmonogram, SOURCES.prakticke, SOURCES.fsPlayground, SOURCES.srovnani],
   related: ["eet-bez-internetu", "musim-vydavat-uctenku", "eet-2-0-vs-eet-1-0"],
   published: "2026-10-01",
   updated: "2026-10-01",
   changelog: [
+    { date: "2026-10-15", text: "Doplněno číslo zákona ve Sbírce zákonů (zákon č. 180/2026 Sb.) a paragrafy ověřené podle vyhlášeného znění." },
     { date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
     {
       date: "2026-10-01",

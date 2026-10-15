@@ -38,6 +38,5 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
       { userAgent: "*", allow: "/", disallow: PRIVATE },
     ],
     sitemap: [`${SITE_URL}/sitemap.xml`, ...extra.map((p) => `${SITE_URL}${p}`)],
-    host: SITE_URL,
   };
 }

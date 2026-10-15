@@ -367,7 +367,6 @@ export const eet20KompletniPruvodce: Guide = {
         },
         {
           ul: [
-            `číslo zákona ve Sbírce zákonů (paragrafy uvádíme podle schváleného znění – ${FACTS.law.printNo}),`,
             "zda bude Finanční správa v lednu 2027 pokutovat – oficiálně to stanoveno není, evidovat se ale musí od 1. 1. 2027,",
             "jak zacházet s místním poplatkem z pobytu, vratnými kaucemi a spropitným,",
             "převody provedené „u pokladny“ bez QR kódu a další hraniční případy kontaktní platby,",
@@ -481,6 +480,7 @@ export const eet20KompletniPruvodce: Guide = {
   published: "2026-10-01",
   updated: "2026-10-03",
   changelog: [
+    { date: "2026-10-15", text: "Doplněno číslo zákona ve Sbírce zákonů (zákon č. 180/2026 Sb.) a paragrafy ověřené podle vyhlášeného znění." },
     { date: "2026-10-07", text: "Doplněn citát odbornice (Helena Jeřábková)." },
     { date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
     { date: "2026-10-03", text: "Opraveno podle semináře Finanční správy pro vývojáře: záloha a doplatek jsou dvě běžné platby, dárkový poukaz se eviduje jen při prodeji (jeho uplatnění není platbou) a částku určenou k čerpání a čerpání uvádí pokladna jen u kreditu." },

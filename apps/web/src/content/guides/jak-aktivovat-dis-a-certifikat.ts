@@ -175,6 +175,7 @@ export const jakAktivovatDisACertifikat: Guide = {
   published: "2026-10-01",
   updated: "2026-10-01",
   changelog: [
+    { date: "2026-10-15", text: "Opraveny odkazy na příručky Certifikační autority EET (Finanční správa je přesunula)." },
     { date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
     { date: "2026-10-01", text: "První verze návodu. Snímky obrazovek doplníme po spuštění funkcí v DIS+ 1. 11. 2026." },
     {

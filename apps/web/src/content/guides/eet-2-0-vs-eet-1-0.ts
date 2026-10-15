@@ -27,7 +27,7 @@ export const eet20VsEet10: Guide = {
           p: "První EET startovala **1. 12. 2016** pro ubytování a stravování a **1. 3. 2017** pro maloobchod a velkoobchod. Další vlny už nenaběhly: Ústavní soud koncem roku 2017 zrušil jejich harmonogram i evidenci plateb kartou, v březnu 2020 byla evidence kvůli pandemii pozastavena a od **1. 1. 2023** byla zrušena úplně.",
         },
         {
-          p: `Nový zákon o evidenci tržeb (sněmovní tisk 189) podepsal prezident ${FACTS.law.signedOn} a účinnosti nabývá ${FACTS.law.effectiveFrom}. Na rozdíl od první EET se týká všech oborů najednou.`,
+          p: `Nový zákon o evidenci tržeb (${FACTS.law.sbNo}) podepsal prezident ${FACTS.law.signedOn} a účinnosti nabývá ${FACTS.law.effectiveFrom}. Na rozdíl od první EET se týká všech oborů najednou.`,
         },
       ],
     },
@@ -179,6 +179,7 @@ export const eet20VsEet10: Guide = {
   published: "2026-10-01",
   updated: "2026-10-03",
   changelog: [
+    { date: "2026-10-15", text: "Doplněno číslo zákona ve Sbírce zákonů (zákon č. 180/2026 Sb.) a paragrafy ověřené podle vyhlášeného znění." },
     { date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
     { date: "2026-10-03", text: "Opraveno podle semináře Finanční správy pro vývojáře: záloha a doplatek jsou dvě běžné platby, dárkový poukaz se eviduje jen při prodeji (jeho uplatnění není platbou) a částku určenou k čerpání a čerpání uvádí pokladna jen u kreditu." },
     {

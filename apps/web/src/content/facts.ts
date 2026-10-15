@@ -7,7 +7,7 @@
  * definitivně publikované (např. paušální daň 2027) — web je tak i označuje.
  */
 
-export const FACTS_UPDATED = "2026-10-03";
+export const FACTS_UPDATED = "2026-10-15";
 
 export interface Source {
   label: string;
@@ -36,6 +36,16 @@ export const SOURCES = {
     url: "https://mf.gov.cz/cs/ministerstvo/media/tiskove-zpravy/2026/eet-2-0-ministerstvo-financi-predstavuje-moderni-a-62878",
   },
   psp: { label: "Poslanecká sněmovna: sněmovní tisk 189", url: "https://www.psp.cz/sqw/historie.sqw?o=10&t=189" },
+  /** Zákon ve Sbírce zákonů (zpřístupněn 7. 10. 2026) */
+  sbirka: { label: "e-Sbírka: zákon č. 180/2026 Sb., o evidenci tržeb", url: "https://e-sbirka.gov.cz/sb/2026/180" },
+  zakonUplne: {
+    label: "eet.gov.cz: Zákon č. 180/2026 Sb. – úplné znění (PDF)",
+    url: "https://eet.gov.cz/assets/cs/cmsmedia/pro-vyvojare/Uplne_zneni_Zakon_o_EET.pdf",
+  },
+  vyhlasen: {
+    label: "eet.gov.cz: Zákon o evidenci tržeb byl vyhlášen ve Sbírce zákonů",
+    url: "https://eet.gov.cz/cs/informacni-servis/2026/zakon-o-evidenci-trzeb-byl-vyhlasen-ve-sbirce-zako-1346",
+  },
   fsFaq: { label: "Finanční správa: Nejčastější otázky k EET 2.0", url: "https://financnisprava.gov.cz/cs/financni-sprava/novinky/novinky-2026/nejcastejsi-otazky-k-eet-2-0" },
   fsPlayground: {
     label: "Finanční správa: testovací prostředí EET2 Playground",
@@ -82,11 +92,11 @@ export const SOURCES = {
   },
   caeetPostupy: {
     label: "eet.gov.cz: Certifikační autorita EET v2.0 – postupy získání pokladního certifikátu (PDF)",
-    url: "https://eet.gov.cz/files/CAEET_postupy_zadost_certifikat_v2.pdf",
+    url: "https://eet.gov.cz/assets/cs/cmsmedia/pro-vyvojare/CAEET_postupy_zadost_certifikat_v2.pdf",
   },
   caeetNapoveda: {
     label: "eet.gov.cz: Certifikační autorita EET v2.0 – nápověda webové aplikace (PDF)",
-    url: "https://eet.gov.cz/files/CAEET_napoveda_webove_aplikace_v2.pdf",
+    url: "https://eet.gov.cz/assets/cs/cmsmedia/pro-vyvojare/CAEET_napoveda_webove_aplikace_v2.pdf",
   },
   mojeDane: { label: "Portál MOJE daně – přihlášení do DIS+", url: "https://mojedane.gov.cz/pmd/home/prihlaseni-do-dis" },
   usoudEet: {
@@ -224,18 +234,21 @@ export const LAW_HISTORY: readonly LawStep[] = [
     source: SOURCES.finmagSchvalena,
   },
   { date: "2026-09-09", dateLabel: "9. 9. 2026", text: "Sněmovna Senát přehlasovala a schválila původní znění.", source: SOURCES.mfSnemovnaPrehlasovala },
-  { date: "2026-09-17", dateLabel: "17. 9. 2026", text: "Prezident zákon podepsal. Číslo ve Sbírce zákonů zatím nebylo zveřejněno.", source: SOURCES.prezident },
+  { date: "2026-09-17", dateLabel: "17. 9. 2026", text: "Prezident zákon podepsal.", source: SOURCES.prezident },
+  { date: "2026-10-07", dateLabel: "7. 10. 2026", text: "Zákon vyšel ve Sbírce zákonů jako zákon č. 180/2026 Sb.", source: SOURCES.vyhlasen },
 ];
 
 export const FACTS = {
   law: {
     name: "zákon o evidenci tržeb (EET 2.0)",
+    /** číslo ve Sbírce zákonů (zpřístupněno 7. 10. 2026) */
+    sbNo: "zákon č. 180/2026 Sb.",
     printNo: "sněmovní tisk 189",
     signedOn: "17. 9. 2026",
     effectiveFrom: "1. 1. 2027",
-    /** Paragrafy podle schváleného znění (sněmovní tisk 189). Ověřit po vyhlášení ve Sbírce. */
-    sections: { occasional: "§ 7", penalty: "§ 24", effect: "§ 36" },
-    sources: [SOURCES.prezident, SOURCES.psp],
+    /** Paragrafy ověřeny podle zákona č. 180/2026 Sb. (15. 10. 2026): neodeslání tržby § 24, maření evidence § 23. */
+    sections: { occasional: "§ 7", penalty: "§ 24", obstruction: "§ 23", exemptions: "§ 11–13", effect: "§ 36" },
+    sources: [SOURCES.sbirka, SOURCES.zakonUplne, SOURCES.prezident],
   },
   /** Leden 2027 */
   pilot: {
@@ -260,10 +273,10 @@ export const FACTS = {
     notCovered:
       "Netýká se příjmů ze zaměstnání, kapitálových příjmů, nájmu a ostatních (příležitostných) příjmů podle § 10 ZDP – ty nejsou příjmy z podnikání.",
     exemptions:
-      "Zákon vyjímá některé činnosti – podle dostupných rozborů například pravidelnou osobní dopravu (platba ve vozidle), poštovní služby, hazardní hry, dodávky energií a vody, finanční služby bank a pojišťoven nebo prodej kaprů před Vánoci. Výjimka se týká jen dané činnosti; přesný výčet ověřte na eet.gov.cz.",
+      "Zákon (§ 11–13) vyjímá některé činnosti – například jízdné placené ve vozidlech pravidelné hromadné dopravy, poštovní služby, hazardní hry, licencované dodávky energií a vody, tržby bank a pojišťoven, prodejní automaty, veřejné toalety nebo prodej sladkovodních ryb od 18. do 24. prosince v provozovně, která v tu dobu prodává jen je. Výjimka se týká jen dané činnosti, ostatní tržby se evidují.",
     occasional:
       "Pevná hranice pro „příležitostné tržby“ (např. 50 000 Kč ročně) ve schváleném zákoně není. Tisková zpráva MF z února 2026 ji zmiňovala, do zákona se ale nedostala. Zákon pracuje jen s tržbou, která je ojedinělá z hlediska obvykle přijímaných tržeb (§ 7) – a to se posuzuje podle okolností, ne podle částky. Finanční správa ji popisuje jako platbu přijatou výjimečně a nečekaně, kterou běžný model podnikání nepředpokládá; tržba, která se opakuje, byť s dlouhými odstupy, mezi ně nepatří.",
-    sources: [SOURCES.kdoMusi, SOURCES.podnikatelDetail, SOURCES.psp],
+    sources: [SOURCES.kdoMusi, SOURCES.zakonUplne, SOURCES.podnikatelDetail],
   },
   offline: {
     hours: 48,
@@ -331,8 +344,8 @@ export const FACTS = {
   penalties: {
     max: 500_000,
     summary:
-      "Za neodeslání datové zprávy nebo závažné maření evidence hrozí pokuta až 500 000 Kč (§ 24). Uzavření provozovny jako sankce v EET 2.0 není.",
-    sources: [SOURCES.pokuty, SOURCES.psp],
+      "Za neodeslání datové zprávy (§ 24) nebo závažné ztěžování či maření evidence (§ 23) hrozí pokuta až 500 000 Kč. Uzavření provozovny jako sankce v EET 2.0 není.",
+    sources: [SOURCES.pokuty, SOURCES.zakonUplne],
   },
   mojeEet: {
     summary:

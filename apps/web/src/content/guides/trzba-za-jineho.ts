@@ -26,10 +26,10 @@ export const trzbaZaJineho: Guide = {
           p: "V praxi často peníze od zákazníka nepřebírá ten, komu tržba patří. Host zaplatí masáž na recepci hotelu, zákazník koupí med místního včelaře v cizím obchodě, dva podnikatelé sdílejí jeden stánek a jednu kasu. EET 2.0 pro tyto situace nabízí institut **pověření**: poplatník, kterému tržba plyne, pověří jiného poplatníka, aby ji za něj evidoval.",
         },
         {
-          p: "Pověřený podle rozborů zákona fakticky jedná za pověřujícího: tržbu eviduje, plní za něj v rozsahu pověření i další povinnosti podle zákona o evidenci tržeb a odpovídá za jejich porušení. Pověřující se ale odpovědnosti za evidenci své tržby úplně nezbavuje – pokud tržba zaevidována není, může to dopadnout i na něj.",
+          p: "Pověřený podle § 10 zákona fakticky jedná za pověřujícího: tržbu eviduje, plní za něj v rozsahu pověření i další povinnosti podle zákona o evidenci tržeb a odpovídá za jejich porušení. Pověřující se ale odpovědnosti za evidenci své tržby úplně nezbavuje – pokud tržba zaevidována není, může to dopadnout i na něj.",
         },
         {
-          note: "Přesné znění ustanovení o pověření ve Sbírce zákonů jsme k 1. 10. 2026 neověřili a Finanční správa k němu zatím nevydala podrobnou metodiku pro podnikatele. Než pověření nastavíte, poraďte se s daňovým poradcem.",
+          note: "Pověření upravuje § 10 zákona č. 180/2026 Sb. Finanční správa k němu zatím nevydala podrobnou metodiku pro podnikatele. Než pověření nastavíte, poraďte se s daňovým poradcem.",
           tone: "warn",
         },
       ],
@@ -118,11 +118,12 @@ export const trzbaZaJineho: Guide = {
       a: "Záleží na tom, jak máte vztah nastavený. Pokud hotel prodává masáž jako vlastní službu, je to tržba hotelu. Pokud vybírá peníze za maséra, je to masérova tržba, kterou může hotel evidovat v pověření.",
     },
   ],
-  sources: [SOURCES.vyvojari, SOURCES.podnikatelDetail, SOURCES.podnikatelPrehled, SOURCES.kdoMusi],
+  sources: [SOURCES.zakonUplne, SOURCES.vyvojari, SOURCES.podnikatelDetail, SOURCES.podnikatelPrehled, SOURCES.kdoMusi],
   related: ["koho-se-eet-tyka", "evidencni-jednotka", "eet-kadernictvi-kosmetika"],
   published: "2026-10-01",
   updated: "2026-10-01",
   changelog: [
+    { date: "2026-10-15", text: "Doplněno číslo zákona ve Sbírce zákonů (zákon č. 180/2026 Sb.) a paragrafy ověřené podle vyhlášeného znění." },
     { date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
     { date: "2026-10-01", text: "Opraveno podle schváleného znění zákona: evidovat se musí od 1. 1. 2027, ne od 1. 2. 2027." },
   ],

@@ -6,10 +6,19 @@ import { articleLd, faqLd, howToLd } from "./jsonld";
 import { REVIEWER, REVIEWER_PROFILE, absoluteUrl } from "./site";
 import { canonicalMeta } from "./metadata";
 
+/** Šablona titulku přidává „ | EvidujZdarma“ (15 znaků); delší titulek by vyhledávač ve výsledcích ořízl (S1). */
+const TITLE_SUFFIX = 15;
+const TITLE_MAX = 62;
+
+/** Titulek návodu: dlouhý jde bez přípony značky, aby se ve výsledcích vešel celý. */
+export function guideTitle(g: Guide): Metadata["title"] {
+  return g.title.length + TITLE_SUFFIX > TITLE_MAX ? { absolute: g.title } : g.title;
+}
+
 /** Metadata stránky návodu: nerevidovaný návod je noindex (Ф9). */
 export function guideMetadata(g: Guide): Metadata {
   return {
-    title: g.title,
+    title: guideTitle(g),
     description: g.description,
     ...canonicalMeta(`/navody/${g.slug}`, { type: "article", title: g.h1 ?? g.title, description: g.description, modifiedTime: guideModified(g), publishedTime: g.published }),
     robots: isIndexable(g) ? undefined : { index: false, follow: true },

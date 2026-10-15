@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { RelatedGuides } from "@/components/related-guides";
 import { Faq } from "@/components/faq";
 import { PageHeader } from "@/components/page-header";
 import { ToolCta } from "@/components/tool-cta";
@@ -52,6 +53,7 @@ export default function UnitsPage() {
           </p>
           <FactsVerified />
         </section>
+        <RelatedGuides slugs={["evidencni-jednotka", "jak-aktivovat-dis-a-certifikat", "eet-2-0-kompletni-pruvodce"]} className="mx-auto mt-14 max-w-5xl" />
         <ToolCta />
       </div>
     </>

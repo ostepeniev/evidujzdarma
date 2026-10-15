@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { RelatedGuides } from "@/components/related-guides";
 import { Faq } from "@/components/faq";
 import { PageHeader } from "@/components/page-header";
 import { ToolCta } from "@/components/tool-cta";
@@ -81,6 +82,7 @@ export default function EetOffPage() {
           </p>
           <FactsVerified />
         </section>
+        <RelatedGuides slugs={["eet-off", "eet-a-pausalni-dan", "eet-2-0-kompletni-pruvodce"]} title="Návody k EET OFF a paušální dani" className="mx-auto mt-14 max-w-5xl" />
         <ToolCta text={SERVICE_COPY.calculatorCta} />
       </div>
     </>

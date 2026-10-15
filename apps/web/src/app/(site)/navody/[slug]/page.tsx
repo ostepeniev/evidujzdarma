@@ -6,12 +6,13 @@ import { GuideBlock } from "@/components/guide-blocks";
 import { PageHeader } from "@/components/page-header";
 import { RichText, plainText } from "@/components/rich-text";
 import { ToolCta } from "@/components/tool-cta";
-import { GUIDES, getGuide, guideModified } from "@/content/guides";
+import { GUIDES, getGuide, guideModified, isIndexable } from "@/content/guides";
 import { CATEGORY_LABEL } from "@/content/guides/types";
 import { guideJsonLd, guideMetadata } from "@/lib/guide-page";
 import { JsonLd } from "@/lib/jsonld";
 import { REVIEWER, SERVICE_COPY } from "@/lib/site";
 import { ExternalLink } from "@/components/external-link";
+import { PILLAR_SLUG, RelatedGuides, indexableGuides } from "@/components/related-guides";
 
 export const dynamicParams = false;
 
@@ -32,7 +33,12 @@ export default async function GuidePage({ params }: PageProps<"/navody/[slug]">)
   const g = getGuide(slug);
   if (!g) notFound();
   const path = `/navody/${g.slug}`;
-  const related = g.related.map(getGuide).filter((x): x is NonNullable<typeof x> => !!x);
+  // indexovaný návod odkazuje jen na indexované (nerevidované koncepty ne, Ф9); koncept smí odkazovat na cokoli
+  const related = isIndexable(g) ? indexableGuides(g.related) : g.related.map(getGuide).filter((x): x is NonNullable<typeof x> => !!x);
+  // S1: každý návod clusteru odkazuje na pilíř a na další návody téže kategorie
+  const pillar = g.slug === PILLAR_SLUG ? undefined : getGuide(PILLAR_SLUG);
+  const shown = new Set([g.slug, PILLAR_SLUG, ...related.map((r) => r.slug)]);
+  const sameCategory = GUIDES.filter((x) => x.category === g.category && !shown.has(x.slug) && isIndexable(x)).slice(0, 3);
   const ld = guideJsonLd(g);
   const modified = guideModified(g);
 
@@ -72,6 +78,15 @@ export default async function GuidePage({ params }: PageProps<"/navody/[slug]">)
           <p className="text-xl leading-relaxed text-ink">
             <RichText text={g.lead} />
           </p>
+          {pillar && isIndexable(pillar) && (
+            <p className="mt-4 text-base text-ink-soft">
+              Celý přehled povinností, termínů a výjimek najdete v návodu{" "}
+              <Link href={`/navody/${pillar.slug}`} className="font-medium text-brand-700 underline underline-offset-2">
+                {pillar.h1 ?? pillar.title}
+              </Link>
+              .
+            </p>
+          )}
 
           <aside className="not-prose my-8 rounded-2xl border border-line bg-surface p-6" aria-label="Stručně">
             <h2 className="text-lg font-bold text-ink">Stručně</h2>
@@ -167,23 +182,10 @@ export default async function GuidePage({ params }: PageProps<"/navody/[slug]">)
         </aside>
       </div>
 
-      {related.length > 0 && (
-        <section className="container-page" aria-labelledby="souvisejici">
-          <h2 id="souvisejici" className="text-2xl font-bold">
-            Související návody
-          </h2>
-          <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {related.map((r) => (
-              <li key={r.slug}>
-                <Link href={`/navody/${r.slug}`} className="card block h-full hover:border-brand-200">
-                  <p className="font-semibold text-ink">{r.h1 ?? r.title}</p>
-                  <p className="mt-1 text-sm text-ink-soft">{r.description}</p>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      <div className="container-page space-y-12">
+        <RelatedGuides guides={related} id="souvisejici" />
+        <RelatedGuides guides={sameCategory} title={`Další návody: ${CATEGORY_LABEL[g.category]}`} id="dalsi-navody" />
+      </div>
       <div className="container-page">
         <ToolCta />
       </div>

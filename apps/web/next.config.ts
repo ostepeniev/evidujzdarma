@@ -43,6 +43,8 @@ const nextConfig: NextConfig = {
       ...(process.env.NODE_ENV === "production"
         ? [{ source: "/((?!pokladna|u/|prihlaseni|kabinet|pozvanka/|admin).*)", headers: [{ key: "Content-Security-Policy", value: csp }] }]
         : []),
+      // písmo má verzi v cestě (/fonts/v1/) – nový soubor = nová cesta, starý se smí cachovat napořád (S1)
+      { source: "/fonts/:path*", headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }] },
       {
         source: "/sw.js",
         headers: [
