@@ -18,6 +18,8 @@ import { kontaktniPlatba } from "./kontaktni-platba";
 import { musimVydavatUctenku } from "./musim-vydavat-uctenku";
 import { pokladnaVMobiluZdarma } from "./pokladna-v-mobilu-zdarma";
 import { pokutyEet } from "./pokuty-eet";
+import { slevaNaDaniZaEet } from "./sleva-na-dani-za-eet";
+import { stornoAVraceniEet } from "./storno-a-vraceni-eet";
 import { trzbaZaJineho } from "./trzba-za-jineho";
 
 /**
@@ -43,6 +45,8 @@ export const GUIDES: readonly Guide[] = [
   eetGastronomie,
   eetTrhyStanky,
   eetEshopDobirka,
+  stornoAVraceniEet,
+  slevaNaDaniZaEet,
   eet20VsEet10,
   glosarEet,
 ];
