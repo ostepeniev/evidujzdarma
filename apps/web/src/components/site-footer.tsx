@@ -13,6 +13,7 @@ const COLUMNS = [
       { href: "/kalkulacka-eet-off", label: "Kalkulačka EET OFF" },
       { href: "/evidencni-jednotky", label: "Průvodce evidenčními jednotkami" },
       { href: "/qr-platba", label: "Generátor QR platby" },
+      { href: "/doklad-o-prodeji", label: "Doklad o prodeji" },
       { href: "/stav-eet", label: "Je EET dole? Stav EET" },
       { href: "/mcp", label: "Pro AI asistenty (MCP)" },
     ],

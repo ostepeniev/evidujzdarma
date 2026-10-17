@@ -119,7 +119,7 @@ export const trzbaZaJineho: Guide = {
     },
   ],
   sources: [SOURCES.zakonUplne, SOURCES.vyvojari, SOURCES.podnikatelDetail, SOURCES.podnikatelPrehled, SOURCES.kdoMusi],
-  related: ["koho-se-eet-tyka", "evidencni-jednotka", "eet-kadernictvi-kosmetika"],
+  related: ["koho-se-eet-tyka", "evidencni-jednotka", "eet-kadernictvi-kosmetika", "eet-gastronomie"],
   published: "2026-10-01",
   updated: "2026-10-01",
   changelog: [

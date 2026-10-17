@@ -224,7 +224,7 @@ export const eet20KompletniPruvodce: Guide = {
       blocks: [
         { p: FACTS.receipt.summary },
         {
-          p: `Kvůli EET 2.0 tedy nemusíte kupovat tiskárnu ani tisknout účtenky. Pokud zákazník doklad chce, vydáte ho – papírový nebo elektronický. ${FACTS.confirmation.onReceipt} Plátci DPH se dál řídí pravidly zákona o DPH pro daňové doklady. Podle dostupných rozborů zákona odpadá i povinnost vyvěšovat informační oznámení o evidenci tržeb. Více v návodu [Musím vydávat účtenku?](/navody/musim-vydavat-uctenku)`,
+          p: `Kvůli EET 2.0 tedy nemusíte kupovat tiskárnu ani tisknout účtenky. Pokud zákazník doklad chce, vydáte ho – papírový nebo elektronický. ${FACTS.confirmation.onReceipt} Plátci DPH se dál řídí pravidly zákona o DPH pro daňové doklady. Podle dostupných rozborů zákona odpadá i povinnost vyvěšovat informační oznámení o evidenci tržeb. Více v návodu [Musím vydávat účtenku?](/navody/musim-vydavat-uctenku), doklad pro zákazníka vytvoříte v [generátoru dokladu o prodeji](/doklad-o-prodeji).`,
         },
       ],
     },
@@ -263,7 +263,7 @@ export const eet20KompletniPruvodce: Guide = {
           },
         },
         {
-          p: "Státní aplikace je dobrá volba pro jednoduchý provoz se stabilním připojením. Kdo prodává venku, na horách nebo na trzích, potřebuje pokladnu, která zvládne výpadky signálu. Větší provozy s terminálem a skladem často sáhnou po komerčním řešení. Nezávislé srovnání najdete na stránce [EvidujZdarma vs MOJE eet](/srovnani/moje-eet).",
+          p: "Státní aplikace je dobrá volba pro jednoduchý provoz se stabilním připojením. Kdo prodává venku, na horách nebo na trzích, potřebuje pokladnu, která zvládne výpadky signálu. Větší provozy s terminálem a skladem často sáhnou po komerčním řešení. Nezávislé srovnání najdete na stránce [EvidujZdarma vs MOJE eet](/srovnani/moje-eet). Co musí pokladna v mobilu umět, shrnuje návod [Pokladna v mobilu zdarma](/navody/pokladna-v-mobilu-zdarma).",
         },
         { cta: "registrace" },
       ],
@@ -286,15 +286,15 @@ export const eet20KompletniPruvodce: Guide = {
         },
         { h3: "Gastronomie" },
         {
-          p: "Kavárny, restaurace a bistra evidují všechny platby hostů na místě včetně stravenek (poukázek). Rozvoz přes aplikace placený online se neeviduje; platba kurýrovi při převzetí může být kontaktní platbou a může vyžadovat pověření – viz [Tržba za jiného](/navody/trzba-za-jineho).",
+          p: "Kavárny, restaurace a bistra evidují všechny platby hostů na místě včetně stravenek (poukázek). Rozvoz přes aplikace placený online se neeviduje; platba kurýrovi při převzetí může být kontaktní platbou a může vyžadovat pověření – viz [Tržba za jiného](/navody/trzba-za-jineho). Stravenky, spropitné, rozvoz a evidenční jednotky v restauraci rozebírá návod [EET 2.0 v gastronomii](/navody/eet-gastronomie).",
         },
         { h3: "Stánky, trhy a jarmarky" },
         {
-          p: "Stánek je mobilní provozovna. Na trzích bývá slabý signál, proto je důležitá pokladna s offline režimem – nebo, u malých paušalistů, EET OFF.",
+          p: "Stánek je mobilní provozovna. Na trzích bývá slabý signál, proto je důležitá pokladna s offline režimem – nebo, u malých paušalistů, EET OFF. Podrobně v návodu [EET 2.0 na trzích a ve stáncích](/navody/eet-trhy-stanky).",
         },
         { h3: "E-shopy" },
         {
-          p: "Platby přes platební bránu se neevidují. Evidujete jen platby, které zákazník provede osobně – typicky při osobním odběru na prodejně nebo výdejním místě.",
+          p: "Platby přes platební bránu se neevidují. Evidujete jen platby, které zákazník provede osobně – typicky při osobním odběru na vaší prodejně nebo vašem výdejním místě. Dobírku a další hraniční případy rozebírá návod [EET 2.0 a e-shop](/navody/eet-eshop-dobirka).",
         },
         { h3: "Spolky a neziskové organizace" },
         {
@@ -480,6 +480,7 @@ export const eet20KompletniPruvodce: Guide = {
   published: "2026-10-01",
   updated: "2026-10-03",
   changelog: [
+    { date: "2026-10-17", text: "Doplněny odkazy na nové návody (gastronomie, trhy a stánky, e-shop, pokladna v mobilu) a na generátor dokladu o prodeji." },
     { date: "2026-10-15", text: "Doplněno číslo zákona ve Sbírce zákonů (zákon č. 180/2026 Sb.) a paragrafy ověřené podle vyhlášeného znění." },
     { date: "2026-10-07", text: "Doplněn citát odbornice (Helena Jeřábková)." },
     { date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },

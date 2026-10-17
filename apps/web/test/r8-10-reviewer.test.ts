@@ -16,7 +16,7 @@ import { REVIEWER, REVIEWER_TITLE, SITE, absoluteUrl } from "@/lib/site";
 import { pageText } from "./helpers/render-text";
 
 const CHANGELOG = { date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." };
-/** koncepty z C1 – před revizí (gate v c1-draft-guides.test.ts); revize R8.10 se týkala 16 návodů před nimi */
+/** návody po R8.10: revidované 17. 10. 2026 a koncepty před revizí (gate v c1-draft-guides.test.ts); revize R8.10 se týkala 16 návodů před nimi */
 const C1_DRAFTS = new Set(["pokladna-v-mobilu-zdarma", "eet-trhy-stanky", "eet-eshop-dobirka", "eet-gastronomie", "sleva-na-dani-za-eet", "storno-a-vraceni-eet"]);
 const REVIEWED = GUIDES.filter((g) => !C1_DRAFTS.has(g.slug));
 

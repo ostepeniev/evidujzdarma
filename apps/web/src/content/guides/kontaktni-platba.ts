@@ -156,7 +156,7 @@ export const kontaktniPlatba: Guide = {
     SOURCES.podnikatelDetail,
     SOURCES.psp,
   ],
-  related: ["koho-se-eet-tyka", "eet-ubytovani", "eet-remeslnici"],
+  related: ["koho-se-eet-tyka", "eet-ubytovani", "eet-remeslnici", "eet-eshop-dobirka"],
   published: "2026-10-01",
   updated: "2026-10-03",
   changelog: [

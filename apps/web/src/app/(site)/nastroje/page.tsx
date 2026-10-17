@@ -11,7 +11,7 @@ import { canonicalMeta } from "@/lib/metadata";
 export const metadata: Metadata = {
   title: "Nástroje k EET 2.0 zdarma",
   description:
-    "Bezplatné nástroje k EET 2.0: kontrola IČO, kvíz Musím evidovat?, kalkulačka EET OFF, průvodce evidenčními jednotkami, QR platba a hromadná kontrola pro účetní.",
+    "Nástroje k EET 2.0 zdarma: kontrola IČO, kvíz Musím evidovat?, kalkulačka EET OFF, evidenční jednotky, QR platba, doklad o prodeji a hromadná kontrola IČO.",
   ...canonicalMeta("/nastroje"),
 };
 
@@ -46,6 +46,13 @@ const TOOLS = [
     title: "Generátor QR platby",
     text: "QR kód pro platbu na účet ve formátu QR Platba (SPAYD). Funguje se všemi českými bankami a údaje neopouštějí váš prohlížeč.",
     time: "30 vteřin",
+  },
+  {
+    href: "/doklad-o-prodeji",
+    title: "Doklad o prodeji",
+    text: "Zákazník chce doklad a pokladnu nemáte po ruce? Vyplníte prodávajícího a položky, doklad podle § 16 zákona o ochraně spotřebitele vytisknete nebo uložíte jako PDF.",
+    tag: "Novinka",
+    time: "1 minuta",
   },
   {
     href: "/stav-eet",

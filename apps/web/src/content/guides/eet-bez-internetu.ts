@@ -82,7 +82,7 @@ export const eetBezInternetu: Guide = {
     },
   ],
   sources: [SOURCES.prakticke, SOURCES.fsFaq, SOURCES.prezident, SOURCES.pokuty, SOURCES.mojeEet],
-  related: ["eet-2-0-kompletni-pruvodce", "evidencni-jednotka", "pokuty-eet"],
+  related: ["eet-2-0-kompletni-pruvodce", "evidencni-jednotka", "pokuty-eet", "eet-trhy-stanky"],
   published: "2026-10-01",
   updated: "2026-10-02",
   changelog: [

@@ -172,12 +172,12 @@ body {
   }
 }
 
-/* Tisk účtenky z pokladny: jen papírová část, šířka termotiskárny */
+/* Tisk účtenky z pokladny: jen papírová část, šířka termotiskárny (jen na stránce s účtenkou – jinak by se tiskla prázdná stránka) */
 @media print {
   @page {
     margin: 0;
   }
-  body * {
+  body:where(:has(.receipt-paper)) * {
     visibility: hidden;
   }
   .receipt-paper,
@@ -194,5 +194,30 @@ body {
     padding: 2mm !important;
     font-size: 9pt !important;
     white-space: pre-wrap;
+  }
+}
+
+/* Nástroje Doklad o prodeji a Vzor pověření (S1): tiskne se jen dokument, bez webu kolem */
+@media print {
+  body:where(:has(.doc-paper)) * {
+    visibility: hidden;
+  }
+  .doc-paper,
+  .doc-paper * {
+    visibility: visible;
+  }
+  .doc-paper {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-width: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    padding: 12mm !important;
+  }
+  .doc-paper.doc-narrow {
+    width: 110mm;
+    padding: 6mm !important;
   }
 }

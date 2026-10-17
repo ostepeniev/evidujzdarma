@@ -1,5 +1,6 @@
 import { FACTS, SOURCES, formatKc, timelineAt } from "../facts";
 import type { Guide } from "./types";
+import { REVIEWER } from "@/lib/site";
 
 const DIS = timelineAt("2026-11-01");
 
@@ -195,7 +196,10 @@ export const eetGastronomie: Guide = {
   ],
   related: ["kontaktni-platba", "trzba-za-jineho", "eet-bez-internetu", "evidencni-jednotka"],
   published: "2026-10-15",
-  updated: "2026-10-15",
-  changelog: [{ date: "2026-10-15", text: "Koncept návodu – před odbornou revizí." }],
-  reviewedBy: null,
+  updated: "2026-10-17",
+  changelog: [
+    { date: "2026-10-17", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
+    { date: "2026-10-15", text: "Koncept návodu – před odbornou revizí." },
+  ],
+  reviewedBy: REVIEWER.name,
 };

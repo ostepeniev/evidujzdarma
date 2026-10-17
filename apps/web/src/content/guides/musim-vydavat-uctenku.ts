@@ -55,7 +55,7 @@ export const musimVydavatUctenku: Guide = {
         },
         { h3: "Papír, nebo e-mail?" },
         {
-          p: "§ 16 formu dokladu nepředepisuje. Podle dostupných výkladů proto obstojí i **elektronický doklad** – PDF, e-mail nebo odkaz v SMS –, pokud ho zákazník přijme. Kdo chce papír a vy tiskárnu nemáte, můžete doklad vypsat i ručně z bloku.",
+          p: "§ 16 formu dokladu nepředepisuje. Podle dostupných výkladů proto obstojí i **elektronický doklad** – PDF, e-mail nebo odkaz v SMS –, pokud ho zákazník přijme. Kdo chce papír a vy tiskárnu nemáte, můžete doklad vypsat i ručně z bloku, nebo ho během minuty vytvořit v našem [generátoru dokladu o prodeji](/doklad-o-prodeji) a uložit jako PDF.",
         },
       ],
     },
@@ -142,6 +142,7 @@ export const musimVydavatUctenku: Guide = {
   published: "2026-10-01",
   updated: "2026-10-01",
   changelog: [
+    { date: "2026-10-17", text: "Doplněn odkaz na generátor dokladu o prodeji." },
     { date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
     {
       date: "2026-10-01",

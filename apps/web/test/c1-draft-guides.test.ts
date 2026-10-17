@@ -8,9 +8,13 @@ import { describe, expect, it } from "vitest";
 import { SOURCES } from "@/content/facts";
 import { GUIDES, getGuide, isIndexable } from "@/content/guides";
 import { guideJsonLd, guideMetadata } from "@/lib/guide-page";
-import { absoluteUrl } from "@/lib/site";
+import { REVIEWER, absoluteUrl } from "@/lib/site";
 
 const DRAFTS = ["pokladna-v-mobilu-zdarma", "eet-trhy-stanky", "eet-eshop-dobirka"] as const;
+/** 17. 10. 2026: Helena Jeřábková potvrdila C1 + gastro (zpráva Olegovi) – návody jdou do indexu (Ф9). */
+const REVIEWED_1017 = [...DRAFTS, "eet-gastronomie"] as const;
+/** S1 koncepty, které na revizi ještě čekají – noindex, mimo sitemap, llms.txt i MCP. */
+const STILL_DRAFTS = ["sleva-na-dani-za-eet", "storno-a-vraceni-eet"] as const;
 const ALL_SOURCES = new Set<string>(Object.values(SOURCES).map((s) => s.url));
 const plain = (s: string) => s.replace(/\*\*/g, "").replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");
 /** Věty: konec věty je .!? a za ním velké písmeno (ne „1. 1. 2027“). */
@@ -18,24 +22,45 @@ const sentences = (s: string) => plain(s).split(/(?<=[.!?])\s+(?=[A-ZÁČĎÉĚ�
 const words = (s: string) => plain(s).split(/\s+/).filter(Boolean).length;
 const text = (slug: string) => JSON.stringify(getGuide(slug));
 
-describe("C1 – three draft guides", () => {
-  it("gate: the drafts exist, are not reviewed and therefore noindex, without reviewedBy in JSON-LD", () => {
-    for (const slug of DRAFTS) {
+describe("C1 – three guides (drafts until 17. 10. 2026, then reviewed)", () => {
+  it("gate: reviewed on 2026-10-17 – reviewedBy, changelog entry, index, reviewedBy in JSON-LD", () => {
+    for (const slug of REVIEWED_1017) {
       const g = getGuide(slug);
       expect(g, slug).toBeTruthy();
-      expect(g!.reviewedBy, slug).toBeNull();
-      expect(isIndexable(g!), slug).toBe(false);
-      expect(guideMetadata(g!).robots, slug).toEqual({ index: false, follow: true });
-      expect(guideJsonLd(g!).find((x) => x["@type"] === "Article"), slug).not.toHaveProperty("reviewedBy");
+      expect(g!.reviewedBy, slug).toBe(REVIEWER.name);
+      expect(g!.changelog?.[0], slug).toEqual({ date: "2026-10-17", text: "Návod prošel odbornou revizí (Helena Jeřábková)." });
+      expect(isIndexable(g!), slug).toBe(true);
+      expect(guideMetadata(g!).robots, slug).toBeUndefined();
+      expect(guideJsonLd(g!).find((x) => x["@type"] === "Article"), slug).toHaveProperty("reviewedBy");
     }
   });
 
-  it("gate: drafts stay out of the sitemap, llms.txt and the MCP index", async () => {
+  it("gate: reviewed guides are in the sitemap, llms.txt and the MCP index; the pillar links them", async () => {
     const { default: sitemap } = await import("@/app/sitemap");
     const urls = sitemap().map((e) => e.url);
     const { llmsTxt, llmsFullTxt } = await import("@/lib/llms");
     const { publicGuides } = await import("@/lib/mcp/guides");
-    for (const slug of DRAFTS) {
+    const pillar = text("eet-2-0-kompletni-pruvodce");
+    for (const slug of REVIEWED_1017) {
+      expect(urls, slug).toContain(absoluteUrl(`/navody/${slug}`));
+      expect(llmsTxt(), slug).toContain(`/navody/${slug})`);
+      expect(llmsFullTxt(), slug).toContain(`/navody/${slug}`);
+      expect(publicGuides().map((g) => g.slug), slug).toContain(slug);
+      expect(pillar, slug).toContain(`(/navody/${slug})`);
+    }
+  });
+
+  it("gate: drafts still waiting for the review stay noindex and out of the sitemap, llms.txt and the MCP index", async () => {
+    const { default: sitemap } = await import("@/app/sitemap");
+    const urls = sitemap().map((e) => e.url);
+    const { llmsTxt, llmsFullTxt } = await import("@/lib/llms");
+    const { publicGuides } = await import("@/lib/mcp/guides");
+    for (const slug of STILL_DRAFTS) {
+      const g = getGuide(slug)!;
+      expect(g.reviewedBy, slug).toBeNull();
+      expect(isIndexable(g), slug).toBe(false);
+      expect(guideMetadata(g).robots, slug).toEqual({ index: false, follow: true });
+      expect(guideJsonLd(g).find((x) => x["@type"] === "Article"), slug).not.toHaveProperty("reviewedBy");
       expect(urls, slug).not.toContain(absoluteUrl(`/navody/${slug}`));
       expect(llmsTxt(), slug).not.toContain(`/navody/${slug})`);
       expect(llmsFullTxt(), slug).not.toContain(`/navody/${slug}`);

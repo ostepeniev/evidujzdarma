@@ -1,6 +1,7 @@
 import { isClosed } from "@/lib/launch";
 import { FACTS, SOURCES, timelineAt } from "../facts";
 import type { Guide } from "./types";
+import { REVIEWER } from "@/lib/site";
 
 const DIS = timelineAt("2026-11-01");
 const MOJE_EET = timelineAt("2026-12-01");
@@ -145,7 +146,10 @@ export const pokladnaVMobiluZdarma: Guide = {
   ],
   related: ["jak-aktivovat-dis-a-certifikat", "eet-bez-internetu", "musim-vydavat-uctenku"],
   published: "2026-10-07",
-  updated: "2026-10-07",
-  changelog: [{ date: "2026-10-07", text: "Koncept návodu – před odbornou revizí." }],
-  reviewedBy: null,
+  updated: "2026-10-17",
+  changelog: [
+    { date: "2026-10-17", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
+    { date: "2026-10-07", text: "Koncept návodu – před odbornou revizí." },
+  ],
+  reviewedBy: REVIEWER.name,
 };

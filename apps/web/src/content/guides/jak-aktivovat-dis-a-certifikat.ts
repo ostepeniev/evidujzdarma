@@ -171,7 +171,7 @@ export const jakAktivovatDisACertifikat: Guide = {
     },
   ],
   sources: [SOURCES.jakZacit, SOURCES.harmonogram, SOURCES.caeetPostupy, SOURCES.caeetNapoveda, SOURCES.mojeDane, SOURCES.vyvojari, SOURCES.fsPlayground, SOURCES.psp],
-  related: ["evidencni-jednotka", "eet-2-0-kompletni-pruvodce", "eet-bez-internetu"],
+  related: ["evidencni-jednotka", "eet-2-0-kompletni-pruvodce", "eet-bez-internetu", "pokladna-v-mobilu-zdarma"],
   published: "2026-10-01",
   updated: "2026-10-01",
   changelog: [

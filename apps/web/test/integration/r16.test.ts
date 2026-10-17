@@ -58,7 +58,7 @@ const rows = () => getDb().select().from(schema.analyticsDaily);
 
 describe("R16.1 – only pages from the site register", () => {
   it("gate: a made-up path and a non-existent guide write nothing (view and time); / and an existing guide are counted", async () => {
-    for (const p of ["/neexistuje-xyz", "/navody/neexistuje", "/navody/eet-trhy-stanky", "/cenik/x", "/kontrola-ico/12345679"]) {
+    for (const p of ["/neexistuje-xyz", "/navody/neexistuje", "/navody/storno-a-vraceni-eet", "/cenik/x", "/kontrola-ico/12345679"]) {
       await send({ t: "v", p });
       await send({ t: "t", p, s: 10, n: 1 });
     }
