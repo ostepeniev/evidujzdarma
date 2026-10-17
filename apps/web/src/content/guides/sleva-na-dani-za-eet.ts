@@ -1,9 +1,10 @@
 import { FACTS, SOURCES } from "../facts";
 import type { Guide } from "./types";
+import { REVIEWER } from "@/lib/site";
 
 /**
  * S1 (15. 10. 2026): cluster návod ke slevě na evidenci tržeb (§ 35be ZDP ve znění zákona č. 180/2026 Sb.).
- * Koncept před odbornou revizí (Ф9): reviewedBy null = noindex. Paušální režim = „podle našeho čtení“ + ověřit s účetní.
+ * 17. 10. 2026 prošel odbornou revizí (Helena Jeřábková) – index, sitemap, llms.txt, MCP. Paušální režim = „podle našeho čtení“ + ověřit s účetní.
  */
 export const slevaNaDaniZaEet: Guide = {
   slug: "sleva-na-dani-za-eet",
@@ -125,7 +126,10 @@ export const slevaNaDaniZaEet: Guide = {
   sources: [SOURCES.zakonUplne, SOURCES.sbirka, SOURCES.zdp, SOURCES.podnikatelDetail, SOURCES.eetOff],
   related: ["eet-2-0-kompletni-pruvodce", "eet-off", "eet-a-pausalni-dan", "koho-se-eet-tyka"],
   published: "2026-10-15",
-  updated: "2026-10-15",
-  changelog: [{ date: "2026-10-15", text: "Koncept návodu – před odbornou revizí." }],
-  reviewedBy: null,
+  updated: "2026-10-17",
+  changelog: [
+    { date: "2026-10-17", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
+    { date: "2026-10-15", text: "Koncept návodu – před odbornou revizí." },
+  ],
+  reviewedBy: REVIEWER.name,
 };

@@ -3,6 +3,7 @@ import { ExternalLink } from "@/components/external-link";
 import { Faq } from "@/components/faq";
 import { MoneyParams } from "@/components/money-params";
 import { PageHeader } from "@/components/page-header";
+import { ReviewNote } from "@/components/review-note";
 import { RelatedGuides } from "@/components/related-guides";
 import { ToolCta } from "@/components/tool-cta";
 import { NetWageCalculator } from "@/components/tools/net-wage-calculator";
@@ -10,12 +11,12 @@ import { SOURCES } from "@/content/facts";
 import { JsonLd, faqLd } from "@/lib/jsonld";
 import { canonicalMeta } from "@/lib/metadata";
 import { P2026, kc, uniqueSources, type ParamKey } from "@/lib/money-2026";
-import { MONEY_DISCLAIMER, moneyRobots } from "@/lib/money-review";
+import { MONEY_DISCLAIMER, MONEY_REVIEWED_ON, moneyRobots } from "@/lib/money-review";
 import { calculateNetWage } from "@/lib/net-wage";
 
 /**
- * S2/B2 (17. 10. 2026): kalkulačka čisté mzdy 2026. Peněžní kalkulačka = noindex, mimo sitemap/llms/rozcestník, dokud
- * ji nezkontroluje účetní (lib/money-review.ts, MONEY_CALCULATORS_REVIEWED).
+ * S2/B2 (17. 10. 2026): kalkulačka čisté mzdy 2026. Peněžní kalkulačka: index, sitemap, llms a rozcestník až po kontrole
+ * účetní (lib/money-review.ts, MONEY_CALCULATORS_REVIEWED) – zkontrolovala ji 17. 10. 2026 (S3-OPEN, ReviewNote).
  */
 export const metadata: Metadata = {
   title: "Kalkulačka čisté mzdy 2026 – výpočet z hrubé mzdy",
@@ -96,7 +97,9 @@ export default function NetWagePage() {
           { name: "Čistá mzda 2026", path: "/kalkulacka-cista-mzda" },
         ]}
         lead={`Zadejte hrubou mzdu a zjistíte, kolik dostanete na účet a kolik vás platí zaměstnavatel. Počítáme s parametry pro rok 2026 přímo ze zákona, ČSSZ a VZP.`}
-      />
+      >
+        <ReviewNote date={MONEY_REVIEWED_ON} />
+      </PageHeader>
       <div className="container-page py-10">
         <NetWageCalculator />
         <MoneyParams keys={KEYS} />

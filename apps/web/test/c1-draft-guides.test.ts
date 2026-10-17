@@ -1,6 +1,6 @@
 /**
  * C1 (SEO-блок, 7. 10. 2026) – tři nové návody jako koncepty: reviewedBy null = noindex, mimo sitemap, llms.txt i MCP,
- * dokud je nezkontroluje odbornice (Ф9). Každý: přímá odpověď na začátku (2–3 věty), zdroje jen ze SOURCES, FAQ, HowTo,
+ * dokud je nezkontroluje odbornice (Ф9). 17. 10. 2026 revidované C1, gastro i S1 (sleva, storno) – všechny v indexu. Každý: přímá odpověď na začátku (2–3 věty), zdroje jen ze SOURCES, FAQ, HowTo,
  * historie změn, odkazy na existující návody. Dobírka bez jednoznačného zdroje = „zatím není jisté“ + otázka pro poradce.
  */
 import { readFileSync } from "node:fs";
@@ -11,10 +11,12 @@ import { guideJsonLd, guideMetadata } from "@/lib/guide-page";
 import { REVIEWER, absoluteUrl } from "@/lib/site";
 
 const DRAFTS = ["pokladna-v-mobilu-zdarma", "eet-trhy-stanky", "eet-eshop-dobirka"] as const;
-/** 17. 10. 2026: Helena Jeřábková potvrdila C1 + gastro (zpráva Olegovi) – návody jdou do indexu (Ф9). */
-const REVIEWED_1017 = [...DRAFTS, "eet-gastronomie"] as const;
-/** S1 koncepty, které na revizi ještě čekají – noindex, mimo sitemap, llms.txt i MCP. */
-const STILL_DRAFTS = ["sleva-na-dani-za-eet", "storno-a-vraceni-eet"] as const;
+/** S1 koncepty ke slevě na dani a ke stornu – Helena je schválila 17. 10. 2026 spolu s ostatními (S3-OPEN). */
+const S1_DRAFTS = ["sleva-na-dani-za-eet", "storno-a-vraceni-eet"] as const;
+/** 17. 10. 2026: Helena Jeřábková potvrdila C1 + gastro + S1 koncepty (zpráva Olegovi) – návody jdou do indexu (Ф9). */
+const REVIEWED_1017 = [...DRAFTS, "eet-gastronomie", ...S1_DRAFTS] as const;
+/** Koncepty, které na revizi ještě čekají – noindex, mimo sitemap, llms.txt i MCP. Od 17. 10. 2026 žádné. */
+const STILL_DRAFTS: readonly string[] = [];
 const ALL_SOURCES = new Set<string>(Object.values(SOURCES).map((s) => s.url));
 const plain = (s: string) => s.replace(/\*\*/g, "").replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");
 /** Věty: konec věty je .!? a za ním velké písmeno (ne „1. 1. 2027“). */
@@ -48,6 +50,25 @@ describe("C1 – three guides (drafts until 17. 10. 2026, then reviewed)", () =>
       expect(publicGuides().map((g) => g.slug), slug).toContain(slug);
       expect(pillar, slug).toContain(`(/navody/${slug})`);
     }
+    // S3-OPEN: pilíř odkazuje na slevu a storno a má o tom záznam v historii změn
+    const p = getGuide("eet-2-0-kompletni-pruvodce")!;
+    expect(p.changelog).toContainEqual({ date: "2026-10-17", text: "Doplněny odkazy na návody o slevě na dani a o stornu." });
+    expect(p.changelog?.[0]?.date).toBe("2026-10-17");
+  });
+
+  it("gate: S1 guides (sleva, storno) – related guides exist and are indexable; other guides link back", () => {
+    for (const slug of S1_DRAFTS) {
+      const g = getGuide(slug)!;
+      expect(g.related.length, slug).toBeGreaterThanOrEqual(2);
+      for (const r of g.related) expect(isIndexable(getGuide(r)!), `${slug} → ${r}`).toBe(true);
+      // aspoň jeden jiný návod než pilíř na ně odkazuje v „Související“
+      expect(GUIDES.filter((x) => x.slug !== "eet-2-0-kompletni-pruvodce" && x.related.includes(slug)).length, slug).toBeGreaterThan(0);
+    }
+  });
+
+  it("gate: no guide is waiting for the review any more (17. 10. 2026) – every guide is indexable", () => {
+    expect(STILL_DRAFTS).toEqual([]);
+    expect(GUIDES.filter((g) => !isIndexable(g)).map((g) => g.slug)).toEqual([]);
   });
 
   it("gate: drafts still waiting for the review stay noindex and out of the sitemap, llms.txt and the MCP index", async () => {

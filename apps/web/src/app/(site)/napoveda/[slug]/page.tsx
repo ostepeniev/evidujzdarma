@@ -47,8 +47,8 @@ export default async function HelpArticlePage({ params }: PageProps<"/napoveda/[
 
   return (
     <>
-      {ld.length > 0 && <JsonLd data={ld} />}
-      <HelpClosedNote />
+      <JsonLd data={ld} />
+      <HelpClosedNote slug={a.slug} />
       <PageHeader
         title={a.title}
         crumbs={[

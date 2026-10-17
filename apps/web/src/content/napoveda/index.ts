@@ -1,4 +1,3 @@
-import { isClosed } from "@/lib/launch";
 import type { HelpArticle, HelpTopic } from "./types";
 import { ODESILANI } from "./odesilani";
 import { PRODEJ } from "./prodej";
@@ -24,17 +23,11 @@ export function helpArticlesIn(topic: HelpTopic): HelpArticle[] {
   return HELP_ARTICLES.filter((a) => a.topic === topic);
 }
 
-/**
- * Nápověda popisuje pokladnu, která se otevírá 2. 11. 2026. Dokud je /pokladna v CLOSED_SECTIONS, jsou stránky nápovědy
- * noindex,follow, nejsou v sitemap (tedy ani v měření návštěvnosti, R16.1) ani v llms.txt. Commit otevření (odebrání
- * „/pokladna“ z lib/launch.ts) je zpřístupní vyhledávačům sám – nic dalšího se měnit nemusí.
+/*
+ * S3-OPEN (17. 10. 2026, rozhodnutí majitele): nápověda je pro vyhledávače otevřená už před spuštěním pokladny (2. 11. 2026) –
+ * index, sitemap (= měření, R16.1) i llms.txt. Články o ovládání pokladny mají do spuštění nahoře poznámku o aktuálnosti
+ * (lib/help-page.ts: HELP_APP_ARTICLES, helpLaunchNote); přepínač helpIndexable() zanikl.
  */
-export function helpIndexable(): boolean {
-  return !isClosed("/pokladna");
-}
-
-/** Poznámka nahoře na stránkách nápovědy, dokud je pokladna zavřená (doslovně ze zadání S2-A). */
-export const HELP_CLOSED_NOTE = "Pokladnu spouštíme 2. 11. 2026 – návod popisuje, jak bude fungovat.";
 
 /** Poslední změna nápovědy – lastmod rozcestníku v sitemap. */
 export function helpModified(): string {

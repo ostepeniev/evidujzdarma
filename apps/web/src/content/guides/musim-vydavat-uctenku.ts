@@ -138,7 +138,7 @@ export const musimVydavatUctenku: Guide = {
     },
   ],
   sources: [SOURCES.prakticke, SOURCES.prezident, SOURCES.fsVladaSchvalila, SOURCES.zos, SOURCES.srovnani],
-  related: ["kontaktni-platba", "eet-2-0-vs-eet-1-0", "pokuty-eet"],
+  related: ["kontaktni-platba", "eet-2-0-vs-eet-1-0", "pokuty-eet", "storno-a-vraceni-eet"],
   published: "2026-10-01",
   updated: "2026-10-01",
   changelog: [

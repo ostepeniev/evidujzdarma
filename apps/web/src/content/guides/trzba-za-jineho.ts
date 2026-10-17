@@ -97,6 +97,9 @@ export const trzbaZaJineho: Guide = {
             "Pravidelně si porovnávejte přehledy tržeb – pověřující se odpovědnosti za evidenci své tržby nezbavuje.",
           ],
         },
+        {
+          p: "Text pověření si můžete připravit ve [vzoru pověření k evidování tržeb](/vzor-povereni): vyplníte obě strany, rozsah a datum a vzor vytisknete nebo uložíte jako PDF. Před podpisem ho projděte s účetní.",
+        },
       ],
     },
   ],
@@ -123,6 +126,7 @@ export const trzbaZaJineho: Guide = {
   published: "2026-10-01",
   updated: "2026-10-01",
   changelog: [
+    { date: "2026-10-17", text: "Doplněn odkaz na vzor pověření k evidování tržeb." },
     { date: "2026-10-15", text: "Doplněno číslo zákona ve Sbírce zákonů (zákon č. 180/2026 Sb.) a paragrafy ověřené podle vyhlášeného znění." },
     { date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
     { date: "2026-10-01", text: "Opraveno podle schváleného znění zákona: evidovat se musí od 1. 1. 2027, ne od 1. 2. 2027." },

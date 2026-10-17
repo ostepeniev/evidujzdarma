@@ -17,7 +17,8 @@ describe("review 7 – controller fixes", () => {
   it("the /navody hub lists only reviewed guides", () => {
     const src = readFileSync(join(__dirname, "../src/app/(site)/navody/page.tsx"), "utf8");
     expect(src).toMatch(/GUIDES\.filter\(\(g\) => g\.category === cat && isIndexable\(g\)\)/);
-    expect(GUIDES.some((g) => !isIndexable(g))).toBe(true); // C1 koncepty existují, ale v seznamu nejsou
+    // od 17. 10. 2026 jsou revidované všechny návody (S3-OPEN); koncept bez revize by se v seznamu neobjevil
+    expect(isIndexable({ ...GUIDES[0]!, reviewedBy: null })).toBe(false);
   });
 
   it("guide CTA does not claim a working register while /pokladna is closed", () => {

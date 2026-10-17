@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ExternalLink } from "@/components/external-link";
 import { Faq } from "@/components/faq";
 import { PageHeader } from "@/components/page-header";
+import { ReviewNote } from "@/components/review-note";
 import { RelatedGuides } from "@/components/related-guides";
 import { ToolCta } from "@/components/tool-cta";
 import { TipsCalculator } from "@/components/tools/tips-calculator";
@@ -9,13 +10,13 @@ import { SOURCES } from "@/content/facts";
 import { JsonLd, faqLd } from "@/lib/jsonld";
 import { canonicalMeta } from "@/lib/metadata";
 import { kc } from "@/lib/money-2026";
-import { MONEY_DISCLAIMER, moneyRobots } from "@/lib/money-review";
+import { MONEY_DISCLAIMER, MONEY_REVIEWED_ON, moneyRobots } from "@/lib/money-review";
 import { TIPS_DEFAULT, TIP_EXEMPT_PERCENT, TIP_RULE_FROM, calculateTips } from "@/lib/tips";
 
 /**
  * S2/B2 (17. 10. 2026): spropitné ze stravovacích služeb – § 6 odst. 9 písm. g) a odst. 19 ZDP ve znění zákona č. 180/2026 Sb.
  * Kalkulačka jen přepočítává doslovné znění zákona. Co zákon neříká, je v bloku „Co zákon výslovně neřeší“ a v otázkách pro
- * účetní (hlášení S2/B2). Noindex, dokud ji účetní nezkontroluje (lib/money-review.ts).
+ * účetní (hlášení S2/B2). Index až po kontrole účetní (lib/money-review.ts) – zkontrolovala ji 17. 10. 2026.
  */
 export const metadata: Metadata = {
   title: "Kalkulačka spropitného 2027: osvobození do 7 % v gastronomii",
@@ -75,7 +76,9 @@ export default function TipsPage() {
           { name: "Spropitné v gastronomii", path: "/kalkulacka-spropitne" },
         ]}
         lead={`Od ${TIP_RULE_FROM} je spropitné zaměstnanců v restauracích, kavárnách a bistrech osvobozené od daně – do ${TIP_EXEMPT_PERCENT} % měsíčních příjmů podniku ze stravovacích služeb. Spočítejte limit na zaměstnance a část, která se do něj nevejde.`}
-      />
+      >
+        <ReviewNote date={MONEY_REVIEWED_ON} />
+      </PageHeader>
       <div className="container-page py-10">
         <TipsCalculator />
         <section className="mx-auto mt-14 max-w-3xl rounded-2xl border border-line bg-surface p-6 sm:p-8" aria-labelledby="co-zakon-neresi">

@@ -12,6 +12,9 @@ import {
   itemBase,
 } from "@/lib/faktura";
 
+/** S3-OPEN: dobrovolná patička faktury (rozhodnutí majitele: odkaz vypnutý, zaškrtávátko dobrovolně, výchozí stav nezaškrtnuto). */
+export const INVOICE_CREDIT = "Vystaveno zdarma v EvidujZdarma.cz";
+
 const num = (n: number) => new Intl.NumberFormat("cs-CZ", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
 const date = (iso: string) => (iso ? formatCzDate(iso) : "—");
 
@@ -40,6 +43,7 @@ export function InvoicePaper({
   iban,
   qrSvg,
   paper = true,
+  credit = false,
 }: {
   inv: Invoice;
   totals: InvoiceTotals;
@@ -49,6 +53,8 @@ export function InvoicePaper({
   qrSvg: string | null;
   /** false = ukázka na stránce s více fakturami (bez .doc-paper, jinak by se při tisku překryly) */
   paper?: boolean;
+  /** true = dole malým písmem INVOICE_CREDIT (jen když to uživatel v generátoru zaškrtne; bez odkazu) */
+  credit?: boolean;
 }) {
   const taxDoc = inv.vatPayer && inv.kind === "faktura";
   const simplified = isSimplified(inv, totals);
@@ -201,6 +207,7 @@ export function InvoicePaper({
           {t}
         </p>
       ))}
+      {credit && <p className="mt-6 text-center text-[11px] text-muted">{INVOICE_CREDIT}</p>}
     </div>
   );
 }

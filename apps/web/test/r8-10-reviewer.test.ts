@@ -16,9 +16,11 @@ import { REVIEWER, REVIEWER_TITLE, SITE, absoluteUrl } from "@/lib/site";
 import { pageText } from "./helpers/render-text";
 
 const CHANGELOG = { date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." };
-/** návody po R8.10: revidované 17. 10. 2026 a koncepty před revizí (gate v c1-draft-guides.test.ts); revize R8.10 se týkala 16 návodů před nimi */
+/** návody po R8.10 (C1, gastro, S1) – všechny revidované 17. 10. 2026 (gate v c1-draft-guides.test.ts); revize R8.10 se týkala 16 návodů před nimi */
 const C1_DRAFTS = new Set(["pokladna-v-mobilu-zdarma", "eet-trhy-stanky", "eet-eshop-dobirka", "eet-gastronomie", "sleva-na-dani-za-eet", "storno-a-vraceni-eet"]);
 const REVIEWED = GUIDES.filter((g) => !C1_DRAFTS.has(g.slug));
+const REVIEWED_1017 = GUIDES.filter((g) => C1_DRAFTS.has(g.slug));
+const CHANGELOG_1017 = { date: "2026-10-17", text: "Návod prošel odbornou revizí (Helena Jeřábková)." };
 
 describe("R8.10 – the guides' expert reviewer", () => {
   it("gate: REVIEWER constants", () => {
@@ -37,6 +39,16 @@ describe("R8.10 – the guides' expert reviewer", () => {
       expect(latest >= "2026-10-07", g.slug).toBe(true);
       expect(isIndexable(g), g.slug).toBe(true);
       expect(guideModified(g), g.slug).toBe(latest);
+    }
+  });
+
+  it("gate: the 6 guides after R8.10 were reviewed on 2026-10-17 – reviewedBy, changelog entry, indexable", () => {
+    expect(REVIEWED_1017).toHaveLength(C1_DRAFTS.size);
+    for (const g of REVIEWED_1017) {
+      expect(g.reviewedBy, g.slug).toBe(REVIEWER.name);
+      expect(g.changelog, g.slug).toContainEqual(CHANGELOG_1017);
+      expect(isIndexable(g), g.slug).toBe(true);
+      expect(guideModified(g), g.slug).toBe(g.changelog![0]!.date);
     }
   });
 

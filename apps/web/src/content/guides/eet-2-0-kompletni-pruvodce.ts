@@ -211,6 +211,9 @@ export const eet20KompletniPruvodce: Guide = {
         {
           p: "Záloha a doplatek zaplacené na místě jsou dvě běžné platby. Zvlášť se v datové zprávě uvádí jen dobití kreditu (čip, předplacená karta) a jeho čerpání. Dárkový poukaz na konkrétní zboží nebo službu evidujete při prodeji, jeho uplatnění platbou není a neeviduje se. Pokladna, kterou si vyberete, proto musí platbu poukazem a kreditem umět rozlišit – ověřte si to dřív, než začnete poukazy na rok 2027 prodávat.",
         },
+        {
+          p: "Vracíte-li zákazníkovi peníze za evidovanou tržbu nebo opravujete chybnou částku, evidujete zápornou tržbu (§ 8 zákona). Vrácení zboží, reklamaci i překlep v částce rozebírá návod [Storno a vrácení peněz v EET 2.0](/navody/storno-a-vraceni-eet).",
+        },
         { h3: "Co když vypadne internet" },
         { p: FACTS.offline.summary },
         { p: FACTS.offline.responseTimeout },
@@ -357,6 +360,7 @@ export const eet20KompletniPruvodce: Guide = {
             ],
           },
         },
+        { p: "Komu sleva na evidenci tržeb náleží a jak se počítá, ukazuje na příkladech návod [Sleva na dani za evidenci tržeb](/navody/sleva-na-dani-za-eet)." },
       ],
     },
     {
@@ -455,6 +459,7 @@ export const eet20KompletniPruvodce: Guide = {
   ],
   sources: [
     SOURCES.seminarVyvojari,
+    SOURCES.sbirka,
     SOURCES.prezident,
     SOURCES.mfPredstavuje,
     SOURCES.fsVladaSchvalila,
@@ -481,6 +486,7 @@ export const eet20KompletniPruvodce: Guide = {
   published: "2026-10-01",
   updated: "2026-10-03",
   changelog: [
+    { date: "2026-10-17", text: "Doplněny odkazy na návody o slevě na dani a o stornu." },
     { date: "2026-10-17", text: "Doplněny odkazy na nové návody (gastronomie, trhy a stánky, e-shop, pokladna v mobilu), na generátor dokladu o prodeji a na checklist EET 2.0." },
     { date: "2026-10-15", text: "Doplněno číslo zákona ve Sbírce zákonů (zákon č. 180/2026 Sb.) a paragrafy ověřené podle vyhlášeného znění." },
     { date: "2026-10-07", text: "Doplněn citát odbornice (Helena Jeřábková)." },

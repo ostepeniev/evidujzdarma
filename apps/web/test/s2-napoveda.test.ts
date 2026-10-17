@@ -2,9 +2,12 @@
  * S2-A – nápověda k pokladně (/napoveda, /napoveda/[slug]).
  *  - obsah: 20–30 článků, titulek ≤ 60 znaků, úvod, aspoň jeden krok nebo oddíl, 120–350 slov, odkazy vedou na existující
  *    stránky (helpers/routes.ts, pravidla R2.9) a nikdy do uzavřených sekcí; zákonná fakta přes FACTS;
- *  - dokud je pokladna zavřená (simulace ze skutečných seznamů, helpers/launch.ts – R17.2): noindex,follow, mimo sitemap
- *    (= mimo měření, R16.1) i llms.txt, poznámka „Pokladnu spouštíme 2. 11. 2026…“, žádný odkaz do pokladny;
- *  - po otevření (commit odebere „/pokladna“ z CLOSED_SECTIONS): indexovatelná, v sitemap i v llms.txt, bez poznámky.
+ *  - S3-OPEN (17. 10. 2026, rozhodnutí majitele): indexovatelná, v sitemap (= v měření, R16.1) i v llms.txt už před
+ *    spuštěním pokladny;
+ *  - dokud je pokladna zavřená (simulace ze skutečných seznamů, helpers/launch.ts – R17.2): u článků o ovládání pokladny
+ *    a na rozcestníku poznámka „Pokladnu EvidujZdarma spouštíme 2. 11. 2026…“ (obecné články ji nemají), žádný odkaz do
+ *    pokladny, výzva k předregistraci;
+ *  - po otevření (commit odebere „/pokladna“ z CLOSED_SECTIONS): bez poznámky, zůstane „Aktualizováno …“, výzva vede do pokladny.
  */
 import { createElement, type FC, type ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -20,7 +23,7 @@ afterEach(() => {
   mockLaunch("closed");
 });
 
-const NOTE = "Pokladnu spouštíme 2. 11. 2026 – návod popisuje, jak bude fungovat.";
+const NOTE = "Pokladnu EvidujZdarma spouštíme 2. 11. 2026. Návod popisuje, jak bude fungovat; po spuštění ho podle potřeby upřesníme. Aktuální k 17. 10. 2026.";
 const hrefs = (html: string) => [...html.matchAll(/href="([^"]+)"/g)].map((m) => m[1]!.replace(/&amp;/g, "&"));
 const mdLinks = (text: string) => [...text.matchAll(/\]\((\/[^)\s]*)\)/g)].map((m) => m[1]!);
 
@@ -138,44 +141,54 @@ describe("S2-A – help articles (content)", () => {
   });
 });
 
-describe("S2-A – closed cash register (until 2. 11. 2026)", () => {
-  it("gate: hub and every article are noindex,follow", async () => {
+describe("S2-A – closed cash register (until 2. 11. 2026), help already open (S3-OPEN)", () => {
+  it("gate: hub and every article are indexable (no robots → index,follow from the layout), canonical", async () => {
     const { HELP_ARTICLES, launch } = await load();
     expect(launch.isClosed("/pokladna")).toBe(true);
     const hub = await import("@/app/(site)/napoveda/page");
-    expect(hub.metadata.robots).toEqual({ index: false, follow: true });
+    expect(hub.metadata.robots).toBeUndefined();
     for (const a of HELP_ARTICLES) {
       const m = await articleMeta(a.slug);
-      expect(m.robots, a.slug).toEqual({ index: false, follow: true });
+      expect(m.robots, a.slug).toBeUndefined();
       expect((m.alternates as { canonical?: string }).canonical, a.slug).toBe(`/napoveda/${a.slug}`);
     }
   });
 
-  it("gate: not in the sitemap (= not tracked, R16.1) nor in llms.txt", async () => {
+  it("gate: in the sitemap (= tracked, R16.1) and in llms.txt – in the future tense about the cash register", async () => {
+    const { HELP_ARTICLES } = await load();
     const { default: sitemap } = await import("@/app/sitemap");
     const { sitePages } = await import("@/lib/site-pages");
     const { SITE_URL } = await import("@/lib/site");
     const urls = sitemap().map((e) => e.url.slice(SITE_URL.length) || "/");
-    expect(urls.filter((u) => u.startsWith("/napoveda"))).toEqual([]);
-    expect(sitePages().filter((p) => p.path.startsWith("/napoveda"))).toEqual([]);
+    expect(urls).toContain("/napoveda");
+    for (const a of HELP_ARTICLES) expect(urls, a.slug).toContain(`/napoveda/${a.slug}`);
     // sitemap a rejstřík měření jsou jeden zdroj (R16.1)
     expect(urls).toEqual(sitePages().map((p) => p.path));
-    const { llmsTxt, llmsFullTxt } = await import("@/lib/llms");
-    expect(llmsTxt()).not.toContain("/napoveda");
-    expect(llmsFullTxt()).not.toContain("/napoveda");
+    for (const e of sitemap().filter((x) => x.url.includes("/napoveda/"))) {
+      const a = HELP_ARTICLES.find((x) => e.url.endsWith(`/napoveda/${x.slug}`))!;
+      expect(String(e.lastModified), a.slug).toBe(a.updated);
+    }
+    const { llmsTxt } = await import("@/lib/llms");
+    const line = llmsTxt().split("\n").find((l) => l.includes(`(${SITE_URL}/napoveda)`));
+    expect(line).toBeTruthy();
+    expect(line).toContain("spouštíme ji 2. 11. 2026");
+    expect(line).toMatch(/jak bude v pokladně/);
   });
 
-  it("gate: the note on top, and no link into the closed cash register (hub and articles)", async () => {
-    const { HELP_ARTICLES, launch } = await load();
-    const pages: [string, string][] = [["hub", await renderHub()]];
-    for (const a of HELP_ARTICLES) pages.push([a.slug, await renderArticle(a.slug)]);
-    for (const [name, html] of pages) {
-      expect(html, name).toContain(NOTE);
+  it("gate: the note on the hub and on app articles only; general articles without it; no link into the closed cash register", async () => {
+    const { HELP_ARTICLES, launch, isAppHelpArticle } = await load();
+    const pages: [string, string, boolean][] = [["hub", await renderHub(), true]];
+    for (const a of HELP_ARTICLES) pages.push([a.slug, await renderArticle(a.slug), isAppHelpArticle(a.slug)]);
+    for (const [name, html, app] of pages) {
+      if (app) expect(html, name).toContain(NOTE);
+      else expect(html, name).not.toContain(NOTE);
       const bad = hrefs(html).filter((h) => h.startsWith("/") && launch.isClosed(h.split(/[?#]/)[0]!));
       expect(bad, name).toEqual([]);
       // výzva k akci zve k předregistraci
       expect(html, name).toContain('href="/#registrace"');
     }
+    // obecný článek existuje (kontakt na podporu) a poznámku nemá
+    expect(pages.filter(([, , app]) => !app).map(([n]) => n)).toEqual(["podpora"]);
   });
 
   it("gate: the footer links to /napoveda („Nápověda“ in Služba)", async () => {
@@ -186,7 +199,7 @@ describe("S2-A – closed cash register (until 2. 11. 2026)", () => {
 });
 
 describe("S2-A – open cash register (after the launch commit)", () => {
-  it("gate: hub and articles become indexable by themselves", async () => {
+  it("gate: hub and articles stay indexable", async () => {
     mockLaunch("open");
     const { HELP_ARTICLES, launch } = await load();
     expect(launch.isClosed("/pokladna")).toBe(false);
@@ -195,7 +208,7 @@ describe("S2-A – open cash register (after the launch commit)", () => {
     for (const a of HELP_ARTICLES) expect((await articleMeta(a.slug)).robots, a.slug).toBeUndefined();
   });
 
-  it("gate: in the sitemap and in llms.txt", async () => {
+  it("gate: in the sitemap and in llms.txt (present tense)", async () => {
     mockLaunch("open");
     const { HELP_ARTICLES } = await load();
     const { default: sitemap } = await import("@/app/sitemap");
@@ -207,22 +220,23 @@ describe("S2-A – open cash register (after the launch commit)", () => {
     expect(urls).toEqual(sitePages().map((p) => p.path));
     for (const e of sitemap().filter((x) => x.url.includes("/napoveda"))) expect(String(e.lastModified)).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     const { llmsTxt } = await import("@/lib/llms");
-    expect(llmsTxt()).toContain(`(${SITE_URL}/napoveda)`);
+    expect(llmsTxt()).toContain(`(${SITE_URL}/napoveda): jak v pokladně EvidujZdarma nastavit firmu`);
   });
 
-  it("gate: no launch note; the call to action leads into the cash register", async () => {
+  it("gate: no launch note, „Aktualizováno“ stays; the call to action leads into the cash register", async () => {
     mockLaunch("open");
     const hub = await renderHub();
     const art = await renderArticle("prvni-prodej");
     for (const html of [hub, art]) {
       expect(html).not.toContain(NOTE);
+      expect(html).toContain("Aktualizováno");
       expect(hrefs(html)).toContain("/pokladna");
     }
   });
 });
 
 describe("S2-A – structured data", () => {
-  it("gate: step articles carry HowTo (steps verbatim, plain text) and every page a BreadcrumbList", async () => {
+  it("gate: every article has TechArticle with dateModified = „Aktualizováno“; HowTo only with steps (verbatim, plain text); BreadcrumbList", async () => {
     const { HELP_ARTICLES, helpJsonLd } = await load();
     const { plainText } = await import("@/components/rich-text");
     const { SITE_URL } = await import("@/lib/site");
@@ -230,16 +244,24 @@ describe("S2-A – structured data", () => {
       const html = await renderArticle(a.slug);
       expect(html, a.slug).toContain('"@type":"BreadcrumbList"');
       expect(html, a.slug).toContain(`"item":"${SITE_URL}/napoveda/${a.slug}"`);
+      expect(html, a.slug).toContain('"@type":"TechArticle"');
+      expect(html, a.slug).toContain(`"dateModified":"${a.updated}"`);
+      expect(html, a.slug).toMatch(new RegExp(`Aktualizováno: <time dateTime="${a.updated}">`));
       const ld = helpJsonLd(a);
+      const article = ld[0] as { "@type": string; headline: string; dateModified: string; mainEntityOfPage: string };
+      expect(article["@type"], a.slug).toBe("TechArticle");
+      expect(article.headline, a.slug).toBe(a.title);
+      expect(article.dateModified, a.slug).toBe(a.updated);
+      expect(article.mainEntityOfPage, a.slug).toBe(`${SITE_URL}/napoveda/${a.slug}`);
       if (a.steps?.length) {
         expect(html, a.slug).toContain('"@type":"HowTo"');
-        const howTo = ld[0] as { name: string; step: { name: string; text: string; position: number }[] };
+        const howTo = ld[1] as { name: string; step: { name: string; text: string; position: number }[] };
         expect(howTo.name).toBe(a.title);
         expect(howTo.step.map((s) => s.name)).toEqual(a.steps.map((s) => s.name));
         expect(howTo.step.map((s) => s.text)).toEqual(a.steps.map((s) => plainText(s.text)));
         for (const s of howTo.step) expect(s.text, a.slug).not.toMatch(/\*\*|\]\(/);
       } else {
-        expect(ld, a.slug).toEqual([]);
+        expect(ld, a.slug).toHaveLength(1);
         expect(html, a.slug).not.toContain('"@type":"HowTo"');
       }
     }

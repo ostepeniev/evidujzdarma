@@ -3,6 +3,7 @@ import { ExternalLink } from "@/components/external-link";
 import { Faq } from "@/components/faq";
 import { MoneyParams } from "@/components/money-params";
 import { PageHeader } from "@/components/page-header";
+import { ReviewNote } from "@/components/review-note";
 import { RelatedGuides } from "@/components/related-guides";
 import { ToolCta } from "@/components/tool-cta";
 import { OsvcCalculator } from "@/components/tools/osvc-calculator";
@@ -10,11 +11,11 @@ import { SOURCES } from "@/content/facts";
 import { JsonLd, faqLd } from "@/lib/jsonld";
 import { canonicalMeta } from "@/lib/metadata";
 import { EXPENSE_FLAT, P2026, kc, uniqueSources, type ParamKey } from "@/lib/money-2026";
-import { MONEY_DISCLAIMER, moneyRobots } from "@/lib/money-review";
+import { MONEY_DISCLAIMER, MONEY_REVIEWED_ON, moneyRobots } from "@/lib/money-review";
 
 /**
  * S2/B2 (17. 10. 2026): kalkulačka OSVČ 2026 – daň, sociální a zdravotní pojištění, srovnání s paušální daní. Peněžní
- * kalkulačka = noindex, mimo sitemap/llms/rozcestník, dokud ji nezkontroluje účetní (lib/money-review.ts).
+ * kalkulačka: index, sitemap, llms a rozcestník až po kontrole účetní (lib/money-review.ts) – zkontrolovala ji 17. 10. 2026.
  */
 export const metadata: Metadata = {
   title: "Kalkulačka OSVČ 2026: daň, sociální a zdravotní pojištění",
@@ -104,7 +105,9 @@ export default function OsvcPage() {
           { name: "Kalkulačka OSVČ 2026", path: "/kalkulacka-osvc" },
         ]}
         lead={`Zadejte příjmy a výdaje za rok 2026 a uvidíte daň z příjmů, sociální a zdravotní pojištění – i srovnání s paušální daní. Minimální zálohy počítáme podle zákona č. 90/2026 Sb.`}
-      />
+      >
+        <ReviewNote date={MONEY_REVIEWED_ON} />
+      </PageHeader>
       <div className="container-page py-10">
         <OsvcCalculator />
         <MoneyParams keys={KEYS} />

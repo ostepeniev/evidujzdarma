@@ -4,19 +4,17 @@ import { HelpClosedNote, HelpContact, HelpCta } from "@/components/help-blocks";
 import { PageHeader } from "@/components/page-header";
 import { helpArticlesIn, helpModified } from "@/content/napoveda";
 import { HELP_TOPIC_LABEL, HELP_TOPIC_ORDER } from "@/content/napoveda/types";
-import { helpRobots } from "@/lib/help-page";
 import { canonicalMeta } from "@/lib/metadata";
 
 /**
- * Nápověda k pokladně (S2-A) – rozcestník podle témat. Dokud je pokladna zavřená (do 2. 11. 2026): noindex,follow, mimo
- * sitemap a llms.txt, nahoře poznámka; po otevření indexovatelná sama (content/napoveda helpIndexable).
+ * Nápověda k pokladně (S2-A) – rozcestník podle témat. S3-OPEN: indexovatelná, v sitemap a llms.txt už před spuštěním
+ * pokladny; do 2. 11. 2026 nahoře poznámka o aktuálnosti (lib/help-page.ts helpLaunchNote).
  */
 export const metadata: Metadata = {
   title: "Nápověda k pokladně EvidujZdarma",
   description:
     "Nápověda k pokladně EvidujZdarma: první spuštění, certifikát, prodej a platby, účtenky, prodej bez signálu, vratky, uzávěrka, export pro účetní a podpora.",
   ...canonicalMeta("/napoveda"),
-  robots: helpRobots(),
 };
 
 const dateCs = (iso: string) => new Date(iso).toLocaleDateString("cs-CZ", { day: "numeric", month: "long", year: "numeric" });

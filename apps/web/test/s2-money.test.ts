@@ -4,20 +4,24 @@
  *    (ČSSZ: úspora 8 577 Kč, záloha 5 420 Kč z 18 560 Kč; VZP: 3 024 Kč z minimální mzdy);
  *  - ručně přepočítané příklady (výpočty jsou rozepsané u každého testu);
  *  - přepínač MONEY_CALCULATORS_REVIEWED: dokud je false, noindex a nikde v sitemap, llms.txt ani /nastroje.
+ *    S3-OPEN: účetní kalkulačky 17. 10. 2026 zkontrolovala → true; test hlídá stav „revidováno“: index, sitemap, llms.txt,
+ *    /nastroje (skupina Kalkulačky a ověření) a viditelné „Odborná revize: Helena Jeřábková, účetní · 17. 10. 2026“.
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { FC } from "react";
+import { createElement, type FC } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { pageText } from "./helpers/render-text";
 import { FACTS } from "@/content/facts";
 import { DEFAULT_INPUT, calculateEetOff, eetOffYear } from "@/lib/eet-off";
 import { llmsTxt } from "@/lib/llms";
 import { P2026, ceilAdvanceBase, childBenefitMonthly, childBenefitYearly, floor100, pctCeil, progressiveTaxCeil } from "@/lib/money-2026";
-import { MONEY_CALCULATORS_REVIEWED, MONEY_DISCLAIMER, MONEY_PAGES } from "@/lib/money-review";
+import { MONEY_CALCULATORS_REVIEWED, MONEY_DISCLAIMER, MONEY_PAGES, MONEY_REVIEWED_ON } from "@/lib/money-review";
 import { calculateNetWage, type NetWageInput } from "@/lib/net-wage";
 import { OSVC_DEFAULT, calculateOsvc, type OsvcInput } from "@/lib/osvc-2026";
 import { sitePages } from "@/lib/site-pages";
+import { absoluteUrl } from "@/lib/site";
 import { STATIC_PAGES } from "@/lib/static-pages";
 import { TIPS_DEFAULT, calculateTips } from "@/lib/tips";
 import * as NetWagePage from "@/app/(site)/kalkulacka-cista-mzda/page";
@@ -275,7 +279,7 @@ describe("S2/B2 – EET OFF: annual sum with the flat tax and break-even (instea
   });
 });
 
-describe("S2/B2 – review flag: noindex and unlisted until the accountant's review", () => {
+describe("S2/B2 – review flag: reviewed on 17. 10. 2026 (S3-OPEN) – indexed and listed", () => {
   const pages = [
     ["/kalkulacka-cista-mzda", NetWagePage],
     ["/kalkulacka-osvc", OsvcPage],
@@ -286,32 +290,51 @@ describe("S2/B2 – review flag: noindex and unlisted until the accountant's rev
     expect(MONEY_PAGES.map((p) => p.path)).toEqual(pages.map((p) => p[0]));
   });
 
-  it("gate: robots noindex,follow while MONEY_CALCULATORS_REVIEWED is false (and index after the flip)", async () => {
+  it("gate: the flag is on – the accountant reviewed the calculators on 2026-10-17", () => {
+    expect(MONEY_CALCULATORS_REVIEWED).toBe(true);
+    expect(MONEY_REVIEWED_ON).toBe("2026-10-17");
+  });
+
+  it("gate: robots not set (index,follow from the layout), canonical", async () => {
     for (const [path, mod] of pages) {
-      if (!MONEY_CALCULATORS_REVIEWED) expect(mod.metadata.robots, path).toEqual({ index: false, follow: true });
-      else expect(mod.metadata.robots, path).toBeUndefined();
+      expect(mod.metadata.robots, path).toBeUndefined();
       expect(mod.metadata.alternates?.canonical).toBe(path);
     }
   });
 
-  it("gate: not in sitemap/STATIC_PAGES, llms.txt or /nastroje while false", async () => {
-    const sitemap = sitePages().map((p) => p.path);
+  it("gate: in sitemap/STATIC_PAGES (lastmod 2026-10-17), llms.txt and /nastroje (group Kalkulačky a ověření)", async () => {
+    const sitemap = sitePages();
     const statics = STATIC_PAGES.map((p) => p.path);
     const llms = llmsTxt();
     const { default: Tools } = await import("@/app/(site)/nastroje/page");
     const tools = pageText(Tools as FC);
+    const calcSection = tools.slice(tools.indexOf("Kalkulačky a ověření"));
     for (const m of MONEY_PAGES) {
-      if (!MONEY_CALCULATORS_REVIEWED) {
-        expect(sitemap, m.path).not.toContain(m.path);
-        expect(statics, m.path).not.toContain(m.path);
-        expect(llms, m.path).not.toContain(m.path);
-        expect(tools, m.path).not.toContain(m.title);
-      } else {
-        expect(sitemap).toContain(m.path);
-        expect(llms).toContain(m.path);
-        expect(tools).toContain(m.title);
-      }
+      expect(sitemap.find((p) => p.path === m.path)?.lastModified, m.path).toBe(m.modified);
+      expect(statics, m.path).toContain(m.path);
+      expect(llms, m.path).toContain(`(${absoluteUrl(m.path)})`);
+      expect(tools, m.path).toContain(m.title);
+      expect(calcSection, m.path).toContain(m.title);
     }
+  });
+
+  it("gate: every money calculator shows the review note (Helena Jeřábková, účetní, 17. 10. 2026) linking /o-nas#odborna-revize", () => {
+    for (const [path, mod] of pages) {
+      const html = renderToStaticMarkup(createElement(mod.default as FC));
+      expect(html, path).toMatch(/Odborná revize: <a [^>]*href="\/o-nas#odborna-revize"[^>]*>Helena Jeřábková<\/a>, účetní · <time dateTime="2026-10-17">17\. 10\. 2026<\/time>/);
+      expect(pageText(mod.default as FC), path).not.toMatch(/čeká na (kontrolu|revizi)|před (odbornou )?(kontrolou|revizí)/i);
+    }
+  });
+
+  it("gate: the EET OFF calculator (with the S2/B2 extension) is indexed, in the sitemap, /nastroje and llms.txt", async () => {
+    const EetOff = await import("@/app/(site)/kalkulacka-eet-off/page");
+    expect(EetOff.metadata.robots).toBeUndefined();
+    expect(sitePages().map((p) => p.path)).toContain("/kalkulacka-eet-off");
+    expect(llmsTxt()).toContain(`(${absoluteUrl("/kalkulacka-eet-off")})`);
+    const { default: Tools } = await import("@/app/(site)/nastroje/page");
+    expect(pageText(Tools as FC)).toContain("Kalkulačka EET OFF");
+    // rozšíření: bod zvratu a roční součet s paušální daní
+    expect(pageText(EetOff.default as FC)).toContain("Kolik minut evidence denně vyjde stejně jako přirážka?");
   });
 
   it("gate: every money calculator shows the disclaimer verbatim, a FAQ with sources, and no browser storage", async () => {

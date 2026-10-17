@@ -4,6 +4,7 @@ import { AuthorizationGenerator } from "@/components/authorization-generator";
 import { ExternalLink } from "@/components/external-link";
 import { Faq } from "@/components/faq";
 import { PageHeader } from "@/components/page-header";
+import { ReviewNote } from "@/components/review-note";
 import { RelatedGuides } from "@/components/related-guides";
 import { ToolCta } from "@/components/tool-cta";
 import { SOURCES } from "@/content/facts";
@@ -12,8 +13,10 @@ import { canonicalMeta } from "@/lib/metadata";
 /**
  * S1 (17. 10. 2026): vzor pověření k evidování tržeb (§ 10 zákona č. 180/2026 Sb.). Právní text = před odbornou kontrolou
  * účetní noindex, mimo sitemap a rozcestník nástrojů (obdoba Ф9 u návodů). Po jejím „ok“: robots pryč, STATIC_PAGES, /nastroje.
+ * S3-OPEN: účetní (Helena Jeřábková) vzor 17. 10. 2026 zkontrolovala → index, STATIC_PAGES, /nastroje, llms.txt, „Odborná revize“.
  */
-const VZOR_POVERENI_REVIEWED: boolean = false;
+const VZOR_POVERENI_REVIEWED: boolean = true;
+const VZOR_POVERENI_REVIEWED_ON = "2026-10-17";
 
 export const metadata: Metadata = {
   title: "Vzor pověření k evidování tržeb (EET 2.0, § 10)",
@@ -58,7 +61,9 @@ export default function AuthorizationPage() {
           { name: "Vzor pověření", path: "/vzor-povereni" },
         ]}
         lead="Eviduje-li tržbu za vás jiný podnikatel, upravuje to § 10 zákona o evidenci tržeb. Vyplňte obě strany a rozsah, text pověření se složí sám. Pak ho vytiskněte a podepište."
-      />
+      >
+        {VZOR_POVERENI_REVIEWED && <ReviewNote date={VZOR_POVERENI_REVIEWED_ON} />}
+      </PageHeader>
       <div className="container-page py-10">
         <p className="no-print mx-auto mb-8 max-w-3xl rounded-xl bg-warn-50 px-5 py-4 text-base text-ink">
           Vzor je pomůcka, ne právní služba. Finanční správa k pověření zatím nevydala podrobnou metodiku. Před podpisem si ho projděte s účetní nebo daňovým

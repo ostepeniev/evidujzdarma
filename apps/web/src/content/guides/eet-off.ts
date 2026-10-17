@@ -183,7 +183,7 @@ export const eetOff: Guide = {
     },
   ],
   sources: [SOURCES.eetOff, SOURCES.eetOffJak, SOURCES.pausal2026, SOURCES.pausal2027, SOURCES.fsPausalFaq, SOURCES.mfPredstavuje],
-  related: ["eet-a-pausalni-dan", "koho-se-eet-tyka", "eet-2-0-kompletni-pruvodce"],
+  related: ["eet-a-pausalni-dan", "koho-se-eet-tyka", "eet-2-0-kompletni-pruvodce", "sleva-na-dani-za-eet"],
   published: "2026-10-01",
   updated: "2026-10-01",
   changelog: [

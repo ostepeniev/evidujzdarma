@@ -1,9 +1,10 @@
 import { FACTS, SOURCES } from "../facts";
 import type { Guide } from "./types";
+import { REVIEWER } from "@/lib/site";
 
 /**
  * S1 (15. 10. 2026): cluster návod ke stornu a vrácení (§ 8 zákona č. 180/2026 Sb.).
- * Koncept před odbornou revizí (Ф9): reviewedBy null = noindex. Vrácení převodem k hotovostní tržbě = „zatím není jisté“.
+ * 17. 10. 2026 prošel odbornou revizí (Helena Jeřábková) – index, sitemap, llms.txt, MCP. Vrácení převodem k hotovostní tržbě = „zatím není jisté“.
  */
 export const stornoAVraceniEet: Guide = {
   slug: "storno-a-vraceni-eet",
@@ -110,7 +111,10 @@ export const stornoAVraceniEet: Guide = {
   sources: [SOURCES.zakonUplne, SOURCES.sbirka, SOURCES.seminarVyvojari, SOURCES.prakticke, SOURCES.zos],
   related: ["kontaktni-platba", "musim-vydavat-uctenku", "eet-bez-internetu", "eet-ubytovani"],
   published: "2026-10-15",
-  updated: "2026-10-15",
-  changelog: [{ date: "2026-10-15", text: "Koncept návodu – před odbornou revizí." }],
-  reviewedBy: null,
+  updated: "2026-10-17",
+  changelog: [
+    { date: "2026-10-17", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
+    { date: "2026-10-15", text: "Koncept návodu – před odbornou revizí." },
+  ],
+  reviewedBy: REVIEWER.name,
 };

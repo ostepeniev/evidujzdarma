@@ -3,7 +3,6 @@ import { plainText } from "@/components/rich-text";
 import { FACTS, FACTS_UPDATED, TIMELINE } from "@/content/facts";
 import { GUIDES, guideModified, isIndexable } from "@/content/guides";
 import { MYTHS, MYTHS_UPDATED } from "@/content/myths";
-import { helpIndexable } from "@/content/napoveda";
 import type { Block, Guide } from "@/content/guides/types";
 import { OPERATOR, SITE, absoluteUrl, REVIEWER } from "./site";
 import { STATIC_PAGES } from "./static-pages";
@@ -67,8 +66,10 @@ export function llmsTxt(): string {
     ...STATIC_PAGES.filter((p) => p.path === "/faktura-zdarma").map((p) => `- [${p.title}](${absoluteUrl(p.path)}): plátce i neplátce DPH, zálohová faktura, QR platba; nic se neukládá. Předvyplnění odběratele: ${absoluteUrl("/faktura-zdarma")}#odberatel=<IČO>.`),
     // S2 B1: kalkulačky a ověření (vše v prohlížeči, nic se neodesílá)
     ...STATIC_PAGES.filter((p) => CALC_TOOLS.includes(p.path)).map((p) => `- [${p.title}](${absoluteUrl(p.path)})`),
-    // S2/B2: peněžní kalkulačky až po kontrole účetní (lib/money-review.ts)
+    // S2/B2: peněžní kalkulačky až po kontrole účetní (lib/money-review.ts; zkontrolované 17. 10. 2026)
     ...STATIC_PAGES.filter((p) => reviewedMoneyPaths().includes(p.path)).map((p) => `- [${p.title}](${absoluteUrl(p.path)})`),
+    // S3-OPEN: vzor pověření (§ 10) po kontrole účetní 17. 10. 2026
+    ...STATIC_PAGES.filter((p) => p.path === "/vzor-povereni").map((p) => `- [${p.title}](${absoluteUrl(p.path)}): pověření podle § 10 zákona o evidenci tržeb – kdo za koho eviduje, v jakém rozsahu a odkdy; text se skládá v prohlížeči, na server se nic neodesílá.`),
     "",
     "## Návody",
     "",
@@ -83,10 +84,10 @@ export function llmsTxt(): string {
     `- [Srovnání s MOJE eet](${absoluteUrl("/srovnani/moje-eet")})`,
     `- [Přechod z jiné pokladny](${absoluteUrl("/prechod-z-jine-pokladny")}): ceny základních tarifů pokladen s evidencí tržeb podle ceníků výrobců (s datem a zdroji), kalkulačka ročních nákladů a postup přechodu včetně importu zboží z CSV.`,
     `- [Ukázka pokladny bez registrace](${absoluteUrl("/ukazka")}): prodej, platba a účtenka v prohlížeči; nic se neukládá ani neodesílá.`,
-    // S2-A: nápověda k pokladně – až po otevření pokladny (do té doby noindex a mimo sitemap)
-    ...(helpIndexable()
-      ? [`- [Nápověda k pokladně](${absoluteUrl("/napoveda")}): jak v pokladně EvidujZdarma nastavit firmu, certifikát a jednotky, prodávat, vydat účtenku, udělat vratku a uzávěrku a stáhnout export pro účetní.`]
-      : []),
+    // S2-A / S3-OPEN: nápověda k pokladně je veřejná už před otevřením pokladny; do 2. 11. popisuje, jak pokladna bude fungovat (R7.6)
+    isClosed("/pokladna")
+      ? `- [Nápověda k pokladně](${absoluteUrl("/napoveda")}): jak bude v pokladně EvidujZdarma (spouštíme ji 2. 11. 2026) fungovat nastavení firmy, certifikátu a jednotek, prodej, účtenka, vratka, uzávěrka a export pro účetní.`
+      : `- [Nápověda k pokladně](${absoluteUrl("/napoveda")}): jak v pokladně EvidujZdarma nastavit firmu, certifikát a jednotky, prodávat, vydat účtenku, udělat vratku a uzávěrku a stáhnout export pro účetní.`,
     `- [Všechny návody](${absoluteUrl("/navody")}) a [všechny nástroje](${absoluteUrl("/nastroje")})`,
     `- [O nás a odborná revize](${absoluteUrl("/o-nas")}): kdo web provozuje, jak ověřujeme fakta a kdo návody reviduje.`,
     `- [Ceník](${absoluteUrl("/cenik")}): evidence tržeb zdarma navždy; Premium 149 Kč/měsíc.`,

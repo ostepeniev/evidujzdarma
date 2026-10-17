@@ -61,6 +61,13 @@ const TOOLS = [
     text: "Zákazník chce doklad a pokladnu nemáte po ruce? Vyplníte prodávajícího a položky, doklad podle § 16 zákona o ochraně spotřebitele vytisknete nebo uložíte jako PDF.",
     time: "1 minuta",
   },
+  // S3-OPEN: vzor pověření (§ 10) po kontrole účetní 17. 10. 2026
+  {
+    href: "/vzor-povereni",
+    title: "Vzor pověření k evidování tržeb",
+    text: "Eviduje-li tržbu za vás jiný podnikatel (§ 10 zákona o evidenci tržeb), vyplňte obě strany a rozsah. Text pověření se složí sám – vytisknete ho nebo uložíte jako PDF.",
+    time: "3 minuty",
+  },
   {
     href: "/faktura-zdarma",
     title: "Faktura zdarma",
@@ -138,7 +145,7 @@ const TOOLS = [
     time: "10 vteřin",
     group: "kalkulacky",
   },
-  // S2/B2: peněžní kalkulačky – v rozcestníku až po kontrole účetní (lib/money-review.ts)
+  // S2/B2: peněžní kalkulačky – v rozcestníku až po kontrole účetní (lib/money-review.ts; zkontrolované 17. 10. 2026), skupina „kalkulacky“
   ...reviewedMoneyTools(),
 ] as const;
 
@@ -215,7 +222,8 @@ export default function ToolsPage() {
             Kalkulačky a ověření
           </h2>
           <p className="mt-2 max-w-3xl text-[17px] text-ink-soft">
-            Pomocníci pro fakturaci a platby: DPH, úrok z prodlení, splatnost, IČO, DIČ a IBAN. Počítají jen ve vašem prohlížeči, nic neodesílají.
+            Pomocníci pro fakturaci, platby, mzdy a daně: DPH, úrok z prodlení, splatnost, IČO, DIČ a IBAN, čistá mzda, daň a pojistné OSVČ a spropitné. Počítají jen
+            ve vašem prohlížeči, nic neodesílají.
           </p>
           <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {CALC_TOOLS.map((t) => (

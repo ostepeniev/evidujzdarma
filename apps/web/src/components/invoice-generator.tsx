@@ -61,6 +61,8 @@ export function InvoiceGenerator() {
   const [vs, setVs] = useState("");
   const [items, setItems] = useState<InvoiceItem[]>([emptyItem()]);
   const [note, setNote] = useState("");
+  // S3-OPEN: patička „Vystaveno zdarma v EvidujZdarma.cz“ jen na přání – výchozí stav nezaškrtnuto, nikam se neukládá
+  const [credit, setCredit] = useState(false);
   const [ares, setAres] = useState<Record<Role, AresState>>({ supplier: { loading: false, message: null }, customer: { loading: false, message: null } });
   const [qrSvg, setQrSvg] = useState<string | null>(null);
 
@@ -417,10 +419,15 @@ export function InvoiceGenerator() {
             onChange={(e) => setNote(e.target.value)}
           />
         </div>
+
+        <label className="flex items-start gap-2 text-base">
+          <input id="fa-credit" type="checkbox" className="mt-1" checked={credit} onChange={(e) => setCredit(e.target.checked)} />
+          <span>Uvést na faktuře, že je vystavená v EvidujZdarma.cz</span>
+        </label>
       </form>
 
       <div className="space-y-4 xl:sticky xl:top-4 xl:self-start">
-        <InvoicePaper inv={inv} totals={totals} dueDate={dueDate} vs={vsEff} iban={qr?.iban ?? null} qrSvg={qrSvg} />
+        <InvoicePaper inv={inv} totals={totals} dueDate={dueDate} vs={vsEff} iban={qr?.iban ?? null} qrSvg={qrSvg} credit={credit} />
         {missing.length > 0 ? (
           <ul className="no-print mx-auto max-w-[210mm] list-disc space-y-1 rounded-xl bg-warn-50 px-8 py-3 text-sm text-ink">
             {missing.map((m) => (

@@ -170,7 +170,7 @@ export const eetAPausalniDan: Guide = {
     SOURCES.kdoMusi,
     SOURCES.harmonogram,
   ],
-  related: ["eet-off", "koho-se-eet-tyka", "eet-2-0-kompletni-pruvodce"],
+  related: ["eet-off", "koho-se-eet-tyka", "eet-2-0-kompletni-pruvodce", "sleva-na-dani-za-eet"],
   published: "2026-10-01",
   updated: "2026-10-01",
   changelog: [

@@ -1,7 +1,8 @@
 /**
  * S1 (17. 10. 2026): nástroje Doklad o prodeji (§ 16 zákona o ochraně spotřebitele) a Vzor pověření (§ 10 zákona
  * č. 180/2026 Sb.). Doklad je veřejný nástroj (sitemap, /nastroje, patička, llms.txt); vzor pověření je právní text
- * a do kontroly účetní zůstává noindex, mimo sitemap i rozcestník.
+ * a do kontroly účetní zůstával noindex, mimo sitemap i rozcestník. S3-OPEN: účetní ho 17. 10. 2026 zkontrolovala →
+ * index, sitemap, /nastroje, llms.txt, odkaz z návodu Tržba za jiného a „Odborná revize“ na stránce.
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
@@ -94,17 +95,31 @@ describe("S1 – /doklad-o-prodeji", () => {
   });
 });
 
-describe("S1 – /vzor-povereni (before the accountant's review)", () => {
-  it("gate: noindex, not in the sitemap, the tools hub or llms.txt", async () => {
+describe("S1 – /vzor-povereni (reviewed by the accountant on 17. 10. 2026, S3-OPEN)", () => {
+  it("gate: index, in the sitemap (lastmod 2026-10-17), in /nastroje and in llms.txt", async () => {
     const { metadata } = await import("@/app/(site)/vzor-povereni/page");
-    expect(metadata.robots).toEqual({ index: false, follow: true });
-    expect(STATIC_PAGES.map((p) => p.path)).not.toContain("/vzor-povereni");
+    expect(metadata.robots).toBeUndefined();
+    expect(metadata.alternates?.canonical).toBe("/vzor-povereni");
+    const page = STATIC_PAGES.find((p) => p.path === "/vzor-povereni");
+    expect(page?.modified).toBe("2026-10-17");
     const { default: sitemap } = await import("@/app/sitemap");
-    expect(sitemap().map((e) => e.url)).not.toContain(absoluteUrl("/vzor-povereni"));
-    expect(readFileSync(new URL("../src/app/(site)/nastroje/page.tsx", import.meta.url), "utf8")).not.toContain("/vzor-povereni");
-    const { llmsTxt, llmsFullTxt } = await import("@/lib/llms");
-    expect(llmsTxt()).not.toContain("/vzor-povereni");
-    expect(llmsFullTxt()).not.toContain("/vzor-povereni");
+    const entry = sitemap().find((e) => e.url === absoluteUrl("/vzor-povereni"));
+    expect(entry).toBeTruthy();
+    expect(String(entry!.lastModified)).toBe("2026-10-17");
+    expect(readFileSync(new URL("../src/app/(site)/nastroje/page.tsx", import.meta.url), "utf8")).toContain('href: "/vzor-povereni"');
+    const { default: Tools } = await import("@/app/(site)/nastroje/page");
+    expect(pageText(Tools)).toContain("Vzor pověření k evidování tržeb");
+    const { llmsTxt } = await import("@/lib/llms");
+    expect(llmsTxt()).toContain(`(${absoluteUrl("/vzor-povereni")})`);
+  });
+
+  it("gate: the guide Tržba za jiného links the template and logs it; the page shows the review note", async () => {
+    const { getGuide } = await import("@/content/guides");
+    const g = getGuide("trzba-za-jineho")!;
+    expect(JSON.stringify(g.sections)).toContain("](/vzor-povereni)");
+    expect(g.changelog?.[0]).toEqual({ date: "2026-10-17", text: "Doplněn odkaz na vzor pověření k evidování tržeb." });
+    const { default: Page } = await import("@/app/(site)/vzor-povereni/page");
+    expect(pageText(Page)).toContain("Odborná revize: Helena Jeřábková, účetní · 17. 10. 2026");
   });
 
   it("gate: the page says it is a pomůcka, links the guide and keeps § 10 odst. 2 liability", async () => {

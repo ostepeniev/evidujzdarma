@@ -1,16 +1,22 @@
 import Link from "next/link";
-import { HELP_CLOSED_NOTE, getHelpArticle, helpIndexable } from "@/content/napoveda";
+import { getHelpArticle } from "@/content/napoveda";
 import type { HelpStep } from "@/content/napoveda/types";
+import { helpLaunchNote } from "@/lib/help-page";
+import { isClosed } from "@/lib/launch";
 import { SITE } from "@/lib/site";
 import { RichText } from "./rich-text";
 import { ToolCta } from "./tool-cta";
 
-/** Dokud je pokladna zavřená, nápověda popisuje, jak bude fungovat (S2-A, R17). Po otevření se nevypisuje. */
-export function HelpClosedNote() {
-  if (helpIndexable()) return null;
+/**
+ * Poznámka o aktuálnosti nahoře (S3-OPEN): dokud je pokladna zavřená, na rozcestníku (bez slug) a u článků o ovládání
+ * pokladny – popisují, jak bude fungovat (R17). Obecné články a stránky po spuštění ji nemají.
+ */
+export function HelpClosedNote({ slug }: { slug?: string }) {
+  const note = helpLaunchNote(slug);
+  if (!note) return null;
   return (
     <p role="note" className="border-b border-sun-200 bg-sun-100 px-4 py-2 text-center text-[15px] font-semibold text-warn-700">
-      {HELP_CLOSED_NOTE}
+      {note}
     </p>
   );
 }
@@ -89,7 +95,7 @@ export function HelpContact() {
  * po otevření vede rovnou do pokladny a do nastavení.
  */
 export function HelpCta() {
-  if (!helpIndexable()) return <ToolCta />;
+  if (isClosed("/pokladna")) return <ToolCta />;
   return (
     <aside className="mt-12 rounded-2xl bg-brand-700 p-8 text-white sm:p-10">
       <h2 className="text-2xl font-bold sm:text-3xl">Vyzkoušejte to v pokladně</h2>

@@ -1,10 +1,76 @@
 import type { Metadata } from "next";
 import { plainText } from "@/components/rich-text";
-import { helpIndexable } from "@/content/napoveda";
 import type { Block } from "@/content/guides/types";
 import type { HelpArticle } from "@/content/napoveda/types";
-import { howToLd } from "./jsonld";
+import { articleLd, howToLd } from "./jsonld";
+import { isClosed } from "./launch";
 import { canonicalMeta } from "./metadata";
+
+/**
+ * S3-OPEN (17. 10. 2026, rozhodnutí majitele): nápověda je pro vyhledávače otevřená už před spuštěním pokladny. Články, které
+ * popisují ovládání naší pokladny (aplikace), mají do spuštění nahoře poznámku o aktuálnosti; obecné články (co je EET,
+ * pojmy, povinnosti, kontakt) ji nemají. Rozlišení je jen tady – těla článků se kvůli tomu nemění (upravuje je proud POKLADNA).
+ * Nový článek zařaďte do jednoho ze seznamů (test s3-open hlídá, že je zařazený každý).
+ */
+export const HELP_APP_ARTICLES: readonly string[] = [
+  // Začínáme
+  "prvni-spusteni",
+  "firma-a-ares",
+  "evidencni-jednotky",
+  "pokladni-certifikat",
+  "rezim-evidence",
+  "zarizeni-jako-pokladna",
+  // Prodej a platby
+  "prvni-prodej",
+  "katalog-rychla-tlacitka",
+  "zpusoby-platby",
+  "qr-platba",
+  "rozdelena-platba",
+  "poukazy-kredit-zalohy",
+  // Účtenky
+  "tisk-uctenky",
+  "uctenka-emailem-a-qr",
+  "pok-na-uctence",
+  // Odesílání tržeb a vratky
+  "prodej-bez-signalu",
+  "stav-trzby",
+  "odmitnuta-trzba",
+  "vratka",
+  // Přehled, uzávěrka, obsluha a zařízení
+  "denni-prehled",
+  "denni-uzaverka",
+  "pokladni-a-pin",
+  "vice-zarizeni",
+  // Pro účetní
+  "export-pro-ucetni",
+  "propojeni-s-ucetni",
+  // Účet a certifikát
+  "platnost-certifikatu",
+  "zmeny-v-provozovne",
+  "zruseni-uctu",
+  "bezpecnost",
+];
+
+/** Obecné články bez poznámky o aktuálnosti – nepopisují ovládání pokladny. */
+export const HELP_GENERAL_ARTICLES: readonly string[] = ["podpora"];
+
+export const isAppHelpArticle = (slug: string): boolean => HELP_APP_ARTICLES.includes(slug);
+
+/** Poznámka o aktuálnosti (doslovně podle rozhodnutí majitele 17. 10. 2026). */
+export const HELP_LAUNCH_NOTE =
+  "Pokladnu EvidujZdarma spouštíme 2. 11. 2026. Návod popisuje, jak bude fungovat; po spuštění ho podle potřeby upřesníme. Aktuální k 17. 10. 2026.";
+
+/**
+ * Poznámka nahoře na stránce nápovědy: jen dokud je pokladna zavřená (isClosed("/pokladna"), pravidlo 7 / R17) a jen
+ * u článků o ovládání pokladny a na rozcestníku (slug undefined). Po spuštění zmizí sama – zůstane „Aktualizováno …“.
+ */
+export function helpLaunchNote(slug?: string): string | null {
+  if (!isClosed("/pokladna")) return null;
+  return slug === undefined || isAppHelpArticle(slug) ? HELP_LAUNCH_NOTE : null;
+}
+
+/** Den zveřejnění nápovědy (S2-A, commit b89d89c) – datePublished v JSON-LD. */
+export const HELP_PUBLISHED = "2026-10-17";
 
 /** Šablona titulku přidává „ | EvidujZdarma“ (15 znaků); delší titulek jde bez přípony (jako u návodů, S1). */
 const TITLE_SUFFIX = 15;
@@ -16,24 +82,26 @@ export function helpTitle(a: Pick<HelpArticle, "title">): Metadata["title"] {
   return a.title.length + TITLE_SUFFIX > TITLE_MAX ? { absolute: a.title } : a.title;
 }
 
-/** Dokud je pokladna zavřená: noindex,follow (S2-A). Po otevření se robots nevypisuje – platí index,follow z layoutu. */
-export function helpRobots(): Metadata["robots"] {
-  return helpIndexable() ? undefined : { index: false, follow: true };
-}
-
+/** S3-OPEN: robots se nevypisuje (platí index,follow z layoutu) – nápověda je indexovatelná i před spuštěním pokladny. */
 export function helpMetadata(a: HelpArticle): Metadata {
   return {
     title: helpTitle(a),
     description: a.description,
     ...canonicalMeta(helpPath(a.slug), { type: "article", title: a.title, description: a.description, modifiedTime: a.updated }),
-    robots: helpRobots(),
   };
 }
 
-/** Strukturovaná data článku s postupem: HowTo (drobečková navigace je v PageHeader). */
+/**
+ * Strukturovaná data článku: TechArticle s dateModified (= „Aktualizováno“ na stránce) u každého článku, HowTo jen u článku
+ * s postupem. Drobečková navigace (BreadcrumbList) je v PageHeader.
+ */
 export function helpJsonLd(a: HelpArticle): Record<string, unknown>[] {
-  if (!a.steps?.length) return [];
-  return [howToLd({ name: a.title, description: plainText(a.lead), steps: a.steps.map((s) => ({ name: s.name, text: plainText(s.text) })) })];
+  const article = {
+    ...articleLd({ title: a.title, description: a.description, path: helpPath(a.slug), published: HELP_PUBLISHED, modified: a.updated }),
+    "@type": "TechArticle",
+  };
+  if (!a.steps?.length) return [article];
+  return [article, howToLd({ name: a.title, description: plainText(a.lead), steps: a.steps.map((s) => ({ name: s.name, text: plainText(s.text) })) })];
 }
 
 function blockText(b: Block): string[] {
