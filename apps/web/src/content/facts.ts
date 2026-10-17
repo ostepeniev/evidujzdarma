@@ -154,6 +154,42 @@ export const SOURCES = {
     label: "LeitnerLeitner: Evidence tržeb (EET 2.0) se vrací – poplatníci daně z příjmů i nerezidenti",
     url: "https://www.leitnerleitner.cz/novinky/evidence-trzeb-eet-2-0-se-vraci-povinnost-miri-na-poplatniky-dane-z-prijmu-a-za-urcitych-okolnosti-i-na-nerezidenty/",
   },
+  // --- S2 B1: kalkulačky a ověření (ověřeno 17. 10. 2026) ---
+  zakladniRegistry: { label: "Zákon o základních registrech č. 111/2009 Sb., § 26 (identifikační číslo osoby)", url: "https://www.zakonyprolidi.cz/cs/2009-111" },
+  danovyRad: { label: "Daňový řád č. 280/2009 Sb., § 130 (daňové identifikační číslo)", url: "https://www.zakonyprolidi.cz/cs/2009-280" },
+  evidenceObyvatel: { label: "Zákon o evidenci obyvatel č. 133/2000 Sb., § 13 (rodné číslo)", url: "https://www.zakonyprolidi.cz/cs/2000-133" },
+  mvRodneCislo: { label: "Ministerstvo vnitra: Rodné číslo obecně", url: "https://mv.gov.cz/rodne-cislo-obecne" },
+  fsVcp: {
+    label: "Finanční správa: informace k přidělování čísla nahrazujícího rodné číslo (č. 76/26)",
+    url: "https://financnisprava.gov.cz/assets/cs/prilohy/fs-generalni-financni-reditelstvi/Informace_106_2026_76.docx",
+  },
+  fsZmenaDic: {
+    label: "GFŘ: Metodický pokyn ke změně DIČ na žádost daňového subjektu (2020)",
+    url: "https://financnisprava.gov.cz/assets/cs/prilohy/d-sprava-dani-a-poplatku/79651_20_MP_ke_zmene_DIC_na_zadost_subjektu.pdf",
+  },
+  registrDph: {
+    label: "Finanční správa: Registr DPH – vyhledání plátců podle DIČ",
+    url: "https://adisspr.mfcr.cz/adis/jepo/epo/dpr/apl_ramce.htm?R=/dpr/DphReg?ZPRAC=FDPHI1%26poc_dic=2%26OK=Zobraz",
+  },
+  fsVies: { label: "Finanční správa: Ověřování DIČ (VAT ID) v systému VIES", url: "https://financnisprava.gov.cz/cs/mezinarodni-spoluprace/mezinarodni-spoluprace-a-dph/dph-v-eu/overovani-dic-vat-id" },
+  vies: { label: "Evropská komise: VIES – ověření DIČ (VAT ID)", url: "https://ec.europa.eu/taxation_customs/vies/#/vat-validation" },
+  cnbIban: { label: "ČNB: IBAN – mezinárodní formát čísla účtu", url: "https://www.cnb.cz/cs/platebni-styk/iban/iban-mezinarodni-format-cisla-uctu/" },
+  cnbKodyBank: { label: "ČNB: Číselník kódů platebního styku v ČR (č. 255, platný od 1. 10. 2026)", url: "https://www.cnb.cz/cs/platebni-styk/ucty-kody-bank/" },
+  vyhlaska169: { label: "Vyhláška ČNB č. 169/2011 Sb., o pravidlech tvorby čísla účtu v platebním styku", url: "https://www.zakonyprolidi.cz/cs/2011-169" },
+  oz: { label: "Občanský zákoník č. 89/2012 Sb. (§ 605–607 lhůty, § 1957–1970 splnění a prodlení)", url: "https://www.zakonyprolidi.cz/cs/2012-89" },
+  svatky: { label: "Zákon č. 245/2000 Sb., o státních svátcích a dnech pracovního klidu", url: "https://www.zakonyprolidi.cz/cs/2000-245" },
+  zdph: { label: "Zákon o DPH č. 235/2004 Sb. (§ 37 výpočet daně, § 47 sazby)", url: "https://www.zakonyprolidi.cz/cs/2004-235" },
+  fsSazbyDph2024: {
+    label: "Finanční správa: Informace GFŘ ke změnám sazeb DPH od 1. 1. 2024",
+    url: "https://financnisprava.gov.cz/cs/financni-sprava/media-a-verejnost/tiskove-zpravy-gfr/tiskove-zpravy-2024/informace-gfr-ke-zmenam-sazeb-dph-od-20240101",
+  },
+  fsVypocetDph: {
+    label: "Finanční správa: Výpočet DPH a zaokrouhlování od 1. 10. 2019",
+    url: "https://financnisprava.gov.cz/cs/financni-sprava/novinky/novinky-2019/vypocet-dph-a-zaokrouhlovani-od-1-10-2019",
+  },
+  nv351: { label: "Nařízení vlády č. 351/2013 Sb. (výše úroku z prodlení a nákladů spojených s uplatněním pohledávky)", url: "https://www.zakonyprolidi.cz/cs/2013-351" },
+  cnbRepo: { label: "ČNB: Jak se vyvíjela dvoutýdenní repo sazba ČNB?", url: "https://www.cnb.cz/cs/casto-kladene-dotazy/Jak-se-vyvijela-dvoutydenni-repo-sazba-CNB/" },
+  cnbRepo2026: { label: "ČNB: ČNB zvyšuje úrokové sazby (18. 6. 2026, 2T repo 3,75 % od 19. 6. 2026)", url: "https://www.cnb.cz/cs/cnb-news/tiskove-zpravy/CNB-zvysuje-urokove-sazby-00026" },
 } as const satisfies Record<string, Source>;
 
 export interface TimelineItem {

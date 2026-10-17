@@ -16,6 +16,7 @@ const COLUMNS = [
       { href: "/checklist-eet", label: "Checklist EET 2.0" },
       { href: "/doklad-o-prodeji", label: "Doklad o prodeji" },
       { href: "/faktura-zdarma", label: "Faktura zdarma" },
+      { href: "/nastroje#kalkulacky", label: "Kalkulačky a ověření (DPH, IČO, IBAN)" },
       { href: "/stav-eet", label: "Je EET dole? Stav EET" },
       { href: "/mcp", label: "Pro AI asistenty (MCP)" },
     ],

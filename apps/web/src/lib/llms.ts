@@ -7,6 +7,17 @@ import type { Block, Guide } from "@/content/guides/types";
 import { OPERATOR, SITE, absoluteUrl, REVIEWER } from "./site";
 import { STATIC_PAGES } from "./static-pages";
 
+/** S2 B1: kalkulačky a ověření v llms.txt */
+const CALC_TOOLS = [
+  "/nastroje/overeni-ico",
+  "/nastroje/overeni-dic",
+  "/nastroje/overeni-iban",
+  "/nastroje/ucet-na-iban",
+  "/nastroje/datum-splatnosti",
+  "/kalkulacka-dph",
+  "/kalkulacka-urok-z-prodleni",
+];
+
 function indexedGuides() {
   return GUIDES.filter(isIndexable);
 }
@@ -52,6 +63,8 @@ export function llmsTxt(): string {
       (p) => `- [${p.title}](${absoluteUrl(p.path)})`,
     ),
     ...STATIC_PAGES.filter((p) => p.path === "/faktura-zdarma").map((p) => `- [${p.title}](${absoluteUrl(p.path)}): plátce i neplátce DPH, zálohová faktura, QR platba; nic se neukládá. Předvyplnění odběratele: ${absoluteUrl("/faktura-zdarma")}#odberatel=<IČO>.`),
+    // S2 B1: kalkulačky a ověření (vše v prohlížeči, nic se neodesílá)
+    ...STATIC_PAGES.filter((p) => CALC_TOOLS.includes(p.path)).map((p) => `- [${p.title}](${absoluteUrl(p.path)})`),
     "",
     "## Návody",
     "",

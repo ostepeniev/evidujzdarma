@@ -7,3 +7,6 @@ export * from "./legal-form.ts";
 export * from "./nace.ts";
 export * from "./ares.ts";
 export * from "./res-csv.ts";
+export * from "./bank-codes.ts";
+export * from "./dic.ts";
+export * from "./holidays.ts";
