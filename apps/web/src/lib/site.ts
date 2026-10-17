@@ -63,6 +63,11 @@ export const SITE = {
     "https://www.threads.com/@evidujzdarma",
     // S1 (17. 10. 2026): profil na Firmy.cz (Seznam, zdroj pro Mapy.cz a Seznam Asistenta)
     "https://www.firmy.cz/detail/14080667-evidujzdarma-karlovy-vary-dvory",
+    // S3 (17. 10. 2026): katalogy a profily ověřené po zveřejnění (Najisto, ŽiveFirmy a Zlaté stránky doplníme po schválení)
+    "https://www.cylex.cz/karlovy-vary/evidujzdarma+-+swipe+scape+s.r.o-585792.html",
+    "https://www.f6s.com/evidujzdarma",
+    "https://czechia.dealroom.co/companies/evidujzdarma",
+    "https://medium.seznam.cz/autor/evidujzdarma-37946",
   ],
 } as const;
 

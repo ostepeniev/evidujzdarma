@@ -196,15 +196,21 @@ describe("R14.5 – sticky button on the phone", () => {
 });
 
 describe("R14.6 – sameAs", () => {
-  it("gate: the organisation has 5 profiles incl. Instagram, Threads and Firmy.cz (S1)", async () => {
+  it("gate: the organisation has 9 profiles incl. Instagram, Threads, Firmy.cz (S1) and S3 catalogues", async () => {
     const { organizationLd } = await import("@/lib/jsonld");
     const sameAs = (organizationLd() as { sameAs: string[] }).sameAs;
-    expect(sameAs).toHaveLength(5);
+    expect(sameAs).toHaveLength(9);
+    expect(new Set(sameAs).size).toBe(sameAs.length);
+    for (const url of sameAs) expect(url).toMatch(/^https:\/\//);
     expect(sameAs).toEqual(
       expect.arrayContaining([
         "https://www.instagram.com/evidujzdarma/",
         "https://www.threads.com/@evidujzdarma",
         "https://www.firmy.cz/detail/14080667-evidujzdarma-karlovy-vary-dvory",
+        "https://www.cylex.cz/karlovy-vary/evidujzdarma+-+swipe+scape+s.r.o-585792.html",
+        "https://www.f6s.com/evidujzdarma",
+        "https://czechia.dealroom.co/companies/evidujzdarma",
+        "https://medium.seznam.cz/autor/evidujzdarma-37946",
       ]),
     );
   });
