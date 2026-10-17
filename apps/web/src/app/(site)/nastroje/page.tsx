@@ -80,7 +80,79 @@ const TOOLS = [
     tag: "Pro účetní",
     time: "1 minuta",
   },
+  // S2 B1: skupina „Kalkulačky a ověření“ (17. 10. 2026) – vykresluje se zvlášť pod hlavní mřížkou
+  {
+    href: "/kalkulacka-dph",
+    title: "Kalkulačka DPH",
+    text: "Základ, DPH a cena s daní v sazbách 21 % a 12 % – ze základu, z ceny s DPH i z denní tržby rozdělené podle sazeb.",
+    time: "20 vteřin",
+    group: "kalkulacky",
+  },
+  {
+    href: "/kalkulacka-urok-z-prodleni",
+    title: "Úrok z prodlení",
+    text: "Zákonný úrok z prodlení podle nařízení vlády č. 351/2013 Sb.: repo sazba ČNB + 8 procentních bodů, s náklady 1 200 Kč mezi podnikateli.",
+    time: "30 vteřin",
+    group: "kalkulacky",
+  },
+  {
+    href: "/nastroje/datum-splatnosti",
+    title: "Datum splatnosti faktury",
+    text: "Datum vystavení + počet dní: den splatnosti, den v týdnu a upozornění na víkend nebo státní svátek.",
+    time: "10 vteřin",
+    group: "kalkulacky",
+  },
+  {
+    href: "/nastroje/overeni-ico",
+    title: "Ověření IČO",
+    text: "Sedí kontrolní číslice IČO? Ukážeme výpočet krok za krokem a platné IČO hned prověříte v kontrole EET 2.0.",
+    time: "5 vteřin",
+    group: "kalkulacky",
+  },
+  {
+    href: "/nastroje/overeni-dic",
+    title: "Ověření DIČ",
+    text: "Odpovídá DIČ zákonnému tvaru – podle IČO, rodného čísla nebo identifikátoru Finanční správy? DIČ nikam neodesíláme.",
+    time: "5 vteřin",
+    group: "kalkulacky",
+  },
+  {
+    href: "/nastroje/overeni-iban",
+    title: "Ověření IBAN",
+    text: "Kontrolní číslice IBAN z jakékoli země. U českého IBAN i číslo účtu, banka a BIC podle číselníku ČNB.",
+    time: "5 vteřin",
+    group: "kalkulacky",
+  },
+  {
+    href: "/nastroje/ucet-na-iban",
+    title: "Číslo účtu na IBAN",
+    text: "Převod českého čísla účtu na IBAN a zpět, s kontrolou čísla účtu podle vyhlášky č. 169/2011 Sb.",
+    time: "10 vteřin",
+    group: "kalkulacky",
+  },
 ] as const;
+
+type Tool = (typeof TOOLS)[number];
+const MAIN_TOOLS = TOOLS.filter((t) => !("group" in t));
+const CALC_TOOLS = TOOLS.filter((t) => "group" in t && t.group === "kalkulacky");
+
+function ToolCard({ t }: { t: Tool }) {
+  return (
+    <Link href={t.href} className="card group flex h-full flex-col transition-colors hover:border-brand-500 hover:bg-brand-50/40">
+      <div className="flex flex-wrap items-center gap-2">
+        {"tag" in t && <span className="chip bg-sun-100 text-ink">{t.tag}</span>}
+        <span className="chip bg-surface text-muted">
+          <span className="sr-only">Časová náročnost:</span> {t.time}
+        </span>
+      </div>
+      <h3 className="mt-3 text-xl font-bold text-ink group-hover:text-brand-700">{t.title}</h3>
+      <p className="mt-2 flex-1 text-[15px] leading-relaxed text-ink-soft">{t.text}</p>
+      <span className="mt-4 text-[15px] font-semibold text-brand-700" aria-hidden="true">
+        Otevřít nástroj →
+      </span>
+    </Link>
+  );
+}
 
 export default function ToolsPage() {
   return (
@@ -106,7 +178,7 @@ export default function ToolsPage() {
       />
       <div className="container-page py-10 sm:py-14">
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {TOOLS.map((t) => (
+          {MAIN_TOOLS.map((t) => (
             <li key={t.href}>
               <Link
                 href={t.href}
@@ -127,6 +199,22 @@ export default function ToolsPage() {
             </li>
           ))}
         </ul>
+
+        <section id="kalkulacky" className="mt-14 scroll-mt-24" aria-labelledby="kalkulacky-h">
+          <h2 id="kalkulacky-h" className="text-2xl font-bold">
+            Kalkulačky a ověření
+          </h2>
+          <p className="mt-2 max-w-3xl text-[17px] text-ink-soft">
+            Pomocníci pro fakturaci a platby: DPH, úrok z prodlení, splatnost, IČO, DIČ a IBAN. Počítají jen ve vašem prohlížeči, nic neodesílají.
+          </p>
+          <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {CALC_TOOLS.map((t) => (
+              <li key={t.href}>
+                <ToolCard t={t} />
+              </li>
+            ))}
+          </ul>
+        </section>
 
         <section className="mx-auto mt-14 max-w-3xl rounded-2xl border border-line bg-surface p-6 sm:p-8" aria-labelledby="jak-pocitame">
           <h2 id="jak-pocitame" className="text-xl font-bold">

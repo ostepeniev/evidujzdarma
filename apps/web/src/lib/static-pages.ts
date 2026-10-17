@@ -27,4 +27,12 @@ export const STATIC_PAGES: readonly { path: string; title: string; priority: num
   { path: "/podminky", title: "Obchodní podmínky", priority: 0.2, changeFrequency: "monthly" },
   { path: "/ochrana-osobnich-udaju", title: "Ochrana osobních údajů", priority: 0.2, changeFrequency: "monthly" },
   { path: "/pravidla-doporuceni", title: "Pravidla akce Doporučte kolegu", priority: 0.2, changeFrequency: "monthly", modified: "2026-10-07" },
+  // S2 B1: kalkulačky a ověření (17. 10. 2026)
+  { path: "/nastroje/overeni-ico", title: "Ověření IČO: kontrolní číslice", priority: 0.6, changeFrequency: "monthly", modified: "2026-10-17" },
+  { path: "/nastroje/overeni-dic", title: "Ověření DIČ: kontrola tvaru", priority: 0.6, changeFrequency: "monthly", modified: "2026-10-17" },
+  { path: "/nastroje/overeni-iban", title: "Ověření IBAN", priority: 0.6, changeFrequency: "monthly", modified: "2026-10-17" },
+  { path: "/nastroje/ucet-na-iban", title: "Převod čísla účtu na IBAN", priority: 0.6, changeFrequency: "monthly", modified: "2026-10-17" },
+  { path: "/nastroje/datum-splatnosti", title: "Datum splatnosti faktury", priority: 0.6, changeFrequency: "monthly", modified: "2026-10-17" },
+  { path: "/kalkulacka-dph", title: "Kalkulačka DPH (21 % a 12 %)", priority: 0.7, changeFrequency: "monthly", modified: "2026-10-17" },
+  { path: "/kalkulacka-urok-z-prodleni", title: "Kalkulačka úroku z prodlení", priority: 0.7, changeFrequency: "monthly", modified: "2026-10-17" },
 ];

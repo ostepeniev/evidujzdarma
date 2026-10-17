@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { icoFromHash } from "@/lib/ico-param";
 
 function isValidIco(v: string): boolean {
   const d = v.replace(/\s+/g, "");
@@ -18,6 +19,15 @@ export function IcoQuickCheck({ size = "lg", initial = "" }: { size?: "lg" | "md
   const router = useRouter();
   const [ico, setIco] = useState(initial);
   const [error, setError] = useState<string | null>(null);
+
+  // S2 B1: nástroje odkazují na /kontrola-ico#ico=… (fragment, ne query – COMMON 9); IČO z fragmentu rovnou zkontrolujeme
+  useEffect(() => {
+    if (window.location.pathname !== "/kontrola-ico" || window.location.search) return;
+    const fromHash = icoFromHash(window.location.hash);
+    if (!fromHash) return;
+    setIco(fromHash);
+    router.replace(`/kontrola-ico?ico=${fromHash}`);
+  }, [router]);
 
   return (
     <form

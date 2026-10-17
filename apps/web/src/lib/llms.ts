@@ -7,6 +7,17 @@ import type { Block, Guide } from "@/content/guides/types";
 import { OPERATOR, SITE, absoluteUrl, REVIEWER } from "./site";
 import { STATIC_PAGES } from "./static-pages";
 
+/** S2 B1: kalkulačky a ověření v llms.txt */
+const CALC_TOOLS = [
+  "/nastroje/overeni-ico",
+  "/nastroje/overeni-dic",
+  "/nastroje/overeni-iban",
+  "/nastroje/ucet-na-iban",
+  "/nastroje/datum-splatnosti",
+  "/kalkulacka-dph",
+  "/kalkulacka-urok-z-prodleni",
+];
+
 function indexedGuides() {
   return GUIDES.filter(isIndexable);
 }
@@ -51,6 +62,8 @@ export function llmsTxt(): string {
     ...STATIC_PAGES.filter((p) => ["/kontrola-ico", "/musim-evidovat", "/kalkulacka-eet-off", "/evidencni-jednotky", "/qr-platba", "/doklad-o-prodeji", "/checklist-eet", "/ucetni/hromadna-kontrola"].includes(p.path)).map(
       (p) => `- [${p.title}](${absoluteUrl(p.path)})`,
     ),
+    // S2 B1: kalkulačky a ověření (vše v prohlížeči, nic se neodesílá)
+    ...STATIC_PAGES.filter((p) => CALC_TOOLS.includes(p.path)).map((p) => `- [${p.title}](${absoluteUrl(p.path)})`),
     "",
     "## Návody",
     "",

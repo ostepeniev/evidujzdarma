@@ -77,3 +77,33 @@ export function toIban(input: string): string | null {
 export function formatIban(iban: string): string {
   return normalizeIban(iban).replace(/(.{4})/g, "$1 ").trim();
 }
+
+// --- S2 B1 (17. 10. 2026): rozbor účtu a IBAN pro nástroje /nastroje/overeni-iban a /nastroje/ucet-na-iban ---
+
+/** Předčíslí (až 6 číslic) nebo číslo účtu (až 10 číslic) splňuje kontrolu modulo 11 podle vyhlášky č. 169/2011 Sb. */
+export function isValidCzAccountPart(digits: string): boolean {
+  return /^\d{1,10}$/.test(digits) && mod11Ok(digits);
+}
+
+/** IBAN je platný podle ISO 13616 (kontrolní číslice modulo 97) – pro libovolnou zemi, bez kontroly délky podle země. */
+export function ibanChecksumOk(input: string): boolean {
+  const iban = normalizeIban(input);
+  if (!/^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/.test(iban)) return false;
+  return mod97(ibanToNumeric(iban.slice(4) + iban.slice(0, 4))) === 1;
+}
+
+/** Český IBAN → tuzemský účet (předčíslí bez úvodních nul, číslo, kód banky). Null, není-li to platný český IBAN. */
+export function czIbanToAccount(input: string): (CzAccount & { partsOk: boolean }) | null {
+  const iban = normalizeIban(input);
+  if (!/^CZ\d{22}$/.test(iban) || !ibanChecksumOk(iban)) return null;
+  const bankCode = iban.slice(4, 8);
+  const prefix = iban.slice(8, 14).replace(/^0+/, "");
+  const number = iban.slice(14, 24).replace(/^0+/, "");
+  const partsOk = (!prefix || isValidCzAccountPart(prefix)) && !!number && isValidCzAccountPart(number);
+  return { prefix, number, bankCode, partsOk };
+}
+
+/** „19-2000145399/0800“; bez předčíslí jen „2000145399/0800“. */
+export function formatCzAccount(account: CzAccount): string {
+  return `${account.prefix ? `${account.prefix}-` : ""}${account.number}/${account.bankCode}`;
+}
