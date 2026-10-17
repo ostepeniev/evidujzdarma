@@ -12,7 +12,7 @@ import { reviewedMoneyTools } from "@/lib/money-review";
 export const metadata: Metadata = {
   title: "Nástroje k EET 2.0 zdarma",
   description:
-    "Nástroje k EET 2.0 zdarma: kontrola IČO, kvíz Musím evidovat?, kalkulačka EET OFF, evidenční jednotky, QR platba, doklad o prodeji a hromadná kontrola IČO.",
+    "Nástroje zdarma: kontrola IČO pro EET 2.0, kalkulačka EET OFF, faktura a doklad o prodeji, kalkulačka DPH, úrok z prodlení, ověření DIČ a IBAN, checklist.",
   ...canonicalMeta("/nastroje"),
 };
 
@@ -184,7 +184,7 @@ export default function ToolsPage() {
       <PageHeader
         title="Nástroje k EET 2.0 zdarma"
         crumbs={[{ name: "Nástroje", path: "/nastroje" }]}
-        lead="Šest bezplatných pomocníků, se kterými zjistíte, zda se vás evidence tržeb týká, a připravíte se na start. Bez registrace a bez poplatků."
+        lead="Bezplatní pomocníci pro podnikatele: zjistíte, zda se vás evidence tržeb týká, připravíte se na start a vystavíte fakturu nebo doklad. Bez registrace a bez poplatků."
       />
       <div className="container-page py-10 sm:py-14">
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

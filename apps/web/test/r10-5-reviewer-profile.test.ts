@@ -65,7 +65,8 @@ describe("R10.5 – the reviewer's profile and quote", () => {
     const hits: string[] = [];
     for (const f of files(SRC)) {
       for (const [i, line] of withoutComments(readFileSync(f, "utf8")).split("\n").entries()) {
-        if (/poradkyn|Komor\w* daňových poradců|\bKDP\b|evidenční číslo|číslo osvědčení|hasCredential/i.test(line)) hits.push(`${f.slice(SRC.length + 1)}:${i + 1}: ${line.trim()}`);
+        // S2: „evidenční číslo (daňového) dokladu“ je zákonná náležitost faktury (§ 29 ZDPH), ne číslo v rejstříku KDP
+        if (/poradkyn|Komor\w* daňových poradců|\bKDP\b|evidenční číslo(?! (daňového )?dokladu)|číslo osvědčení|hasCredential/i.test(line)) hits.push(`${f.slice(SRC.length + 1)}:${i + 1}: ${line.trim()}`);
       }
     }
     expect(hits).toEqual([]);
