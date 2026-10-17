@@ -1,6 +1,6 @@
 // TODO(právník): Pracovní návrh zásad zpracování osobních údajů – před spuštěním pokladny nechat zrevidovat
-// advokátem / pověřencem. Zkontrolovat zejména: (1) test proporcionality (LIA) pro katalog firem z veřejných
-// registrů a rozsah údajů u fyzických osob; (2) doby uložení v sekci „Jak dlouho údaje uchováváme“ (jsou to
+// advokátem / pověřencem. Zkontrolovat zejména: (1) test oprávněného zájmu (LIA) pro katalog firem z veřejných
+// registrů – hotový v docs/LIA-katalog-firem.md (S3), katalog je od 17. 10. 2026 veřejný – a rozsah údajů u fyzických osob; (2) doby uložení v sekci „Jak dlouho údaje uchováváme“ (jsou to
 // navržené interní lhůty, ne zákonné); (3) roli správce × zpracovatele u dat pokladny (údaje zákazníků a pokladních
 // podnikatele) a potřebu zpracovatelské smlouvy dle čl. 28 GDPR v obchodních podmínkách; (4) doplnit jména
 // zpracovatelů (hosting v EU, doručování e-mailů, později platební partner a poskytovatel AI přehledu – u AI ověřit,
@@ -59,9 +59,11 @@ const PURPOSES: readonly { purpose: string; data: string; basis: string; retenti
   },
   {
     purpose: "Katalog firem a kontrola IČO",
-    data: `Veřejné údaje z registrů ARES, živnostenského rejstříku (RŽP) a ČSÚ: ${CATALOG_DATA}. U fyzických osob nezobrazujeme adresu bydliště.`,
-    basis: "Oprávněný zájem – čl. 6 odst. 1 písm. f) GDPR: informovat podnikatele a veřejnost o tom, zda se jich může týkat evidence tržeb.",
-    retention: "Po dobu, kdy jsou údaje veřejné v registrech; aktualizujeme je pravidelně. Odpovědi ARES pro kontrolu IČO ukládáme do mezipaměti na 24 hodin.",
+    data: `Veřejné údaje z Registru ekonomických subjektů ČSÚ a z ARES: ${CATALOG_DATA}. U podnikajících fyzických osob nezobrazujeme adresu, DIČ ani provozovny.`,
+    basis:
+      "Oprávněný zájem – čl. 6 odst. 1 písm. f) GDPR: umožnit najít obchodního partnera podle IČO, vystavit mu fakturu a ověřit jeho údaje a informovat podnikatele a veřejnost o tom, zda se jich může týkat evidence tržeb. Test oprávněného zájmu máme zdokumentovaný.",
+    retention:
+      "Po dobu, kdy je subjekt zapsán v registrech; údaje z registrů pravidelně obnovujeme. Zaniklý subjekt vyřadíme ze seznamů při nejbližší aktualizaci, jeho stránku 90 dnů po zániku zrušíme a údaje smažeme při nejbližší aktualizaci dat. Odpovědi ARES pro kontrolu IČO ukládáme do mezipaměti na 24 hodin.",
   },
   {
     purpose: "Vyřízení námitek a žádostí",
@@ -181,14 +183,41 @@ const SECTIONS: readonly { id: string; title: string; body: ReactNode }[] = [
     body: (
       <>
         <p>
-          Připravujeme katalog firem a provozoven s orientačním vyhodnocením, zda se jich může týkat EET 2.0. Zatím není veřejně
-          přístupný; zveřejníme ho až po posouzení oprávněného zájmu. Údaje přebíráme z veřejných registrů – ARES, živnostenského rejstříku (RŽP) a Českého statistického úřadu. U podnikajících
-          fyzických osob nezobrazujeme adresu bydliště.
+          Od 17. 10. 2026 zveřejňujeme <Link href="/firmy">katalog firem a provozoven</Link>, zatím pro Karlovarský kraj. Ukazuje údaje
+          o podnikatelích z veřejných registrů a orientační odhad, zda se jich může týkat EET 2.0. Tato část zásad je informací podle
+          čl. 14 GDPR pro podnikatele, jejichž údaje jsme nezískali přímo od nich.
+        </p>
+        <p>
+          <strong>Odkud údaje máme.</strong> Z Registru ekonomických subjektů Českého statistického úřadu (zveřejňovaného jako otevřená
+          data) a z registru ARES Ministerstva financí. U firem (právnických osob) přebíráme z ARES i provozovny ze živnostenského
+          rejstříku.
+        </p>
+        <p>
+          <strong>Jaké údaje.</strong> {CATALOG_DATA}. U podnikajících fyzických osob (OSVČ) nezveřejňujeme adresu bydliště ani sídla,
+          DIČ, provozovny a živnosti. Nikde neuvádíme datum narození ani rodné číslo, údaje o statutárních orgánech a stránky osob
+          nevytváříme.
+        </p>
+        <p>
+          <strong>Proč a na jakém základě.</strong> Na základě oprávněného zájmu (čl. 6 odst. 1 písm. f) GDPR) našeho i uživatelů webu:
+          najít obchodního partnera podle IČO, vystavit mu fakturu, ověřit jeho údaje a zjistit, zda se ho může týkat evidence tržeb.
+          Test oprávněného zájmu (balanční test) máme zdokumentovaný a na vyžádání ho poskytneme.
+        </p>
+        <p>
+          <strong>Jak omezujeme zásah do soukromí.</strong> Stránky OSVČ označujeme pro vyhledávače jako neindexované, nejsou v mapě
+          webu a v seznamech uvádíme OSVČ jen počtem – stránku najde ten, kdo zná IČO. Zaniklý subjekt vyřadíme ze seznamů při
+          nejbližší aktualizaci, jeho stránku 90 dnů po zániku zrušíme a údaje smažeme při nejbližší aktualizaci dat. Údaje z registrů
+          pravidelně obnovujeme a nic k nim nedoplňujeme ani je nehodnotíme.
+        </p>
+        <p>
+          <strong>Kdo údaje uvidí.</strong> Stránky katalogu jsou veřejně přístupné; stránky firem (právnických osob) mohou indexovat
+          vyhledávače. Dalším příjemcům údaje nepředáváme, technicky je u nás zpracovává jen poskytovatel hostingu.
         </p>
         <p>
           <strong>Máte právo vznést námitku</strong> proti tomuto zpracování podle čl. 21 GDPR nebo požádat o opravu údajů,
-          a to přes <Link href="/namitka">formulář námitky</Link>. Námitku vyřídíme nejpozději do 30 dnů. Pokud neprokážeme
-          závažné oprávněné důvody pro další zpracování, údaje z katalogu odstraníme nebo stránku vyřadíme z vyhledávačů.
+          a to přes <Link href="/namitka">formulář námitky</Link>. U OSVČ stránku vyřadíme z vyhledávačů hned po odeslání, u firem po
+          potvrzení e-mailu. Námitku vyřídíme nejpozději do 30 dnů. Pokud neprokážeme závažné oprávněné důvody pro další zpracování,
+          údaje z katalogu odstraníme nebo stránku vyřadíme z vyhledávačů. Máte také právo na přístup k údajům a jejich opravu a právo
+          podat stížnost u Úřadu pro ochranu osobních údajů (viz <a href="#prava">Vaše práva</a>).
         </p>
         <p>
           Seznamy IČO, které zadáte do kontroly IČO nebo do hromadné kontroly pro účetní, neukládáme k žádnému profilu. Veřejné
@@ -343,8 +372,8 @@ export default function PrivacyPage() {
           <div className="prose-ez min-w-0 max-w-3xl">
             <p className="mt-0 rounded-2xl border border-line bg-surface p-5 text-base text-ink">
               <strong>Ve zkratce:</strong> údaje neprodáváme a ukládáme je v EU. Marketingové e-maily posíláme jen se souhlasem.
-              Katalog firem z veřejných registrů připravujeme; fyzickým osobám v něm nebudeme zobrazovat adresu bydliště. Proti
-              zpracování můžete kdykoli vznést <Link href="/namitka">námitku</Link>.
+              Katalog firem stavíme jen z veřejných registrů; u podnikajících fyzických osob v něm neukazujeme adresu ani DIČ a jejich
+              stránky nejsou ve vyhledávačích. Proti zpracování můžete kdykoli vznést <Link href="/namitka">námitku</Link>.
             </p>
             {SECTIONS.map((s, i) => (
               <section key={s.id} id={s.id} aria-labelledby={`${s.id}-h`} className="scroll-mt-24">

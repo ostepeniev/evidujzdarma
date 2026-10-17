@@ -81,6 +81,14 @@ const TOOLS = [
     tag: "Novinka",
     time: "2 minuty",
   },
+  // S3: katalog firem Karlovarského kraje (otevřený 17. 10. 2026)
+  {
+    href: "/firmy",
+    title: "Katalog firem",
+    text: "Firmy Karlovarského kraje z ARES a RES ČSÚ: IČO, DIČ, sídlo, obory a odhad, zda se jich týká EET 2.0. Fakturační údaje zkopírujete jedním klikem.",
+    tag: "Novinka",
+    time: "10 vteřin",
+  },
   {
     href: "/ucetni/hromadna-kontrola",
     title: "Hromadná kontrola IČO pro účetní",

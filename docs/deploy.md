@@ -255,6 +255,78 @@ cd /opt/evidujzdarma/infra && docker compose -f docker-compose.yml -f docker-com
 
 Smoke-тест відписки — лише з одноразовою адресою.
 
+### Каталог фірм (S3): відкриття, мікрокеш, навантажувальний тест
+
+Каталог (`/firmy`, `/firma`, `/provozovna`, `/obor`) відкрито в S3: LIA — `docs/LIA-katalog-firem.md`, правила — `apps/web/src/lib/catalog-policy.ts`.
+ОСВЧ: сторінка є, але `noindex`, поза sitemap, у списках лише кількістю; DIČ, вулиця й провозовни ОСВЧ не показуються й не зберігаються.
+
+**Порядок (контролер):**
+
+1. `git pull`, збирання образів (вище), `migrate` — міграція `0038_catalog_legal_indexes` (два часткові індекси `CREATE INDEX IF NOT EXISTS`, на ~80 тис. рядків — частки секунди; у транзакції, тому без `CONCURRENTLY`).
+2. Одноразово прибрати дані ОСВЧ, які старий `catalog:enrich` міг зберегти (DIČ і провозовни ОСВЧ), і давно зниклі суб'єкти:
+
+   ```bash
+   cd /opt/evidujzdarma/infra && docker compose -f docker-compose.yml -f docker-compose.nginx.yml exec -T postgres psql -U evidujzdarma -d evidujzdarma <<'SQL'
+   update firms set dic = null where dic is not null and (is_natural_person or legal_form is null or legal_form ~ '^(10[0-9]|42[45])$');
+   delete from firm_establishments e using firms f where e.ico = f.ico and (f.is_natural_person or f.legal_form is null or f.legal_form ~ '^(10[0-9]|42[45])$');
+   delete from firms where dissolved_at is not null and dissolved_at < current_date - 90;
+   SQL
+   ```
+
+3. Збагачення з ARES — спершу юридичні особи, «likely» першими (`--legal-only`; порядок likely → possible → unlikely тепер за замовчуванням):
+
+   ```bash
+   docker compose -f docker-compose.yml -f docker-compose.nginx.yml run --rm --no-deps worker \
+     node --import tsx src/catalog/enrich-ares.ts --legal-only --rpm 120
+   ```
+
+   Потім (або вночі) без `--legal-only`. Щоб дані оновлювались самі, у `infra/.env` поставити `CATALOG_ENRICH=1` (нічний запуск у worker). `catalog:import` тепер після імпорту сам видаляє суб'єкти, що зникли понад 90 днів тому (`--keep-dissolved` вимикає).
+4. Мікрокеш nginx — **спершу** файл зони, потім vhost:
+
+   ```bash
+   sudo install -m 0644 /opt/evidujzdarma/infra/nginx/evidujzdarma-cache.conf /etc/nginx/conf.d/evidujzdarma-cache.conf
+   sudo install -d -o www-data -g www-data -m 0700 /var/cache/nginx/evidujzdarma
+   sudo install -m 0644 /opt/evidujzdarma/infra/nginx/evidujzdarma.conf /etc/nginx/sites-available/evidujzdarma.cz
+   sudo nginx -t && sudo systemctl reload nginx
+   ```
+
+   Що змінилось у vhost: regex закритих секцій — `^/(pokladna|prihlaseni|kabinet|pozvanka|u)(/|$)` (каталог без пароля); нові `location` для каталогу з `proxy_cache ez_catalog`
+   (ключ `$scheme$host$uri` без query, запити з `?…` кеш оминають, кешуються лише 200/301/308 на 10 хв, `proxy_cache_use_stale updating error timeout`,
+   фонове оновлення, `proxy_cache_lock`); живий перегляд з ARES `/firma/{IČO}` без slug — окремий `location` без кешу. Застосунок для каталогу
+   надсилає `Cache-Control: public, max-age=0, s-maxage=3600, stale-while-revalidate=86400` (живий перегляд — `private, no-store`), але nginx
+   його тут ігнорує (`proxy_ignore_headers`), щоб не кешувати 404/500. `Set-Cookie` каталог не надсилає.
+
+   Перевірка: `curl -sI https://evidujzdarma.cz/firmy | grep -i x-cache-status` — перший раз `MISS`, потім `HIT`; `?strana=2` → `BYPASS`;
+   `curl -sI https://evidujzdarma.cz/firma/22269134` — без `X-Cache-Status`. Очистити кеш: `sudo rm -rf /var/cache/nginx/evidujzdarma/*` (nginx не перезапускати).
+5. `curl -s https://evidujzdarma.cz/robots.txt` — з'явились рядки `Sitemap: …/firmy/sitemap.xml`, `/obor/sitemap/0.xml`, `/firma/sitemap/N.xml`, `/provozovna/sitemap/N.xml`. Подати їх у Search Console і Seznam Webmaster — власник.
+
+**Навантажувальний тест** (без залежностей, `apps/worker/src/catalog/loadtest.ts`): бере URL із sitemap каталогу й шле N паралельних запитів, друкує p50/p95/p99, статуси й найповільніші URL. Ганяти поза піком, бо сервер спільний:
+
+```bash
+cd /opt/evidujzdarma/infra
+# сам застосунок (без nginx), зсередини docker-мережі
+docker compose -f docker-compose.yml -f docker-compose.nginx.yml run --rm --no-deps worker \
+  node --import tsx src/catalog/loadtest.ts --base http://web:3000 --concurrency 8 --requests 400
+# через nginx і мікрокеш (повторний прогін має показати X-Cache-Status: HIT)
+docker compose -f docker-compose.yml -f docker-compose.nginx.yml run --rm --no-deps worker \
+  node --import tsx src/catalog/loadtest.ts --base https://evidujzdarma.cz --concurrency 8 --requests 400
+```
+
+Локальні виміри S3 (production-збірка `next start`, 2 vCPU, Postgres 16, 80 000 синтетичних суб'єктів kraje 51 – 20 % юридичних осіб, 132 obce;
+URL зі sitemap каталогу):
+
+| Сценарій | req/s | p50 | p95 | p99 |
+| --- | --- | --- | --- | --- |
+| застосунок напряму, 1 паралельний запит | 30 | 32 мс | 44 мс | 73 мс |
+| застосунок напряму, 8 паралельних | 36 | 213 мс | 302 мс | 359 мс |
+| через nginx, холодний кеш (MISS) | 52 | 186 мс | 255 мс | 275 мс |
+| через nginx, теплий кеш (HIT) | 405 | 18 мс | 33 мс | 51 мс |
+
+Без кешу стелю дає CPU (рендер ≈ 28 мс CPU на сторінку) — мікрокеш потрібен. Агрегація obec × obor (одна на kraj) ~0,3 с раз на 6 год
+у пам'яті процесу (оновлення у фоні). EXPLAIN ANALYZE ключових запитів на тих самих даних: список kraje стор. 1 — 0,2 мс
+(`firms_listable_legal_region_name`), стор. 40 — 22 мс; obor × obec — 1,4 мс (`firms_listable_legal_city_name`); obor × kraj — 1,3 мс;
+нові фірми obce — 0,1 мс (`firms_founded_idx`); пошук за назвою — 60 мс (`firms_name_trgm`); sitemap фірм — 11 мс; počty kraje — 27 мс (раз на годину в пам'яті).
+
 ## Локальна розробка
 
 ```bash

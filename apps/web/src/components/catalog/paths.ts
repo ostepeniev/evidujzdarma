@@ -35,6 +35,11 @@ export function oborObecPath(obor: string, obec: { code: number; name: string },
   return `/obor/${obor}/obec/${obecSlug(obec)}${page && page > 1 ? `?strana=${page}` : ""}`;
 }
 
+/** Rozcestník obce (S3): /firmy/obec/{kód}-{slug}. */
+export function obecHubPath(obec: { code: number; name: string }, page?: number): string {
+  return `/firmy/obec/${obecSlug(obec)}${page && page > 1 ? `?strana=${page}` : ""}`;
+}
+
 /** "554961-karlovy-vary" → { code: 554961, suffix: "karlovy-vary" } */
 export function parseObecSlug(param: string): { code: number; suffix: string } | null {
   const m = safeDecode(param).match(/^(\d{1,9})(?:-(.*))?$/);
@@ -49,6 +54,26 @@ export function monthPath(month: string, page?: number): string {
 
 export function aresUrl(ico: string): string {
   return `https://ares.gov.cz/ekonomicke-subjekty?ico=${ico}`;
+}
+
+/**
+ * Právní formy zapisované do veřejného rejstříku (obchodní, spolkový, nadační rejstřík, rejstřík o. p. s., ústavů a SVJ),
+ * které hledá or.justice.cz: v.o.s., s.r.o., k.s., a.s., družstvo, o. p. s., SVJ, ústav, nadace, nadační fond, spolek.
+ */
+const PUBLIC_REGISTER_FORMS = new Set(["111", "112", "113", "121", "205", "141", "145", "161", "117", "118", "706"]);
+
+export function inPublicRegister(legalForm: string | null | undefined): boolean {
+  return !!legalForm && PUBLIC_REGISTER_FORMS.has(legalForm);
+}
+
+/** Vyhledání subjektu podle IČO ve Veřejném rejstříku a Sbírce listin (or.justice.cz; ověřeno 17. 10. 2026). */
+export function justiceUrl(ico: string): string {
+  return `https://or.justice.cz/ias/ui/rejstrik-$firma?ico=${ico}`;
+}
+
+/** Vyhledání adresy na Mapy.com (dřív Mapy.cz) – jen externí odkaz, žádná vložená mapa ani skript (ověřeno 17. 10. 2026). */
+export function mapyUrl(address: string): string {
+  return `https://mapy.com/cs/zakladni?q=${encodeURIComponent(address)}`;
 }
 
 /**

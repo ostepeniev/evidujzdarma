@@ -12,8 +12,10 @@ import { PageHeader } from "@/components/page-header";
 import { JsonLd } from "@/lib/jsonld";
 import { getEstablishmentPage, type EstablishmentPage } from "@/lib/server/catalog";
 import { canonicalMeta } from "@/lib/metadata";
+import { fitDescription, fitTitle } from "@/lib/catalog-meta";
 
-// Renderuje se pro každý požadavek, bez ISR cache na disku (R3.3).
+// Renderuje se pro každý požadavek, bez ISR cache na disku (R3.3). Jen provozovny právnických osob (S3, LIA):
+// u OSVČ jsou provozovny údajem živnostenského rejstříku o fyzické osobě – getEstablishmentPage vrátí null → 404.
 export const dynamic = "force-dynamic";
 
 async function load(slugParam: string): Promise<EstablishmentPage> {
@@ -37,8 +39,11 @@ export async function generateMetadata({ params }: PageProps<"/provozovna/[slug]
   const p = await load(slug);
   const est = p.establishment;
   return {
-    title: `${title(p)} – IČP ${est.icp}`,
-    description: `Provozovna IČP ${est.icp}${est.city ? `, ${est.city}` : ""}. Provozovatel ${p.firm.name}, IČO ${p.firm.ico}. Údaje ze živnostenského rejstříku k ${dateCs(p.firm.source.date)}.`,
+    title: fitTitle([`${title(p)} – IČP ${est.icp}`, title(p)]),
+    description: fitDescription(
+      [`Provozovna IČP ${est.icp}${est.city ? `, ${est.city}` : ""}. Provozovatel ${p.firm.name}, IČO ${p.firm.ico}.`, `Údaje ze živnostenského rejstříku k ${dateCs(p.firm.source.date)}.`],
+      ["Odhad, zda se provozovny týká EET 2.0.", "Údaje z ARES."],
+    ),
     ...canonicalMeta(establishmentPath(est)),
     robots: p.index ? undefined : { index: false, follow: true },
   };

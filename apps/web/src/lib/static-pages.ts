@@ -40,6 +40,8 @@ export const STATIC_PAGES: readonly { path: string; title: string; priority: num
   { path: "/nastroje/datum-splatnosti", title: "Datum splatnosti faktury", priority: 0.6, changeFrequency: "monthly", modified: "2026-10-17" },
   { path: "/kalkulacka-dph", title: "Kalkulačka DPH (21 % a 12 %)", priority: 0.7, changeFrequency: "monthly", modified: "2026-10-17" },
   { path: "/kalkulacka-urok-z-prodleni", title: "Kalkulačka úroku z prodlení", priority: 0.7, changeFrequency: "monthly", modified: "2026-10-17" },
+  // S3: katalog firem – vstupní stránka (ostatní stránky katalogu mají vlastní sitemapy v robots.txt)
+  { path: "/firmy", title: "Katalog firem v Karlovarském kraji", priority: 0.7, changeFrequency: "daily", modified: "2026-10-17" },
   // S2/B2: peněžní kalkulačky – v sitemap až po kontrole účetní (MONEY_CALCULATORS_REVIEWED v lib/money-review.ts)
   ...reviewedMoneyStaticPages(),
 ];

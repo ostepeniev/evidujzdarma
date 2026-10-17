@@ -19,10 +19,11 @@ const current = readFileSync(CONF_PATH, "utf8");
 const CLOSED_PATHS = [
   ...[...CLOSED_SECTIONS, ...CLOSED_API].flatMap((p) => [p, `${p}/`, `${p}/x`]),
   "/api/ucet/certifikat",
-  "/firma/sitemap/0.xml",
-  "/provozovna/sitemap/0.xml",
   "/u/00000000-0000-4000-8000-000000000000",
 ];
+
+/** S3: katalog je veřejný – žádná z těchto cest nesmí být za heslem (a má mikrocache, kromě živého náhledu z ARES). */
+const CATALOG_PUBLIC = ["/firmy", "/firmy/obec/554961-karlovy-vary", "/firma/12345679-x", "/firma/sitemap/0.xml", "/provozovna/1-x", "/obor/x/kraj/y", "/firmy/sitemap.xml"];
 
 /** Porušení pravidel R7.2 (prázdné = v pořádku). */
 function violations(conf: string): string[] {
@@ -55,6 +56,30 @@ const planFromOpenSite = fromReview.replace(/(location = \/api\/ucet\/certifikat
 describe("R7.2 – nginx keeps the closed sections closed", () => {
   it("gate: infra/nginx/evidujzdarma.conf passes", () => {
     expect(violations(current)).toEqual([]);
+  });
+
+  it("gate S3: the catalogue is public with a microcache keyed without query; the live ARES view /firma/{IČO} is not cached", () => {
+    const server = mainServer(parseNginx(current));
+    const locs = locations(server);
+    for (const p of CATALOG_PUBLIC) {
+      expect(effectiveAuth(server, p) ?? "off", p).toBe("off");
+      const loc = matchLocation(locs, p)!;
+      const d = (n: string) => loc.block.find((x: Directive) => x.name === n)?.args;
+      expect(d("proxy_cache"), p).toEqual(["ez_catalog"]);
+      expect(d("proxy_cache_key"), p).toEqual(["$scheme$host$uri"]);
+      expect(d("proxy_cache_bypass"), p).toEqual(["$is_args"]);
+      expect(d("proxy_no_cache"), p).toEqual(["$is_args"]);
+      expect(d("proxy_cache_use_stale"), p).toEqual(expect.arrayContaining(["updating", "error", "timeout"]));
+      expect(d("proxy_cache_valid"), p).toEqual(["200", "301", "308", "10m"]);
+    }
+    for (const p of ["/firma/12345679", "/firma/12345679/"]) {
+      const loc = matchLocation(locs, p)!;
+      expect(loc.block.some((x: Directive) => x.name === "proxy_cache"), p).toBe(false);
+      expect(effectiveAuth(server, p) ?? "off", p).toBe("off");
+    }
+    // zóna je v http kontextu ve vlastním souboru pro /etc/nginx/conf.d/
+    const cacheConf = readFileSync(new URL("../../../infra/nginx/evidujzdarma-cache.conf", import.meta.url), "utf8");
+    expect(cacheConf).toMatch(/^proxy_cache_path \/var\/cache\/nginx\/evidujzdarma .*keys_zone=ez_catalog:/m);
   });
 
   it("gate: the opening-day plan from open-site.md (1aec031) is caught – exact /api/ucet/certifikat would be public", () => {

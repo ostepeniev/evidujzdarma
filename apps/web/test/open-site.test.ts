@@ -1,7 +1,7 @@
 /**
- * eet-open-site (docs/tasks/2026-10-03-open-site.md): veřejný je obsah, nástroje a předregistrace. Pokladna,
- * přihlášení, Účetní kabinet, pozvánky, účtenky a katalog firem zůstávají za heslem (nginx), dokud je neotevře
- * rozhodnutí (právník, LIA). Web na ně neodkazuje, robots.txt je zakazuje a sitemapy je neobsahují.
+ * eet-open-site (docs/tasks/2026-10-03-open-site.md): veřejný je obsah, nástroje a předregistrace, od S3 i katalog firem
+ * (LIA hotová, docs/LIA-katalog-firem.md). Pokladna, přihlášení, Účetní kabinet, pozvánky a účtenky zůstávají za heslem
+ * (nginx) do 2. 11. 2026. Web na ně neodkazuje, robots.txt je zakazuje a sitemapy je neobsahují.
  * R17.2: testy čtou skutečné CLOSED_SECTIONS (commit otevření pokladny 2. 11. je nerozbije); stav „zavřeno“ tam,
  * kde na něm test stojí, si nasimulují (helpers/launch.ts).
  */
@@ -28,10 +28,14 @@ afterEach(() => {
 });
 
 describe("eet-open-site – what stays closed", () => {
-  it("the closed list is the app (until 2. 11.) and the catalog; /ucetni is not caught by /u", () => {
-    // katalog čeká na LIA; kromě něj smí být zavřené jen sekce pokladny
-    for (const p of CATALOG) expect(CLOSED, p).toContain(p);
-    for (const p of CLOSED) expect([...CATALOG, ...POS_SECTIONS], p).toContain(p);
+  it("the closed list is only the app (until 2. 11.); the catalogue is open (S3); /ucetni is not caught by /u", () => {
+    // katalog je od S3 otevřený; zavřené smí být jen sekce pokladny
+    for (const p of CATALOG) {
+      expect(CLOSED, p).not.toContain(p);
+      expect(launch.isClosed(`${p}/x`), p).toBe(false);
+    }
+    expect(launch.CATALOG_CLOSED).toBe(false);
+    for (const p of CLOSED) expect([...POS_SECTIONS], p).toContain(p);
     for (const p of CLOSED) {
       expect(launch.isClosed(p), p).toBe(true);
       expect(launch.isClosed(`${p}/x`), p).toBe(true);
@@ -39,14 +43,15 @@ describe("eet-open-site – what stays closed", () => {
     for (const p of ["/", "/ucetni", "/ucetni/hromadna-kontrola", "/kontrola-ico", "/navody/x", "/namitka", "/registrace/potvrzeni", "/firmyx"]) expect(launch.isClosed(p), p).toBe(false);
   });
 
-  it("gate: robots.txt disallows every closed section and lists no catalog sitemap", async () => {
+  it("gate: robots.txt disallows every closed section, not the catalogue, and lists the catalogue sitemaps (S3)", async () => {
     const r = await robots();
     const rules = Array.isArray(r.rules) ? r.rules : [r.rules];
     for (const rule of rules) {
       const dis = ([] as string[]).concat(rule.disallow ?? []);
       for (const p of CLOSED) expect(dis.includes(`${p}$`) && dis.includes(`${p}/`), `${p} in ${String(rule.userAgent)}`).toBe(true);
+      for (const p of CATALOG) expect(dis.some((d) => d === `${p}$` || d === `${p}/`), `${p} in ${String(rule.userAgent)}`).toBe(false);
     }
-    expect(([] as string[]).concat(r.sitemap ?? []).some((s) => /\/(firma|provozovna)\//.test(s))).toBe(false);
+    expect(([] as string[]).concat(r.sitemap ?? []).filter((s) => /\/(firma|provozovna)\//.test(s)).length).toBe(2);
   });
 
   it("gate: the main sitemap has no closed URL", () => {

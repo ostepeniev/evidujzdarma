@@ -117,6 +117,16 @@ export default async function IcoCheckPage({ searchParams }: PageProps<"/kontrol
               .
             </p>
           )}
+          {/* S3: katalog firem – stránka subjektu (sídlo, obory, fakturační údaje); u zaniklého ne (po 90 dnech je 404) */}
+          {result && !isClosed("/firmy") && !result.subject.dissolvedAt && (
+            <p className="mt-3 text-[15px]">
+              Sídlo, obory činnosti a fakturační údaje ke zkopírování najdete na{" "}
+              <Link href={`/firma/${result.subject.ico}`} className="font-medium text-brand-700 underline underline-offset-4">
+                stránce subjektu v katalogu firem
+              </Link>
+              .
+            </p>
+          )}
           {prefillIco &&
             (isClosed("/pokladna") ? (
               <section className="card mt-10 p-6 shadow-sm sm:p-8" aria-labelledby="predregistrace-h">
@@ -141,6 +151,15 @@ export default async function IcoCheckPage({ searchParams }: PageProps<"/kontrol
             <Faq items={FAQ} />
             <FactsVerified className="mt-4 text-sm text-muted" />
           </section>
+          {!isClosed("/firmy") && (
+            <p className="mt-10 rounded-2xl border border-line bg-surface p-5 text-[15px] text-ink-soft">
+              Hledáte údaje o firmě nebo fakturační údaje odběratele? Podívejte se do{" "}
+              <Link href="/firmy" className="font-medium text-brand-700 underline underline-offset-4">
+                katalogu firem
+              </Link>{" "}
+              – IČO, DIČ, sídlo, obory a odhad EET 2.0 pro firmy Karlovarského kraje.
+            </p>
+          )}
           <RelatedGuides
             slugs={["koho-se-eet-tyka", "kontaktni-platba", "evidencni-jednotka", "eet-2-0-kompletni-pruvodce"]}
             title="Co dál: návody k EET 2.0"

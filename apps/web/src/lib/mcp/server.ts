@@ -76,7 +76,7 @@ Args:
   - income_under_1m ('yes'|'no'|'unknown'): yearly self-employment income up to 1,000,000 CZK?
   - response_format ('markdown'|'json').
 
-Returns: subject (name, legal form, VAT payer, municipality), verdict ('likely'|'possible'|'unlikely'|'dissolved'), headline, eet_off ('possible'|'not_available'|'check') with explanation, reasons, checklist [{date, title, text, url}], url of the full check on the website.
+Returns: subject (name, legal form, VAT payer, municipality), verdict ('likely'|'possible'|'unlikely'|'dissolved'), headline, eet_off ('possible'|'not_available'|'check') with explanation, reasons, checklist [{date, title, text, url}], url of the full check on the website, catalog_url of the subject's page in the company catalogue (basic registry data, billing details, EET estimate).
 
 Don't use for: payment-type questions (use eet_classify_payment) or the EET OFF cost comparison (use eet_calculate_eet_off).`,
       inputSchema: z
@@ -125,7 +125,10 @@ Don't use for: payment-type questions (use eet_classify_payment) or the EET OFF 
         active_establishments: a.activeEstablishments,
         // odkaz na návod jen po revizi poradcem (Ф9, R6.5); jiné odkazy webu zůstávají
         checklist: a.checklist.map((c) => ({ date: c.date ?? null, title: c.title, text: c.text, url: publicHref(c.href) })),
-        url: absoluteUrl(`/kontrola-ico?ico=${ico}`),
+        // IČO ve fragmentu, ne v query (COMMON 9, S3) – stránka si ho přečte v prohlížeči
+        url: absoluteUrl(`/kontrola-ico#ico=${ico}`),
+        // stránka subjektu v katalogu firem (/firma/{IČO} přesměruje na kanonickou adresu, mimo katalog ukáže údaje z ARES)
+        catalog_url: absoluteUrl(`/firma/${ico}`),
         data_source: "ARES (Ministerstvo financí)",
       };
       const md = [
@@ -139,6 +142,7 @@ Don't use for: payment-type questions (use eet_classify_payment) or the EET OFF 
         "## Co udělat",
         bulletList(output.checklist.map((c) => `${c.date ? `**${c.date}** – ` : ""}${c.title}: ${c.text}${c.url ? ` (${c.url})` : ""}`)),
         `Podrobná kontrola: ${output.url}`,
+        `Stránka subjektu v katalogu firem: ${output.catalog_url}`,
         "Odhad vychází z veřejných údajů ARES; neví, zda podnikatel přijímá platby osobně. Pro přesnější výsledek zadejte doplňující odpovědi.",
       ].join("\n\n");
       return respond(output, md, args.response_format as ResponseFormat);
