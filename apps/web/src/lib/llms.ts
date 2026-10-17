@@ -6,6 +6,7 @@ import { MYTHS, MYTHS_UPDATED } from "@/content/myths";
 import type { Block, Guide } from "@/content/guides/types";
 import { OPERATOR, SITE, absoluteUrl, REVIEWER } from "./site";
 import { STATIC_PAGES } from "./static-pages";
+import { reviewedMoneyPaths } from "./money-review";
 
 function indexedGuides() {
   return GUIDES.filter(isIndexable);
@@ -51,6 +52,8 @@ export function llmsTxt(): string {
     ...STATIC_PAGES.filter((p) => ["/kontrola-ico", "/musim-evidovat", "/kalkulacka-eet-off", "/evidencni-jednotky", "/qr-platba", "/doklad-o-prodeji", "/checklist-eet", "/ucetni/hromadna-kontrola"].includes(p.path)).map(
       (p) => `- [${p.title}](${absoluteUrl(p.path)})`,
     ),
+    // S2/B2: peněžní kalkulačky až po kontrole účetní (lib/money-review.ts)
+    ...STATIC_PAGES.filter((p) => reviewedMoneyPaths().includes(p.path)).map((p) => `- [${p.title}](${absoluteUrl(p.path)})`),
     "",
     "## Návody",
     "",

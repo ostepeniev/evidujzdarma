@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { trackEvent } from "@/components/analytics-beacon";
-import { calculateEetOff, DEFAULT_INPUT, type Band, type EetOffInput } from "@/lib/eet-off";
+import { calculateEetOff, DEFAULT_INPUT, eetOffYear, type Band, type EetOffInput } from "@/lib/eet-off";
 import { FACTS } from "@/content/facts";
 
 const kc = (n: number) => `${Math.round(n).toLocaleString("cs-CZ")} Kč`;
@@ -60,6 +60,8 @@ function NumberField({
 export function EetOffCalculator() {
   const [input, setInput] = useState<EetOffInput>(DEFAULT_INPUT);
   const r = useMemo(() => calculateEetOff(input), [input]);
+  // S2/B2: roční součet s paušální daní a bod zvratu (místo duplicitní stránky /kalkulacka-pausal-vs-eet-off)
+  const y = useMemo(() => (r.eligible ? eetOffYear(input, r) : null), [input, r]);
   const used = useRef(false);
   const set = <K extends keyof EetOffInput>(k: K, v: EetOffInput[K]) => {
     // trychtýř (R15.1): první úprava vstupu = kalkulačka použita (jednou za návštěvu stránky)
@@ -211,6 +213,40 @@ export function EetOffCalculator() {
               </table>
               <p className="mt-3 text-xs text-muted">Výše paušální zálohy pro rok 2027 je zatím předběžná (oznámená, oficiální leták FS ještě nevyšel).</p>
             </div>
+            {y && (
+              <div className="card" id="rocni-soucet">
+                <h3 className="text-lg font-bold text-ink">Paušální daň {r.months === 12 ? "za rok 2027" : `za ${r.months} ${r.months === 1 ? "měsíc" : r.months <= 4 ? "měsíce" : "měsíců"} roku 2027`} (předběžně)</h3>
+                <table className="mt-2 w-full text-left text-[15px]">
+                  <tbody className="divide-y divide-line">
+                    <tr>
+                      <th scope="row" className="py-2 pr-4 font-medium">
+                        S přirážkou EET OFF
+                      </th>
+                      <td className="whitespace-nowrap py-2 text-right font-semibold">{kc(y.withEetOff)}</td>
+                    </tr>
+                    <tr>
+                      <th scope="row" className="py-2 pr-4 font-medium">
+                        S evidencí tržeb (paušální daň + vaše náklady evidence)
+                      </th>
+                      <td className="whitespace-nowrap py-2 text-right font-semibold">{kc(y.withEvidence)}</td>
+                    </tr>
+                    <tr>
+                      <th scope="row" className="py-2 pr-4 font-normal text-ink-soft">
+                        z toho paušální daň bez přirážky
+                      </th>
+                      <td className="whitespace-nowrap py-2 text-right text-ink-soft">{kc(y.pausalTotal)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+                {y.breakEvenMinutesPerDay !== null && (
+                  <p className="mt-3 text-[15px] text-ink-soft">
+                    Bod zvratu: přirážka vás stojí stejně jako zhruba <strong className="text-ink">{y.breakEvenMinutesPerDay.toLocaleString("cs-CZ")} minut</strong> evidence
+                    za pracovní den při ceně hodiny {kc(input.hourlyRate)}. Zabere-li vám evidence méně, vychází levněji evidovat.
+                  </p>
+                )}
+                <p className="mt-2 text-xs text-muted">Cena pokladny EvidujZdarma: 0 Kč – v nákladech evidence pak zůstává jen váš čas a případné zařízení.</p>
+              </div>
+            )}
             <div className="rounded-xl bg-surface p-4 text-[15px] text-ink-soft">
               {(input.startMonth ?? 1) === 1 ? (
                 <p>

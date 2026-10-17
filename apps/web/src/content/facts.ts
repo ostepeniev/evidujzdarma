@@ -150,6 +150,49 @@ export const SOURCES = {
     label: "LeitnerLeitner: Evidence tržeb (EET 2.0) se vrací – poplatníci daně z příjmů i nerezidenti",
     url: "https://www.leitnerleitner.cz/novinky/evidence-trzeb-eet-2-0-se-vraci-povinnost-miri-na-poplatniky-dane-z-prijmu-a-za-urcitych-okolnosti-i-na-nerezidenty/",
   },
+  // --- S2/B2 (17. 10. 2026): peněžní kalkulačky pro rok 2026 (parametry v lib/money-2026.ts) ---
+  zakonPojistneSoc: {
+    label: "Zákon č. 589/1992 Sb., o pojistném na sociální zabezpečení (znění od 1. 7. 2026)",
+    url: "https://www.zakonyprolidi.cz/cs/1992-589",
+  },
+  zakonPojistneZdr: { label: "Zákon č. 592/1992 Sb., o pojistném na veřejné zdravotní pojištění", url: "https://www.zakonyprolidi.cz/cs/1992-592" },
+  zakon90: {
+    label: "e-Sbírka: zákon č. 90/2026 Sb. – minimální vyměřovací základ OSVČ 35 % průměrné mzdy (účinnost 1. 7. 2026)",
+    url: "https://e-sbirka.gov.cz/sb/2026/90",
+  },
+  csszUdaje2026: {
+    label: "ČSSZ: Přehled nejdůležitějších údajů pro sociální zabezpečení v roce 2026",
+    url: "https://www.cssz.gov.cz/web/cz/-/prehled-nejdulezitejsich-udaju-pro-socialni-zabezpeceni-v-roce-2026",
+  },
+  csszOsvcOd072026: {
+    label: "ČSSZ: Informace pro OSVČ o změně pojistného na důchodové pojištění od 1. 7. 2026",
+    url: "https://www.cssz.gov.cz/web/cz/-/informace-pro-osvc-o-zmene-pojistneho-na-duchodove-pojisteni-od-1-7-2026",
+  },
+  csszMinZalohy2026: { label: "ČSSZ: Změna výše minimálních záloh OSVČ v roce 2026", url: "https://www.cssz.gov.cz/zmena-vyse-minimalnich-zaloh-osvc-v-roce-2024" },
+  csszRozhodnaCastka: {
+    label: "ČSSZ: Povinná účast OSVČ na důchodovém pojištění (rozhodná částka)",
+    url: "https://www.cssz.gov.cz/duchodove-pojisteni-osvc-povinna-ucast",
+  },
+  csszDruhySvc: { label: "ČSSZ: Definice a druhy SVČ (hlavní a vedlejší činnost)", url: "https://www.cssz.gov.cz/web/cz/definice-a-druhy-svc" },
+  mpsvPojisteni2026: { label: "MPSV: Sociální pojištění v roce 2026", url: "https://mpsv.gov.cz/socialni-pojisteni" },
+  mpsvMinMzda2026: {
+    label: "MPSV: Minimální mzda v roce 2026 – 22 400 Kč měsíčně",
+    url: "https://mpsv.gov.cz/minimalni-mzda-od-ledna-2026-vzroste-o-1-600-korun-na-22-400-korun-mesicne",
+  },
+  vzpPlatby2026: {
+    label: "VZP: Platby zdravotního pojištění v roce 2026",
+    url: "https://www.vzp.cz/o-nas/tiskove-centrum/otazky-tydne/platby-zdravotniho-pojisteni-v-roce-2026",
+  },
+  vzpMinVzOsvc: {
+    label: "VZP: Jaký je minimální vyměřovací základ OSVČ",
+    url: "https://www.vzp.cz/platci/informace/osvc/vymerovaci-zaklad-a-vypocet-pojistneho/jaky-je-minimalni-vymerovaci-zaklad",
+  },
+  vzpPrumernaMzda: { label: "VZP: OSVČ – průměrná mzda (nařízení vlády č. 365/2025 Sb.)", url: "https://www.vzp.cz/platci/informace/osvc/osvc-prumerna-mzda" },
+  danovyRad: { label: "Zákon č. 280/2009 Sb., daňový řád – § 146 Zaokrouhlování", url: "https://www.zakonyprolidi.cz/cs/2009-280" },
+  vzpZamestnavatel: {
+    label: "VZP: Plátce pojistného – zaměstnavatel (třetina pojistného hradí zaměstnanec)",
+    url: "https://www.vzp.cz/platci/informace/povinnosti-platcu-metodika/2-4-platce-pojistneho-zamestnavatel",
+  },
 } as const satisfies Record<string, Source>;
 
 export interface TimelineItem {
