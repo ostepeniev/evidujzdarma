@@ -120,7 +120,8 @@ describe("R8.3 – Czech texts (verbatim from the review)", () => {
     expect(z).toContain("Předregistrace k pokladně, přihláška na webinář a zájem o Účetní kabinet");
     expect(z).toContain(", u webinářů a Účetního kabinetu, o co máte zájem.");
     expect(z).not.toContain("u webináře jeho termín");
-    expect(z).toContain("Katalog firem z veřejných registrů připravujeme; fyzickým osobám v něm nebudeme zobrazovat adresu bydliště. Proti zpracování můžete kdykoli vznést námitku.");
+    // S3 (17. 10. 2026): katalog je veřejný – shrnutí popisuje skutečný stav (OSVČ bez adresy a DIČ, mimo vyhledávače)
+    expect(z).toContain("Katalog firem stavíme jen z veřejných registrů; u podnikajících fyzických osob v něm neukazujeme adresu ani DIČ a jejich stránky nejsou ve vyhledávačích. Proti zpracování můžete kdykoli vznést námitku.");
     expect(src("app/(site)/ochrana-osobnich-udaju/page.tsx")).toMatch(/kdykoli vznést\s*<Link href="\/namitka">námitku<\/Link>\./);
   });
 
