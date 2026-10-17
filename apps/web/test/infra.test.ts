@@ -66,9 +66,11 @@ describe("R7.2 – nginx keeps the closed sections closed", () => {
       const loc = matchLocation(locs, p)!;
       const d = (n: string) => loc.block.find((x: Directive) => x.name === n)?.args;
       expect(d("proxy_cache"), p).toEqual(["ez_catalog"]);
-      expect(d("proxy_cache_key"), p).toEqual(["$scheme$host$uri"]);
-      expect(d("proxy_cache_bypass"), p).toEqual(["$is_args"]);
-      expect(d("proxy_no_cache"), p).toEqual(["$is_args"]);
+      // klíč bez query, ale s variantou kódování (gzip / bez) – Next.js odpovídá s Vary: Accept-Encoding
+      expect(d("proxy_cache_key"), p).toEqual(["$scheme$host$uri$ez_cache_ae"]);
+      // obejít kešku: query (?…) a požadavky klientské navigace Next.js (RSC hlavičky)
+      expect(d("proxy_cache_bypass"), p).toEqual(["$is_args", "$ez_cache_rsc"]);
+      expect(d("proxy_no_cache"), p).toEqual(["$is_args", "$ez_cache_rsc"]);
       expect(d("proxy_cache_use_stale"), p).toEqual(expect.arrayContaining(["updating", "error", "timeout"]));
       expect(d("proxy_cache_valid"), p).toEqual(["200", "301", "308", "10m"]);
     }
@@ -80,6 +82,8 @@ describe("R7.2 – nginx keeps the closed sections closed", () => {
     // zóna je v http kontextu ve vlastním souboru pro /etc/nginx/conf.d/
     const cacheConf = readFileSync(new URL("../../../infra/nginx/evidujzdarma-cache.conf", import.meta.url), "utf8");
     expect(cacheConf).toMatch(/^proxy_cache_path \/var\/cache\/nginx\/evidujzdarma .*keys_zone=ez_catalog:/m);
+    expect(cacheConf).toMatch(/^map \$http_accept_encoding \$ez_cache_ae \{/m);
+    expect(cacheConf).toMatch(/^map "\$http_rsc\$http_next_router_prefetch\$http_next_router_state_tree" \$ez_cache_rsc \{/m);
   });
 
   it("gate: the opening-day plan from open-site.md (1aec031) is caught – exact /api/ucet/certifikat would be public", () => {
