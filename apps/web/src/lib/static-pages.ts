@@ -1,3 +1,5 @@
+import { reviewedMoneyStaticPages } from "./money-review";
+
 /**
  * Statické stránky pro sitemap a llms.txt. `modified` = datum poslední změny obsahu stránky (lastmod v sitemap, R14.7) –
  * při změně textu stránky ho posuňte. Ne datum sestavení; změny jen v metadatech nebo v atributech odkazů se nepočítají.
@@ -7,7 +9,7 @@ export const STATIC_PAGES: readonly { path: string; title: string; priority: num
   { path: "/", title: "EvidujZdarma – evidence tržeb EET 2.0 zdarma", priority: 1, changeFrequency: "daily", modified: "2026-10-09" },
   { path: "/kontrola-ico", title: "EET kontrola podle IČO", priority: 0.9, changeFrequency: "weekly", modified: "2026-10-09" },
   { path: "/musim-evidovat", title: "Kvíz: Musím evidovat tržby?", priority: 0.8, changeFrequency: "weekly", modified: "2026-10-02" },
-  { path: "/kalkulacka-eet-off", title: "Kalkulačka EET OFF", priority: 0.9, changeFrequency: "weekly", modified: "2026-10-07" },
+  { path: "/kalkulacka-eet-off", title: "Kalkulačka EET OFF", priority: 0.9, changeFrequency: "weekly", modified: "2026-10-17" },
   { path: "/evidencni-jednotky", title: "Průvodce evidenčními jednotkami", priority: 0.8, changeFrequency: "weekly", modified: "2026-10-02" },
   { path: "/qr-platba", title: "Generátor QR platby", priority: 0.7, changeFrequency: "monthly", modified: "2026-10-02" },
   { path: "/doklad-o-prodeji", title: "Doklad o prodeji: generátor zdarma", priority: 0.7, changeFrequency: "monthly", modified: "2026-10-17" },
@@ -37,4 +39,6 @@ export const STATIC_PAGES: readonly { path: string; title: string; priority: num
   { path: "/nastroje/datum-splatnosti", title: "Datum splatnosti faktury", priority: 0.6, changeFrequency: "monthly", modified: "2026-10-17" },
   { path: "/kalkulacka-dph", title: "Kalkulačka DPH (21 % a 12 %)", priority: 0.7, changeFrequency: "monthly", modified: "2026-10-17" },
   { path: "/kalkulacka-urok-z-prodleni", title: "Kalkulačka úroku z prodlení", priority: 0.7, changeFrequency: "monthly", modified: "2026-10-17" },
+  // S2/B2: peněžní kalkulačky – v sitemap až po kontrole účetní (MONEY_CALCULATORS_REVIEWED v lib/money-review.ts)
+  ...reviewedMoneyStaticPages(),
 ];

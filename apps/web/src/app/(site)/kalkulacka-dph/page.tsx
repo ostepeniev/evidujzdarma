@@ -44,7 +44,7 @@ const FAQ = [
   },
 ];
 
-const FAQ_SOURCES = [SOURCES.zdph, SOURCES.fsSazbyDph2024, SOURCES.fsVypocetDph, SOURCES.seminarVyvojari];
+const FAQ_SOURCES = [SOURCES.zdphSazby, SOURCES.fsSazbyDph2024, SOURCES.fsVypocetDph, SOURCES.seminarVyvojari];
 
 export default function VatCalculatorPage() {
   return (

@@ -7,6 +7,7 @@ import { helpIndexable } from "@/content/napoveda";
 import type { Block, Guide } from "@/content/guides/types";
 import { OPERATOR, SITE, absoluteUrl, REVIEWER } from "./site";
 import { STATIC_PAGES } from "./static-pages";
+import { reviewedMoneyPaths } from "./money-review";
 
 /** S2 B1: kalkulačky a ověření v llms.txt */
 const CALC_TOOLS = [
@@ -66,6 +67,8 @@ export function llmsTxt(): string {
     ...STATIC_PAGES.filter((p) => p.path === "/faktura-zdarma").map((p) => `- [${p.title}](${absoluteUrl(p.path)}): plátce i neplátce DPH, zálohová faktura, QR platba; nic se neukládá. Předvyplnění odběratele: ${absoluteUrl("/faktura-zdarma")}#odberatel=<IČO>.`),
     // S2 B1: kalkulačky a ověření (vše v prohlížeči, nic se neodesílá)
     ...STATIC_PAGES.filter((p) => CALC_TOOLS.includes(p.path)).map((p) => `- [${p.title}](${absoluteUrl(p.path)})`),
+    // S2/B2: peněžní kalkulačky až po kontrole účetní (lib/money-review.ts)
+    ...STATIC_PAGES.filter((p) => reviewedMoneyPaths().includes(p.path)).map((p) => `- [${p.title}](${absoluteUrl(p.path)})`),
     "",
     "## Návody",
     "",

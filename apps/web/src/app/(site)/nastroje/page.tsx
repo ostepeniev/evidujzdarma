@@ -7,6 +7,7 @@ import { JsonLd } from "@/lib/jsonld";
 import { SITE_URL, absoluteUrl } from "@/lib/site";
 import { ExternalLink } from "@/components/external-link";
 import { canonicalMeta } from "@/lib/metadata";
+import { reviewedMoneyTools } from "@/lib/money-review";
 
 export const metadata: Metadata = {
   title: "Nástroje k EET 2.0 zdarma",
@@ -137,6 +138,8 @@ const TOOLS = [
     time: "10 vteřin",
     group: "kalkulacky",
   },
+  // S2/B2: peněžní kalkulačky – v rozcestníku až po kontrole účetní (lib/money-review.ts)
+  ...reviewedMoneyTools(),
 ] as const;
 
 type Tool = (typeof TOOLS)[number];

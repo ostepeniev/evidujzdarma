@@ -10,6 +10,11 @@ import { FactsVerified } from "@/components/facts-verified";
 import { ExternalLink } from "@/components/external-link";
 import { canonicalMeta } from "@/lib/metadata";
 import { SERVICE_COPY } from "@/lib/site";
+import { DEFAULT_INPUT, calculateEetOff, eetOffYear } from "@/lib/eet-off";
+
+// S2/B2: bod zvratu pro výchozí odhady (300 Kč/h, 21 pracovních dní) – stejný výpočet jako v kalkulačce
+const r0 = calculateEetOff(DEFAULT_INPUT);
+const y0 = r0.eligible ? eetOffYear(DEFAULT_INPUT, r0) : null;
 
 export const metadata: Metadata = {
   title: "Kalkulačka EET OFF 2027 – vyplatí se přirážka?",
@@ -39,6 +44,14 @@ const FAQ = [
   },
   { q: "Můžu EET OFF změnit v polovině roku?", a: `Ne. ${FACTS.eetOff.binding}` },
   { q: "Jak se z EET OFF odhlásit a do kdy?", a: FACTS.eetOff.exit },
+  ...(y0 && y0.breakEvenMinutesPerDay !== null
+    ? [
+        {
+          q: "Kolik minut evidence denně vyjde stejně jako přirážka?",
+          a: `Při ceně vaší hodiny ${formatKc(DEFAULT_INPUT.hourlyRate)} a ${DEFAULT_INPUT.workDaysPerMonth} pracovních dnech v měsíci stojí přirážka ${formatKc(FACTS.eetOff.surchargeYearly)} ročně stejně jako zhruba ${y0.breakEvenMinutesPerDay.toLocaleString("cs-CZ")} minut evidence denně. S pokladnou za 0 Kč rozhoduje jen čas: zabere-li vám evidence méně, vychází levněji evidovat. Kalkulačka bod zvratu přepočítá podle vašich čísel a ukáže i roční součet s paušální daní.`,
+        },
+      ]
+    : []),
   {
     q: "Musím v EET OFF vydat účtenku, když si ji zákazník vyžádá?",
     a: `Ano. EET OFF vás zbavuje jen evidence tržeb. ${FACTS.receipt.summary}`,

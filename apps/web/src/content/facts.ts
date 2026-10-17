@@ -178,7 +178,7 @@ export const SOURCES = {
   vyhlaska169: { label: "Vyhláška ČNB č. 169/2011 Sb., o pravidlech tvorby čísla účtu v platebním styku", url: "https://www.zakonyprolidi.cz/cs/2011-169" },
   oz: { label: "Občanský zákoník č. 89/2012 Sb. (§ 605–607 lhůty, § 1957–1970 splnění a prodlení)", url: "https://www.zakonyprolidi.cz/cs/2012-89" },
   svatky: { label: "Zákon č. 245/2000 Sb., o státních svátcích a dnech pracovního klidu", url: "https://www.zakonyprolidi.cz/cs/2000-245" },
-  zdph: { label: "Zákon o DPH č. 235/2004 Sb. (§ 37 výpočet daně, § 47 sazby)", url: "https://www.zakonyprolidi.cz/cs/2004-235" },
+  zdphSazby: { label: "Zákon o DPH č. 235/2004 Sb. (§ 37 výpočet daně, § 47 sazby)", url: "https://www.zakonyprolidi.cz/cs/2004-235" },
   fsSazbyDph2024: {
     label: "Finanční správa: Informace GFŘ ke změnám sazeb DPH od 1. 1. 2024",
     url: "https://financnisprava.gov.cz/cs/financni-sprava/media-a-verejnost/tiskove-zpravy-gfr/tiskove-zpravy-2024/informace-gfr-ke-zmenam-sazeb-dph-od-20240101",
@@ -190,6 +190,49 @@ export const SOURCES = {
   nv351: { label: "Nařízení vlády č. 351/2013 Sb. (výše úroku z prodlení a nákladů spojených s uplatněním pohledávky)", url: "https://www.zakonyprolidi.cz/cs/2013-351" },
   cnbRepo: { label: "ČNB: Jak se vyvíjela dvoutýdenní repo sazba ČNB?", url: "https://www.cnb.cz/cs/casto-kladene-dotazy/Jak-se-vyvijela-dvoutydenni-repo-sazba-CNB/" },
   cnbRepo2026: { label: "ČNB: ČNB zvyšuje úrokové sazby (18. 6. 2026, 2T repo 3,75 % od 19. 6. 2026)", url: "https://www.cnb.cz/cs/cnb-news/tiskove-zpravy/CNB-zvysuje-urokove-sazby-00026" },
+  // --- S2/B2 (17. 10. 2026): peněžní kalkulačky pro rok 2026 (parametry v lib/money-2026.ts) ---
+  zakonPojistneSoc: {
+    label: "Zákon č. 589/1992 Sb., o pojistném na sociální zabezpečení (znění od 1. 7. 2026)",
+    url: "https://www.zakonyprolidi.cz/cs/1992-589",
+  },
+  zakonPojistneZdr: { label: "Zákon č. 592/1992 Sb., o pojistném na veřejné zdravotní pojištění", url: "https://www.zakonyprolidi.cz/cs/1992-592" },
+  zakon90: {
+    label: "e-Sbírka: zákon č. 90/2026 Sb. – minimální vyměřovací základ OSVČ 35 % průměrné mzdy (účinnost 1. 7. 2026)",
+    url: "https://e-sbirka.gov.cz/sb/2026/90",
+  },
+  csszUdaje2026: {
+    label: "ČSSZ: Přehled nejdůležitějších údajů pro sociální zabezpečení v roce 2026",
+    url: "https://www.cssz.gov.cz/web/cz/-/prehled-nejdulezitejsich-udaju-pro-socialni-zabezpeceni-v-roce-2026",
+  },
+  csszOsvcOd072026: {
+    label: "ČSSZ: Informace pro OSVČ o změně pojistného na důchodové pojištění od 1. 7. 2026",
+    url: "https://www.cssz.gov.cz/web/cz/-/informace-pro-osvc-o-zmene-pojistneho-na-duchodove-pojisteni-od-1-7-2026",
+  },
+  csszMinZalohy2026: { label: "ČSSZ: Změna výše minimálních záloh OSVČ v roce 2026", url: "https://www.cssz.gov.cz/zmena-vyse-minimalnich-zaloh-osvc-v-roce-2024" },
+  csszRozhodnaCastka: {
+    label: "ČSSZ: Povinná účast OSVČ na důchodovém pojištění (rozhodná částka)",
+    url: "https://www.cssz.gov.cz/duchodove-pojisteni-osvc-povinna-ucast",
+  },
+  csszDruhySvc: { label: "ČSSZ: Definice a druhy SVČ (hlavní a vedlejší činnost)", url: "https://www.cssz.gov.cz/web/cz/definice-a-druhy-svc" },
+  mpsvPojisteni2026: { label: "MPSV: Sociální pojištění v roce 2026", url: "https://mpsv.gov.cz/socialni-pojisteni" },
+  mpsvMinMzda2026: {
+    label: "MPSV: Minimální mzda v roce 2026 – 22 400 Kč měsíčně",
+    url: "https://mpsv.gov.cz/minimalni-mzda-od-ledna-2026-vzroste-o-1-600-korun-na-22-400-korun-mesicne",
+  },
+  vzpPlatby2026: {
+    label: "VZP: Platby zdravotního pojištění v roce 2026",
+    url: "https://www.vzp.cz/o-nas/tiskove-centrum/otazky-tydne/platby-zdravotniho-pojisteni-v-roce-2026",
+  },
+  vzpMinVzOsvc: {
+    label: "VZP: Jaký je minimální vyměřovací základ OSVČ",
+    url: "https://www.vzp.cz/platci/informace/osvc/vymerovaci-zaklad-a-vypocet-pojistneho/jaky-je-minimalni-vymerovaci-zaklad",
+  },
+  vzpPrumernaMzda: { label: "VZP: OSVČ – průměrná mzda (nařízení vlády č. 365/2025 Sb.)", url: "https://www.vzp.cz/platci/informace/osvc/osvc-prumerna-mzda" },
+  danovyRadZaokrouhleni: { label: "Zákon č. 280/2009 Sb., daňový řád – § 146 Zaokrouhlování", url: "https://www.zakonyprolidi.cz/cs/2009-280#p146" },
+  vzpZamestnavatel: {
+    label: "VZP: Plátce pojistného – zaměstnavatel (třetina pojistného hradí zaměstnanec)",
+    url: "https://www.vzp.cz/platci/informace/povinnosti-platcu-metodika/2-4-platce-pojistneho-zamestnavatel",
+  },
 } as const satisfies Record<string, Source>;
 
 export interface TimelineItem {

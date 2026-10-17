@@ -79,3 +79,32 @@ export function calculateEetOff(i: EetOffInput): EetOffResult {
     months,
   };
 }
+
+/**
+ * S2/B2 (17. 10. 2026): roční součet pro paušalistu v 1. pásmu a bod zvratu. Místo samostatné stránky
+ * /kalkulacka-pausal-vs-eet-off (duplicitní obsah) rozšiřuje tuto kalkulačku: paušální daň + přirážka vs. paušální daň
+ * + evidence (pokladna EvidujZdarma 0 Kč, tedy jen váš čas a případné zařízení).
+ */
+export interface EetOffYear {
+  /** paušální daň za období (bez přirážky) */
+  pausalTotal: number;
+  /** paušální daň + přirážka EET OFF */
+  withEetOff: number;
+  /** paušální daň + náklady evidence podle vašich odhadů */
+  withEvidence: number;
+  /** kolik minut evidence za pracovní den stojí stejně jako přirážka (null = nelze spočítat, např. nulová cena hodiny) */
+  breakEvenMinutesPerDay: number | null;
+}
+
+export function eetOffYear(i: EetOffInput, r: Extract<EetOffResult, { eligible: true }>): EetOffYear {
+  const pausalTotal = r.pausalMonthly * r.months;
+  const fixed = Math.max(0, i.toolsMonthly) * r.months + (Math.max(0, i.hardwareOneOff) / 3) * (r.months / 12);
+  const perMinute = (Math.max(0, i.hourlyRate) / 60) * Math.max(0, i.workDaysPerMonth) * r.months;
+  const breakEven = perMinute > 0 ? Math.max(0, (r.surchargeYearly - fixed) / perMinute) : null;
+  return {
+    pausalTotal,
+    withEetOff: pausalTotal + r.surchargeYearly,
+    withEvidence: pausalTotal + r.evidenceYearly,
+    breakEvenMinutesPerDay: breakEven === null ? null : Math.round(breakEven * 10) / 10,
+  };
+}
