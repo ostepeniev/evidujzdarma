@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { IMPORT_LIMITS } from "@/lib/pos/import-products";
 
 export const UNIT_TYPES = ["stala_provozovna", "mobilni_provozovna", "automat", "internetova_stranka", "dopravni_prostredek", "osoba"] as const;
 
@@ -45,6 +46,22 @@ export const CatalogInput = z.object({
   active: z.boolean().optional(),
 });
 export const CatalogPatch = CatalogInput.partial();
+
+/** S2-E: import zboží ze souboru – jen název, cena s DPH (haléře, > 0) a sazba; limit řádků = IMPORT_LIMITS.maxRows. */
+export const CatalogImportInput = z.object({
+  items: z
+    .array(
+      z.object({
+        name: z.string().trim().min(1, "Položka bez názvu").max(IMPORT_LIMITS.nameMax, `Název má víc než ${IMPORT_LIMITS.nameMax} znaků`),
+        price: z.number().int().min(1, "Cena musí být větší než 0 Kč").max(IMPORT_LIMITS.maxPrice, "Cena je vyšší než 10 milionů Kč"),
+        vatRate: z.number().int().refine((v) => [0, 12, 21].includes(v), "Sazba DPH 0, 12 nebo 21 %"),
+      }),
+    )
+    .min(1, "Soubor neobsahuje žádnou položku k importu")
+    .max(IMPORT_LIMITS.maxRows, "Najednou lze naimportovat nejvýš 2 000 položek"),
+});
+/** Vrácení importu: smaže jen položky z tohoto importu (id vrátil POST). */
+export const CatalogImportUndo = z.object({ ids: z.array(z.string().uuid()).min(1).max(IMPORT_LIMITS.maxRows) });
 
 export const DeviceInput = z.object({
   name: z.string().trim().min(1).max(60),

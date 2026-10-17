@@ -154,6 +154,13 @@ export default function CompareMojeEetPage() {
           <div className="mt-6">
             <ComparisonTable />
           </div>
+          <p className="mt-4 max-w-3xl text-[15px] text-ink-soft">
+            Platíte dnes za jinou pokladnu? Ceny základních tarifů podle ceníků výrobců, kalkulačku a postup přechodu najdete na stránce{" "}
+            <Link href="/prechod-z-jine-pokladny" className="font-medium text-brand-700 underline underline-offset-4">
+              přechod z jiné pokladny
+            </Link>
+            .
+          </p>
         </section>
 
         <article className="prose-ez mx-auto mt-16 max-w-3xl">
