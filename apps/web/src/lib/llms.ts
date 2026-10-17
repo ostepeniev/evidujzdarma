@@ -51,6 +51,7 @@ export function llmsTxt(): string {
     ...STATIC_PAGES.filter((p) => ["/kontrola-ico", "/musim-evidovat", "/kalkulacka-eet-off", "/evidencni-jednotky", "/qr-platba", "/doklad-o-prodeji", "/checklist-eet", "/ucetni/hromadna-kontrola"].includes(p.path)).map(
       (p) => `- [${p.title}](${absoluteUrl(p.path)})`,
     ),
+    ...STATIC_PAGES.filter((p) => p.path === "/faktura-zdarma").map((p) => `- [${p.title}](${absoluteUrl(p.path)}): plátce i neplátce DPH, zálohová faktura, QR platba; nic se neukládá. Předvyplnění odběratele: ${absoluteUrl("/faktura-zdarma")}#odberatel=<IČO>.`),
     "",
     "## Návody",
     "",

@@ -72,6 +72,10 @@ export const SOURCES = {
     url: "https://www.podnikatel.cz/clanky/pausalni-dan-osvc-v-roce-2027-opet-vzroste-vime-kolik-bude-nove-cinit-1/",
   },
   zos: { label: "Zákon o ochraně spotřebitele č. 634/1992 Sb., § 16", url: "https://www.zakonyprolidi.cz/cs/1992-634" },
+  // S2 Faktura zdarma (17. 10. 2026): znění ověřena na zakonyprolidi.cz – OZ verze 18 (od 1. 1. 2026), ZDPH verze 69 (od 1. 1. 2026), ZÚ verze 40
+  oz435: { label: "Občanský zákoník č. 89/2012 Sb., § 435", url: "https://www.zakonyprolidi.cz/cs/2012-89#p435" },
+  zdph: { label: "Zákon o DPH č. 235/2004 Sb.", url: "https://www.zakonyprolidi.cz/cs/2004-235#p29" },
+  zoUcetnictvi: { label: "Zákon o účetnictví č. 563/1991 Sb., § 11", url: "https://www.zakonyprolidi.cz/cs/1991-563#p11" },
   vyvojari: { label: "eet.gov.cz: Pro vývojáře", url: "https://eet.gov.cz/pro-vyvojare/" },
   // --- doplněno pro návody (vlna 1, 1. 10. 2026) ---
   fsVladaSchvalila: {
