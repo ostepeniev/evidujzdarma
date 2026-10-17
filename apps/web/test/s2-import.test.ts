@@ -82,10 +82,11 @@ describe("S2-E – parser: encodings, delimiters, numbers", () => {
       [3, "Žluťoučký čaj", 3500, 12, "Nápoje", "ok"],
       [4, "Chléb kváskový", 123490, 12, "Pečivo", "ok"],
     ]);
+    // S3-POKLADNA: kategorie (a kód) jdou s položkou na server a ukládají se
     expect(p.items).toEqual([
-      { name: "Káva s mlékem", price: 4550, vatRate: 21 },
-      { name: "Žluťoučký čaj", price: 3500, vatRate: 12 },
-      { name: "Chléb kváskový", price: 123490, vatRate: 12 },
+      { name: "Káva s mlékem", price: 4550, vatRate: 21, category: "Nápoje" },
+      { name: "Žluťoučký čaj", price: 3500, vatRate: 12, category: "Nápoje" },
+      { name: "Chléb kváskový", price: 123490, vatRate: 12, category: "Pečivo" },
     ]);
     // stejný text v UTF-8 (s BOM i bez) dá totéž
     expect(decodeImportFile(utf8(csv)).encoding).toBe("utf-8");
@@ -222,10 +223,11 @@ describe("S2-E – presets from the vendors' documented exports", () => {
       ["Košile – L", "ok"],
       ["Čepice", "ok"],
     ]);
+    // S3-POKLADNA: varianta převezme kategorii položky; kód je ze sloupce Barcode (tady prázdný), SKU je jen náhradní sloupec
     expect(p.items).toEqual([
-      { name: "Košile – M", price: 45000, vatRate: 21 },
-      { name: "Košile – L", price: 45000, vatRate: 21 },
-      { name: "Čepice", price: 19900, vatRate: 21 },
+      { name: "Košile – M", price: 45000, vatRate: 21, category: "Oblečení" },
+      { name: "Košile – L", price: 45000, vatRate: 21, category: "Oblečení" },
+      { name: "Čepice", price: 19900, vatRate: 21, category: "Oblečení" },
     ]);
   });
 

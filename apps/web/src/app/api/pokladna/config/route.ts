@@ -47,7 +47,7 @@ export async function GET(req: Request) {
         },
         units: units.map((u) => ({ id: u.id, label: u.label, type: u.type, fsUnitId: u.fsUnitId, active: u.active, address: u.address })),
         staff: staff.map((x) => (x.role === "owner" ? { ...x, pinHash: null, onlinePin: true } : x)),
-        catalog: catalog.map((c) => ({ id: c.id, name: c.name, price: c.price, vatRate: c.vatRate, color: c.color })),
+        catalog: catalog.map((c) => ({ id: c.id, name: c.name, price: c.price, vatRate: c.vatRate, color: c.color, category: c.category, ean: c.ean })),
         lastClosing,
       },
       { headers: { "cache-control": "no-store" } },

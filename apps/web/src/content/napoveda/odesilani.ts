@@ -154,11 +154,17 @@ export const ODESILANI: readonly HelpArticle[] = [
     topic: "odesilani",
     title: "Vratka a storno: vrácení peněz zákazníkovi",
     description:
-      "Jak v pokladně EvidujZdarma vrátit zákazníkovi peníze: vratka k původní tržbě se schválením vlastníka, záporná tržba a co udělat ještě před zaplacením.",
-    lead: "Zaplacenou tržbu nejde smazat ani stornovat. Peníze vrátíte **vratkou** – novou tržbou se zápornou částkou, která odkazuje na původní prodej. Dokud zákazník nezaplatil, stačí tlačítko **Zrušit účet**.",
+      "Jak v pokladně EvidujZdarma vrátit zákazníkovi peníze: celý nákup i jen část, doklad z jiné pokladny, schválení vlastníkem a co udělat ještě před zaplacením.",
+    lead: "Zaplacenou tržbu nejde smazat ani stornovat. Peníze vrátíte **vratkou** – novou tržbou se zápornou částkou, která odkazuje na původní prodej. Vrátit jde celý nákup, nebo jen některé položky. Dokud zákazník nezaplatil, stačí tlačítko **Zrušit účet**.",
     steps: [
-      { name: "Otevřete původní tržbu", text: "V **Historie** klepněte na prodej, ke kterému vracíte peníze." },
-      { name: "Klepněte na Vratka", text: "Tlačítko **Vratka** je pod účtenkou, vedle **Nová tržba**." },
+      {
+        name: "Najděte původní doklad",
+        text: "V **Historie** klepněte na prodej a pod účtenkou na **Vratka**. Doklad z jiné pokladny vašeho účtu nebo starší než 7 dní najdete dole v Historii: napište číslo dokladu z účtenky (například P1-AB12-000123) a klepněte na **Najít**.",
+      },
+      {
+        name: "Vyberte, co vracíte",
+        text: "Okno **Vratka** má předvybraný celý nákup. Tlačítky **−** a **+** vrátíte jen některé položky nebo kusy. Byla-li už k dokladu vratka, pokladna nabídne jen zbytek. Pokračujte tlačítkem **Pokračovat – schválení vlastníkem**.",
+      },
       {
         name: "Nechte vratku schválit",
         text: "Otevře se **Vratku schvaluje vlastník**. Vlastník zadá svůj PIN (6–8 číslic). PIN se ověří online, proto je potřeba internet.",
@@ -176,9 +182,9 @@ export const ODESILANI: readonly HelpArticle[] = [
         blocks: [
           {
             ul: [
-              "K jedné tržbě je nejvýš jedna vratka a vrací se celý nákup – částečnou vratku pokladna zatím neumí.",
-              "Vratku uděláte na zařízení, na kterém se prodávalo, u tržeb z posledních 7 dní (tolik ukazuje Historie).",
-              "K odmítnuté tržbě vratka není.",
+              "Vratky k jednomu dokladu dohromady nevrátí víc kusů ani víc peněz, než se prodalo.",
+              "Vratka patří do evidenční jednotky původního prodeje – v záhlaví pokladny musí být vybraná ona.",
+              "K odmítnuté tržbě ani k jiné vratce vratka není.",
               "K tržbě z jiného režimu evidence ji pokladna neodešle: „Původní prodej proběhl … Vratku k němu pokladna neodešle.“",
               "Spropitné se nevrací.",
             ],

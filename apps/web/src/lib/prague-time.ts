@@ -45,3 +45,10 @@ export function pragueToday(now = new Date()): string {
 }
 
 export const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Kalendářní den (RRRR-MM-DD) posunutý o `n` dní – bez časového pásma, jen kalendář (S3-POKLADNA). */
+export function addDays(day: string, n: number): string {
+  const [y, m, d] = day.split("-").map(Number) as [number, number, number];
+  const t = new Date(Date.UTC(y, m - 1, d + n));
+  return `${t.getUTCFullYear()}-${String(t.getUTCMonth() + 1).padStart(2, "0")}-${String(t.getUTCDate()).padStart(2, "0")}`;
+}

@@ -23,7 +23,7 @@ export const QUARANTINE_REASON_TEXT: Record<string, string> = {
   ID_CONFLICT: "Identifikátor tržby už patří jiné pokladně.",
   REFUND_EXCEEDS: "Vratka je vyšší než původní tržba.",
   REFUND_UNKNOWN_ORIGINAL: "Původní tržba k vratce není na serveru.",
-  REFUND_DUPLICATE: "K této tržbě už vratka existuje.",
+  REFUND_DUPLICATE: "Tato tržba už byla celá vrácena.",
   REFUND_NOT_AUTHORIZED: "Vratku smí udělat jen vlastník nebo s jeho schválením.",
   REFUND_MODE_MISMATCH: "Vratka je v jiném režimu než původní prodej – pokladna ji neodešle. Vyřiďte ji ručně.",
   UNKNOWN_STAFF: "Pokladní nepatří k tomuto účtu.",

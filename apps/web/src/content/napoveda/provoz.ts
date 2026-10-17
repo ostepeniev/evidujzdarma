@@ -116,7 +116,7 @@ export const PROVOZ: readonly HelpArticle[] = [
       { name: "Přihlaste se v pokladně", text: "Pokladna se zeptá „Kdo bude prodávat?“. Klepněte na své jméno, naťukejte PIN a klepněte na **OK**." },
       {
         name: "Zamykejte",
-        text: "Ikonou zámku 🔒 vedle jména pokladnu zamknete. Když ji znovu otevřete po víc než 15 minutách bez práce, zeptá se na PIN znovu; vlastník ho zadává po každém otevření.",
+        text: "Ikonou zámku 🔒 vedle jména pokladnu zamknete. Po 15 minutách bez práce se pokladna zamkne sama, i když zůstane otevřená, a zeptá se na PIN znovu. Vlastník zadává PIN i po každém otevření.",
       },
     ],
     sections: [

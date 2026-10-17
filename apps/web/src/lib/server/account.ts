@@ -250,7 +250,8 @@ export async function setEetMode(accountId: string, mode: "mock" | "playground" 
     });
     if (!cert) throw new HttpError(400, mode === "production" ? "Nahrajte platný pokladní certifikát z DIS+." : "Nahrajte testovací certifikát pro Playground.");
     // ostrý provoz až po úspěšném ověřovacím odeslání s tímto certifikátem (R1.9)
-    if (mode === "production" && !cert.verifiedAt) throw new HttpError(400, "Nejdřív ověřte spojení s Finanční správou (tlačítko „Ověřit“) s ostrým certifikátem.");
+    // text tlačítka doslovně jako v nastavení (S3-POKLADNA)
+    if (mode === "production" && !cert.verifiedAt) throw new HttpError(400, "Nejdřív ověřte spojení s Finanční správou: s ostrým certifikátem klepněte na „Odeslat ověřovací tržbu“.");
     const units = await db.select().from(schema.evidenceUnits).where(and(eq(schema.evidenceUnits.accountId, accountId), eq(schema.evidenceUnits.active, true)));
     if (!units.length) throw new HttpError(400, "Přidejte alespoň jednu evidenční jednotku.");
     if (units.some((u) => !u.fsUnitId)) throw new HttpError(400, "Všechny evidenční jednotky musí mít číslo přidělené Finanční správou.");

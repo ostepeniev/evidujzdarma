@@ -6,6 +6,8 @@ import { CatalogPatch } from "@/lib/server/schemas";
 
 export const PATCH = ownerRoute<{ id: string }>(async ({ req, accountId, params }) => {
   const input = await parseJson(req, CatalogPatch);
+  // úprava z nastavení (S3-POKLADNA): název, cena, DPH, rychlé tlačítko, kategorie, kód
+  if (!Object.values(input).some((v) => v !== undefined)) throw new HttpError(400, "Není co uložit");
   const [item] = await getDb()
     .update(schema.catalogItems)
     .set(input)

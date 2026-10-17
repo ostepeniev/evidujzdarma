@@ -6,6 +6,7 @@ import { isConfigStale } from "./sync";
 import { mirrorPayments } from "./split-payment";
 import { correctedNow } from "./sync-result";
 import { modeIn } from "@/lib/modes";
+import { linesTotal, refundLinesFor, refundPayments, refundableLines, type RefundLookupDto } from "./refund";
 import type { DeviceCredentials, LocalSale, PosConfig, PosMode } from "./types";
 
 export interface NewSaleInput {
@@ -85,7 +86,7 @@ export async function createLocalSale(device: DeviceCredentials, config: PosConf
  * Vratka jen v režimu původní tržby (R7.13, Р3): k tržbě z jiného režimu ji pokladna nenabízí a řekne proč.
  * Server takovou vratku stejně nepřijme (karanténa REFUND_MODE_MISMATCH).
  */
-export function refundBlockedReason(original: Pick<LocalSale, "mode">, accountMode: PosMode): string | null {
+export function refundBlockedReason(original: { mode: PosMode }, accountMode: PosMode): string | null {
   if (original.mode === accountMode) return null;
   return `Původní prodej proběhl ${modeIn(original.mode)}. Vratku k němu pokladna neodešle.`;
 }
@@ -111,4 +112,121 @@ export function refundInput(original: LocalSale): { lines: SaleLine[]; payments:
   const total = lines.reduce((s, l) => s + Math.round(l.qty * l.unitPrice), 0);
   // vracíme stejnými způsoby, jakými se platilo, poměrně – jinak by se evidovala jiná částka než u originálu (R6.9)
   return { lines, payments: mirrorPayments(original.payments, original.tip, total), total };
+}
+
+/**
+ * S3-POKLADNA: doklad, ke kterému se dělá (částečná) vratka – z tohoto zařízení i z jiné pokladny účtu (dohledaný na
+ * serveru). `lines` jsou položky PO slevě, `refunds` všechny známé dřívější vratky (server + zařízení, bez duplicit).
+ */
+export interface RefundSource {
+  id: string;
+  sequence: string;
+  soldAt: string;
+  unitId: string | null;
+  unitLabel: string | null;
+  mode: PosMode;
+  status: string;
+  refundOf: string | null;
+  lines: SaleLine[];
+  payments: Payment[];
+  tip: number;
+  /** součet položek po slevě (bez spropitného) – víc vratky dohromady vrátit nemohou */
+  subtotal: number;
+  total: number;
+  refunds: { id: string; lines: SaleLine[]; payments: Payment[]; total: number }[];
+  /** doklad je jen na serveru (z jiného zařízení, nebo už smazaný ze zařízení) */
+  remote: boolean;
+}
+
+function mergeRefunds(server: RefundSource["refunds"], local: readonly LocalSale[]): RefundSource["refunds"] {
+  const out = [...server];
+  for (const r of local) if (!out.some((x) => x.id === r.id)) out.push({ id: r.id, lines: r.lines, payments: r.payments, total: r.total });
+  return out;
+}
+
+/** Doklad z tohoto zařízení (bez spojení se serverem jen s vratkami, které zná zařízení). */
+export function refundSourceFromLocal(original: LocalSale, localRefunds: readonly LocalSale[], serverRefunds: RefundSource["refunds"] = []): RefundSource {
+  const probe = buildSale({
+    id: original.id,
+    deviceId: "x",
+    registerId: "x",
+    unitId: "1",
+    sequence: "x",
+    soldAt: original.soldAt,
+    lines: original.lines,
+    payments: original.payments,
+    discount: original.discount,
+    tip: original.tip,
+    refundOf: original.refundOf,
+    vatPayer: !!original.vat,
+    mode: "test",
+  });
+  return {
+    id: original.id,
+    sequence: original.sequence,
+    soldAt: original.soldAt,
+    unitId: original.unitId,
+    unitLabel: original.unitLabel,
+    mode: original.mode,
+    status: original.status,
+    refundOf: original.refundOf,
+    lines: probe.lines,
+    payments: original.payments,
+    tip: original.tip,
+    subtotal: probe.subtotal,
+    total: probe.total,
+    refunds: mergeRefunds(serverRefunds, localRefunds),
+    remote: false,
+  };
+}
+
+/** Doklad dohledaný na serveru (/api/pokladna/vratka) – položky už jsou po slevě. */
+export function refundSourceFromServer(dto: RefundLookupDto, localRefunds: readonly LocalSale[], remote = true): RefundSource {
+  const s = dto.sale;
+  return {
+    id: s.id,
+    sequence: s.sequence,
+    soldAt: s.soldAt,
+    unitId: s.unitId,
+    unitLabel: s.unitLabel,
+    mode: s.mode,
+    status: s.status,
+    refundOf: s.refundOf,
+    lines: s.lines,
+    payments: s.payments,
+    tip: s.tip,
+    subtotal: s.total - s.tip,
+    total: s.total,
+    refunds: mergeRefunds(
+      dto.refunds.map((r) => ({ id: r.id, lines: r.lines, payments: r.payments, total: r.total })),
+      localRefunds,
+    ),
+    remote,
+  };
+}
+
+/** Kolik z dokladu ještě jde vrátit (haléře, kladně). */
+export function refundRemaining(source: RefundSource): number {
+  return Math.max(0, source.subtotal + source.refunds.reduce((s, r) => s + r.total, 0));
+}
+
+/** Proč k dokladu vratku udělat nejde (nebo null). Režim kontroluje refundBlockedReason. */
+export function refundUnavailableReason(source: RefundSource, config: Pick<PosConfig, "units">, currentUnitId: string): string | null {
+  if (source.refundOf) return "Toto je vratka – k vratce další vratku udělat nejde.";
+  if (source.total <= 0) return "Doklad nemá kladnou částku – vratka k němu nejde.";
+  if (source.status === "rejected") return "Tržbu Finanční správa odmítla – vratka k ní není. Vyřiďte ji v nastavení pokladny.";
+  if (refundRemaining(source) <= 0) return "Doklad už byl celý vrácen.";
+  const unit = config.units.find((u) => u.id === source.unitId && u.active);
+  if (!unit) return "Evidenční jednotka původního prodeje už není aktivní – vratku vyřiďte s účetní.";
+  // vratka patří do provozovny, kde se prodávalo (záporná tržba se eviduje v její evidenční jednotce)
+  if (unit.id !== currentUnitId) return `Doklad je z evidenční jednotky ${unit.label}. Přepněte ji v záhlaví pokladny, nebo vratku udělejte na pokladně v této jednotce.`;
+  return null;
+}
+
+/** Návrh vratky z výběru množství: záporné položky, platby zrcadlící zbytek originálu a částka. */
+export function refundDraft(source: RefundSource, selection: Readonly<Record<number, number>>): { lines: SaleLine[]; payments: Payment[]; total: number } {
+  const rows = refundableLines(source.lines, source.refunds);
+  const lines = refundLinesFor(rows, selection);
+  const total = linesTotal(lines);
+  return { lines, payments: refundPayments(source, source.refunds, total), total };
 }

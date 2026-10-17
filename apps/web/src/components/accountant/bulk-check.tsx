@@ -6,6 +6,7 @@ import { parseIcoList } from "@ez/cz/ico";
 import type { Verdict } from "@/lib/eet-assessment";
 import { csvCell } from "@/lib/csv";
 import { kontrolaIcoHref } from "@/lib/hash-params";
+import { pragueToday } from "@/lib/prague-time";
 import {
   BULK_MAX_BATCH,
   BULK_MAX_TOTAL,
@@ -111,7 +112,7 @@ function downloadCsv(rows: readonly BulkRow[]) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `kontrola-eet-ico-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.download = `kontrola-eet-ico-${pragueToday()}.csv`;
   document.body.appendChild(a);
   a.click();
   a.remove();

@@ -207,7 +207,7 @@ export function CatalogImport({ vatPayer, existing, onChange }: { vatPayer: bool
                 </div>
               )}
             </div>
-            <p className="mt-2 text-sm text-muted">Kategorie určí pořadí tlačítek (zboží jedné kategorie bude vedle sebe). Kategorie ani kód se zatím neukládají.</p>
+            <p className="mt-2 text-sm text-muted">Kategorie určí pořadí tlačítek (zboží jedné kategorie bude vedle sebe). Kategorie i kód / EAN se uloží k položce; ve velkém katalogu podle nich pokladna hledá.</p>
           </fieldset>
 
           {preview.notices.length > 0 && (

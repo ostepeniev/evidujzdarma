@@ -71,6 +71,15 @@ export async function nextSequence(prefix: string): Promise<string> {
   return `${prefix}${String(next).padStart(6, "0")}`;
 }
 
+/**
+ * Číslo, které dostane příští tržba tohoto zařízení – bez jeho spotřebování. QR platba z něj odvodí variabilní symbol dřív,
+ * než se tržba uloží (S3-POKLADNA). Zrušená platba číslo nespotřebuje, příští tržba ho dostane.
+ */
+export async function peekSequence(prefix: string): Promise<string> {
+  const current = ((await getMeta<number>("counter")) as number | undefined) ?? 0;
+  return `${prefix}${String(current + 1).padStart(6, "0")}`;
+}
+
 export async function saveSale(sale: LocalSale): Promise<void> {
   await (await posDb()).put("sales", sale);
 }
@@ -106,9 +115,15 @@ export async function unsettledSales(): Promise<LocalSale[]> {
   return out.sort((a, b) => a.soldAt.localeCompare(b.soldAt));
 }
 
-/** Vratka k dané tržbě, pokud už v zařízení je (na jednu tržbu nejvýš jedna – R1.7). */
-export async function refundFor(saleId: string): Promise<LocalSale | undefined> {
-  return (await (await posDb()).getAll("sales")).find((s) => s.refundOf === saleId);
+/** Vratky k dané tržbě, které jsou v zařízení (částečných vratek může být víc – S3-POKLADNA). */
+export async function refundsOf(saleId: string): Promise<LocalSale[]> {
+  return (await (await posDb()).getAll("sales")).filter((s) => s.refundOf === saleId);
+}
+
+/** Tržba v zařízení podle čísla dokladu (bez ohledu na velikost písmen). */
+export async function saleBySequence(sequence: string): Promise<LocalSale | undefined> {
+  const q = sequence.trim().toLowerCase();
+  return (await (await posDb()).getAll("sales")).find((s) => s.sequence.toLowerCase() === q);
 }
 
 /** Tržby, které server nebo FS odmítly a nikdo je zatím nevyřešil – pokladna není „čistá“ (Р2, R5.7). */

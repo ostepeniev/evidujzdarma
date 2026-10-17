@@ -1,4 +1,3 @@
-import { SITE } from "@/lib/site";
 import { FACTS } from "../facts";
 import type { HelpArticle } from "./types";
 
@@ -71,7 +70,9 @@ export const PRODEJ: readonly HelpArticle[] = [
         id: "zmeny",
         heading: "Změny a mazání",
         blocks: [
-          { p: "Položku odstraníte tlačítkem **Smazat**. Upravit uloženou položku zatím nejde – smažte ji a přidejte znovu s novou cenou." },
+          {
+            p: "Tlačítkem **Upravit** změníte název, cenu, sazbu DPH, kategorii i kód / EAN a uložíte **Uložit změny**. Když zrušíte zaškrtnutí **Rychlé tlačítko v pokladně**, položka v katalogu zůstane, ale pokladna ji nenabídne. **Smazat** položku odstraní. Ve velkém katalogu pokladna hledá podle názvu, kategorie i kódu.",
+          },
           {
             p: "Pokladna si nastavení načte, když se do ní vrátíte z jiné karty nebo aplikace, a jinak nejméně jednou za 5 minut. Katalog má uložený v zařízení, takže tlačítka fungují i bez signálu.",
           },
@@ -136,7 +137,10 @@ export const PRODEJ: readonly HelpArticle[] = [
         text: "V kroku **Firma** vyplňte **Číslo účtu pro QR platby** – ve tvaru 123456789/0100 nebo jako IBAN – a klepněte na **Uložit změny**.",
       },
       { name: "Zvolte QR", text: "V okně **Platba** klepněte na **QR**. Pokladna vytvoří QR kód přímo v zařízení, takže to jde i bez signálu." },
-      { name: "Nechte zákazníka zaplatit", text: "Zákazník naskenuje kód v bankovní aplikaci. Ve zprávě pro příjemce uvidí název vaší firmy." },
+      {
+        name: "Nechte zákazníka zaplatit",
+        text: "Zákazník naskenuje kód v bankovní aplikaci. Každý doklad má vlastní variabilní symbol odvozený z čísla dokladu a ve zprávě pro příjemce je číslo dokladu a název firmy – platbu na výpisu snadno spárujete s účtenkou.",
+      },
       { name: "Potvrďte po připsání", text: "Na **Zaplaceno – … Kč** klepněte až ve chvíli, kdy vám platba přišla na účet." },
     ],
     sections: [
@@ -207,7 +211,7 @@ export const PRODEJ: readonly HelpArticle[] = [
     title: "Stravenky, kredit, dárkové poukazy a zálohy",
     description:
       "Jak v pokladně EvidujZdarma účtovat stravenky, čerpání kreditu, dárkové poukazy a zálohy s doplatkem, a které z těchto plateb se v EET 2.0 evidují.",
-    lead: "Pro poukazy má pokladna tři tlačítka: **Stravenka**, **Kredit** a **Dárkový**. Liší se tím, zda se platba eviduje. Záloha zvláštní tlačítko nemá – je to běžná tržba.",
+    lead: "Pro poukazy má pokladna tři tlačítka: **Stravenka**, **Kredit** a **Dárkový**. Liší se tím, zda se platba eviduje. Dobití kreditu zadáte na obrazovce **Prodej**. Záloha zvláštní tlačítko nemá – je to běžná tržba.",
     sections: [
       {
         id: "ktere-tlacitko",
@@ -241,8 +245,17 @@ export const PRODEJ: readonly HelpArticle[] = [
         heading: "Co platí podle Finanční správy",
         blocks: [
           { p: FACTS.evidenced.prepayments },
+        ],
+      },
+      {
+        id: "dobiti-kreditu",
+        heading: "Dobití kreditu",
+        blocks: [
           {
-            note: `Dobití kreditu jako zvláštní položku s částkou určenou k pozdějšímu čerpání pokladna zatím nenabízí. Pokud kredit nebo předplacené karty prodáváte, napište nám na **${SITE.email}** dřív, než začnete evidovat naostro.`,
+            p: "Naťukejte částku, zaškrtněte **Dobití kreditu (čip, předplacená karta)** a klepněte na **+ Přidat dobití kreditu**. Zákazník ho zaplatí hotově nebo kartou – **Kredit** a **Dárkový** pokladna u dobití nenabídne. Do datové zprávy jde částka i jako určená k pozdějšímu čerpání.",
+          },
+          {
+            note: "Na dokladu má dobití kreditu sazbu DPH 0 %. Jak dobití a čerpání kreditu zachytit v DPH, ověřte se svou účetní.",
             tone: "warn",
           },
         ],

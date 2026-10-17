@@ -56,9 +56,9 @@ export const ZACINAME: readonly HelpArticle[] = [
   {
     slug: "firma-a-ares",
     topic: "zaciname",
-    title: "Krok Firma: údaje z ARES a patička účtenky",
+    title: "Krok Firma: údaje z ARES, záhlaví a patička účtenky",
     description:
-      "Jak v nastavení pokladny vyplnit krok Firma: IČO a načtení údajů z ARES, DIČ a EIČ, číslo účtu pro QR platby, plátce DPH, patička účtenky a kód POK.",
+      "Jak v nastavení pokladny vyplnit krok Firma: IČO a údaje z ARES, DIČ a EIČ, číslo účtu pro QR platby, plátce DPH, záhlaví a patička účtenky a kód POK.",
     lead: "První krok nastavení se jmenuje **Firma**. Údaje se tisknou na účtenku a DIČ / EIČ je vaše identifikace pro Finanční správu. Většinu z nich pokladna načte z veřejného registru ARES.",
     steps: [
       {
@@ -71,7 +71,7 @@ export const ZACINAME: readonly HelpArticle[] = [
       },
       {
         name: "Doplňte zbytek formuláře",
-        text: "**EIČ pro EET** vyplňte, jen pokud se liší od DIČ. **Číslo účtu pro QR platby** zadejte jako 123456789/0100 nebo IBAN. Dále **Vaše jméno v pokladně** a **Patička účtenky**, například „Děkujeme za návštěvu!“.",
+        text: "**EIČ pro EET** vyplňte, jen pokud se liší od DIČ. **Číslo účtu pro QR platby** zadejte jako 123456789/0100 nebo IBAN. Dále **Vaše jméno v pokladně**, **Záhlaví účtenky** (text nahoře, například otevírací doba) a **Patička účtenky** (text dole, například „Děkujeme za návštěvu!“).",
       },
       {
         name: "Zaškrtněte DPH a POK",
@@ -244,7 +244,7 @@ export const ZACINAME: readonly HelpArticle[] = [
       { name: "Doplňte čísla jednotek", text: "Všechny aktivní evidenční jednotky musí mít číslo přidělené Finanční správou." },
       {
         name: "Odešlete ověřovací tržbu",
-        text: "Klepněte na **Odeslat ověřovací tržbu**. Finanční správa zprávu zkontroluje, ale tržbu neeviduje. Pokladna ji posílá za první evidenční jednotku v seznamu.",
+        text: "Klepněte na **Odeslat ověřovací tržbu**. Finanční správa zprávu zkontroluje, ale tržbu neeviduje. Máte-li víc evidenčních jednotek, vyberte v poli **Za evidenční jednotku** jednu z nich, nebo **Všechny jednotky** – pokladna pak ověří každou zvlášť a ukáže výsledek u každé.",
       },
       {
         name: "Přepněte na Ostrý provoz",

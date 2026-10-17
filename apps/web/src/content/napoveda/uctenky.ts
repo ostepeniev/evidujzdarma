@@ -36,7 +36,7 @@ export const UCTENKY: readonly HelpArticle[] = [
         heading: "Co je na účtence",
         blocks: [
           {
-            p: "Název firmy, adresa evidenční jednotky, IČO a DIČ, položky, sleva, celková částka a způsoby platby, u plátce DPH rozpis DPH, datum, číslo jednotky, označení pokladny, číslo dokladu, POK, patička a odkaz na online účtenku.",
+            p: "Název firmy, adresa evidenční jednotky, IČO a DIČ, záhlaví, položky, sleva, celková částka a způsoby platby, u plátce DPH rozpis DPH, datum, číslo jednotky, označení pokladny, číslo dokladu, POK, patička a odkaz na online účtenku.",
           },
           { p: `${FACTS.receipt.summary} Více v návodu [Musím vydávat účtenku?](/navody/musim-vydavat-uctenku)` },
         ],

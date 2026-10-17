@@ -66,6 +66,10 @@ export const UCET: readonly HelpArticle[] = [
         text: "U jednotky klepněte na **Odebrat**. Jednotka se jen vypne – tržby, které na ní proběhly, zůstanou v historii i v exportu.",
       },
       {
+        name: "Nový název nebo adresa",
+        text: "U jednotky klepněte na **Upravit**, opravte název nebo adresu (tiskne se na účtenku) a klepněte na **Uložit změny**.",
+      },
+      {
         name: "Jiné číslo jednotky",
         text: "Přepište číslo v poli **Číslo z DIS+** u jednotky a klepněte na **Uložit**. Odmítnuté tržby se starým číslem pak odešlete tlačítkem **Odeslat s opravenými údaji** – viz [Odmítnutá tržba](/napoveda/odmitnuta-trzba).",
       },

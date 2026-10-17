@@ -13,7 +13,10 @@ export const UCETNI: readonly HelpArticle[] = [
       "Jak z pokladny EvidujZdarma stáhnout export tržeb za libovolné období do CSV pro Excel a pokladní knihu s uzávěrkami ze všech pokladen pro účetní.",
     lead: "Účetní nepotřebuje přístup do pokladny – stačí jí dva soubory CSV z **Nastavení pokladny**: export tržeb a pokladní kniha. Oba obsahují údaje ze všech vašich pokladen.",
     steps: [
-      { name: "Zvolte období", text: "V kroku **Export pro účetní** vyplňte **Od** a **Do**. Předvyplněné je období od začátku měsíce do dneška." },
+      {
+        name: "Zvolte období",
+        text: "V kroku **Export pro účetní** vyplňte **Od** a **Do**. Předvyplněné je období od začátku měsíce do dneška. Dny se počítají v českém čase, od půlnoci do půlnoci – tržba po půlnoci patří do nového dne.",
+      },
       { name: "Stáhněte tržby", text: "Klepněte na **Stáhnout CSV**. Soubor má středníky a desetinné čárky, takže ho český Excel otevře rovnou." },
       {
         name: "Stáhněte pokladní knihu",

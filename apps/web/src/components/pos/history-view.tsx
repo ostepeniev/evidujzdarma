@@ -7,22 +7,30 @@ import { unresolvedRejected } from "@/lib/pos/sync-result";
 import { onSyncChange } from "@/lib/pos/sync";
 import type { LocalSale, PosConfig } from "@/lib/pos/types";
 import { CashPanel } from "./cash-panel";
+import { RefundLookupForm } from "./refund-sheet";
 import { StatusChip, kc } from "./ui";
 import { csvCell } from "@/lib/csv";
+import { addDays, pragueDayStart, pragueToday } from "@/lib/prague-time";
 
-const time = new Intl.DateTimeFormat("cs-CZ", { hour: "2-digit", minute: "2-digit" });
-const day = new Intl.DateTimeFormat("cs-CZ", { weekday: "short", day: "numeric", month: "numeric" });
+// dny a časy v pražském čase – stejně jako účtenka a export (S3-POKLADNA), nezávisle na časovém pásmu zařízení
+const time = new Intl.DateTimeFormat("cs-CZ", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Prague" });
+const day = new Intl.DateTimeFormat("cs-CZ", { weekday: "short", day: "numeric", month: "numeric", timeZone: "Europe/Prague" });
+const dateTime = new Intl.DateTimeFormat("cs-CZ", { dateStyle: "short", timeStyle: "medium", timeZone: "Europe/Prague" });
 
+/** Půlnoc dne (v Praze), do kterého okamžik patří. */
 function startOfDay(d = new Date()): Date {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x;
+  return pragueDayStart(pragueToday(d));
+}
+
+/** Půlnoc v Praze o `days` dní dřív než dnes (přechod letního času nevadí – počítá se po kalendářních dnech). */
+function daysAgo(days: number): Date {
+  return pragueDayStart(addDays(pragueToday(), -days));
 }
 
 function useSales(sinceDays: number): LocalSale[] {
   const [sales, setSales] = useState<LocalSale[]>([]);
   useEffect(() => {
-    const since = new Date(startOfDay().getTime() - sinceDays * 86_400_000).toISOString();
+    const since = daysAgo(sinceDays).toISOString();
     const load = () => void salesSince(since).then(setSales);
     load();
     return onSyncChange(load);
@@ -30,7 +38,7 @@ function useSales(sinceDays: number): LocalSale[] {
   return sales;
 }
 
-export function HistoryView({ onOpen }: { onOpen: (id: string) => void }) {
+export function HistoryView({ onOpen, onFind, finding = false }: { onOpen: (id: string) => void; onFind?: (q: string) => void; finding?: boolean }) {
   const sales = useSales(7);
   const groups = useMemo(() => {
     const map = new Map<string, LocalSale[]>();
@@ -41,7 +49,14 @@ export function HistoryView({ onOpen }: { onOpen: (id: string) => void }) {
     return [...map.entries()];
   }, [sales]);
 
-  if (!sales.length) return <p className="py-16 text-center text-muted">Za posledních 7 dní tu nejsou žádné tržby.</p>;
+  const lookup = onFind ? <RefundLookupForm onFind={onFind} busy={finding} /> : null;
+  if (!sales.length)
+    return (
+      <div className="mx-auto max-w-2xl space-y-6">
+        <p className="py-16 text-center text-muted">Za posledních 7 dní tu nejsou žádné tržby.</p>
+        {lookup}
+      </div>
+    );
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       {groups.map(([k, list]) => (
@@ -72,6 +87,7 @@ export function HistoryView({ onOpen }: { onOpen: (id: string) => void }) {
           </ul>
         </section>
       ))}
+      {lookup}
     </div>
   );
 }
@@ -104,7 +120,7 @@ export function SummaryView({ config, staff }: { config: PosConfig; staff: { id:
     const head = ["Čas", "Pořadové číslo", "Položky", "Celkem", "Způsob platby", "Spropitné", "Sleva", "POK", "Stav", "Důvod odmítnutí", "Pokladní"];
     const rows = today.map((s) =>
       [
-        new Date(s.soldAt).toLocaleString("cs-CZ"),
+        dateTime.format(new Date(s.soldAt)),
         s.sequence,
         s.lines.map((l) => `${l.qty}× ${l.name}`).join(", "),
         decimalString(s.total),
@@ -122,7 +138,7 @@ export function SummaryView({ config, staff }: { config: PosConfig; staff: { id:
     const blob = new Blob(["﻿" + [head.join(";"), ...rows].join("\r\n")], { type: "text/csv;charset=utf-8" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `trzby-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `trzby-${pragueToday()}.csv`;
     a.click();
   }
 

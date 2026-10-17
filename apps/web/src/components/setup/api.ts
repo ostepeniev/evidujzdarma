@@ -47,7 +47,7 @@ export interface AccountStateDto {
   limits?: { staff: number; units: number; devices: number };
   units?: { id: string; type: string; label: string; fsUnitId: number | null; address: string | null; active: boolean }[];
   staff?: { id: string; name: string; role: string; active: boolean; hasPin: boolean }[];
-  catalog?: { id: string; name: string; price: number; vatRate: number; color: string | null; active: boolean }[];
+  catalog?: { id: string; name: string; price: number; vatRate: number; color: string | null; active: boolean; category?: string | null; ean?: string | null }[];
   devices?: { id: string; name: string; registerId: string; unitId: string | null; lastSeenAt: string | null }[];
   certificates?: { id: string; subject: string; eic: string | null; environment: string; validFrom: string; validTo: string; verifiedAt: string | null }[];
   /** zrušený účet: kdy nejpozději smažeme data a co ještě čeká (R6.4) */

@@ -366,7 +366,11 @@ export const catalogItems = pgTable(
     vatRate: smallint("vat_rate").notNull().default(0),
     color: varchar("color", { length: 16 }),
     sort: integer("sort").notNull().default(0),
+    /** true = rychlé tlačítko v pokladně; vypnutá položka zůstane v katalogu, ale pokladna ji nenabízí */
     active: boolean("active").notNull().default(true),
+    /** S3-POKLADNA: kategorie a kód zboží (EAN / PLU / SKU) – převezmou se z importu z jiné pokladny, jdou upravit v nastavení */
+    category: text("category"),
+    ean: varchar("ean", { length: 64 }),
     updatedAt: updatedAt(),
   },
   (t) => [index("catalog_account_idx").on(t.accountId)],
@@ -398,7 +402,7 @@ export const sales = pgTable(
     tip: bigint("tip", { mode: "number" }).notNull().default(0),
     discount: bigint("discount", { mode: "number" }).notNull().default(0),
     payments: jsonb("payments").$type<{ method: string; amount: number }[]>().notNull(),
-    items: jsonb("items").$type<{ name: string; qty: number; unitPrice: number; vatRate: number }[]>(),
+    items: jsonb("items").$type<{ name: string; qty: number; unitPrice: number; vatRate: number; kind?: "goods" | "prepayment" }[]>(),
     vatBreakdown: jsonb("vat_breakdown").$type<Record<string, { base: number; vat: number }>>(),
     refundOf: uuid("refund_of"),
     /** vlastník, který vratku schválil PINem na pokladně (R1.7) */
@@ -439,8 +443,13 @@ export const sales = pgTable(
     uniqueIndex("sales_device_seq_uq").on(t.deviceId, t.sequence),
     index("sales_account_sold_idx").on(t.accountId, t.soldAt),
     index("sales_pending_idx").on(t.status, t.nextAttemptAt),
-    /** na jednu tržbu nejvýš jedna vratka – drží i při souběhu (R1.7) */
-    uniqueIndex("sales_refund_of_uq").on(t.refundOf).where(sql`${t.refundOf} is not null`),
+    /**
+     * S3-POKLADNA: k jedné tržbě může být víc (částečných) vratek; součet nesmí přesáhnout originál. Hlídá to ingest pod zámkem
+     * řádku původní tržby (lib/server/sales.ts), index jen zrychlí součet vratek. Dřív unikátní sales_refund_of_uq (R1.7).
+     */
+    index("sales_refund_of_idx").on(t.refundOf).where(sql`${t.refundOf} is not null`),
+    /** dohledání dokladu podle čísla pro vratku z jiného zařízení (S3-POKLADNA) */
+    index("sales_account_seq_idx").on(t.accountId, t.sequence),
     uniqueIndex("sales_approval_jti_uq").on(t.approvalJti).where(sql`${t.approvalJti} is not null`),
   ],
 );

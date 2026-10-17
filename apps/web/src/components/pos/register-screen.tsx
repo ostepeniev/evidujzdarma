@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { lineTotal, type SaleLine } from "@ez/fiscal-core";
+import { catalogMatches } from "@/lib/pos/catalog-search";
 import type { PosConfig } from "@/lib/pos/types";
 import { Keypad, Sheet, applyKey, kc, parseKc } from "./ui";
 
@@ -31,17 +32,19 @@ export function RegisterScreen({
   const [amount, setAmount] = useState("");
   const [label, setLabel] = useState("");
   const [discountOpen, setDiscountOpen] = useState(false);
+  // dobití kreditu (čip, předplacená karta) – částka určená k pozdějšímu čerpání, urceno_cerp_zuct (Ф11, S3-POKLADNA)
+  const [topUp, setTopUp] = useState(false);
   const [query, setQuery] = useState("");
   const defaultVat = config.account.vatPayer ? 21 : 0;
   // velký katalog (import z jiné pokladny, S2-E): hledání podle názvu a nejvýš CATALOG_SHOWN tlačítek
   const searchable = config.catalog.length > CATALOG_SEARCH_FROM;
   const q = query.trim().toLocaleLowerCase("cs");
-  const catalog = searchable ? (q ? config.catalog.filter((i) => i.name.toLocaleLowerCase("cs").includes(q)) : config.catalog).slice(0, CATALOG_SHOWN) : config.catalog;
+  const catalog = searchable ? (q ? config.catalog.filter((i) => catalogMatches(i, q)) : config.catalog).slice(0, CATALOG_SHOWN) : config.catalog;
   const gross = cart.reduce((s, l) => s + lineTotal(l), 0);
   const total = gross - discount;
 
   function addLine(line: Omit<CartLine, "key">) {
-    const existing = cart.find((c) => c.name === line.name && c.unitPrice === line.unitPrice && c.vatRate === line.vatRate);
+    const existing = cart.find((c) => c.name === line.name && c.unitPrice === line.unitPrice && c.vatRate === line.vatRate && c.kind === line.kind);
     if (existing) setCart(cart.map((c) => (c === existing ? { ...c, qty: c.qty + line.qty } : c)));
     else setCart([...cart, { ...line, key: crypto.randomUUID() }]);
   }
@@ -49,9 +52,12 @@ export function RegisterScreen({
   function addAmount() {
     const h = parseKc(amount);
     if (!h || h <= 0) return;
-    addLine({ name: label.trim() || "Položka", qty: 1, unitPrice: h, vatRate: defaultVat });
+    // dobití kreditu se na dokladu ukáže se sazbou 0 % – DPH se řeší až u zboží placeného kreditem (ověřte s účetní)
+    if (topUp) addLine({ name: label.trim() || "Dobití kreditu", qty: 1, unitPrice: h, vatRate: 0, kind: "prepayment" });
+    else addLine({ name: label.trim() || "Položka", qty: 1, unitPrice: h, vatRate: defaultVat });
     setAmount("");
     setLabel("");
+    setTopUp(false);
   }
 
   return (
@@ -102,8 +108,12 @@ export function RegisterScreen({
           <div className="mt-3">
             <Keypad onKey={(k) => setAmount((v) => applyKey(v, k))} />
           </div>
+          <label className="mt-3 flex items-center gap-3 text-[15px]">
+            <input type="checkbox" checked={topUp} onChange={(e) => setTopUp(e.target.checked)} className="h-5 w-5 accent-brand-600" />
+            Dobití kreditu (čip, předplacená karta)
+          </label>
           <button type="button" onClick={addAmount} disabled={!parseKc(amount)} className="btn-secondary mt-3 w-full py-3 text-lg">
-            + Přidat částku
+            {topUp ? "+ Přidat dobití kreditu" : "+ Přidat částku"}
           </button>
         </div>
       </section>
@@ -120,7 +130,7 @@ export function RegisterScreen({
                   <p className="truncate font-medium">{l.name}</p>
                   <p className="text-sm text-muted">
                     {kc(l.unitPrice)}
-                    {config.account.vatPayer && <> · DPH {l.vatRate} %</>}
+                    {l.kind === "prepayment" ? <> · dobití kreditu</> : config.account.vatPayer && <> · DPH {l.vatRate} %</>}
                   </p>
                 </div>
                 <div className="flex items-center gap-1">

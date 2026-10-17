@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { call } from "@/components/setup/api";
+import { pragueToday } from "@/lib/prague-time";
 
 interface Readiness {
   disActivated: boolean;
@@ -289,7 +290,8 @@ function AddClients({ onAdded }: { onAdded: (msg: string) => Promise<void> }) {
 }
 
 function ExportBox() {
-  const today = new Date().toISOString().slice(0, 10);
+  // dnešek v Praze, ne v UTC – mezi půlnocí a 1–2 h ráno by jinak výchozí „do“ byl včerejšek (S3-POKLADNA)
+  const today = pragueToday();
   const [from, setFrom] = useState(`${today.slice(0, 8)}01`);
   const [to, setTo] = useState(today);
   return (

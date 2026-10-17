@@ -14,8 +14,8 @@ interface Staff {
   name: string;
 }
 
-const timeFmt = new Intl.DateTimeFormat("cs-CZ", { hour: "2-digit", minute: "2-digit" });
-const dateTimeFmt = new Intl.DateTimeFormat("cs-CZ", { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" });
+const timeFmt = new Intl.DateTimeFormat("cs-CZ", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Prague" });
+const dateTimeFmt = new Intl.DateTimeFormat("cs-CZ", { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Prague" });
 
 /** Okamžik „teď“, ale vždy po začátku období (těsně po uzávěrce by výpočet odmítl prázdné období). */
 function nowAfter(periodFrom: string): string {

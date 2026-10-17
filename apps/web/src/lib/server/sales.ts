@@ -8,6 +8,7 @@ import { accountMode, productionAcceptsFrom, type EetMode } from "./fiscal";
 import { canSendInMode, ingestedFromQuarantine, markIngested, notifyClosedUnsent, quarantineSale } from "./quarantine";
 import { safeError } from "./log";
 import { verifyApproval } from "./staff-pin";
+import { refundCapacityIssue } from "@/lib/pos/refund";
 import { modeIn } from "@/lib/modes";
 
 /** Tržba tak, jak ji posílá pokladna (částky v haléřích). */
@@ -85,7 +86,7 @@ function stable(v: unknown): string {
 
 /**
  * Pokladní a vratka musí patřit k účtu; vratku dělá vlastník nebo ji vlastník schválí PINem.
- * Vratka nesmí přesáhnout původní tržbu a na jednu tržbu je nejvýš jedna (R1.7).
+ * Vratka nesmí přesáhnout původní tržbu; součet částečných vratek hlídá refundCapacity (S3-POKLADNA, dřív R1.7 „nejvýš jedna“).
  */
 async function checkStaffAndRefund(accountId: string, deviceId: string, input: DeviceSale, sale: Sale): Promise<{ approvedBy: string; approvalJti: string } | null> {
   const total = sale.total;
@@ -125,9 +126,35 @@ async function checkStaffAndRefund(accountId: string, deviceId: string, input: D
   const amounts = evidencedAmounts(sale);
   if (-amounts.total > original.evidencedTotal) throw new IngestRejection("REFUND_EXCEEDS", "Evidovaná částka vratky je vyšší než evidovaná částka původní tržby");
   if (-amounts.redeemed > original.redeemedAmount) throw new IngestRejection("REFUND_EXCEEDS", "Čerpání ve vratce je vyšší než čerpání u původní tržby");
-  const other = await db.query.sales.findFirst({ where: and(eq(schema.sales.refundOf, input.refundOf), ne(schema.sales.id, input.id)), columns: { id: true } });
-  if (other) throw new IngestRejection("REFUND_DUPLICATE", "Tato tržba už byla vrácena", 409);
+  // součet s dřívějšími (částečnými) vratkami hlídá refundCapacity pod zámkem řádku originálu (S3-POKLADNA)
   return { approvedBy: approver.id, approvalJti: approval!.jti };
+}
+
+type Tx = Parameters<Parameters<ReturnType<typeof getDb>["transaction"]>[0]>[0];
+
+/**
+ * S3-POKLADNA: k jedné tržbě může být víc částečných vratek. Pod zámkem řádku původní tržby (FOR UPDATE) sečte dřívější
+ * vratky a ověří, že s touto nepřesáhnou kusy položek, částku, evidovanou částku ani čerpání originálu. Souběžné vratky
+ * téže tržby (dvě pokladny) se tím seřadí – druhá už první vidí (dřív unikátní index sales_refund_of_uq, R1.7).
+ */
+async function refundCapacity(tx: Tx, accountId: string, input: DeviceSale, sale: Sale): Promise<void> {
+  const [original] = await tx
+    .select()
+    .from(schema.sales)
+    .where(and(eq(schema.sales.id, input.refundOf!), eq(schema.sales.accountId, accountId)))
+    .for("update");
+  if (!original) throw new IngestRejection("REFUND_UNKNOWN_ORIGINAL", "Původní tržba k vratce není na serveru");
+  const previous = await tx
+    .select({ items: schema.sales.items, total: schema.sales.total, evidencedTotal: schema.sales.evidencedTotal, redeemedAmount: schema.sales.redeemedAmount })
+    .from(schema.sales)
+    .where(and(eq(schema.sales.refundOf, original.id), ne(schema.sales.id, input.id)));
+  const amounts = evidencedAmounts(sale);
+  const issue = refundCapacityIssue(
+    { items: original.items, total: original.total, tip: original.tip, evidencedTotal: original.evidencedTotal, redeemedAmount: original.redeemedAmount },
+    previous,
+    { items: sale.lines, total: sale.total, evidencedTotal: amounts.total, redeemedAmount: amounts.redeemed },
+  );
+  if (issue) throw new IngestRejection(issue.code, issue.message, issue.httpStatus);
 }
 
 /** Posun hodin, který pokladna sama neopravuje (lib/pos/sync-result.ts, correctedNow). */
@@ -230,37 +257,46 @@ export async function ingestSales(ctx: DeviceContext, inputs: DeviceSale[]): Pro
 
       let inserted: { id: string }[];
       try {
-        inserted = await db
-          .insert(schema.sales)
-          .values({
-            id: sale.id,
-            accountId: account.id,
-            deviceId: device.id,
-            unitId: unit.id,
-            staffId: input.staffId ?? null,
-            registerId: sale.registerId,
-            fsUnitId: unit.fsUnitId ?? 1,
-            sequence: sale.sequence,
-            soldAt: new Date(sale.soldAt),
-            total: sale.total,
-            tip: sale.tip,
-            discount: sale.discount,
-            payments: sale.payments,
-            items: sale.lines,
-            vatBreakdown: sale.vat,
-            refundOf: sale.refundOf,
-            approvedBy: approved?.approvedBy ?? null,
-            approvalJti: approved?.approvalJti ?? null,
-            evidencedTotal: amounts.total,
-            prepaymentAmount: amounts.prepayment,
-            redeemedAmount: amounts.redeemed,
-            status: amounts.total === 0 ? "not_required" : "queued",
-            mode,
-            deadlineAt: deadlineFor(sale.soldAt),
-          })
-          .onConflictDoNothing({ target: schema.sales.id })
-          .returning({ id: schema.sales.id });
+        const insert = (q: typeof db | Tx) =>
+          q
+            .insert(schema.sales)
+            .values({
+              id: sale.id,
+              accountId: account.id,
+              deviceId: device.id,
+              unitId: unit.id,
+              staffId: input.staffId ?? null,
+              registerId: sale.registerId,
+              fsUnitId: unit.fsUnitId ?? 1,
+              sequence: sale.sequence,
+              soldAt: new Date(sale.soldAt),
+              total: sale.total,
+              tip: sale.tip,
+              discount: sale.discount,
+              payments: sale.payments,
+              items: sale.lines,
+              vatBreakdown: sale.vat,
+              refundOf: sale.refundOf,
+              approvedBy: approved?.approvedBy ?? null,
+              approvalJti: approved?.approvalJti ?? null,
+              evidencedTotal: amounts.total,
+              prepaymentAmount: amounts.prepayment,
+              redeemedAmount: amounts.redeemed,
+              status: amounts.total === 0 ? "not_required" : "queued",
+              mode,
+              deadlineAt: deadlineFor(sale.soldAt),
+            })
+            .onConflictDoNothing({ target: schema.sales.id })
+            .returning({ id: schema.sales.id });
+        // vratka: kontrola součtu vratek a vložení v jedné transakci pod zámkem originálu (S3-POKLADNA)
+        inserted = sale.refundOf
+          ? await db.transaction(async (tx) => {
+              await refundCapacity(tx, account.id, input, sale);
+              return insert(tx);
+            })
+          : await insert(db);
       } catch (e) {
+        if (e instanceof IngestRejection) throw e;
         // souběžný POST stejné tržby (dvě karty pokladny): druhý požadavek narazí na jiný unikátní index dřív než na id.
         // Je-li uložený řádek tatáž tržba, není to konflikt (Д-4).
         const twin = await db.query.sales.findFirst({ where: eq(schema.sales.id, sale.id) }).catch(() => undefined);
@@ -269,7 +305,6 @@ export async function ingestSales(ctx: DeviceContext, inputs: DeviceSale[]): Pro
         }
         // unikátní (zařízení, pořadové číslo) → jiná tržba už má toto číslo: trvalý konflikt
         else if (/sales_device_seq_uq/.test(errorText(e))) throw new IngestRejection("SEQUENCE_CONFLICT", "Pořadové číslo už bylo použito jinou tržbou", 409);
-        else if (/sales_refund_of_uq/.test(errorText(e))) throw new IngestRejection("REFUND_DUPLICATE", "Tato tržba už byla vrácena", 409);
         else if (/sales_approval_jti_uq/.test(errorText(e))) throw new IngestRejection("REFUND_NOT_AUTHORIZED", "Toto schválení vratky už bylo použito – vlastník musí schválit znovu", 403);
         else throw e;
       }

@@ -2,8 +2,8 @@
 
 import QRCode from "qrcode";
 import { useEffect, useMemo, useState } from "react";
-import { buildSpayd } from "@ez/cz/spayd";
 import { PAYMENT_LABEL, roundCash, type Payment, type PaymentMethod } from "@ez/fiscal-core";
+import { posQrPayload, qrVariableSymbol } from "@/lib/pos/qr-payment";
 import { MAX_PAYMENTS, REFUND_SWAPPABLE, splitPayments } from "@/lib/pos/split-payment";
 import type { PosConfig } from "@/lib/pos/types";
 import { Keypad, Sheet, applyKey, kc, parseKc } from "./ui";
@@ -21,7 +21,8 @@ const METHODS: PaymentMethod[] = ["cash", "card", "qr", "meal_voucher", "credit"
 export function PaymentSheet({
   total,
   config,
-  sequenceHint,
+  qrSequence,
+  noCredit,
   onClose,
   onPay,
   busy,
@@ -30,7 +31,10 @@ export function PaymentSheet({
 }: {
   total: number;
   config: PosConfig;
-  sequenceHint: string;
+  /** číslo, které tržba dostane – z něj je variabilní symbol QR platby (S3-POKLADNA); null = ještě se načítá */
+  qrSequence: string | null;
+  /** v účtu je dobití kreditu – nejde ho zaplatit kreditem ani dárkovým poukazem */
+  noCredit?: boolean;
   onClose: () => void;
   onPay: (r: PaymentResult) => void;
   busy: boolean;
@@ -62,13 +66,13 @@ export function PaymentSheet({
 
   useEffect(() => {
     let cancelled = false;
-    if (method !== "qr" || !config.account.iban || due <= 0) {
+    if (method !== "qr" || !config.account.iban || due <= 0 || !qrSequence) {
       setQrSvg(null);
       return;
     }
     try {
-      const vs = sequenceHint.replace(/\D/g, "").slice(-10) || undefined;
-      const spayd = buildSpayd({ account: config.account.iban, amount: due / 100, message: config.account.name.slice(0, 60), variableSymbol: vs });
+      // variabilní symbol z čísla dokladu – pro každou tržbu jiný (S3-POKLADNA)
+      const spayd = posQrPayload({ iban: config.account.iban, amount: due, sequence: qrSequence, merchantName: config.account.name });
       QRCode.toString(spayd, { type: "svg", margin: 1, width: 260, errorCorrectionLevel: "M" }).then((s) => !cancelled && setQrSvg(s));
     } catch {
       setQrSvg(null);
@@ -76,7 +80,7 @@ export function PaymentSheet({
     return () => {
       cancelled = true;
     };
-  }, [method, due, config.account.iban, config.account.name, sequenceHint]);
+  }, [method, due, config.account.iban, config.account.name, qrSequence]);
 
   const isRefund = total < 0;
   const cashShort = !isRefund && method === "cash" && receivedH > 0 && receivedH < due;
@@ -163,7 +167,7 @@ export function PaymentSheet({
 
       {!isRefund && (
         <div className="mt-5 grid grid-cols-4 gap-2" role="radiogroup" aria-label="Způsob platby">
-          {METHODS.map((m) => (
+          {METHODS.filter((m) => !(noCredit && (m === "credit" || m === "gift_voucher"))).map((m) => (
             <button
               key={m}
               type="button"
@@ -244,6 +248,11 @@ export function PaymentSheet({
             )
           ) : (
             <p className="rounded-xl bg-surface p-4 text-ink-soft">Pro QR platbu doplňte číslo účtu v nastavení pokladny.</p>
+          )}
+          {qrSequence && config.account.iban && (
+            <p className="mt-2 text-sm text-ink-soft">
+              Variabilní symbol <strong className="tabular-nums">{qrVariableSymbol(qrSequence)}</strong> · doklad {qrSequence}
+            </p>
           )}
           <p className="mt-2 text-sm text-muted">Zákazník naskenuje kód v bankovní aplikaci. Potvrďte až po připsání platby.</p>
         </div>

@@ -279,3 +279,20 @@ export async function resendSale(id: string): Promise<void> {
   await updateSale(id, { status: "local", error: null });
   await syncNow().catch(() => {});
 }
+
+/** Doklad k vratce ze serveru (S3-POKLADNA) – i z jiné pokladny účtu; `notFound` = server doklad nemá. */
+export type RefundLookupResult =
+  | { ok: true; data: import("./refund").RefundLookupDto }
+  | { ok: false; notFound: boolean; offline: boolean; error: string };
+
+export async function lookupRefundSale(q: string): Promise<RefundLookupResult> {
+  try {
+    const res = await api(`/api/pokladna/vratka?q=${encodeURIComponent(q)}`, { method: "GET" });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) return { ok: true, data };
+    return { ok: false, notFound: res.status === 404, offline: false, error: (data as { error?: string }).error ?? "Doklad se nepodařilo načíst." };
+  } catch (e) {
+    if (e instanceof DeviceRevokedError) throw e;
+    return { ok: false, notFound: false, offline: true, error: "Vratku schvaluje vlastník online – zkontrolujte připojení k internetu." };
+  }
+}

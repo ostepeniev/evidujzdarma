@@ -2,19 +2,28 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { getConfig, getDevice, getMeta, pruneOld, rejectedSales, setMeta, deleteMeta, unsettledSales } from "@/lib/pos/db";
-import { createLocalSale, refundBlockedReason, refundInput } from "@/lib/pos/sale-factory";
+import { getConfig, getDevice, getMeta, peekSequence, pruneOld, refundsOf, rejectedSales, saleBySequence, setMeta, deleteMeta, unsettledSales } from "@/lib/pos/db";
+import { AUTO_LOCK_MS, watchIdle } from "@/lib/pos/idle-lock";
+import {
+  createLocalSale,
+  refundBlockedReason,
+  refundSourceFromLocal,
+  refundSourceFromServer,
+  refundUnavailableReason,
+  type RefundSource,
+} from "@/lib/pos/sale-factory";
 import { removeRegistrationPrompt, revokedNotice } from "@/lib/pos/revoked";
-import { DeviceRevokedError, configVersion, isConfigStale, onSyncChange, refreshConfig, startAutoSync, syncNow } from "@/lib/pos/sync";
+import { DeviceRevokedError, configVersion, isConfigStale, lookupRefundSale, onSyncChange, refreshConfig, startAutoSync, syncNow } from "@/lib/pos/sync";
 import type { DeviceCredentials, LocalSale, PosConfig } from "@/lib/pos/types";
 import { HistoryView, SummaryView } from "./history-view";
 import { PaymentSheet, type PaymentResult } from "./payment-sheet";
 import { OwnerApproval } from "./owner-approval";
 import { PinLock } from "./pin-lock";
 import { ReceiptView } from "./receipt-view";
+import { RefundSheet, type RefundDraft } from "./refund-sheet";
 import { RegisterScreen, type CartLine } from "./register-screen";
 import { StatusBar } from "./status-bar";
-import { kc } from "./ui";
+import { Sheet, kc } from "./ui";
 
 type Phase = "loading" | "unregistered" | "revoked" | "locked" | "ready";
 type View = "register" | "history" | "summary";
@@ -22,8 +31,6 @@ interface Staff {
   id: string;
   name: string;
 }
-
-const AUTO_LOCK_MS = 15 * 60_000;
 
 export function PosApp() {
   const [phase, setPhase] = useState<Phase>("loading");
@@ -34,8 +41,14 @@ export function PosApp() {
   const [unitId, setUnitId] = useState<string>("");
   const [cart, setCart] = useState<CartLine[]>([]);
   const [discount, setDiscount] = useState(0);
-  const [paying, setPaying] = useState<null | { refundOf: LocalSale | null; approval?: string | null }>(null);
-  const [approval, setApproval] = useState<LocalSale | null>(null);
+  // vratka (S3-POKLADNA): doklad → výběr položek → schválení vlastníkem → vrácení peněz
+  const [paying, setPaying] = useState<null | { refund: { source: RefundSource; draft: RefundDraft } | null; approval?: string | null }>(null);
+  const [refundSel, setRefundSel] = useState<RefundSource | null>(null);
+  const [approval, setApproval] = useState<{ source: RefundSource; draft: RefundDraft } | null>(null);
+  const [refundBusy, setRefundBusy] = useState(false);
+  const [refundError, setRefundError] = useState<string | null>(null);
+  /** číslo, které dostane příští tržba – variabilní symbol QR platby (S3-POKLADNA) */
+  const [qrSequence, setQrSequence] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [payError, setPayError] = useState<string | null>(null);
   const [receiptId, setReceiptId] = useState<string | null>(null);
@@ -125,29 +138,72 @@ export function PosApp() {
     });
   }, [device, applyConfig]);
 
-  // Aktivita obsluhy prodlužuje přihlášení
+  // Aktivita obsluhy prodlužuje přihlášení; po 15 minutách bez práce se pokladna zamkne i otevřená (S3-POKLADNA)
   useEffect(() => {
     if (phase !== "ready" || !staff || !config || !needsLock(config)) return;
-    const touch = () => void setMeta("activeStaff", { staff, at: Date.now() });
+    const touch = (at = Date.now()) => void setMeta("activeStaff", { staff, at });
     touch();
-    window.addEventListener("pointerdown", touch);
-    return () => window.removeEventListener("pointerdown", touch);
+    return watchIdle(
+      window,
+      () => {
+        void deleteMeta("activeStaff");
+        setPaying(null);
+        setApproval(null);
+        setRefundSel(null);
+        setStaff(null);
+        setPhase("locked");
+      },
+      { ms: AUTO_LOCK_MS, onActivity: touch, doc: document },
+    );
   }, [phase, staff, config]);
+
+  /**
+   * Vratka: doklad z tohoto zařízení, nebo dohledaný na serveru podle čísla (i z jiné pokladny účtu, i starší než 7 dní).
+   * Server zná i vratky z jiných pokladen – pokladna z nich spočítá, co ještě jde vrátit. Schválení vlastníkem je online.
+   */
+  async function openRefund(target: { local: LocalSale } | { q: string }) {
+    if (!config) return;
+    setRefundError(null);
+    setRefundBusy(true);
+    try {
+      const local = "local" in target ? target.local : await saleBySequence(target.q);
+      if (local && !("local" in target)) {
+        // doklad z tohoto zařízení: ukázat účtenku, vratka se spustí z ní
+        setReceiptFrom("history");
+        setReceiptId(local.id);
+        return;
+      }
+      if (local) await syncNow().catch(() => {});
+      const found = await lookupRefundSale(local ? local.id : (target as { q: string }).q);
+      let source: RefundSource;
+      if (found.ok) source = refundSourceFromServer(found.data, await refundsOf(found.data.sale.id), !local);
+      else if (local && found.notFound) source = refundSourceFromLocal(local, await refundsOf(local.id));
+      else throw new Error(found.error);
+      const blocked = refundBlockedReason(source, config.account.mode) ?? refundUnavailableReason(source, config, unitId);
+      if (blocked) throw new Error(blocked);
+      setRefundSel(source);
+    } catch (e) {
+      if (e instanceof DeviceRevokedError) return onRevoked(e);
+      setRefundError(e instanceof Error ? e.message : "Doklad se nepodařilo načíst.");
+    } finally {
+      setRefundBusy(false);
+    }
+  }
 
   async function pay(r: PaymentResult) {
     if (!device || !config) return;
     setBusy(true);
     setPayError(null);
     try {
-      const refund = paying?.refundOf ?? null;
+      const refund = paying?.refund?.source ?? null;
       let sale: LocalSale;
-      if (refund) {
+      if (refund && paying?.refund) {
         // režim účtu se mohl změnit, zatímco bylo okno vratky otevřené (R7.13)
         const blocked = refundBlockedReason(refund, config.account.mode);
         if (blocked) throw new Error(blocked);
-        const inp = refundInput(refund);
         sale = await createLocalSale(device, config, {
-          lines: inp.lines,
+          // vybrané položky a množství (částečná vratka, S3-POKLADNA)
+          lines: paying.refund.draft.lines,
           // zrcadlo plateb originálu (R6.9); pokladní mohl zaměnit jen způsoby se stejnou evidencí
           payments: r.payments,
           discount: 0,
@@ -155,7 +211,7 @@ export function PosApp() {
           cashReceived: null,
           refundOf: refund.id,
           approval: paying?.approval ?? null,
-          unitId: refund.unitId,
+          unitId: refund.unitId ?? unitId,
           staff,
         });
       } else {
@@ -294,9 +350,10 @@ export function PosApp() {
             }}
             onBack={receiptFrom === "history" ? () => setReceiptId(null) : undefined}
             onRefund={(s) => {
-              // vratku vždy schvaluje vlastník PINem ověřeným na serveru (R1.7, R3.10)
-              setApproval(s);
+              // výběr položek, pak schválení vlastníkem PINem ověřeným na serveru (R1.7, R3.10)
+              void openRefund({ local: s });
             }}
+            refundBusy={refundBusy}
           />
         ) : view === "history" ? (
           <HistoryView
@@ -304,40 +361,75 @@ export function PosApp() {
               setReceiptFrom("history");
               setReceiptId(id);
             }}
+            onFind={(q) => void openRefund({ q })}
+            finding={refundBusy}
           />
         ) : view === "summary" ? (
           <SummaryView config={config} staff={staff} />
         ) : (
-          <RegisterScreen config={config} cart={cart} setCart={setCart} discount={discount} setDiscount={setDiscount} onPay={() => (setPayError(null), setPaying({ refundOf: null }))} />
+          <RegisterScreen
+            config={config}
+            cart={cart}
+            setCart={setCart}
+            discount={discount}
+            setDiscount={setDiscount}
+            onPay={() => {
+              setPayError(null);
+              setQrSequence(null);
+              void peekSequence(device.sequencePrefix).then(setQrSequence);
+              setPaying({ refund: null });
+            }}
+          />
         )}
       </main>
 
       {paying && (
         <PaymentSheet
-          total={paying.refundOf ? -paying.refundOf.subtotal : cart.reduce((s, l) => s + Math.round(l.qty * l.unitPrice), 0) - discount}
+          total={paying.refund ? paying.refund.draft.total : cart.reduce((s, l) => s + Math.round(l.qty * l.unitPrice), 0) - discount}
           config={config}
-          sequenceHint={device.sequencePrefix}
+          qrSequence={qrSequence}
+          noCredit={!paying.refund && cart.some((l) => l.kind === "prepayment")}
           busy={busy}
           error={payError}
           onClose={() => setPaying(null)}
           onPay={pay}
-          refundPayments={paying.refundOf ? refundInput(paying.refundOf).payments : undefined}
+          refundPayments={paying.refund ? paying.refund.draft.payments : undefined}
+        />
+      )}
+      {refundSel && (
+        <RefundSheet
+          source={refundSel}
+          onClose={() => setRefundSel(null)}
+          onContinue={(draft) => {
+            setApproval({ source: refundSel, draft });
+            setRefundSel(null);
+          }}
         />
       )}
       {approval && (
         <OwnerApproval
           config={config}
-          refund={{ refundOf: approval.id, amount: -refundInput(approval).total }}
+          refund={{ refundOf: approval.source.id, amount: -approval.draft.total }}
           onClose={() => setApproval(null)}
           onApprove={(token) => {
-            setPaying({ refundOf: approval, approval: token });
+            setPaying({ refund: approval, approval: token });
             setApproval(null);
           }}
         />
       )}
-      {paying?.refundOf && (
+      {refundError && (
+        <Sheet title="Vratka" onClose={() => setRefundError(null)}>
+          <p role="alert" className="rounded-xl bg-danger-50 p-3 text-danger-600">
+            {refundError}
+          </p>
+          <button type="button" className="btn-secondary mt-4 w-full" onClick={() => setRefundError(null)}>
+            Zavřít
+          </button>
+        </Sheet>
+      )}
+      {paying?.refund && (
         <p className="sr-only" aria-live="polite">
-          Vratka tržby {paying.refundOf.sequence} na {kc(paying.refundOf.subtotal)}
+          Vratka tržby {paying.refund.source.sequence} na {kc(Math.abs(paying.refund.draft.total))}
         </p>
       )}
     </div>

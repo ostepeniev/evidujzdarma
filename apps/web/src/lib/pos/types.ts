@@ -33,7 +33,8 @@ export interface PosConfig {
   units: { id: string; label: string; type: string; fsUnitId: number | null; active: boolean; address: string | null }[];
   /** pinHash jen u pokladních; PIN vlastníka se ověřuje online (onlinePin) – R3.10 */
   staff: { id: string; name: string; role: string; pinHash: string | null; onlinePin?: boolean }[];
-  catalog: { id: string; name: string; price: number; vatRate: number; color: string | null }[];
+  /** category / ean (S3-POKLADNA) chybí u konfigurace uložené starší verzí */
+  catalog: { id: string; name: string; price: number; vatRate: number; color: string | null; category?: string | null; ean?: string | null }[];
   /** poslední uzávěrka tohoto zařízení na serveru (záloha pro případ smazaných dat v prohlížeči) */
   lastClosing?: { id: string; number: number; closedAt: string; closingCash: number } | null;
 }

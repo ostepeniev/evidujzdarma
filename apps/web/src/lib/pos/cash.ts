@@ -7,6 +7,7 @@
 import { computeClosing, type ClosingSale, type ClosingTotals } from "@ez/fiscal-core";
 import { listClosings, movementsSince, saveClosing, saveMovement, salesSince } from "./db";
 import { syncNow } from "./sync";
+import { pragueDayStart, pragueToday } from "@/lib/prague-time";
 import type { LocalCashMovement, LocalClosing, LocalSale, PosConfig } from "./types";
 
 export interface CashPeriod {
@@ -18,10 +19,9 @@ export interface CashPeriod {
   lastClosing: { closedAt: string; number: number } | null;
 }
 
+/** Dnešní půlnoc v pražském čase (ne v časovém pásmu zařízení) – S3-POKLADNA. */
 function startOfToday(): string {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString();
+  return pragueDayStart(pragueToday()).toISOString();
 }
 
 /** Období od poslední uzávěrky (místní nebo ze serveru – podle toho, která je novější). */

@@ -7,8 +7,8 @@
  *  - čísla: desetinná čárka i tečka, mezery jako oddělovač tisíců, „Kč“, „,-“;
  *  - hlavičky: české i anglické názvy sloupců, přesné sloupce exportu Dotykačky a SumUp (podle jejich nápovědy).
  *
- * Model katalogu (packages/db catalog_items) má jen název, cenu s DPH v haléřích, sazbu DPH, barvu a pořadí.
- * Kategorie a kód (EAN/PLU) se v náhledu ukážou, kategorie určí pořadí tlačítek, ale neukládají se.
+ * Katalog (packages/db catalog_items) ukládá název, cenu s DPH v haléřích, sazbu DPH, barvu, pořadí a od S3-POKLADNA (17. 10. 2026)
+ * i kategorii a kód zboží (EAN / PLU / SKU). Kategorie navíc určí pořadí tlačítek.
  */
 
 export const IMPORT_LIMITS = {
@@ -20,6 +20,9 @@ export const IMPORT_LIMITS = {
   maxCatalog: 5000,
   /** stejné jako CatalogInput v lib/server/schemas.ts */
   nameMax: 80,
+  /** kategorie a kód zboží – stejné jako CatalogInput */
+  categoryMax: 80,
+  codeMax: 64,
   /** 10 milionů Kč v haléřích – stejné jako CatalogInput */
   maxPrice: 10_000_000_00,
 } as const;
@@ -380,8 +383,8 @@ export interface PreviewOptions {
 
 export interface ImportPreview {
   rows: ImportRow[];
-  /** co se pošle na server – v pořadí podle kategorie (první výskyt) a pak podle souboru */
-  items: { name: string; price: number; vatRate: number }[];
+  /** co se pošle na server – v pořadí podle kategorie (první výskyt) a pak podle souboru; kategorie a kód jen když jsou */
+  items: { name: string; price: number; vatRate: number; category?: string; ean?: string }[];
   counts: Record<ImportStatus, number>;
   notices: string[];
 }
@@ -493,7 +496,14 @@ export function buildPreview(table: Pick<ImportTable, "rows">, mapping: ImportMa
   const order = new Map<string, number>();
   for (const r of ok) if (!order.has(r.category ?? "")) order.set(r.category ?? "", order.size);
   const sorted = ok.map((r, i) => ({ r, i })).sort((a, b) => order.get(a.r.category ?? "")! - order.get(b.r.category ?? "")! || a.i - b.i);
-  let items = sorted.map(({ r }) => ({ name: r.name, price: r.price!, vatRate: r.vatRate }));
+  let items = sorted.map(({ r }) => ({
+    name: r.name,
+    price: r.price!,
+    vatRate: r.vatRate,
+    // delší kategorie / kód se zkrátí (do katalogu se jinak nevejdou); prázdné se neposílají
+    ...(r.category ? { category: r.category.replace(/\s+/g, " ").slice(0, IMPORT_LIMITS.categoryMax) } : {}),
+    ...(r.code ? { ean: r.code.replace(/\s+/g, "").slice(0, IMPORT_LIMITS.codeMax) } : {}),
+  }));
 
   const room = IMPORT_LIMITS.maxCatalog - (opts.existingCount ?? 0);
   if (items.length > room) {

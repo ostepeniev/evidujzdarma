@@ -180,6 +180,7 @@ function CompanySection({ state, onSaved }: { state: State; onSaved: (s: State) 
     eic: acc?.eic && acc.eic !== acc.dic ? acc.eic : "",
     vatPayer: acc?.vatPayer ?? false,
     iban: acc?.iban ?? "",
+    receiptHeader: acc?.receiptHeader ?? "",
     receiptFooter: acc?.receiptFooter ?? "",
     receiptShowPok: acc?.receiptShowPok ?? true,
     ownerName: "",
@@ -232,7 +233,16 @@ function CompanySection({ state, onSaved }: { state: State; onSaved: (s: State) 
             onSaved(
               await call<State>("/api/ucet", {
                 method: "POST",
-                json: { ...form, ico: form.ico || undefined, dic: form.dic || undefined, eic: form.eic || undefined, iban: form.iban || undefined, ownerName: form.ownerName || undefined },
+                json: {
+                  ...form,
+                  ico: form.ico || undefined,
+                  dic: form.dic || undefined,
+                  eic: form.eic || undefined,
+                  iban: form.iban || undefined,
+                  ownerName: form.ownerName || undefined,
+                  receiptHeader: form.receiptHeader.trim() || null,
+                  receiptFooter: form.receiptFooter.trim() || null,
+                },
               }),
             );
           });
@@ -293,10 +303,16 @@ function CompanySection({ state, onSaved }: { state: State; onSaved: (s: State) 
               </div>
             )}
             <div className="sm:col-span-2">
-              <label htmlFor="f-footer" className="label">
-                Patička účtenky
+              <label htmlFor="f-header" className="label">
+                Záhlaví účtenky <span className="font-normal text-muted">(text nahoře, pod údaji firmy)</span>
               </label>
-              <input id="f-footer" className="input" placeholder="Děkujeme za návštěvu!" value={form.receiptFooter} onChange={(e) => set("receiptFooter", e.target.value)} />
+              <input id="f-header" className="input" maxLength={300} placeholder="např. Otevřeno Po–Pá 9–18 · tel. 777 123 456" value={form.receiptHeader} onChange={(e) => set("receiptHeader", e.target.value)} />
+            </div>
+            <div className="sm:col-span-2">
+              <label htmlFor="f-footer" className="label">
+                Patička účtenky <span className="font-normal text-muted">(text dole)</span>
+              </label>
+              <input id="f-footer" className="input" maxLength={300} placeholder="Děkujeme za návštěvu!" value={form.receiptFooter} onChange={(e) => set("receiptFooter", e.target.value)} />
             </div>
             <label className="flex items-center gap-3 sm:col-span-2">
               <input type="checkbox" checked={form.vatPayer} onChange={(e) => set("vatPayer", e.target.checked)} className="h-5 w-5 accent-brand-600" />
@@ -405,7 +421,37 @@ function UnitsSection({ state, reload }: { state: State; reload: () => Promise<v
 
 function UnitRow({ unit, reload }: { unit: NonNullable<State["units"]>[number]; reload: () => Promise<void> }) {
   const [fsId, setFsId] = useState(unit.fsUnitId ? String(unit.fsUnitId) : "");
+  const [edit, setEdit] = useState<null | { label: string; address: string }>(null);
   const { busy, error, run } = useAction();
+  if (edit)
+    return (
+      // S3-POKLADNA: úprava názvu a adresy jednotky (adresa se tiskne na účtenku)
+      <li className="p-3">
+        <form
+          className="grid gap-2 sm:grid-cols-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void run(async () => {
+              await call(`/api/ucet/jednotky/${unit.id}`, { method: "PATCH", json: { label: edit.label, address: edit.address.trim() || null } });
+              setEdit(null);
+              await reload();
+            });
+          }}
+        >
+          <input aria-label={`Název jednotky ${unit.label}`} required maxLength={120} className="input" value={edit.label} onChange={(e) => setEdit({ ...edit, label: e.target.value })} />
+          <input aria-label={`Adresa jednotky ${unit.label}`} maxLength={300} className="input" placeholder="Adresa (tiskne se na účtenku)" value={edit.address} onChange={(e) => setEdit({ ...edit, address: e.target.value })} />
+          <div className="flex gap-2 sm:col-span-2">
+            <button type="submit" className="btn-secondary px-3 py-2" disabled={busy}>
+              Uložit změny
+            </button>
+            <button type="button" className="px-2 text-sm text-muted" onClick={() => setEdit(null)}>
+              Zrušit
+            </button>
+          </div>
+          {error && <p className="text-sm text-danger-600 sm:col-span-2">{error}</p>}
+        </form>
+      </li>
+    );
   return (
     <li className="flex flex-wrap items-center gap-3 p-3">
       <div className="min-w-0 flex-1">
@@ -423,6 +469,9 @@ function UnitRow({ unit, reload }: { unit: NonNullable<State["units"]>[number]; 
         onClick={() => void run(async () => (await call(`/api/ucet/jednotky/${unit.id}`, { method: "PATCH", json: { fsUnitId: fsId ? Number(fsId) : null } }), await reload()))}
       >
         Uložit
+      </button>
+      <button type="button" className="px-2 text-sm text-muted hover:text-ink" onClick={() => setEdit({ label: unit.label, address: unit.address ?? "" })}>
+        Upravit
       </button>
       <button type="button" className="px-2 text-sm text-muted hover:text-danger-600" onClick={() => void run(async () => (await call(`/api/ucet/jednotky/${unit.id}`, { method: "DELETE" }), await reload()))}>
         Odebrat
@@ -508,11 +557,21 @@ function CertificateSection({ state, reload }: { state: State; reload: () => Pro
 
 /* ───────────── 5. Režim a test ───────────── */
 
+/** Výsledek ověřovací tržby (overeni) jednou větou. */
+function verificationText(r: { ok: boolean; mode: string; message?: string; code?: string; simulated?: boolean; warnings?: { code: number; text: string }[] }): string {
+  const warn = r.warnings?.length ? ` Upozornění FS: ${r.warnings.map((w) => w.text).join("; ")}` : "";
+  if (!r.ok) return `Finanční správa zprávu odmítla: ${r.message ?? r.code}`;
+  if (r.simulated || r.mode === "mock") return "Ukázkový režim: nic se do FS neodeslalo, certifikát tím ověřený není.";
+  return `Finanční správa (${MODE_LABEL[r.mode] ?? r.mode}) ověřovací zprávu přijala – certifikát, EIČ i číslo jednotky jsou v pořádku.${warn}`;
+}
+
 function ModeSection({ state, reload, hasProdCert, hasPgCert }: { state: State; reload: () => Promise<void>; hasProdCert: boolean; hasPgCert: boolean }) {
   const mode = state.account!.eetMode;
   const units = (state.units ?? []).filter((u) => u.active);
   const { busy, error, run } = useAction();
-  const [result, setResult] = useState<string | null>(null);
+  const [result, setResult] = useState<string[] | null>(null);
+  // S3-POKLADNA: ověřovací tržba za vybranou jednotku, nebo postupně za všechny ("all")
+  const [verifyUnit, setVerifyUnit] = useState<string>("all");
   const MODES = [
     { v: "mock", l: "Ukázkový režim", d: "Vyzkoušejte si pokladnu. Nic se neodesílá Finanční správě." },
     { v: "playground", l: "Testovací prostředí FS", d: "Odesílá na Playground Finanční správy (potřebuje testovací certifikát)." },
@@ -553,7 +612,23 @@ function ModeSection({ state, reload, hasProdCert, hasPgCert }: { state: State; 
         })}
       </div>
       {units[0] && (
-        <div className="mt-4">
+        <div className="mt-4 flex flex-wrap items-end gap-2">
+          {units.length > 1 && (
+            <div>
+              <label htmlFor="verify-unit" className="label">
+                Za evidenční jednotku
+              </label>
+              <select id="verify-unit" className="input" value={verifyUnit} onChange={(e) => setVerifyUnit(e.target.value)}>
+                <option value="all">Všechny jednotky ({units.length})</option>
+                {units.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.label}
+                    {u.fsUnitId ? ` (č. ${u.fsUnitId})` : " (bez čísla z DIS+)"}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <button
             type="button"
             className="btn-secondary"
@@ -561,27 +636,28 @@ function ModeSection({ state, reload, hasProdCert, hasPgCert }: { state: State; 
             onClick={() =>
               void run(async () => {
                 setResult(null);
-                const r = await call<{ ok: boolean; mode: string; message?: string; code?: string; simulated?: boolean; warnings?: { code: number; text: string }[] }>("/api/ucet/overeni", {
-                  method: "POST",
-                  json: { unitId: units[0]!.id },
-                });
-                const warn = r.warnings?.length ? ` Upozornění FS: ${r.warnings.map((w) => w.text).join("; ")}` : "";
-                setResult(
-                  r.ok
-                    ? r.simulated || r.mode === "mock"
-                      ? "Ukázkový režim: nic se do FS neodeslalo, certifikát tím ověřený není."
-                      : `Finanční správa (${MODE_LABEL[r.mode] ?? r.mode}) ověřovací zprávu přijala – certifikát, EIČ i číslo jednotky jsou v pořádku.${warn}`
-                    : `Finanční správa zprávu odmítla: ${r.message ?? r.code}`,
-                );
+                const targets = verifyUnit === "all" || !units.some((u) => u.id === verifyUnit) ? units : units.filter((u) => u.id === verifyUnit);
+                const out: string[] = [];
+                // postupně – každá jednotka má vlastní číslo z DIS+ a FS ho ověřuje zvlášť
+                for (const u of targets) {
+                  const r = await call<{ ok: boolean; mode: string; message?: string; code?: string; simulated?: boolean; warnings?: { code: number; text: string }[] }>("/api/ucet/overeni", {
+                    method: "POST",
+                    json: { unitId: u.id },
+                  });
+                  out.push(`${targets.length > 1 ? `${u.label}: ` : ""}${verificationText(r)}`);
+                  setResult([...out]);
+                }
               })
             }
           >
             Odeslat ověřovací tržbu
           </button>
           {result && (
-            <p role="status" className="mt-3 rounded-xl bg-surface p-3 text-[15px]">
-              {result}
-            </p>
+            <div role="status" className="mt-1 w-full space-y-1 rounded-xl bg-surface p-3 text-[15px]">
+              {result.map((line, i) => (
+                <p key={i}>{line}</p>
+              ))}
+            </div>
           )}
         </div>
       )}
@@ -779,15 +855,7 @@ function CatalogSection({ state, reload }: { state: State; reload: () => Promise
       {items.length > 0 && (
         <ul className="mb-4 divide-y divide-line rounded-2xl border border-line">
           {shown.map((i) => (
-            <li key={i.id} className="flex items-center justify-between gap-3 p-3 text-[15px]">
-              <span>
-                {i.name} · <strong>{formatCzk(i.price)}</strong>
-                {vatPayer && <span className="text-muted"> · DPH {i.vatRate} %</span>}
-              </span>
-              <button type="button" className="text-sm text-muted hover:text-danger-600" onClick={() => void run(async () => (await call(`/api/ucet/katalog/${i.id}`, { method: "DELETE" }), await reload()))}>
-                Smazat
-              </button>
-            </li>
+            <CatalogRow key={i.id} item={i} vatPayer={vatPayer} reload={reload} />
           ))}
           {items.length > CATALOG_LIST_MAX && (
             <li className="p-3">
@@ -802,9 +870,9 @@ function CatalogSection({ state, reload }: { state: State; reload: () => Promise
         className="flex flex-wrap gap-2"
         onSubmit={(e) => {
           e.preventDefault();
-          const price = Math.round(Number(form.price.replace(",", ".")) * 100);
+          const price = priceFromInput(form.price);
           void run(async () => {
-            if (!Number.isFinite(price) || price <= 0) throw new Error("Zadejte cenu");
+            if (price === null) throw new Error("Zadejte cenu větší než 0 Kč, nejvýš 2 desetinná místa.");
             await call("/api/ucet/katalog", { method: "POST", json: { name: form.name, price, vatRate: form.vatRate, sort: items.length } });
             setForm({ ...form, name: "", price: "" });
             await reload();
@@ -827,6 +895,100 @@ function CatalogSection({ state, reload }: { state: State; reload: () => Promise
       <ErrorText error={error} />
       <CatalogImport vatPayer={vatPayer} existing={items} onChange={reload} />
     </Section>
+  );
+}
+
+type CatalogItemDto = NonNullable<State["catalog"]>[number];
+
+/** Cena z pole formuláře („45“, „45,50“) → haléře; null = neplatná. */
+function priceFromInput(v: string): number | null {
+  const t = v.replace(/\s+/g, "").replace(",", ".");
+  if (!/^\d+(\.\d{1,2})?$/.test(t)) return null;
+  const h = Math.round(Number(t) * 100);
+  return h > 0 && h <= 10_000_000_00 ? h : null;
+}
+
+/** Řádek katalogu: zobrazení, úprava (název, cena, DPH, rychlé tlačítko, kategorie, kód) a smazání – S3-POKLADNA. */
+function CatalogRow({ item: i, vatPayer, reload }: { item: CatalogItemDto; vatPayer: boolean; reload: () => Promise<void> }) {
+  const [edit, setEdit] = useState<null | { name: string; price: string; vatRate: number; active: boolean; category: string; ean: string }>(null);
+  const { busy, error, run } = useAction();
+  if (edit)
+    return (
+      <li className="p-3">
+        <form
+          className="grid gap-2 sm:grid-cols-6"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void run(async () => {
+              const price = priceFromInput(edit.price);
+              if (price === null) throw new Error("Zadejte cenu větší než 0 Kč, nejvýš 2 desetinná místa.");
+              await call(`/api/ucet/katalog/${i.id}`, {
+                method: "PATCH",
+                // kód z importu může mít znaky, které ruční zadání nepovolí – posíláme ho jen po změně
+                json: { name: edit.name, price, vatRate: vatPayer ? edit.vatRate : 0, active: edit.active, category: edit.category, ...(edit.ean !== (i.ean ?? "") ? { ean: edit.ean } : {}) },
+              });
+              setEdit(null);
+              await reload();
+            });
+          }}
+        >
+          <input aria-label="Název položky" required maxLength={80} className="input sm:col-span-3" value={edit.name} onChange={(e) => setEdit({ ...edit, name: e.target.value })} />
+          <input aria-label="Cena v Kč" required inputMode="decimal" className="input sm:col-span-2" value={edit.price} onChange={(e) => setEdit({ ...edit, price: e.target.value })} />
+          {vatPayer ? (
+            <select aria-label="Sazba DPH" className="input" value={edit.vatRate} onChange={(e) => setEdit({ ...edit, vatRate: Number(e.target.value) })}>
+              <option value={21}>21 %</option>
+              <option value={12}>12 %</option>
+              <option value={0}>0 %</option>
+            </select>
+          ) : (
+            <span className="hidden sm:block" />
+          )}
+          <input aria-label="Kategorie" maxLength={80} className="input sm:col-span-3" placeholder="Kategorie (nepovinné)" value={edit.category} onChange={(e) => setEdit({ ...edit, category: e.target.value })} />
+          <input aria-label="Kód / EAN" maxLength={64} className="input sm:col-span-3" placeholder="Kód / EAN (nepovinné)" value={edit.ean} onChange={(e) => setEdit({ ...edit, ean: e.target.value })} />
+          <label className="flex items-center gap-3 sm:col-span-6">
+            <input type="checkbox" checked={edit.active} onChange={(e) => setEdit({ ...edit, active: e.target.checked })} className="h-5 w-5 accent-brand-600" />
+            Rychlé tlačítko v pokladně
+          </label>
+          <div className="flex gap-2 sm:col-span-6">
+            <button type="submit" className="btn-secondary px-3 py-2" disabled={busy}>
+              Uložit změny
+            </button>
+            <button type="button" className="px-2 text-sm text-muted" onClick={() => setEdit(null)}>
+              Zrušit
+            </button>
+          </div>
+          {error && <p className="text-sm text-danger-600 sm:col-span-6">{error}</p>}
+        </form>
+      </li>
+    );
+  return (
+    <li className="flex flex-wrap items-center justify-between gap-3 p-3 text-[15px]">
+      <span className="min-w-0">
+        {i.name} · <strong>{formatCzk(i.price)}</strong>
+        {vatPayer && <span className="text-muted"> · DPH {i.vatRate} %</span>}
+        {(i.category || i.ean) && (
+          <span className="block text-sm text-muted">
+            {[i.category, i.ean && `kód ${i.ean}`].filter(Boolean).join(" · ")}
+          </span>
+        )}
+        {!i.active && <span className="block text-sm text-warn-700">Skryto – v pokladně se neukáže</span>}
+      </span>
+      <span className="flex gap-3">
+        <button
+          type="button"
+          className="text-sm text-muted hover:text-ink"
+          onClick={() =>
+            setEdit({ name: i.name, price: (i.price / 100).toFixed(2).replace(".", ","), vatRate: i.vatRate, active: i.active, category: i.category ?? "", ean: i.ean ?? "" })
+          }
+        >
+          Upravit
+        </button>
+        <button type="button" className="text-sm text-muted hover:text-danger-600" onClick={() => void run(async () => (await call(`/api/ucet/katalog/${i.id}`, { method: "DELETE" }), await reload()))}>
+          Smazat
+        </button>
+      </span>
+      {error && <p className="w-full text-sm text-danger-600">{error}</p>}
+    </li>
   );
 }
 

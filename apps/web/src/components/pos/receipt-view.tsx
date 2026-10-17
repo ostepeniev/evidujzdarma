@@ -3,7 +3,7 @@
 import QRCode from "qrcode";
 import { useEffect, useMemo, useState } from "react";
 import { PAYMENT_LABEL, cashChange, deadlineFor, formatRemaining, renderReceiptText, urgency } from "@ez/fiscal-core";
-import { getSale, refundFor } from "@/lib/pos/db";
+import { getSale, refundsOf } from "@/lib/pos/db";
 import { refundBlockedReason } from "@/lib/pos/sale-factory";
 import { bluetoothSupported, printEscPos } from "@/lib/pos/escpos";
 import { emailReceipt, onSyncChange, resendSale, syncNow } from "@/lib/pos/sync";
@@ -60,23 +60,26 @@ export function ReceiptView({
   onNew,
   onRefund,
   onBack,
+  refundBusy,
 }: {
   saleId: string;
   config: PosConfig;
   onNew: () => void;
   onRefund?: (sale: LocalSale) => void;
   onBack?: () => void;
+  refundBusy?: boolean;
 }) {
   const [sale, setSale] = useState<LocalSale | null>(null);
   const [emailOpen, setEmailOpen] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [refunded, setRefunded] = useState(false);
+  /** kolik už vrátily vratky v tomto zařízení (haléře, kladně); částečných vratek může být víc (S3-POKLADNA) */
+  const [refundedAmount, setRefundedAmount] = useState(0);
 
   useEffect(() => {
     const load = () => {
       void getSale(saleId).then((s) => setSale(s ?? null));
-      void refundFor(saleId).then((r) => setRefunded(!!r));
+      void refundsOf(saleId).then((list) => setRefundedAmount(-list.reduce((s, r) => s + r.total, 0)));
     };
     load();
     return onSyncChange(load);
@@ -92,6 +95,7 @@ export function ReceiptView({
   const deadline = deadlineFor(sale.soldAt);
   const pending = ["local", "queued", "sending", "failed"].includes(sale.status);
   const urg = urgency(deadline);
+  const refunded = !sale.refundOf && sale.subtotal > 0 && refundedAmount >= sale.subtotal;
 
   return (
     <div className="mx-auto w-full max-w-xl space-y-4">
@@ -171,6 +175,11 @@ export function ReceiptView({
           {refundBlocked}
         </p>
       )}
+      {!sale.refundOf && refundedAmount > 0 && (
+        <p role="note" className="no-print text-center text-sm text-ink-soft">
+          {refunded ? "Doklad je celý vrácený." : `Částečně vráceno: ${kc(refundedAmount)}.`}
+        </p>
+      )}
       <div className="no-print flex flex-col gap-2 sm:flex-row">
         {onBack && (
           <button type="button" className="btn-secondary flex-1" onClick={onBack}>
@@ -178,8 +187,8 @@ export function ReceiptView({
           </button>
         )}
         {onRefund && !sale.refundOf && !refunded && sale.total > 0 && sale.status !== "rejected" && !refundBlocked && (
-          <button type="button" className="btn-secondary flex-1" onClick={() => onRefund(sale)}>
-            Vratka
+          <button type="button" className="btn-secondary flex-1" disabled={refundBusy} onClick={() => onRefund(sale)}>
+            {refundBusy ? "Načítám…" : "Vratka"}
           </button>
         )}
         <button type="button" className="btn-primary flex-1 py-4 text-lg" onClick={onNew}>

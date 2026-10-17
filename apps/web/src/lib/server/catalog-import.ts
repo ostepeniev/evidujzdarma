@@ -9,6 +9,9 @@ export interface CatalogImportItem {
   /** cena s DPH v haléřích */
   price: number;
   vatRate: number;
+  /** S3-POKLADNA: kategorie a kód zboží (EAN / PLU / SKU) z exportu jiné pokladny */
+  category?: string | null;
+  ean?: string | null;
 }
 
 /**
@@ -52,11 +55,45 @@ export async function importCatalogItems(accountId: string, items: readonly Cata
       const chunk = fresh.slice(i, i + 500);
       const rows = await tx
         .insert(schema.catalogItems)
-        .values(chunk.map((it, j) => ({ accountId, name: it.name, price: it.price, vatRate: it.vatRate, sort: start + i + j, active: true })))
+        .values(chunk.map((it, j) => ({ accountId, name: it.name, price: it.price, vatRate: it.vatRate, category: it.category ?? null, ean: it.ean ?? null, sort: start + i + j, active: true })))
         .returning({ id: schema.catalogItems.id, name: schema.catalogItems.name });
       created.push(...rows);
     }
     return { created, skipped };
+  });
+}
+
+/**
+ * Jedna položka z nastavení (S3-POKLADNA): stejný strop katalogu IMPORT_LIMITS.maxCatalog jako import, pod zámkem řádku
+ * účtu, aby ho souběžné přidávání nepřekročilo.
+ */
+export async function createCatalogItem(
+  accountId: string,
+  input: { name: string; price: number; vatRate: number; color?: string | null; sort?: number; active?: boolean; category?: string | null; ean?: string | null },
+) {
+  return getDb().transaction(async (tx) => {
+    const [account] = await tx.select({ id: schema.accounts.id, closedAt: schema.accounts.closedAt }).from(schema.accounts).where(eq(schema.accounts.id, accountId)).for("update");
+    if (!account) throw new HttpError(404, "Účet nenalezen");
+    if (account.closedAt) throw new HttpError(400, "Účet je zrušený.");
+    const [c] = await tx.select({ n: sql<number>`count(*)::int` }).from(schema.catalogItems).where(eq(schema.catalogItems.accountId, accountId));
+    if ((c?.n ?? 0) >= IMPORT_LIMITS.maxCatalog) {
+      throw new HttpError(400, `Katalog pojme nejvýš ${IMPORT_LIMITS.maxCatalog.toLocaleString("cs-CZ")} položek. Nejdřív nějakou smažte.`);
+    }
+    const [item] = await tx
+      .insert(schema.catalogItems)
+      .values({
+        accountId,
+        name: input.name,
+        price: input.price,
+        vatRate: input.vatRate,
+        color: input.color ?? null,
+        sort: input.sort ?? 0,
+        active: input.active ?? true,
+        category: input.category ?? null,
+        ean: input.ean ?? null,
+      })
+      .returning();
+    return item!;
   });
 }
 
