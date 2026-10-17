@@ -35,6 +35,7 @@ const COLUMNS = [
     links: [
       { href: "/pokladna", label: "Pokladna (aplikace)" },
       { href: "/ukazka", label: "Ukázka pokladny bez registrace" },
+      { href: "/napoveda", label: "Nápověda" },
       { href: "/ucetni", label: "Pro účetní" },
       { href: "/ucetni/hromadna-kontrola", label: "Hromadná kontrola IČO" },
       { href: "/ucetni/sablony", label: "Šablony dopisů klientům" },
