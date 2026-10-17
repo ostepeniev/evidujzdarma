@@ -221,6 +221,10 @@ export function PosApp() {
         <p className="mt-8 text-sm text-muted">
           Ještě se rozhodujete? <Link href="/srovnani/moje-eet" className="underline">Srovnání s MOJE eet</Link>
         </p>
+        {/* S2-A: postup nastavení krok za krokem */}
+        <p className="mt-2 text-sm text-muted">
+          Jak na to? <Link href="/napoveda/prvni-spusteni" className="underline">Nápověda k pokladně</Link>
+        </p>
       </div>
     );
 

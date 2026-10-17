@@ -103,9 +103,13 @@ export function SetupApp({ initial }: { initial: State }) {
           <h1 className="text-3xl font-extrabold">Nastavení pokladny</h1>
           <p className="text-[15px] text-ink-soft">EET za 15 minut – krok za krokem. Přihlášen: {state.user.email}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Link href="/pokladna" className="btn-primary">
             Otevřít pokladnu
+          </Link>
+          {/* S2-A: nápověda k pokladně v nové kartě, ať se rozpracované nastavení neztratí */}
+          <Link href="/napoveda" target="_blank" className="btn-secondary">
+            Nápověda
           </Link>
           <button
             type="button"

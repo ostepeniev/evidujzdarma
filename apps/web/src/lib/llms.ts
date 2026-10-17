@@ -3,6 +3,7 @@ import { plainText } from "@/components/rich-text";
 import { FACTS, FACTS_UPDATED, TIMELINE } from "@/content/facts";
 import { GUIDES, guideModified, isIndexable } from "@/content/guides";
 import { MYTHS, MYTHS_UPDATED } from "@/content/myths";
+import { helpIndexable } from "@/content/napoveda";
 import type { Block, Guide } from "@/content/guides/types";
 import { OPERATOR, SITE, absoluteUrl, REVIEWER } from "./site";
 import { STATIC_PAGES } from "./static-pages";
@@ -78,6 +79,10 @@ export function llmsTxt(): string {
     `- [MCP server pro AI asistenty](${absoluteUrl("/mcp")}): veřejný MCP server (Streamable HTTP, bez přihlášení) na ${absoluteUrl("/api/mcp")} – nástroje eet_check_ico, eet_calculate_eet_off, eet_classify_payment, eet_get_facts, eet_list_misconceptions, eet_search_guides, eet_get_guide, eet_get_fs_status.`,
     `- [Srovnání s MOJE eet](${absoluteUrl("/srovnani/moje-eet")})`,
     `- [Ukázka pokladny bez registrace](${absoluteUrl("/ukazka")}): prodej, platba a účtenka v prohlížeči; nic se neukládá ani neodesílá.`,
+    // S2-A: nápověda k pokladně – až po otevření pokladny (do té doby noindex a mimo sitemap)
+    ...(helpIndexable()
+      ? [`- [Nápověda k pokladně](${absoluteUrl("/napoveda")}): jak v pokladně EvidujZdarma nastavit firmu, certifikát a jednotky, prodávat, vydat účtenku, udělat vratku a uzávěrku a stáhnout export pro účetní.`]
+      : []),
     `- [Všechny návody](${absoluteUrl("/navody")}) a [všechny nástroje](${absoluteUrl("/nastroje")})`,
     `- [O nás a odborná revize](${absoluteUrl("/o-nas")}): kdo web provozuje, jak ověřujeme fakta a kdo návody reviduje.`,
     `- [Ceník](${absoluteUrl("/cenik")}): evidence tržeb zdarma navždy; Premium 149 Kč/měsíc.`,
