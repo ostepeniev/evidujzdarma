@@ -2,7 +2,7 @@
  * Stav „pokladna zavřená / otevřená“ pro testy (R17.2). Testy nečtou natvrdo zapsané seznamy: vezmou skutečné
  * CLOSED_SECTIONS / CLOSED_API z lib/launch.ts a jen přidají nebo uberou sekce pokladny. Commit otevření (kontrolor,
  * 2. 11.) tak testy nerozbije – „zavřený“ test si zavřený stav nasimuluje, „otevřený“ otevřený.
- * Katalog (/firmy, /firma, /provozovna, /obor) zůstává, jak je ve skutečném seznamu.
+ * Katalog (/firmy, /firma, /provozovna, /obor) zůstává, jak je ve skutečném seznamu – od S3 otevřený.
  */
 import { vi } from "vitest";
 

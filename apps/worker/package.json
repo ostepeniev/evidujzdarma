@@ -8,7 +8,8 @@
     "typecheck": "tsc --noEmit",
     "catalog:import": "tsx src/catalog/import-res.ts",
     "catalog:enrich": "tsx src/catalog/enrich-ares.ts",
-    "catalog:seed": "tsx src/catalog/seed-dev.ts"
+    "catalog:seed": "tsx src/catalog/seed-dev.ts",
+    "catalog:loadtest": "tsx src/catalog/loadtest.ts"
   },
   "dependencies": {
     "@ez/cz": "workspace:*",

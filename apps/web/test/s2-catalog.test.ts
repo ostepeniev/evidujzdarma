@@ -8,6 +8,8 @@
  *  - robots.txt: Disallow pro URL s IČO v query, žádná stránka ze STATIC_PAGES zablokovaná;
  *  - render na vyžádání bez ISR (R3.3), cache agregací v paměti.
  * Data: syntetické subjekty „Ukázkov…“ v PGlite se stejnými migracemi jako produkce (vč. 0037).
+ * S3: katalog je otevřený; v seznamech jmenovitě jen právnické osoby (OSVČ počtem), OSVČ noindex – testy upravené
+ * (nové chování podrobně v s3-catalog.test.ts).
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -144,12 +146,16 @@ describe("S2-D – obor × obec page", () => {
   it("gate: renders H1, count and the list (Karlovy Vary, 7 subjects; objection and dissolved left out)", async () => {
     const { meta, html } = await renderObec("kadernictvi-a-kosmetika", "554961-karlovy-vary");
     const tx = text(html);
-    expect(html).toMatch(/<h1[^>]*>Kadeřnictví a kosmetika Karlovy Vary – EET 2\.0<\/h1>/);
+    expect(html).toMatch(/<h1[^>]*>Kadeřnictví a kosmetika Karlovy Vary – firmy a EET 2\.0<\/h1>/);
     expect(tx).toContain("V katalogu je 7 subjektů se sídlem v obci Karlovy Vary");
-    for (const f of [SALON_A, SALON_B, OSVC]) {
+    for (const f of [SALON_A, SALON_B]) {
       expect(tx).toContain(f.name);
       expect(hrefs(html)).toContain(`/firma/${f.ico}-${f.slug}`);
     }
+    // S3: OSVČ jen počtem
+    expect(tx).not.toContain(OSVC.name);
+    expect(hrefs(html)).not.toContain(`/firma/${OSVC.ico}-${OSVC.slug}`);
+    expect(tx).toContain("a další 1 živnostník");
     expect(tx).not.toContain("s námitkou");
     expect(tx).not.toContain("zaniklé kadeřnictví");
     expect(tx).not.toContain(BISTRO_SAME_ADDR.name); // jiný obor
@@ -160,13 +166,13 @@ describe("S2-D – obor × obec page", () => {
     // FAQ 3–5 otázek s JSON-LD a zdroji
     const faq = JSON.parse(html.match(/<script type="application\/ld\+json">(\{"@context":"https:\/\/schema.org","@type":"FAQPage"[\s\S]*?)<\/script>/)![1]!);
     expect(faq.mainEntity.length).toBeGreaterThanOrEqual(3);
-    expect(faq.mainEntity.length).toBeLessThanOrEqual(5);
+    expect(faq.mainEntity.length).toBeLessThanOrEqual(6);
     expect(tx).toContain("Zdroje:");
     expect(tx).toContain("1. 1. 2027");
     // indexuje se, kanonická adresa
     expect(meta.robots).toBeUndefined();
     expect(meta.alternates?.canonical).toBe("/obor/kadernictvi-a-kosmetika/obec/554961-karlovy-vary");
-    expect(String(meta.title)).toBe("Kadeřnictví a kosmetika Karlovy Vary – EET 2.0");
+    expect(meta.title).toEqual({ absolute: "Kadeřnictví a kosmetika Karlovy Vary – firmy a EET 2.0" });
   });
 
   it("gate: links – the same obor in other obce of the kraj (only those not thin) and other obory in the same obec", async () => {
@@ -260,7 +266,7 @@ describe("S2-D – firm page", () => {
     const links = hrefs(html);
     const { isClosed } = await import("@/lib/launch");
     expect(links).toContain(`/#registrace&ico=${SALON_A.ico}`);
-    expect(text(html)).toContain(isClosed("/pokladna") ? "Předregistrovat se zdarma" : "Začít evidovat zdarma");
+    expect(text(html)).toContain(isClosed("/pokladna") ? "Pokladna zdarma – předregistrace" : "Začít evidovat zdarma");
     expect(links).toContain(`/kontrola-ico#ico=${SALON_A.ico}`);
     expect(links).toContain(`/namitka#ico=${SALON_A.ico}`);
     expect(text(html)).toContain("Je to vaše firma?");
@@ -271,7 +277,8 @@ describe("S2-D – firm page", () => {
     expect(text(html).includes("Vystavit fakturu této firmě")).toBe(hasFakturaPage());
     // žádný interní odkaz s IČO/IČP v query (oficiální záznam v ARES je cizí web)
     // (část za „#“ je fragment – ten se na server neposílá a roboti ho neprocházejí)
-    const bad = links.filter((h) => /[?&](ico|icp|odberatel)=/.test(h.split("#")[0]!) && !h.startsWith("https://ares.gov.cz/"));
+    // (S3: odkazy na cizí weby – ARES, Veřejný rejstřík justice.cz – nesou IČO v query, to je jejich adresa)
+    const bad = links.filter((h) => h.startsWith("/") && /[?&](ico|icp|odberatel)=/.test(h.split("#")[0]!));
     expect(links.filter((h) => h.startsWith("https://ares.gov.cz/")).length).toBeGreaterThan(0);
     expect(bad).toEqual([]);
   });
@@ -279,7 +286,7 @@ describe("S2-D – firm page", () => {
   it("gate: „Podobné firmy v okolí“ – same obor in the same obec, neighbours by name, link to the obor × obec page", async () => {
     const { html } = await renderFirm(SALON_B);
     const tx = text(html);
-    expect(tx).toContain("Podobné firmy v okolí");
+    expect(tx).toContain("Podobné firmy v obci Karlovy Vary");
     const section = html.slice(html.indexOf('id="podobne-firmy"'), html.indexOf("</section>", html.indexOf('id="podobne-firmy"')));
     expect(text(section)).not.toContain(SALON_B.name); // ne sama sebe
     expect(text(section)).toContain("Ukázkové kadeřnictví 03 s.r.o."); // soused v abecedě
@@ -290,7 +297,7 @@ describe("S2-D – firm page", () => {
 
   it("gate: „Další firmy na stejné adrese“ – legal persons only, on both sides; the OSVČ at the same address is never listed", async () => {
     const { html } = await renderFirm(SALON_A);
-    expect(text(html)).toContain("Další firmy na stejné adrese");
+    expect(text(html)).toContain("Na stejné adrese");
     const section = html.slice(html.indexOf('id="stejna-adresa"'), html.indexOf("</section>", html.indexOf('id="stejna-adresa"')));
     expect(text(section)).toContain(BISTRO_SAME_ADDR.name);
     expect(text(section)).not.toContain(OSVC.name);
@@ -304,14 +311,14 @@ describe("S2-D – firm page", () => {
   it("gate: OSVČ – the street never appears (firm page, its FAQ and JSON-LD, obor × obec page, neighbours' pages)", async () => {
     const own = await renderFirm(OSVC);
     expect(own.html).not.toContain(OSVC_STREET);
-    expect(text(own.html)).not.toContain("Další firmy na stejné adrese");
-    expect(text(own.html)).toContain("U fyzických osob neuvádíme adresu sídla, jen obec.");
+    expect(text(own.html)).not.toContain("Na stejné adrese");
+    expect(text(own.html)).toContain("U podnikajících fyzických osob uvádíme jen obec sídla – ne adresu, DIČ ani provozovny.");
     expect(text(own.html)).not.toMatch(/Kde sídlí/);
     const obec = await renderObec("kadernictvi-a-kosmetika", "554961-karlovy-vary");
     expect(obec.html).not.toContain(OSVC_STREET);
-    // stránka sousední s.r.o.: OSVČ v „Podobné firmy“ jen s obcí, ve „stejné adrese“ vůbec
+    // stránka sousední s.r.o.: OSVČ ani v „Podobné firmy“ (S3: jen právnické osoby), ani ve „stejné adrese“
     const neighbour = await renderFirm(SALON_B);
-    expect(text(neighbour.html)).toContain(OSVC.name);
+    expect(text(neighbour.html)).not.toContain(OSVC.name);
     const similar = neighbour.html.slice(neighbour.html.indexOf('id="podobne-firmy"'), neighbour.html.indexOf("</section>", neighbour.html.indexOf('id="podobne-firmy"')));
     expect(similar).not.toContain(OSVC_STREET);
   });
@@ -324,7 +331,7 @@ describe("S2-D – firm page", () => {
     const qa = Object.fromEntries(faq.mainEntity.map((m: { name: string; acceptedAnswer: { text: string } }) => [m.name, m.acceptedAnswer.text]));
     expect(qa[`Jaké IČO má ${SALON_A.name}?`]).toContain(SALON_A.ico);
     expect(qa[`Je ${SALON_A.name} plátce DPH?`]).toMatch(/^Ano\. Podle ARES k /);
-    expect(qa[`Kde sídlí ${SALON_A.name}?`]).toContain("Hlavní 1, 36001 Karlovy Vary");
+    expect(qa[`Kde sídlí ${SALON_A.name}?`]).toContain("Hlavní 1, 360 01 Karlovy Vary"); // S3: PSČ ve tvaru „360 01“
     expect(qa[`Od kdy existuje ${SALON_A.name}?`]).toContain("2. 3. 2015");
     const eet = qa[`Musí ${SALON_A.name} evidovat tržby (EET 2.0)?`];
     expect(eet).toMatch(/pravděpodobně ano/);
@@ -428,6 +435,7 @@ describe("S2-D – rendering strategy for 1M+ pages", () => {
       "src/app/(site)/firmy/page.tsx",
       "src/app/(site)/firmy/kraj/[kraj]/page.tsx",
       "src/app/(site)/firmy/nove/[mesic]/page.tsx",
+      "src/app/(site)/firmy/obec/[obec]/page.tsx",
       "src/app/(site)/firma/[slug]/page.tsx",
       "src/app/(site)/provozovna/[slug]/page.tsx",
       "src/app/obor/sitemap.ts",
@@ -442,7 +450,8 @@ describe("S2-D – rendering strategy for 1M+ pages", () => {
     const { catalogCacheHeaders, CATALOG_LIST_CACHE_CONTROL } = await import("@/lib/catalog-cache");
     expect(catalogCacheHeaders(true)).toEqual([]);
     const open = catalogCacheHeaders(false);
-    expect(open.map((h) => h.source)).toEqual(["/firmy/:path*", "/obor/:path*"]);
+    // S3: i stránky firem v katalogu a provozovny; živý náhled /firma/{IČO} až poslední (přepíše na private)
+    expect(open.map((h) => h.source)).toEqual(["/firmy/:path*", "/obor/:path*", "/provozovna/:path*", "/firma/:slug", "/firma/:ico(\\d{8})"]);
     expect(CATALOG_LIST_CACHE_CONTROL).toMatch(/s-maxage=\d+/);
     expect(CATALOG_LIST_CACHE_CONTROL).toMatch(/max-age=0/);
     expect(read("next.config.ts")).toContain("...catalogCacheHeaders()");
@@ -455,9 +464,9 @@ describe("S2-D – rendering strategy for 1M+ pages", () => {
     const a = await catalog.regionObecStats(51);
     const b = await catalog.regionObecStats(51);
     expect(a).toBe(b);
-    expect(a.get(KV.code)?.industries["kadernictvi-a-kosmetika"]).toEqual({ listable: 7, indexable: 7 });
-    expect(a.get(SOKOLOV.code)?.industries["kadernictvi-a-kosmetika"]).toEqual({ listable: 5, indexable: 4 });
-    expect((await catalog.regionObecStats(19)).get(PRAHA.code)?.industries["kadernictvi-a-kosmetika"]).toEqual({ listable: 6, indexable: 0 });
+    expect(a.get(KV.code)?.industries["kadernictvi-a-kosmetika"]).toMatchObject({ listable: 7, indexable: 7, legal: 6 });
+    expect(a.get(SOKOLOV.code)?.industries["kadernictvi-a-kosmetika"]).toMatchObject({ listable: 5, indexable: 4, legal: 5 });
+    expect((await catalog.regionObecStats(19)).get(PRAHA.code)?.industries["kadernictvi-a-kosmetika"]).toMatchObject({ listable: 6, indexable: 0 });
     const idx = (await t.pg.query<{ indexname: string; indexdef: string }>("select indexname, indexdef from pg_indexes where tablename = 'firms'")).rows;
     const def = (n: string) => idx.find((i) => i.indexname === n)?.indexdef ?? "";
     expect(def("firms_listable_city_name")).toMatch(/\(city_code, name\) WHERE \(\(noindex = false\) AND \(dissolved_at IS NULL\)\)/);

@@ -86,14 +86,14 @@ describe("R17.2 – the opening day (CLOSED_SECTIONS without the cash register)"
     expect(closed).not.toContain(PRIHLASENI_H);
   });
 
-  it("gate: robots.txt has no Disallow for /pokladna and /prihlaseni; the catalogue stays disallowed", async () => {
+  it("gate: robots.txt has no Disallow for /pokladna and /prihlaseni; the catalogue is open (S3) and not disallowed either", async () => {
     mockLaunch("open");
     const { default: robots } = await import("@/app/robots");
     const r = await robots();
     for (const rule of [r.rules].flat()) {
       const dis = [rule.disallow ?? []].flat();
       for (const p of ["/pokladna", "/prihlaseni"]) expect(dis.filter((d) => d === `${p}$` || d.startsWith(`${p}/`) || d === p), p).toEqual([]);
-      expect(dis).toContain("/firmy/");
+      expect(dis).not.toContain("/firmy/");
     }
   });
 

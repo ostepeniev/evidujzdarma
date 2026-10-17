@@ -11,11 +11,16 @@
  *   --batch <n>           velikost dávky (výchozí 1000)
  *   --dry-run             jen parsovat a spočítat, nic nezapisovat
  *   --pf-nace [cesta|url] po importu doplnit všechny obory z res_pf_nace.csv (bez hodnoty = oficiální URL)
+ *   --keep-dissolved      nemazat subjekty zaniklé před víc než 90 dny (výchozí je smazat – viz níže)
  *
  * Zásady: aktivní subjekty se upsertují (ON CONFLICT (ico) DO UPDATE), zaniklé se jen označí
  * `dissolved_at` (nové se nezakládají). Nikdy nepřepisujeme `profile`, `claimed_account_id`,
  * `noindex`, `dic`, `vat_payer`, `establishments_count`, `ares_updated_at`. U záznamů již ověřených
  * v ARES ponecháváme adresu a obory z ARES (obnovuje je catalog:enrich).
+ *
+ * S3 (LIA, docs/LIA-katalog-firem.md): po importu se smažou subjekty zaniklé před víc než 90 dny (i s provozovnami).
+ * Web jejich stránku po 90 dnech už nezobrazuje (lib/catalog-policy.ts); záznam v DB by byl jen zbytečně uložený
+ * osobní údaj (ÚOOÚ, UOOU-10201/18: údaje zaniklých podnikatelů se nemají dál zveřejňovat ani zpracovávat).
  */
 import { createReadStream } from "node:fs";
 import { Readable, pipeline } from "node:stream";
@@ -140,6 +145,15 @@ async function markDissolved(rows: { ico: string; date: string }[]): Promise<num
     update firms set dissolved_at = v.d, synced_at = now()
     from (values ${values}) as v(ico, d)
     where firms.ico = v.ico and firms.dissolved_at is distinct from v.d`);
+  return (res as unknown as { count?: number }).count ?? 0;
+}
+
+/** Po kolika dnech od zániku se subjekt z katalogu smaže – stejná lhůta jako DISSOLVED_GONE_DAYS na webu. */
+const DISSOLVED_PURGE_DAYS = 90;
+
+/** Smazat subjekty zaniklé před víc než DISSOLVED_PURGE_DAYS dny (provozovny smaže ON DELETE CASCADE). */
+async function purgeDissolved(): Promise<number> {
+  const res = await getDb().execute(sql`delete from firms where dissolved_at is not null and dissolved_at < (current_date - ${DISSOLVED_PURGE_DAYS}::int)`);
   return (res as unknown as { count?: number }).count ?? 0;
 }
 
@@ -283,6 +297,9 @@ async function main() {
   const stats = await importResData({ src, regions, limit, batch, dryRun, stop });
   log("hotovo:", stats);
   if (stats.noRegion > 0) log(`pozor: ${stats.noRegion} subjektů bez rozpoznaného kraje (OKRESLAU) — zkontrolujte mapování NUTS3_TO_KRAJ`);
+  if (!dryRun && !args["keep-dissolved"] && !stop.stopped) {
+    log(`smazáno zaniklých před víc než ${DISSOLVED_PURGE_DAYS} dny: ${await purgeDissolved()}`);
+  }
 
   const pf = args["pf-nace"];
   if (pf && !stop.stopped) {

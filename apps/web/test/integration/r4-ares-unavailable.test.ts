@@ -25,12 +25,19 @@ afterAll(async () => {
 describe("R4 – firm page when ARES is down", () => {
   it("ARES network failure → 'unavailable' state, not an exception (no 500)", async () => {
     fetchMock.mockRejectedValue(new TypeError("fetch failed"));
-    await expect(loadFirmPage("12345679-kadernictvi", "198.51.100.1")).resolves.toEqual({ kind: "unavailable", ico: "12345679" });
+    // S3: živý náhled z ARES má adresu bez slugu (/firma/{IČO}); se slugem se firma mimo katalog přesměruje (307)
+    await expect(loadFirmPage("12345679", "198.51.100.1")).resolves.toEqual({ kind: "unavailable", ico: "12345679" });
   });
 
   it("ARES 403/5xx → 'unavailable' too", async () => {
     fetchMock.mockResolvedValue(new Response("forbidden", { status: 403 }));
     await expect(loadFirmPage("11111119", "198.51.100.2")).resolves.toEqual({ kind: "unavailable", ico: "11111119" });
+  });
+
+  it("S3: a firm outside the catalogue with a slug in the URL redirects to the live view without asking ARES", async () => {
+    fetchMock.mockClear();
+    await expect(loadFirmPage("12345679-kadernictvi", "198.51.100.5")).rejects.toMatchObject({ digest: expect.stringMatching(/^NEXT_REDIRECT;replace;\/firma\/12345679;307;/) });
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("a subject that ARES does not know is still a 404", async () => {

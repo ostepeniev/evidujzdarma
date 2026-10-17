@@ -13,6 +13,7 @@ import { JsonLd } from "@/lib/jsonld";
 import { REVIEWER, SERVICE_COPY } from "@/lib/site";
 import { ExternalLink } from "@/components/external-link";
 import { PILLAR_SLUG, RelatedGuides, indexableGuides } from "@/components/related-guides";
+import { GuideCatalogLinks } from "@/components/catalog/guide-catalog-links";
 
 export const dynamicParams = false;
 
@@ -183,6 +184,8 @@ export default async function GuidePage({ params }: PageProps<"/navody/[slug]">)
       </div>
 
       <div className="container-page space-y-12">
+        {/* S3: oborové návody → katalog firem (obor × obec, obor × kraj) */}
+        <GuideCatalogLinks slug={g.slug} />
         <RelatedGuides guides={related} id="souvisejici" />
         <RelatedGuides guides={sameCategory} title={`Další návody: ${CATEGORY_LABEL[g.category]}`} id="dalsi-navody" />
       </div>

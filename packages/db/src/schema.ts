@@ -571,6 +571,13 @@ export const firms = pgTable(
     index("firms_legal_address")
       .on(t.cityCode, t.street)
       .where(sql`${t.noindex} = false and ${t.dissolvedAt} is null and ${t.isNaturalPerson} = false and ${t.street} is not null`),
+    // S3: seznamy jmenovitě jen s právnickými osobami (OSVČ jen počtem) – kraj a obec stránkované podle názvu
+    index("firms_listable_legal_region_name")
+      .on(t.regionCode, t.name)
+      .where(sql`${t.noindex} = false and ${t.dissolvedAt} is null and ${t.isNaturalPerson} = false`),
+    index("firms_listable_legal_city_name")
+      .on(t.cityCode, t.name)
+      .where(sql`${t.noindex} = false and ${t.dissolvedAt} is null and ${t.isNaturalPerson} = false`),
   ],
 );
 

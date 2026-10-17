@@ -250,6 +250,14 @@ export default function HomePage() {
               <p className="mt-1 text-xl font-bold text-ink">Je EET dole?</p>
               <p className="mt-2 text-[15px] text-ink-soft">Aktuální dostupnost rozhraní Finanční správy a historie výpadků, měřeno každých 5 minut.</p>
             </Link>
+            {/* S3: katalog firem (otevřený s LIA) */}
+            {!isClosed("/firmy") && (
+              <Link href="/firmy" className="card block transition-colors hover:border-brand-200">
+                <p className="text-sm font-semibold uppercase tracking-wide text-muted">Katalog firem</p>
+                <p className="mt-1 text-xl font-bold text-ink">Firmy v Karlovarském kraji</p>
+                <p className="mt-2 text-[15px] text-ink-soft">IČO, DIČ, sídlo a obory z ARES, fakturační údaje ke zkopírování a odhad, zda se firmy týká EET 2.0.</p>
+              </Link>
+            )}
           </div>
         </div>
       </section>

@@ -14,6 +14,7 @@ import {
 } from "@ez/cz";
 import { getDb, hasDatabase, schema } from "@ez/db";
 import { CATALOG_INDUSTRIES } from "@/components/catalog/industry";
+import { catalogNoindexReason, indexPersons, isGone, type CatalogNoindexReason } from "@/lib/catalog-policy";
 import { lookupCompany } from "./ares";
 
 /**
@@ -22,7 +23,10 @@ import { lookupCompany } from "./ares";
  * Zásady (GDPR, kvalita):
  *  - jen veřejné údaje z registrů (ARES, RŽP, RES ČSÚ), žádné vymyšlené texty;
  *  - u fyzických osob (OSVČ) se ulice sídla ani provozovny NIKDY nedostane do view modelu;
- *  - indexujeme postupně po krajích (CATALOG_INDEX_REGIONS) a jen záznamy ověřené v ARES.
+ *  - indexujeme postupně po krajích (CATALOG_INDEX_REGIONS) a jen záznamy ověřené v ARES;
+ *  - S3 (LIA, docs/LIA-katalog-firem.md): OSVČ mají stránku, ale noindex, mimo sitemapu a v seznamech jen počtem
+ *    (CATALOG_INDEX_PERSONS=1 to po posouzení právníkem změní); u OSVČ nezobrazujeme DIČ ani provozovny a živnosti
+ *    ze živnostenského rejstříku; zaniklé subjekty ze seznamů hned a po 90 dnech od zániku bez stránky.
  */
 
 const f = schema.firms;
@@ -129,10 +133,19 @@ function inIndexRegionsSql(): SQL {
   )})`;
 }
 
-/** Firma smí být indexována (a v sitemapě). */
+/**
+ * Právnická osoba (ne OSVČ): stejná podmínka jako isNaturalPerson() – neznámá právní forma = fyzická osoba (fail-closed).
+ * Literál `is_natural_person = false` odpovídá částečným indexům firms_listable_legal_* (migrace 0038).
+ */
+function legalSql(): SQL {
+  return sql`(${f.isNaturalPerson} = false and ${f.legalForm} is not null and ${f.legalForm} !~ '^(10[0-9]|42[45])$')`;
+}
+
+/** Firma smí být indexována (a v sitemapě): bez námitky, nezaniklá, indexovaný kraj, ověřená v ARES, právnická osoba. */
 function indexableSql(): SQL {
   const parts: SQL[] = [listableSql(), inIndexRegionsSql()];
   if (requireAresVerified()) parts.push(isNotNull(f.aresUpdatedAt));
+  if (!indexPersons()) parts.push(legalSql());
   return and(...parts)!;
 }
 
@@ -154,19 +167,15 @@ function nacePrefixSql(prefixes: readonly string[]): SQL {
   )}]::text[]))`;
 }
 
-/**
- * Totéž jako nacePrefixSql pro agregace `count(*) filter (where …)` přes celý kraj: kódy v DB jsou jen číslice
- * (normalizeNaceCode), takže stačí regulární výraz nad spojeným polem – asi o třetinu rychlejší než unnest.
- */
-function naceMatchAggSql(prefixes: readonly string[]): SQL {
+/** Regulární výraz „kód začíná některým z prefixů“ nad kódy spojenými mezerou (array_to_string). */
+function naceRegex(prefixes: readonly string[]): string {
   const clean = prefixes.map((p) => p.replace(/\D/g, "")).filter(Boolean);
-  if (clean.length === 0) return sql`false`;
-  return sql`(array_to_string(${f.nace}, ' ') ~ ${`(^| )(${clean.join("|")})`})`;
+  return clean.length ? `(^| )(${clean.join("|")})` : "x^";
 }
 
 /* ─────────────────────────────── view modely ─────────────────────────────── */
 
-export type NoindexReason = "objection" | "dissolved" | "region" | "unverified" | "not-in-db";
+export type NoindexReason = CatalogNoindexReason;
 
 export interface EstablishmentView {
   icp: string;
@@ -190,6 +199,7 @@ export interface FirmView {
   slug: string;
   legalForm: string | null;
   isNaturalPerson: boolean;
+  /** jen u právnických osob a jen z ARES (u OSVČ bývá DIČ odvozené z rodného čísla – nezobrazujeme) */
   dic: string | null;
   /** null = neznámé (údaj zatím neověřen v ARES) */
   vatPayer: boolean | null;
@@ -205,7 +215,7 @@ export interface FirmView {
   regionCode: number | null;
   nace: string[];
   eetRelevance: EetRelevance;
-  /** null = provozovny zatím neověřeny v RŽP */
+  /** null = provozovny zatím neověřeny v RŽP; u OSVČ vždy null (údaje živnostenského rejstříku u fyzických osob neukazujeme) */
   establishments: EstablishmentView[] | null;
   claimed: boolean;
   /** odkud a k jakému datu jsou údaje */
@@ -213,14 +223,21 @@ export interface FirmView {
   inDb: boolean;
   index: boolean;
   noindexReason: NoindexReason | null;
+  /** zanikl před víc než 90 dny – stránka se nezobrazuje (404) */
+  gone: boolean;
 }
 
 function firmNoindexReason(row: FirmRow): NoindexReason | null {
-  if (row.noindex) return "objection";
-  if (row.dissolvedAt) return "dissolved";
-  if (!isIndexRegion(row.regionCode)) return "region";
-  if (requireAresVerified() && !row.aresUpdatedAt) return "unverified";
-  return null;
+  return catalogNoindexReason(
+    {
+      noindex: row.noindex,
+      dissolvedAt: row.dissolvedAt,
+      natural: row.isNaturalPerson || isNaturalPerson(row.legalForm),
+      indexRegion: isIndexRegion(row.regionCode),
+      verified: !!row.aresUpdatedAt,
+    },
+    { requireAres: requireAresVerified(), indexPersons: indexPersons() },
+  );
 }
 
 function establishmentView(row: EstablishmentRow, natural: boolean): EstablishmentView {
@@ -249,7 +266,7 @@ function firmViewFromRow(row: FirmRow, ests: EstablishmentRow[]): FirmView {
     slug: row.slug,
     legalForm: row.legalForm,
     isNaturalPerson: natural,
-    dic: row.dic,
+    dic: natural || !verified ? null : row.dic,
     vatPayer: verified ? row.vatPayer : null,
     foundedAt: row.foundedAt,
     dissolvedAt: row.dissolvedAt,
@@ -260,7 +277,7 @@ function firmViewFromRow(row: FirmRow, ests: EstablishmentRow[]): FirmView {
     regionCode: row.regionCode,
     nace: row.nace,
     eetRelevance: row.eetRelevance,
-    establishments: verified ? ests.map((x) => establishmentView(x, natural)) : null,
+    establishments: verified && !natural ? ests.map((x) => establishmentView(x, natural)) : null,
     claimed: !!row.claimedAccountId,
     source: verified
       ? { kind: "ares", date: row.aresUpdatedAt! }
@@ -268,6 +285,7 @@ function firmViewFromRow(row: FirmRow, ests: EstablishmentRow[]): FirmView {
     inDb: true,
     index: reason === null,
     noindexReason: reason,
+    gone: isGone(row.dissolvedAt, todayIso()),
   };
 }
 
@@ -319,7 +337,7 @@ async function liveFirmView(ico: string): Promise<FirmView | null> {
     slug: slugify(s.name, 80) || "subjekt",
     legalForm: s.legalForm,
     isNaturalPerson: natural,
-    dic: s.dic,
+    dic: natural ? null : s.dic,
     vatPayer: s.vatPayer,
     foundedAt: s.foundedAt,
     dissolvedAt: s.dissolvedAt,
@@ -330,12 +348,13 @@ async function liveFirmView(ico: string): Promise<FirmView | null> {
     regionCode: s.address.regionCode,
     nace: s.nace,
     eetRelevance: firmRel,
-    establishments: live.rzp ? ests : null,
+    establishments: live.rzp && !natural ? ests : null,
     claimed: false,
     source: { kind: "ares", date: live.fetchedAt.slice(0, 10) },
     inDb: false,
     index: false,
     noindexReason: "not-in-db",
+    gone: isGone(s.dissolvedAt, today),
   };
 }
 
@@ -381,7 +400,8 @@ export const getEstablishmentPage = cache(async (icp: string): Promise<Establish
   const [row] = await db.select().from(e).where(eq(e.icp, icp)).limit(1);
   if (!row) return null;
   const firm = await getFirmView(row.ico);
-  if (!firm) return null;
+  // provozovny OSVČ (údaje živnostenského rejstříku o fyzické osobě) ani zaniklých subjektů po lhůtě nezveřejňujeme
+  if (!firm || firm.isNaturalPerson || firm.gone) return null;
   const today = todayIso();
   const active = !row.endedAt || row.endedAt > today;
   return {
@@ -431,6 +451,8 @@ export interface ListFilter {
   foundedMonth?: string;
   /** jen firmy z indexovaných krajů */
   onlyIndexRegions?: boolean;
+  /** jen právnické osoby – OSVČ se v seznamech ukazují jen počtem (S3) */
+  legalOnly?: boolean;
 }
 
 export const PER_PAGE = 50;
@@ -449,6 +471,7 @@ function listQuery(filter: ListFilter): { where: SQL; order: SQL[] } {
   if (filter.relevance) conds.push(eq(f.eetRelevance, filter.relevance));
   if (filter.nacePrefixes) conds.push(nacePrefixSql(filter.nacePrefixes));
   if (filter.onlyIndexRegions) conds.push(inIndexRegionsSql());
+  if (filter.legalOnly) conds.push(legalSql());
   let order = [asc(f.name), asc(f.ico)];
   if (filter.foundedMonth) {
     const start = `${filter.foundedMonth}-01`;
@@ -495,7 +518,37 @@ async function listFirmsImpl(filter: ListFilter, page: number, perPage: number):
   return { items, total };
 }
 
-/** Vyhledání podle názvu (pg_trgm) — max. `limit` výsledků, bez firem s námitkou. */
+export interface ListCounts {
+  /** všech subjektů v seznamu (bez námitky, nezaniklých) */
+  total: number;
+  /** z toho právnických osob (jmenovitě v seznamu) */
+  legal: number;
+  /** z toho OSVČ (v seznamu jen počtem) */
+  persons: number;
+}
+
+/**
+ * Počty pro seznam (kraj, nové firmy): jeden průchod s `count(*) filter`, v paměti 1 h. Stránkování jde po právnických
+ * osobách, počet OSVČ je jen číslo pod seznamem.
+ */
+export function listCounts(filter: Omit<ListFilter, "legalOnly">): Promise<ListCounts> {
+  if (!hasDatabase()) return Promise.resolve({ total: 0, legal: 0, persons: 0 });
+  return memoize(`listCounts:${JSON.stringify(filter)}:${indexRegions().join(",")}`, 3_600_000, async () => {
+    const { where } = listQuery(filter);
+    const [row] = await getDb()
+      .select({ total: sql<number>`count(*)::int`, legal: sql<number>`(count(*) filter (where ${legalSql()}))::int` })
+      .from(f)
+      .where(where);
+    const total = Number(row?.total ?? 0);
+    const legal = Number(row?.legal ?? 0);
+    return { total, legal, persons: total - legal };
+  });
+}
+
+/**
+ * Vyhledání podle názvu (pg_trgm) — max. `limit` výsledků. Jen právnické osoby v seznamu (bez námitky a zaniklých):
+ * OSVČ se podle jména nevyhledávají, svou stránku najdou podle IČO (S3, LIA).
+ */
 export async function searchFirmsByName(q: string, limit = 20): Promise<FirmListItem[]> {
   const query = q.trim().replace(/\s+/g, " ").slice(0, 100);
   if (!hasDatabase() || query.length < 2) return [];
@@ -503,8 +556,8 @@ export async function searchFirmsByName(q: string, limit = 20): Promise<FirmList
   return getDb()
     .select(listColumns)
     .from(f)
-    .where(and(eq(f.noindex, false), or(sql`${f.name} % ${query}`, sql`${f.name} ilike ${like}`)))
-    .orderBy(sql`${f.dissolvedAt} is not null`, sql`similarity(${f.name}, ${query}) desc`, asc(f.name))
+    .where(and(listableSql(), legalSql(), or(sql`${f.name} % ${query}`, sql`${f.name} ilike ${like}`)))
+    .orderBy(sql`similarity(${f.name}, ${query}) desc`, asc(f.name))
     .limit(limit);
 }
 
@@ -530,21 +583,21 @@ export async function regionCounts(): Promise<Record<number, number>> {
   });
 }
 
-/** Posledních N měsíců vzniku firem v indexovaných krajích (cache 1 h). */
-export async function foundingMonths(limit = 12): Promise<{ month: string; count: number }[]> {
+/** Posledních N měsíců vzniku firem v indexovaných krajích (cache 1 h); `legal` = z toho právnických osob. */
+export async function foundingMonths(limit = 12): Promise<{ month: string; count: number; legal: number }[]> {
   if (!hasDatabase()) return [];
   return memoize(`foundingMonths:${limit}:${indexRegions().join(",")}`, 3_600_000, async () => {
     const today = todayIso();
     const from = `${Number(today.slice(0, 4)) - 2}${today.slice(4, 7)}-01`;
     const month = sql<string>`to_char(${f.foundedAt}, 'YYYY-MM')`;
     const rows = await getDb()
-      .select({ month, count: count() })
+      .select({ month, count: count(), legal: sql<number>`(count(*) filter (where ${legalSql()}))::int` })
       .from(f)
       .where(and(listableSql(), inIndexRegionsSql(), sql`${f.foundedAt} >= ${from}::date`, sql`${f.foundedAt} <= ${today}::date`))
       .groupBy(month)
       .orderBy(desc(month))
       .limit(limit);
-    return rows.map((r) => ({ month: r.month, count: r.count }));
+    return rows.map((r) => ({ month: r.month, count: r.count, legal: Number(r.legal) }));
   });
 }
 
@@ -578,12 +631,18 @@ export async function catalogDataDate(): Promise<string | null> {
  * se 2–3 firmami by jen ředily kvalitu katalogu. Méně = noindex, follow.
  */
 export const OBEC_MIN_FIRMS = 5;
+/** Rozcestník obce /firmy/obec/… se indexuje od tolika subjektů ověřených v ARES (S3). */
+export const OBEC_HUB_MIN_FIRMS = 10;
 
 export interface ObecIndustryCount {
   /** subjekty v seznamu (bez námitky, nezaniklé) */
   listable: number;
   /** z toho indexovatelné (indexovaný kraj, ověřeno v ARES) */
   indexable: number;
+  /** z toho právnické osoby (jmenovitě v seznamu; OSVČ jen počtem) */
+  legal: number;
+  /** z toho vzniklé za posledních 12 měsíců */
+  new12: number;
 }
 
 export interface ObecStats {
@@ -593,15 +652,27 @@ export interface ObecStats {
   regionCode: number;
   /** všech subjektů v seznamu */
   total: number;
+  /** z toho právnických osob */
+  legal: number;
+  /** z toho ověřených v ARES */
+  verified: number;
+  /** z toho vzniklých za posledních 12 měsíců */
+  new12: number;
   /** klíč = slug oboru (CATALOG_INDUSTRIES) */
   industries: Record<string, ObecIndustryCount>;
 }
 
 const SIX_HOURS = 6 * 3_600_000;
 
+/** Datum před 12 měsíci (YYYY-MM-DD) – hranice „nové za 12 měsíců“. */
+export function twelveMonthsAgo(today: string = todayIso()): string {
+  const md = today.slice(5, 10) === "02-29" ? "02-28" : today.slice(5, 10);
+  return `${Number(today.slice(0, 4)) - 1}-${md}`;
+}
+
 /**
  * Počty subjektů obec × obor za celý kraj – jeden průchod tabulkou na kraj, v paměti 6 h (data RES se mění 2× měsíčně),
- * po zastarání se obnoví na pozadí. Slouží stránce obor × obec, odkazům mezi obcemi a obory i sitemapě.
+ * po zastarání se obnoví na pozadí. Slouží stránkám obor × obec a obce, odkazům mezi obcemi a obory i sitemapě.
  */
 export function regionObecStats(regionCode: number): Promise<Map<number, ObecStats>> {
   if (!hasDatabase()) return Promise.resolve(new Map());
@@ -609,17 +680,51 @@ export function regionObecStats(regionCode: number): Promise<Map<number, ObecSta
     `obecStats:${regionCode}`,
     SIX_HOURS,
     async () => {
-      const cols: Record<string, SQL<number>> = {};
-      CATALOG_INDUSTRIES.forEach((ind, i) => {
-        const m = naceMatchAggSql(ind.nace);
-        cols[`l${i}`] = sql<number>`(count(*) filter (where ${m}))::int`;
-        cols[`v${i}`] = sql<number>`(count(*) filter (where ${m} and ${f.aresUpdatedAt} is not null))::int`;
-      });
-      const rows = (await getDb()
-        .select({ code: f.cityCode, name: sql<string>`mode() within group (order by ${f.city})`, total: sql<number>`count(*)::int`, ...cols })
+      // Tři vrstvy, aby se drahé výrazy počítaly jednou na řádek (ne 40×): b = příznaky řádku a obory jako text,
+      // s = příznak oboru (jeden regulární výraz na obor), venku jen count(*) filter nad booleany. Na 80 tis. řádků
+      // kraje 51 zhruba 5× rychlejší než regulární výraz v každém filtru (S3, měření v docs/deploy.md).
+      const since = twelveMonthsAgo();
+      const db = getDb();
+      const b = db
+        .select({
+          code: sql<number>`${f.cityCode}`.as("code"),
+          city: sql<string>`${f.city}`.as("city"),
+          legal: sql<boolean>`${legalSql()}`.as("legal"),
+          verified: sql<boolean>`(${f.aresUpdatedAt} is not null)`.as("verified"),
+          fresh: sql<boolean>`(${f.foundedAt} >= ${since}::date)`.as("fresh"),
+          n: sql<string>`array_to_string(${f.nace}, ' ')`.as("n"),
+        })
         .from(f)
         .where(and(listableSql(), eq(f.regionCode, regionCode), isNotNull(f.cityCode), isNotNull(f.city)))
-        .groupBy(f.cityCode)) as unknown as Record<string, number | string | null>[];
+        .as("b");
+      const flags: Record<string, SQL.Aliased<boolean>> = {};
+      CATALOG_INDUSTRIES.forEach((ind, i) => {
+        flags[`i${i}`] = sql<boolean>`(${b.n} ~ ${naceRegex(ind.nace)})`.as(`i${i}`);
+      });
+      // LIMIT = optimalizační zábrana (poddotaz s LIMIT/OFFSET Postgres nerozbalí): bez ní by regulární výraz počítal
+      // v každém ze 40 filtrů znovu (80 tis. řádků: 1,4 s → 0,3 s). Drizzle „offset 0“ vynechá, proto LIMIT bez praktického stropu.
+      const s = db.select({ code: b.code, city: b.city, legal: b.legal, verified: b.verified, fresh: b.fresh, ...flags }).from(b).limit(2_147_483_647).as("s");
+      const col = (name: string) => sql.raw(`"s"."${name}"`);
+      const cols: Record<string, SQL<number>> = {};
+      CATALOG_INDUSTRIES.forEach((_, i) => {
+        const m = col(`i${i}`);
+        cols[`l${i}`] = sql<number>`(count(*) filter (where ${m}))::int`;
+        cols[`v${i}`] = sql<number>`(count(*) filter (where ${m} and ${col("verified")}))::int`;
+        cols[`p${i}`] = sql<number>`(count(*) filter (where ${m} and ${col("legal")}))::int`;
+        cols[`n${i}`] = sql<number>`(count(*) filter (where ${m} and ${col("fresh")}))::int`;
+      });
+      const rows = (await db
+        .select({
+          code: s.code,
+          name: sql<string>`mode() within group (order by ${col("city")})`,
+          total: sql<number>`count(*)::int`,
+          legal: sql<number>`(count(*) filter (where ${col("legal")}))::int`,
+          verified: sql<number>`(count(*) filter (where ${col("verified")}))::int`,
+          new12: sql<number>`(count(*) filter (where ${col("fresh")}))::int`,
+          ...cols,
+        })
+        .from(s)
+        .groupBy(s.code)) as unknown as Record<string, number | string | null>[];
       const indexRegion = isIndexRegion(regionCode);
       const needAres = requireAresVerified();
       const out = new Map<number, ObecStats>();
@@ -630,9 +735,23 @@ export function regionObecStats(regionCode: number): Promise<Map<number, ObecSta
         CATALOG_INDUSTRIES.forEach((ind, i) => {
           const listable = Number(r[`l${i}`] ?? 0);
           const verified = Number(r[`v${i}`] ?? 0);
-          industries[ind.slug] = { listable, indexable: indexRegion ? (needAres ? verified : listable) : 0 };
+          industries[ind.slug] = {
+            listable,
+            indexable: indexRegion ? (needAres ? verified : listable) : 0,
+            legal: Number(r[`p${i}`] ?? 0),
+            new12: Number(r[`n${i}`] ?? 0),
+          };
         });
-        out.set(code, { code, name: String(r.name), regionCode, total: Number(r.total ?? 0), industries });
+        out.set(code, {
+          code,
+          name: String(r.name),
+          regionCode,
+          total: Number(r.total ?? 0),
+          legal: Number(r.legal ?? 0),
+          verified: Number(r.verified ?? 0),
+          new12: Number(r.new12 ?? 0),
+          industries,
+        });
       }
       return out;
     },
@@ -665,6 +784,12 @@ export function isObecIndustryIndexable(stats: ObecStats, industrySlug: string):
   return isIndexRegion(stats.regionCode) && (stats.industries[industrySlug]?.indexable ?? 0) >= OBEC_MIN_FIRMS;
 }
 
+/** Indexovat rozcestník obce? Indexovaný kraj a aspoň OBEC_HUB_MIN_FIRMS subjektů ověřených v ARES (S3). */
+export function isObecHubIndexable(stats: ObecStats): boolean {
+  if (!isIndexRegion(stats.regionCode)) return false;
+  return (requireAresVerified() ? stats.verified : stats.total) >= OBEC_HUB_MIN_FIRMS;
+}
+
 export interface ObecIndustryPageRef {
   industry: string;
   code: number;
@@ -687,10 +812,50 @@ export async function indexableObecIndustryPages(): Promise<ObecIndustryPageRef[
   return out.sort((a, b) => (a.industry === b.industry ? a.code - b.code : a.industry < b.industry ? -1 : 1));
 }
 
+/** Indexovatelné rozcestníky obcí (pro /firmy/sitemap.xml), podle kódu obce. */
+export async function indexableObecHubs(): Promise<{ code: number; name: string }[]> {
+  if (!hasDatabase()) return [];
+  const out: { code: number; name: string }[] = [];
+  for (const region of indexRegions()) {
+    for (const o of (await regionObecStats(region)).values()) if (isObecHubIndexable(o)) out.push({ code: o.code, name: o.name });
+  }
+  return out.sort((a, b) => a.code - b.code);
+}
+
+/** Součty oborů za kraj (z agregace obcí v paměti): kolik subjektů a z toho právnických osob. */
+export async function regionIndustryTotals(regionCode: number): Promise<Record<string, { listable: number; legal: number }>> {
+  const stats = await regionObecStats(regionCode);
+  const out: Record<string, { listable: number; legal: number }> = {};
+  for (const ind of CATALOG_INDUSTRIES) out[ind.slug] = { listable: 0, legal: 0 };
+  for (const o of stats.values()) {
+    for (const ind of CATALOG_INDUSTRIES) {
+      const c = o.industries[ind.slug];
+      if (!c) continue;
+      out[ind.slug]!.listable += c.listable;
+      out[ind.slug]!.legal += c.legal;
+    }
+  }
+  return out;
+}
+
+/**
+ * Nejnovější právnické osoby v obci (rozcestník obce): vzniklé za posledních 12 měsíců, od nejnovější. Jde po indexu
+ * firms_listable_legal_city_name (obec má nejvýš jednotky tisíc firem).
+ */
+export async function recentLegalFirms(cityCode: number, limit = 10): Promise<FirmListItem[]> {
+  if (!hasDatabase()) return [];
+  return getDb()
+    .select(listColumns)
+    .from(f)
+    .where(and(listableSql(), legalSql(), eq(f.cityCode, cityCode), sql`${f.foundedAt} >= ${twelveMonthsAgo()}::date`))
+    .orderBy(desc(f.foundedAt), asc(f.name), asc(f.ico))
+    .limit(limit);
+}
+
 /* ─────────────────────────────── stránka firmy: okolí a stejná adresa ─────────────────────────────── */
 
 /**
- * „Podobné firmy v okolí“: stejný obor ve stejné obci, sousedé podle abecedy (od názvu firmy dál, pak od začátku).
+ * „Podobné firmy v obci“: stejný obor ve stejné obci, jen právnické osoby, sousedé podle abecedy (od názvu firmy dál, pak od začátku).
  * Každá firma tak dostane odkazy od svých sousedů – ne všechny stránky na první firmy v abecedě. Dotaz jde po indexu
  * firms_listable_city_name a skončí po `limit` řádcích i v Praze.
  */
@@ -700,7 +865,8 @@ export async function similarFirms(
   limit = 6,
 ): Promise<FirmListItem[]> {
   if (!hasDatabase() || firm.cityCode == null || nacePrefixes.length === 0) return [];
-  const base = and(listableSql(), eq(f.cityCode, firm.cityCode), nacePrefixSql(nacePrefixes), sql`${f.ico} <> ${firm.ico}`)!;
+  // jen právnické osoby (S3): OSVČ jmenovitě v seznamech neukazujeme
+  const base = and(listableSql(), legalSql(), eq(f.cityCode, firm.cityCode), nacePrefixSql(nacePrefixes), sql`${f.ico} <> ${firm.ico}`)!;
   const db = getDb();
   const after = await db
     .select(listColumns)
@@ -748,13 +914,7 @@ export async function sameAddressFirms(
 
 /** Právnická osoba v seznamu se známou ulicí – stejné podmínky jako částečný index firms_legal_address. */
 function legalAddressSql(): SQL {
-  return and(
-    listableSql(),
-    sql`${f.isNaturalPerson} = false`,
-    isNotNull(f.street),
-    isNotNull(f.legalForm),
-    sql`${f.legalForm} !~ '^(10[0-9]|42[45])$'`,
-  )!;
+  return and(listableSql(), legalSql(), isNotNull(f.street))!;
 }
 
 /* ─────────────────────────────── sitemapy ─────────────────────────────── */
@@ -784,7 +944,7 @@ export async function countIndexableEstablishments(): Promise<number> {
     .select({ n: count() })
     .from(e)
     .innerJoin(f, eq(f.ico, e.ico))
-    .where(and(indexableSql(), activeEstablishmentSql(todayIso())));
+    .where(and(indexableSql(), legalSql(), activeEstablishmentSql(todayIso())));
   return row?.n ?? 0;
 }
 
@@ -794,7 +954,8 @@ export async function indexableEstablishmentsChunk(chunk: number): Promise<{ icp
     .select({ icp: e.icp, slug: e.slug, updated: f.aresUpdatedAt })
     .from(e)
     .innerJoin(f, eq(f.ico, e.ico))
-    .where(and(indexableSql(), activeEstablishmentSql(todayIso())))
+    // provozovny jen u právnických osob – i kdyby se OSVČ jednou indexovaly (CATALOG_INDEX_PERSONS), údaje ŽR o nich ne
+    .where(and(indexableSql(), legalSql(), activeEstablishmentSql(todayIso())))
     .orderBy(asc(e.icp))
     .limit(SITEMAP_CHUNK)
     .offset(chunk * SITEMAP_CHUNK);

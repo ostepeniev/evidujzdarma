@@ -22,7 +22,9 @@ describe("R7.1 – robots.txt does not block public pages", () => {
       const dis = ([] as string[]).concat(rule.disallow ?? []);
       const blocked = STATIC_PAGES.flatMap((p) => dis.filter((d) => blocks(d, p.path)).map((d) => `${p.path} <- ${d}`));
       expect(blocked, String(rule.userAgent)).toEqual([]);
-      for (const p of ["/u/x", "/pokladna", "/pokladna/nastaveni", "/firma/sitemap/0.xml", "/u"]) expect(dis.some((d) => blocks(d, p)), p).toBe(true);
+      for (const p of ["/u/x", "/pokladna", "/pokladna/nastaveni", "/u"]) expect(dis.some((d) => blocks(d, p)), p).toBe(true);
+      // S3: katalog je otevřený – robots.txt ho nesmí blokovat (sitemapy katalogu jsou v robots.txt)
+      for (const p of ["/firmy", "/firma/12345679-x", "/firma/sitemap/0.xml", "/obor/kadernictvi-a-kosmetika/kraj/karlovarsky", "/provozovna/1-x"]) expect(dis.some((d) => blocks(d, p)), p).toBe(false);
     }
   });
 });

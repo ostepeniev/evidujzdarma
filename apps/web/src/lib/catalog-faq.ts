@@ -37,10 +37,25 @@ const RELEVANCE_OBOR: Record<EetRelevance, string> = {
   unlikely: "V oboru se obvykle platí převodem na fakturu, který se neeviduje. Kdo ale přijímá platby osobně, evidovat musí.",
 };
 
-/** FAQ stránky obor × obec (5 otázek). */
-export function obecIndustryFaq(input: { industryLabel: string; obec: string; relevance: EetRelevance }): { items: CatalogFaqItem[]; sources: Source[] } {
+/** FAQ stránky obor × obec (5 otázek, s počty z katalogu 6). Počty jen z DB katalogu, nic odhadovaného. */
+export function obecIndustryFaq(input: {
+  industryLabel: string;
+  obec: string;
+  relevance: EetRelevance;
+  counts?: { total: number; legal: number; persons: number; asOf: string | null };
+  naceCodes?: readonly string[];
+}): { items: CatalogFaqItem[]; sources: Source[] } {
   const dis = timelineAt("2026-11-01");
+  const c = input.counts;
   const items: CatalogFaqItem[] = [
+    ...(c
+      ? [
+          {
+            q: `Kolik podnikatelů v oboru „${input.industryLabel}“ sídlí v obci ${input.obec}?`,
+            a: `V katalogu je ${c.total} ${pluralCs(c.total, ["subjekt", "subjekty", "subjektů"])} se sídlem v obci ${input.obec}${input.naceCodes?.length ? ` a s oborem činnosti CZ-NACE ${input.naceCodes.join(", ")}` : ""}: ${c.legal} ${pluralCs(c.legal, ["právnická osoba", "právnické osoby", "právnických osob"])} a ${c.persons} ${pluralCs(c.persons, ["podnikající fyzická osoba", "podnikající fyzické osoby", "podnikajících fyzických osob"])} (OSVČ). Počítáme jen subjekty, které nezanikly.${c.asOf ? ` Údaje z registrů ARES a RES ČSÚ k ${dateCs(c.asOf)}.` : ""}`,
+          },
+        ]
+      : []),
     {
       q: `Musí podnikatelé v oboru „${input.industryLabel}“ v obci ${input.obec} evidovat tržby?`,
       a: `${FACTS.whoMust.summary} Povinnost platí od ${FACTS.law.effectiveFrom} (${FACTS.law.sbNo}). Rozhoduje způsob placení, ne obor ani obec. ${RELEVANCE_OBOR[input.relevance]} Náš orientační odhad pro obor: ${RELEVANCE_LABEL[input.relevance]}.`,

@@ -5,11 +5,15 @@ import { krajByCode } from "@ez/cz";
 import { FirmList, Pagination } from "@/components/catalog/firm-list";
 import { formatCount, isMonthParam, monthLabel, monthPath, pageParam } from "@/components/catalog/paths";
 import { ListSource } from "@/components/catalog/list-source";
+import { PersonsNote } from "@/components/catalog/persons-note";
+import { fitDescription, fitTitle } from "@/lib/catalog-meta";
+import { isClosed } from "@/lib/launch";
 import { PageHeader } from "@/components/page-header";
-import { PER_PAGE, foundingMonths, indexRegions, listFirms, todayIso, catalogDataDate } from "@/lib/server/catalog";
+import { PER_PAGE, foundingMonths, indexRegions, listCounts, listFirmItems, todayIso, catalogDataDate } from "@/lib/server/catalog";
 import { canonicalMeta } from "@/lib/metadata";
 
 // Katalog se renderuje na vyžádání, do ISR cache na disku nic neukládá – při milionech URL by ji zaplnil (R3.3, S2).
+// S3: jmenovitě jen právnické osoby, OSVČ počtem.
 export const dynamic = "force-dynamic";
 
 function regionsLabel(): string {
@@ -27,12 +31,17 @@ export async function generateMetadata({ params, searchParams }: PageProps<"/fir
   const { mesic } = await params;
   if (!validMonth(mesic)) return {};
   const page = pageParam((await searchParams).strana);
-  const { total } = await listFirms({ foundedMonth: mesic, onlyIndexRegions: true }, page, PER_PAGE).catch(() => ({ total: 0 }));
+  const { legal } = await listCounts({ foundedMonth: mesic, onlyIndexRegions: true }).catch(() => ({ legal: 0 }));
+  const suffix = page > 1 ? ` (strana ${page})` : "";
   return {
-    title: `Nové firmy – ${monthLabel(mesic)}${page > 1 ? ` (strana ${page})` : ""}`,
-    description: `Firmy a podnikatelé založení v období ${monthLabel(mesic)} (${regionsLabel()}) podle data vzniku v registru. EET 2.0 platí od 1. 1. 2027 – připravte se rovnou.`,
+    title: fitTitle([`Nové firmy – ${monthLabel(mesic)} (${regionsLabel()})${suffix}`, `Nové firmy – ${monthLabel(mesic)}${suffix}`]),
+    description: fitDescription(
+      [`Firmy a podnikatelé založení v období ${monthLabel(mesic)} (${regionsLabel()}) podle data vzniku v registru.`, "EET 2.0 platí od 1. 1. 2027 – připravte se rovnou."],
+      ["Údaje z ARES a RES ČSÚ.", "Seznam s IČO."],
+    ),
     ...canonicalMeta(monthPath(mesic, page)),
-    robots: total > 0 ? undefined : { index: false, follow: true },
+    // index jen s aspoň jednou jmenovitě uvedenou firmou (samotný počet OSVČ je tenká stránka)
+    robots: legal > 0 ? undefined : { index: false, follow: true },
   };
 }
 
@@ -40,8 +49,10 @@ export default async function NewFirmsPage({ params, searchParams }: PageProps<"
   const { mesic } = await params;
   if (!validMonth(mesic)) notFound();
   const page = pageParam((await searchParams).strana);
-  const [{ items, total }, months, dataDate] = await Promise.all([
-    listFirms({ foundedMonth: mesic, onlyIndexRegions: true }, page, PER_PAGE).catch(() => ({ items: [], total: 0 })),
+  const counts = await listCounts({ foundedMonth: mesic, onlyIndexRegions: true }).catch(() => ({ total: 0, legal: 0, persons: 0 }));
+  const total = counts.total;
+  const [items, months, dataDate] = await Promise.all([
+    counts.legal > 0 ? listFirmItems({ foundedMonth: mesic, onlyIndexRegions: true, legalOnly: true }, page, PER_PAGE).catch(() => []) : Promise.resolve([]),
     foundingMonths(12).catch(() => []),
     catalogDataDate().catch(() => null),
   ]);
@@ -66,8 +77,8 @@ export default async function NewFirmsPage({ params, searchParams }: PageProps<"
         <aside className="rounded-2xl border-2 border-brand-500 bg-brand-50 p-6 sm:p-8">
           <h2 className="text-2xl font-bold text-ink">Začínáte podnikat? Vítejte!</h2>
           <p className="mt-2 max-w-2xl text-lg text-ink-soft">
-            Od 1. 1. 2027 platí EET 2.0. Pokud přijímáte platby osobně – hotově, kartou nebo QR kódem na místě – zkontrolujte, co musíte udělat,
-            a evidujte v pokladně zdarma.
+            Od 1. 1. 2027 platí EET 2.0. Pokud přijímáte platby osobně – hotově, kartou nebo QR kódem na místě – zkontrolujte, co musíte udělat
+            {isClosed("/pokladna") ? ", a předregistrujte se k pokladně zdarma." : ", a evidujte v pokladně zdarma."}
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
             <Link href="/kontrola-ico" className="btn-primary">
@@ -86,9 +97,10 @@ export default async function NewFirmsPage({ params, searchParams }: PageProps<"
           {items.length > 0 ? (
             <FirmList items={items} showRegion showFounded />
           ) : (
-            <p className="rounded-2xl bg-surface p-5 text-ink-soft">Pro toto období zatím nemáme v katalogu žádné nové subjekty.</p>
+            <p className="rounded-2xl bg-surface p-5 text-ink-soft">Pro toto období zatím nemáme v katalogu žádné nové firmy.</p>
           )}
-          <Pagination page={page} total={total} perPage={PER_PAGE} href={(p) => monthPath(mesic, p)} />
+          <Pagination page={page} total={counts.legal} perPage={PER_PAGE} href={(p) => monthPath(mesic, p)} />
+          <PersonsNote count={counts.persons} withOthers={counts.legal > 0} />
           <ListSource date={dataDate} />
         </section>
 

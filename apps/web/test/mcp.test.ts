@@ -59,7 +59,10 @@ describe("EET MCP server", () => {
     expect(r.isError).toBeFalsy();
     const s = r.structuredContent!;
     expect(s.verdict).toBe("likely");
-    expect(String(s.url)).toContain("/kontrola-ico?ico=12345679");
+    // S3: IČO ve fragmentu, ne v query (COMMON 9); odkaz do katalogu firem
+    expect(String(s.url)).toContain("/kontrola-ico#ico=12345679");
+    expect(String(s.url)).not.toContain("?ico=");
+    expect(String(s.catalog_url)).toMatch(/\/firma\/12345679$/);
     expect(Array.isArray(s.checklist)).toBe(true);
     const subject = s.subject as { natural_person: boolean; address: string | null };
     if (subject.natural_person) expect(subject.address ?? "").not.toMatch(/\d{3}\s?\d{2}/);

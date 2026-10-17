@@ -48,11 +48,20 @@ describe("R7.8 – privacy policy and terms match the code", () => {
     }
   });
 
-  it("gate Z8: the catalogue is described as being prepared, not published", () => {
-    expect(zasady).toContain(
-      "Připravujeme katalog firem a provozoven s orientačním vyhodnocením, zda se jich může týkat EET 2.0. Zatím není veřejně přístupný; zveřejníme ho až po posouzení oprávněného zájmu. Údaje přebíráme z veřejných registrů",
-    );
-    expect(zasady).not.toMatch(/Na webu zveřejňujeme katalog/);
+  it("gate Z8 (S3): the catalogue is published – art. 14 information matches the code (sources, data, basis, OSVČ, dissolved, objection)", async () => {
+    // S3: katalog je od 17. 10. 2026 veřejný (LIA, docs/LIA-katalog-firem.md); zásady už nesmí tvrdit, že se připravuje
+    expect(zasady).not.toMatch(/Připravujeme katalog firem|Zatím není veřejně přístupný|připravujeme;/);
+    expect(zasady).toContain("Od 17. 10. 2026 zveřejňujeme katalog firem a provozoven, zatím pro Karlovarský kraj.");
+    expect(zasady).toContain("čl. 14 GDPR");
+    expect(zasady).toContain("Registru ekonomických subjektů Českého statistického úřadu");
+    expect(zasady).toContain("U podnikajících fyzických osob (OSVČ) nezveřejňujeme adresu bydliště ani sídla, DIČ, provozovny a živnosti.");
+    expect(zasady).toContain("jeho stránku 90 dnů po zániku zrušíme");
+    expect(zasady).toContain("Námitku vyřídíme nejpozději do 30 dnů.");
+    expect(zasady).toContain("Úřadu pro ochranu osobních údajů");
+    // tvrzení odpovídají kódu
+    const policy = await import("@/lib/catalog-policy");
+    expect(policy.DISSOLVED_GONE_DAYS).toBe(90);
+    expect(policy.indexPersons({})).toBe(false);
   });
 
   it("gate Z9: the catalogue data list is the same in the privacy policy and on /namitka and names what /firma shows", async () => {
@@ -76,7 +85,7 @@ describe("R7.8 – privacy policy and terms match the code", () => {
   it("versions are raised and dated with the R7 draft", async () => {
     const legal = await import("@/lib/legal");
     expect(legal.TERMS_VERSION > "2026-10-03").toBe(true);
-    expect(legal.PRIVACY_VERSION_LABEL).toBe("10. 10. 2026");
+    expect(legal.PRIVACY_VERSION_LABEL).toBe("17. 10. 2026"); // S3: zveřejněný katalog firem
     expect(readFileSync(new URL("../src/app/(site)/podminky/page.tsx", import.meta.url), "utf8")).toMatch(/TERMS_VERSION_LABEL/);
   });
 });

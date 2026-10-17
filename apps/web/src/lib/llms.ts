@@ -47,6 +47,22 @@ function factsSection(): string {
   ].join("\n");
 }
 
+/** S3: sekce „Katalog firem“ – jen když je katalog veřejný (lib/launch.ts). Statický text, bez dotazu do DB. */
+function catalogSection(): string[] {
+  if (isClosed("/firmy")) return [];
+  return [
+    "## Katalog firem",
+    "",
+    `- [Katalog firem v Karlovarském kraji](${absoluteUrl("/firmy")}): firmy z veřejných registrů ARES (Ministerstvo financí) a RES ČSÚ – IČO, DIČ (jen u právnických osob), plátce DPH, právní forma, datum vzniku, sídlo, obory CZ-NACE, provozovny firem a orientační odhad, zda se subjektu týká EET 2.0 (podle oboru; rozhoduje způsob placení). U každé stránky je datum ověření v ARES a odkaz na oficiální záznam.`,
+    `- Firmu podle IČO otevřete na adrese /firma/<IČO>, např. ${absoluteUrl("/firma/22269134")} (přesměruje na stránku subjektu; firmu mimo katalog načte živě z ARES). Vyhledávání podle názvu: ${absoluteUrl("/firmy")} (jen firmy, ne OSVČ).`,
+    `- Seznamy: kraj ${absoluteUrl("/firmy/kraj/karlovarsky")}, obce /firmy/obec/<kód obce>-<název>, obor × obec /obor/<obor>/obec/<kód obce>-<název> (např. ${absoluteUrl("/obor/kadernictvi-a-kosmetika/kraj/karlovarsky")}).`,
+    "- Podnikající fyzické osoby (OSVČ) mají jen základní údaje a obec – bez adresy, DIČ a provozoven; jejich stránky nejsou ve vyhledávačích a v seznamech jsou jen počtem. Zaniklé subjekty v seznamech nejsou, jejich stránka po 90 dnech zmizí.",
+    "- Pro AI asistenty: MCP nástroj eet_check_ico vrací k IČO odhad EET 2.0 a odkaz catalog_url na stránku v katalogu.",
+    `- Námitka a oprava údajů: ${absoluteUrl("/namitka")}`,
+    "",
+  ];
+}
+
 export function llmsTxt(): string {
   return [
     `# ${SITE.name}`,
@@ -71,6 +87,8 @@ export function llmsTxt(): string {
     // S3-OPEN: vzor pověření (§ 10) po kontrole účetní 17. 10. 2026
     ...STATIC_PAGES.filter((p) => p.path === "/vzor-povereni").map((p) => `- [${p.title}](${absoluteUrl(p.path)}): pověření podle § 10 zákona o evidenci tržeb – kdo za koho eviduje, v jakém rozsahu a odkdy; text se skládá v prohlížeči, na server se nic neodesílá.`),
     "",
+    // S3: katalog firem (otevřený s testem oprávněného zájmu; OSVČ jen základní údaje a noindex)
+    ...catalogSection(),
     "## Návody",
     "",
     // jen návody po odborné revizi – nerevidované mají noindex a nemají jít ani do AI (R2.9)

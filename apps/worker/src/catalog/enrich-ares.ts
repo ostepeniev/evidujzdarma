@@ -6,6 +6,7 @@
  * Volby:
  *   --regions 51,19     kraje (kódy VÚSC); výchozí CATALOG_INDEX_REGIONS nebo 51
  *   --likely            navíc všechny subjekty s eet_relevance = likely (i mimo kraje)
+ *   --legal-only        jen právnické osoby (S3: jen ty se v katalogu indexují; OSVČ jsou noindex a v seznamech počtem)
  *   --max-age-days 30   znovu ověřit záznamy starší než N dní (výchozí 30)
  *   --limit <n>         max. počet subjektů v jednom běhu (výchozí bez limitu)
  *   --rpm 120           dotazů na ARES za minutu (tvrdý strop 300; ARES blokuje > 500/min; web má vlastních 240/min – R3.11)
@@ -13,11 +14,19 @@
  *   --ico <ico>         jen jeden subjekt
  *   --mock              bez sítě: syntetické odpovědi, jen pro ukázková data (název „Ukázkov…“)
  *
+ * Pořadí (S3): nejdřív subjekty s eet_relevance = likely, pak possible, nakonec unlikely – v každé skupině podle IČO.
+ * Kontrolor tak po otevření katalogu nejdřív ověří firmy, kterých se EET pravděpodobně týká.
+ *
  * Běh je obnovitelný: zpracované subjekty dostanou `ares_updated_at = dnes`, takže je další
  * běh přeskočí. Ctrl+C dokončí rozpracovaný subjekt a skončí. `ares_updated_at` = datum, kdy
  * jsme údaje naposledy ověřili v ARES (zobrazuje se jako „Ověřeno v ARES k …“).
+ * `--from-ico` platí pro první skupinu, ve které se pokračuje (ostatní skupiny jdou od začátku – hotové se přeskočí samy).
+ *
+ * Minimalizace (S3, LIA – docs/LIA-katalog-firem.md): u podnikajících fyzických osob neukládáme DIČ (u starších bývá
+ * odvozené z rodného čísla) a nenačítáme provozovny ani živnosti ze živnostenského rejstříku – katalog je u OSVČ nezobrazuje.
  */
 import { and, asc, eq, gt, inArray, isNull, lt, notInArray, or, sql, type SQL } from "drizzle-orm";
+import type { EetRelevance } from "@ez/cz";
 import {
   AresClient,
   AresError,
@@ -39,6 +48,8 @@ type FirmRow = typeof schema.firms.$inferSelect;
 
 const MAX_RPM = 300;
 const PAGE = 200;
+/** S3: pořadí ověřování – nejdřív subjekty, kterých se EET pravděpodobně týká. */
+const ENRICH_ORDER: readonly EetRelevance[] = ["likely", "possible", "unlikely"];
 
 /* ─────────────────────────────── rate limit + retry ─────────────────────────────── */
 
@@ -148,7 +159,8 @@ async function saveFirm(row: FirmRow, s: Subject, rzp: RzpRecord | null, rzpKnow
         slug: (slugify(name, 80) || "subjekt").slice(0, 96),
         legalForm: s.legalForm?.slice(0, 4) ?? row.legalForm,
         isNaturalPerson: natural,
-        dic: s.dic?.slice(0, 14) ?? null,
+        // u OSVČ DIČ neukládáme (bývá odvozené z rodného čísla; katalog ho u fyzických osob nezobrazuje – S3, LIA)
+        dic: natural ? null : (s.dic?.slice(0, 14) ?? null),
         vatPayer: s.vatPayer,
         foundedAt: s.foundedAt ?? row.foundedAt,
         dissolvedAt: s.dissolvedAt,
@@ -162,10 +174,15 @@ async function saveFirm(row: FirmRow, s: Subject, rzp: RzpRecord | null, rzpKnow
         eetRelevance: firmRel,
         aresUpdatedAt: today,
         syncedAt: new Date(),
-        ...(active ? { establishmentsCount: active.length } : {}),
+        ...(natural ? { establishmentsCount: 0 } : active ? { establishmentsCount: active.length } : {}),
       })
       .where(eq(f.ico, row.ico));
 
+    if (natural) {
+      // S3: provozovny a živnosti fyzických osob neukládáme – a případné starší záznamy smažeme
+      await tx.delete(e).where(eq(e.ico, row.ico));
+      return;
+    }
     if (!active) return; // RŽP se nepodařilo načíst — provozovny necháme beze změny
 
     if (active.length) {
@@ -227,6 +244,7 @@ async function main() {
   const limit = argNumber(args, "limit", 0) || Infinity;
   const regions = argRegions(args) ?? argRegions({ r: process.env.CATALOG_INDEX_REGIONS ?? "51" }, "r") ?? [51];
   const onlyIco = argString(args, "ico") ? normalizeIco(argString(args, "ico")!) : null;
+  const legalOnly = !!args["legal-only"];
   let cursor = argString(args, "from-ico") ? (normalizeIco(argString(args, "from-ico")!) ?? "") : "";
 
   const today = todayIso();
@@ -242,19 +260,34 @@ async function main() {
   if (onlyIco) base.push(eq(f.ico, onlyIco));
   else base.push(or(...scope)!);
   if (mock) base.push(sql`${f.name} like 'Ukázkov%'`);
+  // jen právnické osoby: stejná podmínka jako v katalogu (neznámá právní forma = fyzická osoba, fail-closed)
+  if (legalOnly && !onlyIco) base.push(sql`(${f.isNaturalPerson} = false and ${f.legalForm} is not null and ${f.legalForm} !~ '^(10[0-9]|42[45])$')`);
 
-  log(`enrich ARES: kraje ${regions.join(",")}${args.likely ? " + likely" : ""}, starší než ${staleBefore}, ${rpm}/min${mock ? " (MOCK)" : ""}`);
+  log(
+    `enrich ARES: kraje ${regions.join(",")}${args.likely ? " + likely" : ""}${legalOnly ? ", jen právnické osoby" : ""}, starší než ${staleBefore}, pořadí likely → possible → unlikely, ${rpm}/min${mock ? " (MOCK)" : ""}`,
+  );
   const stats = { processed: 0, updated: 0, notFound: 0, failed: 0, establishments: 0, requests: 0 };
   const started = Date.now();
+  // S3: nejdřív subjekty, kterých se EET pravděpodobně týká; skupina = jeden průchod podle IČO s vlastním kurzorem
+  const groups: readonly EetRelevance[] = onlyIco ? ["likely"] : ENRICH_ORDER;
+  let groupIdx = 0;
+  const groupSql = (g: EetRelevance): SQL[] => (onlyIco ? [] : [eq(f.eetRelevance, g)]);
 
-  outer: while (!stop.stopped && stats.processed < limit) {
+  outer: while (!stop.stopped && stats.processed < limit && groupIdx < groups.length) {
+    const group = groups[groupIdx]!;
     const rows = await db
       .select()
       .from(f)
-      .where(and(...base, gt(f.ico, cursor)))
+      .where(and(...base, ...groupSql(group), gt(f.ico, cursor)))
       .orderBy(asc(f.ico))
       .limit(PAGE);
-    if (rows.length === 0) break;
+    if (rows.length === 0) {
+      if (onlyIco) break;
+      groupIdx++;
+      cursor = "";
+      if (groupIdx < groups.length) log(`skupina ${group} hotová, pokračuji skupinou ${groups[groupIdx]}`);
+      continue;
+    }
     if (mock) for (const r of rows) mockRows.set(r.ico, r);
 
     for (const row of rows) {
@@ -271,7 +304,8 @@ async function main() {
         }
         let rzp: RzpRecord | null = null;
         let rzpKnown = true;
-        if (subject.registrations.rzp === "AKTIVNI") {
+        // u fyzických osob provozovny ze živnostenského rejstříku nenačítáme (S3, LIA)
+        if (subject.registrations.rzp === "AKTIVNI" && !isNaturalPerson(subject.legalForm ?? row.legalForm)) {
           try {
             stats.requests++;
             rzp = await withRetry(pacer, stop, () => client.rzp(row.ico));
@@ -293,13 +327,13 @@ async function main() {
       }
       if (stats.processed % 100 === 0) {
         const perMin = Math.round(stats.requests / ((Date.now() - started) / 60_000));
-        log(`zpracováno ${stats.processed} (${perMin} dotazů/min), poslední IČO ${cursor}`);
+        log(`zpracováno ${stats.processed} (${perMin} dotazů/min), skupina ${group}, poslední IČO ${cursor}`);
       }
     }
     if (onlyIco) break;
   }
 
-  log("hotovo:", stats, stop.stopped ? `(přerušeno — pokračujte s --from-ico ${cursor})` : "");
+  log("hotovo:", stats, stop.stopped ? `(přerušeno ve skupině ${groups[groupIdx] ?? "-"} — pokračujte s --from-ico ${cursor})` : "");
 }
 
 main()
