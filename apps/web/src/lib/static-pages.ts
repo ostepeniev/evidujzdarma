@@ -18,6 +18,7 @@ export const STATIC_PAGES: readonly { path: string; title: string; priority: num
   { path: "/navody", title: "Návody k EET 2.0", priority: 0.8, changeFrequency: "weekly" },
   { path: "/co-se-o-eet-pise-spatne", title: "Co se o EET 2.0 píše špatně", priority: 0.8, changeFrequency: "weekly" },
   { path: "/srovnani/moje-eet", title: "Srovnání EvidujZdarma a MOJE eet", priority: 0.8, changeFrequency: "weekly", modified: "2026-10-07" },
+  { path: "/prechod-z-jine-pokladny", title: "Přechod z jiné pokladny: ceny, kalkulačka a import zboží", priority: 0.7, changeFrequency: "monthly", modified: "2026-10-17" },
   { path: "/ucetni", title: "EvidujZdarma pro účetní", priority: 0.7, changeFrequency: "monthly", modified: "2026-10-03" },
   { path: "/ucetni/hromadna-kontrola", title: "Hromadná kontrola IČO pro účetní", priority: 0.7, changeFrequency: "monthly", modified: "2026-10-01" },
   { path: "/ucetni/sablony", title: "Šablony dopisů klientům k EET 2.0", priority: 0.5, changeFrequency: "monthly", modified: "2026-10-01" },

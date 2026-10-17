@@ -10,6 +10,7 @@ import { FACTS } from "@/content/facts";
 import { pragueToday } from "@/lib/prague-time";
 import { ApiError, call, UNIT_TYPE_LABEL, type AccountStateDto } from "./api";
 import { AresCard, aresOutcome, isCompleteIco, type AresOutcome } from "./ares-card";
+import { CatalogImport } from "./catalog-import";
 import { modeIn } from "@/lib/modes";
 
 const MODE_LABEL: Record<string, string> = { mock: "ukázkový", playground: "Playground", production: "ostrý provoz" };
@@ -758,16 +759,22 @@ function StaffRow({ s, reload }: { s: NonNullable<State["staff"]>[number]; reloa
 
 /* ───────────── 8. Katalog ───────────── */
 
+/** Kolik položek katalogu ukázat, než seznam rozbalíte. */
+const CATALOG_LIST_MAX = 30;
+
 function CatalogSection({ state, reload }: { state: State; reload: () => Promise<void> }) {
   const items = state.catalog ?? [];
   const vatPayer = state.account!.vatPayer;
   const [form, setForm] = useState({ name: "", price: "", vatRate: vatPayer ? 21 : 0 });
+  const [showAll, setShowAll] = useState(false);
   const { busy, error, run } = useAction();
+  // po importu může být položek stovky – seznam zkrátíme (S2-E)
+  const shown = showAll ? items : items.slice(0, CATALOG_LIST_MAX);
   return (
     <Section id="katalog" step={8} title="Rychlá tlačítka (katalog)" done={items.length > 0} lead="Nejčastější zboží a služby – prodej pak stačí jedním klepnutím.">
       {items.length > 0 && (
         <ul className="mb-4 divide-y divide-line rounded-2xl border border-line">
-          {items.map((i) => (
+          {shown.map((i) => (
             <li key={i.id} className="flex items-center justify-between gap-3 p-3 text-[15px]">
               <span>
                 {i.name} · <strong>{formatCzk(i.price)}</strong>
@@ -778,6 +785,13 @@ function CatalogSection({ state, reload }: { state: State; reload: () => Promise
               </button>
             </li>
           ))}
+          {items.length > CATALOG_LIST_MAX && (
+            <li className="p-3">
+              <button type="button" className="text-sm font-medium text-brand-700 underline underline-offset-2" onClick={() => setShowAll(!showAll)}>
+                {showAll ? "Zobrazit méně" : `Zobrazit všech ${items.length} položek`}
+              </button>
+            </li>
+          )}
         </ul>
       )}
       <form
@@ -807,6 +821,7 @@ function CatalogSection({ state, reload }: { state: State; reload: () => Promise
         </button>
       </form>
       <ErrorText error={error} />
+      <CatalogImport vatPayer={vatPayer} existing={items} onChange={reload} />
     </Section>
   );
 }

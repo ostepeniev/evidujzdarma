@@ -9,6 +9,10 @@ export interface CartLine extends SaleLine {
   key: string;
 }
 
+/** Od kolika položek katalogu ukázat hledání a kolik tlačítek nejvýš vykreslit. */
+const CATALOG_SEARCH_FROM = 24;
+const CATALOG_SHOWN = 60;
+
 export function RegisterScreen({
   config,
   cart,
@@ -27,7 +31,12 @@ export function RegisterScreen({
   const [amount, setAmount] = useState("");
   const [label, setLabel] = useState("");
   const [discountOpen, setDiscountOpen] = useState(false);
+  const [query, setQuery] = useState("");
   const defaultVat = config.account.vatPayer ? 21 : 0;
+  // velký katalog (import z jiné pokladny, S2-E): hledání podle názvu a nejvýš CATALOG_SHOWN tlačítek
+  const searchable = config.catalog.length > CATALOG_SEARCH_FROM;
+  const q = query.trim().toLocaleLowerCase("cs");
+  const catalog = searchable ? (q ? config.catalog.filter((i) => i.name.toLocaleLowerCase("cs").includes(q)) : config.catalog).slice(0, CATALOG_SHOWN) : config.catalog;
   const gross = cart.reduce((s, l) => s + lineTotal(l), 0);
   const total = gross - discount;
 
@@ -48,9 +57,21 @@ export function RegisterScreen({
   return (
     <div className="grid gap-4 lg:grid-cols-[1.3fr_1fr]">
       <section aria-label="Zadání položek" className="space-y-4">
-        {config.catalog.length > 0 && (
+        {searchable && (
+          <input
+            type="search"
+            aria-label="Hledat zboží"
+            placeholder={`Hledat zboží (${config.catalog.length} položek)`}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="w-full rounded-2xl border border-line bg-white px-4 py-3 text-base text-ink placeholder:text-muted"
+          />
+        )}
+        {searchable && q && catalog.length === 0 && <p className="text-sm text-muted">Nic nenalezeno.</p>}
+        {searchable && !q && config.catalog.length > CATALOG_SHOWN && <p className="text-sm text-muted">Ukazujeme prvních {CATALOG_SHOWN} položek, další najdete hledáním.</p>}
+        {catalog.length > 0 && (
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {config.catalog.map((item) => (
+            {catalog.map((item) => (
               <button
                 key={item.id}
                 type="button"

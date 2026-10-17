@@ -63,6 +63,7 @@ export function llmsTxt(): string {
     `- [Je EET dole? Stav systému evidence tržeb](${absoluteUrl("/stav-eet")}): nezávislé měření dostupnosti rozhraní EET každých 5 minut, historie výpadků; strojově na ${absoluteUrl("/api/stav-eet")}.`,
     `- [MCP server pro AI asistenty](${absoluteUrl("/mcp")}): veřejný MCP server (Streamable HTTP, bez přihlášení) na ${absoluteUrl("/api/mcp")} – nástroje eet_check_ico, eet_calculate_eet_off, eet_classify_payment, eet_get_facts, eet_list_misconceptions, eet_search_guides, eet_get_guide, eet_get_fs_status.`,
     `- [Srovnání s MOJE eet](${absoluteUrl("/srovnani/moje-eet")})`,
+    `- [Přechod z jiné pokladny](${absoluteUrl("/prechod-z-jine-pokladny")}): ceny základních tarifů pokladen s evidencí tržeb podle ceníků výrobců (s datem a zdroji), kalkulačka ročních nákladů a postup přechodu včetně importu zboží z CSV.`,
     `- [Ukázka pokladny bez registrace](${absoluteUrl("/ukazka")}): prodej, platba a účtenka v prohlížeči; nic se neukládá ani neodesílá.`,
     `- [Všechny návody](${absoluteUrl("/navody")}) a [všechny nástroje](${absoluteUrl("/nastroje")})`,
     `- [O nás a odborná revize](${absoluteUrl("/o-nas")}): kdo web provozuje, jak ověřujeme fakta a kdo návody reviduje.`,

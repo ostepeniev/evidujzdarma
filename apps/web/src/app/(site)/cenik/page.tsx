@@ -154,6 +154,11 @@ export default function PricingPage() {
             <Link href="/srovnani/moje-eet" className="underline underline-offset-2">
               srovnání s MOJE eet
             </Link>
+
+            . Ceny jiných pokladen a postup přechodu najdete na stránce{" "}
+            <Link href="/prechod-z-jine-pokladny" className="underline underline-offset-2">
+              přechod z jiné pokladny
+            </Link>
             .
           </p>
         </section>
