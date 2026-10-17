@@ -158,6 +158,7 @@ export const eet20KompletniPruvodce: Guide = {
             "**Od 1. 1. 2027:** evidujte každou kontaktní platbu – leden už je standardní evidence.",
           ],
         },
+        { p: "Seznam si můžete odškrtávat nebo vytisknout v [checklistu EET 2.0](/checklist-eet)." },
         { cta: "jednotky" },
       ],
     },
@@ -480,7 +481,7 @@ export const eet20KompletniPruvodce: Guide = {
   published: "2026-10-01",
   updated: "2026-10-03",
   changelog: [
-    { date: "2026-10-17", text: "Doplněny odkazy na nové návody (gastronomie, trhy a stánky, e-shop, pokladna v mobilu) a na generátor dokladu o prodeji." },
+    { date: "2026-10-17", text: "Doplněny odkazy na nové návody (gastronomie, trhy a stánky, e-shop, pokladna v mobilu), na generátor dokladu o prodeji a na checklist EET 2.0." },
     { date: "2026-10-15", text: "Doplněno číslo zákona ve Sbírce zákonů (zákon č. 180/2026 Sb.) a paragrafy ověřené podle vyhlášeného znění." },
     { date: "2026-10-07", text: "Doplněn citát odbornice (Helena Jeřábková)." },
     { date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },

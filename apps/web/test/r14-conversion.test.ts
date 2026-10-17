@@ -196,11 +196,17 @@ describe("R14.5 – sticky button on the phone", () => {
 });
 
 describe("R14.6 – sameAs", () => {
-  it("gate: the organisation has 4 profiles incl. Instagram and Threads", async () => {
+  it("gate: the organisation has 5 profiles incl. Instagram, Threads and Firmy.cz (S1)", async () => {
     const { organizationLd } = await import("@/lib/jsonld");
     const sameAs = (organizationLd() as { sameAs: string[] }).sameAs;
-    expect(sameAs).toHaveLength(4);
-    expect(sameAs).toEqual(expect.arrayContaining(["https://www.instagram.com/evidujzdarma/", "https://www.threads.com/@evidujzdarma"]));
+    expect(sameAs).toHaveLength(5);
+    expect(sameAs).toEqual(
+      expect.arrayContaining([
+        "https://www.instagram.com/evidujzdarma/",
+        "https://www.threads.com/@evidujzdarma",
+        "https://www.firmy.cz/detail/14080667-evidujzdarma-karlovy-vary-dvory",
+      ]),
+    );
   });
 });
 

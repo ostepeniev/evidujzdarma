@@ -48,10 +48,16 @@ const TOOLS = [
     time: "30 vteřin",
   },
   {
+    href: "/checklist-eet",
+    title: "Checklist EET 2.0",
+    text: "Osm kroků do 1. 1. 2027: DIS+, evidenční jednotky, certifikát, pokladna, EET OFF a zkouška v prosinci. Odškrtávejte, nebo si seznam vytiskněte.",
+    tag: "Novinka",
+    time: "2 minuty",
+  },
+  {
     href: "/doklad-o-prodeji",
     title: "Doklad o prodeji",
     text: "Zákazník chce doklad a pokladnu nemáte po ruce? Vyplníte prodávajícího a položky, doklad podle § 16 zákona o ochraně spotřebitele vytisknete nebo uložíte jako PDF.",
-    tag: "Novinka",
     time: "1 minuta",
   },
   {

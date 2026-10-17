@@ -125,3 +125,41 @@ describe("S1 – print CSS", () => {
     expect(css).not.toMatch(/^\s{2}body \* \{/m);
   });
 });
+
+describe("S1 – /checklist-eet", () => {
+  it("gate: public tool in the sitemap, /nastroje, footer and llms.txt; 8 steps matching the pillar's 'Co musíte udělat'", async () => {
+    const { CHECKLIST } = await import("@/content/checklist");
+    const { getGuide } = await import("@/content/guides");
+    expect(STATIC_PAGES.map((p) => p.path)).toContain("/checklist-eet");
+    const { default: sitemap } = await import("@/app/sitemap");
+    expect(sitemap().map((e) => e.url)).toContain(absoluteUrl("/checklist-eet"));
+    expect(readFileSync(new URL("../src/app/(site)/nastroje/page.tsx", import.meta.url), "utf8")).toContain('href: "/checklist-eet"');
+    expect(readFileSync(new URL("../src/components/site-footer.tsx", import.meta.url), "utf8")).toContain('href: "/checklist-eet"');
+    const { llmsTxt } = await import("@/lib/llms");
+    expect(llmsTxt()).toContain(absoluteUrl("/checklist-eet"));
+    const pillar = getGuide("eet-2-0-kompletni-pruvodce")!;
+    const blocks = pillar.sections.find((s) => s.id === "co-udelat")!.blocks;
+    const ol = (blocks.find((b) => "ol" in b) as { ol: string[] }).ol;
+    expect(CHECKLIST).toHaveLength(ol.length);
+    for (const when of ["Od 1. 11. 2026", "Hned poté", "Od 1. 1. 2027", "V prosinci 2026"]) {
+      expect(CHECKLIST.some((s) => s.when === when), when).toBe(true);
+      expect(ol.some((x) => x.startsWith(`**${when}:**`)), when).toBe(true);
+    }
+    expect(JSON.stringify(blocks)).toContain("(/checklist-eet)");
+    const { metadata } = await import("@/app/(site)/checklist-eet/page");
+    expect((metadata.description as string).length).toBeGreaterThanOrEqual(140);
+    expect((metadata.description as string).length).toBeLessThanOrEqual(160);
+  });
+
+  it("gate: the page renders all steps, says nothing is stored and has HowTo JSON-LD", async () => {
+    const { default: Page } = await import("@/app/(site)/checklist-eet/page");
+    const { renderToStaticMarkup } = await import("react-dom/server");
+    const { createElement } = await import("react");
+    const html = renderToStaticMarkup(createElement(Page));
+    expect(html).toContain('"@type":"HowTo"');
+    const text = pageText(Page);
+    expect(text).toContain("Hotovo 0 z 8");
+    expect(text).toContain("Přihlaste se v DIS+ k evidenci tržeb");
+    expect(text).toContain("Odškrtnutí platí jen v otevřené stránce.");
+  });
+});

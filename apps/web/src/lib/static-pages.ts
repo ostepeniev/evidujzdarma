@@ -11,6 +11,7 @@ export const STATIC_PAGES: readonly { path: string; title: string; priority: num
   { path: "/evidencni-jednotky", title: "Průvodce evidenčními jednotkami", priority: 0.8, changeFrequency: "weekly", modified: "2026-10-02" },
   { path: "/qr-platba", title: "Generátor QR platby", priority: 0.7, changeFrequency: "monthly", modified: "2026-10-02" },
   { path: "/doklad-o-prodeji", title: "Doklad o prodeji: generátor zdarma", priority: 0.7, changeFrequency: "monthly", modified: "2026-10-17" },
+  { path: "/checklist-eet", title: "Checklist EET 2.0: co udělat do 1. 1. 2027", priority: 0.8, changeFrequency: "monthly", modified: "2026-10-17" },
   { path: "/stav-eet", title: "Je EET dole? Stav systému evidence tržeb", priority: 0.7, changeFrequency: "daily", modified: "2026-10-01" },
   { path: "/nastroje", title: "Nástroje k EET 2.0", priority: 0.6, changeFrequency: "monthly", modified: "2026-10-17" },
   { path: "/mcp", title: "EET 2.0 pro AI asistenty (MCP server)", priority: 0.6, changeFrequency: "monthly", modified: "2026-10-02" },

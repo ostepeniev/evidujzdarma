@@ -48,7 +48,7 @@ export function llmsTxt(): string {
     "",
     "## Nástroje (zdarma, bez registrace)",
     "",
-    ...STATIC_PAGES.filter((p) => ["/kontrola-ico", "/musim-evidovat", "/kalkulacka-eet-off", "/evidencni-jednotky", "/qr-platba", "/doklad-o-prodeji", "/ucetni/hromadna-kontrola"].includes(p.path)).map(
+    ...STATIC_PAGES.filter((p) => ["/kontrola-ico", "/musim-evidovat", "/kalkulacka-eet-off", "/evidencni-jednotky", "/qr-platba", "/doklad-o-prodeji", "/checklist-eet", "/ucetni/hromadna-kontrola"].includes(p.path)).map(
       (p) => `- [${p.title}](${absoluteUrl(p.path)})`,
     ),
     "",

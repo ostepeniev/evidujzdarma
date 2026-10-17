@@ -61,6 +61,8 @@ export const SITE = {
     // R14.6
     "https://www.instagram.com/evidujzdarma/",
     "https://www.threads.com/@evidujzdarma",
+    // S1 (17. 10. 2026): profil na Firmy.cz (Seznam, zdroj pro Mapy.cz a Seznam Asistenta)
+    "https://www.firmy.cz/detail/14080667-evidujzdarma-karlovy-vary-dvory",
   ],
 } as const;
 
