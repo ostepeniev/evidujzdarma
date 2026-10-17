@@ -9,6 +9,9 @@ import { PageHeader } from "@/components/page-header";
 import { PER_PAGE, foundingMonths, indexRegions, listFirms, todayIso, catalogDataDate } from "@/lib/server/catalog";
 import { canonicalMeta } from "@/lib/metadata";
 
+// Katalog se renderuje na vyžádání, do ISR cache na disku nic neukládá – při milionech URL by ji zaplnil (R3.3, S2).
+export const dynamic = "force-dynamic";
+
 function regionsLabel(): string {
   const names = indexRegions()
     .map((c) => krajByCode(c)?.name)

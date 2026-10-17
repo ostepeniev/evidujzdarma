@@ -3,6 +3,7 @@ import { RelatedGuides } from "@/components/related-guides";
 import Link from "next/link";
 import { isValidIco, normalizeIco } from "@ez/cz";
 import { Faq } from "@/components/faq";
+import { IcoHashRedirect } from "@/components/ico-hash-redirect";
 import { IcoQuickCheck } from "@/components/ico-quick-check";
 import { IcoResult } from "@/components/ico-result";
 import { PageHeader } from "@/components/page-header";
@@ -95,6 +96,8 @@ export default async function IcoCheckPage({ searchParams }: PageProps<"/kontrol
       >
         <div className="mt-6 max-w-2xl">
           <IcoQuickCheck size="md" initial={icoParam ?? ""} />
+          {/* odkazy z katalogu nesou IČO ve fragmentu (#ico=…), staré odkazy ?ico= dál fungují na serveru (S2) */}
+          {!icoParam && <IcoHashRedirect />}
         </div>
       </PageHeader>
       <div className="container-page py-10">

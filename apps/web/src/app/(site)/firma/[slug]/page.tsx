@@ -3,16 +3,23 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { classifyNaceList, krajByCode, legalFormName, legalFormShort } from "@ez/cz";
 import { Facts } from "@/components/catalog/facts";
-import { CATALOG_INDUSTRIES } from "@/components/catalog/industry";
+import { FirmList } from "@/components/catalog/firm-list";
+import { CATALOG_INDUSTRIES, industryOfNace, type CatalogIndustry } from "@/components/catalog/industry";
 import { firmLd } from "@/components/catalog/jsonld";
 import { naceDivisionLabel } from "@/components/catalog/nace-labels";
 import { OwnerCta } from "@/components/catalog/owner-cta";
 import { AresUnavailable } from "@/components/catalog/ares-unavailable";
-import { aresUrl, dateCs, establishmentPath, firmPath, krajPath, oborKrajPath } from "@/components/catalog/paths";
+import { aresUrl, dateCs, establishmentPath, firmPath, krajPath, oborKrajPath, oborObecPath } from "@/components/catalog/paths";
 import { RelevanceChip, RelevanceExplainer } from "@/components/catalog/relevance";
 import { SourceNote } from "@/components/catalog/source-note";
 import { PageHeader } from "@/components/page-header";
-import { JsonLd } from "@/lib/jsonld";
+import { Faq } from "@/components/faq";
+import { firmFaq } from "@/lib/catalog-faq";
+import { fakturaLink, hasFakturaPage } from "@/lib/faktura-link";
+import { kontrolaIcoHref, registraceHref } from "@/lib/hash-params";
+import { JsonLd, faqLd } from "@/lib/jsonld";
+import { isClosed } from "@/lib/launch";
+import { OBEC_MIN_FIRMS, sameAddressFirms, similarFirms, type FirmListItem, type FirmView } from "@/lib/server/catalog";
 import { loadFirmPage } from "@/lib/server/firm-page";
 import { clientIpFromHeaders } from "@/lib/server/rate-limit";
 import { ExternalLink } from "@/components/external-link";
@@ -24,6 +31,31 @@ export const dynamic = "force-dynamic";
 
 async function loadFirm(slug: string) {
   return loadFirmPage(slug, clientIpFromHeaders(await headers()));
+}
+
+/** Dokud je pokladna zavřená (do 2. 11. 2026), vede tlačítko na předregistraci a nesmí tvrdit, že už lze evidovat. */
+const START_LABEL = isClosed("/pokladna") ? "Předregistrovat se zdarma" : "Začít evidovat zdarma";
+
+/**
+ * „Podobné firmy v okolí“ (stejný obor ve stejné obci) a „Další firmy na stejné adrese“ (jen právnické osoby).
+ * Jen u subjektů z naší DB, které nezanikly a mají známou obec; dva dotazy po indexech (migrace 0037).
+ */
+async function neighbours(firm: FirmView): Promise<{
+  industry: CatalogIndustry | undefined;
+  label: string | null;
+  similar: FirmListItem[];
+  sameAddress: { items: FirmListItem[]; more: boolean };
+}> {
+  const empty = { items: [] as FirmListItem[], more: false };
+  if (!firm.inDb || firm.dissolvedAt || firm.cityCode == null) return { industry: undefined, label: null, similar: [], sameAddress: empty };
+  const industry = industryOfNace(firm.nace);
+  const division = firm.nace[0]?.slice(0, 2);
+  const prefixes = industry ? industry.nace : division ? [division] : [];
+  const [similar, sameAddress] = await Promise.all([
+    prefixes.length ? similarFirms(firm, prefixes).catch((): FirmListItem[] => []) : Promise.resolve([] as FirmListItem[]),
+    sameAddressFirms(firm).catch(() => empty),
+  ]);
+  return { industry, label: industry ? industry.headline : division ? naceDivisionLabel(division) : null, similar, sameAddress };
 }
 
 export async function generateMetadata({ params }: PageProps<"/firma/[slug]">): Promise<Metadata> {
@@ -56,10 +88,31 @@ export default async function FirmPage({ params }: PageProps<"/firma/[slug]">) {
   const path = firmPath(firm);
   const { matched } = classifyNaceList(firm.nace);
   const seat = [firm.street, [firm.postalCode, firm.city].filter(Boolean).join(" ")].filter(Boolean).join(", ");
+  const near = await neighbours(firm);
+  const faq = firmFaq(
+    {
+      ico: firm.ico,
+      name: firm.name,
+      isNaturalPerson: firm.isNaturalPerson,
+      dic: firm.dic,
+      vatPayer: firm.vatPayer,
+      foundedAt: firm.foundedAt,
+      dissolvedAt: firm.dissolvedAt,
+      // u OSVČ sídlo do FAQ nikdy (street je u nich null už ve view modelu)
+      seat: firm.isNaturalPerson ? null : seat || null,
+      establishments: firm.establishments ? firm.establishments.length : null,
+      eetRelevance: firm.eetRelevance,
+      matched: matched.map((m) => m.label),
+      sourceDate: firm.source.date,
+      sourceKind: firm.source.kind,
+    },
+    { kontrolaIco: kontrolaIcoHref(firm.ico) },
+  );
 
   return (
     <>
       <JsonLd data={firmLd(firm)} />
+      <JsonLd data={faqLd(faq.items)} />
       <PageHeader
         title={firm.name}
         crumbs={[
@@ -81,6 +134,19 @@ export default async function FirmPage({ params }: PageProps<"/firma/[slug]">) {
             {firm.source.kind === "ares" ? "Ověřeno v ARES" : "Údaje z RES ČSÚ"} k {dateCs(firm.source.date)}
           </span>
         </div>
+        {!firm.dissolvedAt && (
+          // IČO jen ve fragmentu (#…), nikdy v query – z milionu stránek firem by jinak vzniklo milion nových URL (COMMON 9)
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link href={registraceHref(firm.ico)} className="btn-primary">
+              {START_LABEL}
+            </Link>
+            {hasFakturaPage() && (
+              <Link href={fakturaLink(firm.ico)} className="btn-secondary">
+                Vystavit fakturu této firmě
+              </Link>
+            )}
+          </div>
+        )}
       </PageHeader>
 
       <div className="container-page grid gap-8 py-10 lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -135,11 +201,8 @@ export default async function FirmPage({ params }: PageProps<"/firma/[slug]">) {
               <RelevanceChip relevance={firm.eetRelevance} />
               <RelevanceExplainer matched={matched.map((m) => m.label)} />
               <div className="flex flex-wrap gap-3 pt-2">
-                <Link href={`/kontrola-ico?ico=${firm.ico}`} className="btn-primary" rel="nofollow">
+                <Link href={kontrolaIcoHref(firm.ico)} className="btn-primary">
                   Ověřit EET podle IČO
-                </Link>
-                <Link href="/#registrace" className="btn-secondary">
-                  Pokladna zdarma
                 </Link>
               </div>
             </section>
@@ -188,6 +251,68 @@ export default async function FirmPage({ params }: PageProps<"/firma/[slug]">) {
                 </ul>
               </>
             )}
+          </section>
+
+          {near.similar.length > 0 && (
+            <section aria-labelledby="podobne-firmy">
+              <h2 id="podobne-firmy" className="mb-1 text-xl font-bold">
+                Podobné firmy v okolí
+              </h2>
+              <p className="mb-4 text-[15px] text-ink-soft">
+                {near.label ? `Obor ${near.label.toLowerCase()}` : "Stejný obor"}, obec {firm.city}.
+              </p>
+              <FirmList items={near.similar} />
+              {near.industry && firm.cityCode != null && firm.city && near.similar.length >= OBEC_MIN_FIRMS - 1 && (
+                <p className="mt-3 text-[15px]">
+                  <Link href={oborObecPath(near.industry.slug, { code: firm.cityCode, name: firm.city })} className="font-medium text-brand-700 underline underline-offset-4">
+                    {near.industry.headline} {firm.city}: celý seznam
+                  </Link>
+                </p>
+              )}
+            </section>
+          )}
+
+          {!firm.isNaturalPerson && near.sameAddress.items.length > 0 && (
+            <section aria-labelledby="stejna-adresa">
+              <h2 id="stejna-adresa" className="mb-1 text-xl font-bold">
+                Další firmy na stejné adrese
+              </h2>
+              <p className="mb-4 text-[15px] text-ink-soft">
+                Právnické osoby se sídlem {seat}
+                {near.sameAddress.more ? ` – prvních ${near.sameAddress.items.length} podle abecedy` : ""}. Podnikající fyzické osoby tu
+                neuvádíme.
+              </p>
+              <FirmList items={near.sameAddress.items} />
+            </section>
+          )}
+
+          <section aria-labelledby="faq-firma">
+            <h2 id="faq-firma" className="mb-4 text-xl font-bold">
+              Časté otázky
+            </h2>
+            <Faq
+              items={faq.items.map((it) => ({
+                q: it.q,
+                a: it.a,
+                rich: it.link ? (
+                  <p>
+                    {it.a}{" "}
+                    <Link href={it.link.href} className="font-medium">
+                      {it.link.label}
+                    </Link>
+                  </p>
+                ) : undefined,
+              }))}
+            />
+            <p className="mt-3 text-sm text-muted">
+              Zdroje:{" "}
+              {faq.sources.map((src, i) => (
+                <span key={src.url}>
+                  {i > 0 && " · "}
+                  <ExternalLink href={src.url}>{src.label}</ExternalLink>
+                </span>
+              ))}
+            </p>
           </section>
 
           <SourceNote ico={firm.ico} source={firm.source} />

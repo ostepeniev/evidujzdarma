@@ -11,6 +11,9 @@ import { ToolCta } from "@/components/tool-cta";
 import { catalogDataDate, findFirmSlug, foundingMonths, indexRegions, regionCounts, searchFirmsByName, type FirmListItem } from "@/lib/server/catalog";
 import { canonicalMeta } from "@/lib/metadata";
 
+// Katalog se renderuje na vyžádání, do ISR cache na disku nic neukládá – při milionech URL by ji zaplnil (R3.3, S2).
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata({ searchParams }: PageProps<"/firmy">): Promise<Metadata> {
   const { q } = await searchParams;
   return {

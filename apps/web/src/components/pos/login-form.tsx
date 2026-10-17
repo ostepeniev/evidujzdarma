@@ -1,11 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { scrollToHashAnchor, withHashIco } from "@/lib/hash-params";
 
 export function LoginForm({ redirectTo }: { redirectTo: string }) {
   const [email, setEmail] = useState("");
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
+
+  // odkaz z katalogu firem: /#registrace&ico=… – sjet k formuláři (prohlížeč to s parametry ve fragmentu neudělá, S2)
+  useEffect(() => scrollToHashAnchor(), []);
 
   if (state === "sent")
     return (
@@ -25,7 +29,8 @@ export function LoginForm({ redirectTo }: { redirectTo: string }) {
         const res = await fetch("/api/auth/login", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ email, redirectTo }),
+          // IČO z fragmentu odkazu katalogu jde do kroku „Firma“ stejně jako z kontroly IČO (R18.1, S2)
+          body: JSON.stringify({ email, redirectTo: withHashIco(redirectTo, window.location.hash) }),
         }).catch(() => null);
         if (res?.ok) setState("sent");
         else {

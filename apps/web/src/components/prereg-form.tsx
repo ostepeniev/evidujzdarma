@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { icoFromHash, scrollToHashAnchor } from "@/lib/hash-params";
 import { icoParam } from "@/lib/ico-param";
 import { SITE } from "@/lib/site";
 import { INDUSTRIES } from "@/content/industries";
@@ -39,11 +40,13 @@ export function PreregForm({ defaultIco = "" }: { defaultIco?: string }) {
   const [state, setState] = useState<State>({ kind: "idle" });
   const [ico, setIco] = useState(defaultIco);
 
-  // úvodní stránka je statická – IČO z ?ico= se doplní až v prohlížeči (R14.2)
+  // úvodní stránka je statická – IČO z ?ico= se doplní až v prohlížeči (R14.2); odkazy z katalogu ho nesou
+  // ve fragmentu (/#registrace&ico=…, S2), ke kotvě pak sjedeme sami
   useEffect(() => {
     if (!defaultIco) {
-      const fromUrl = icoFromSearch(window.location.search);
+      const fromUrl = icoFromSearch(window.location.search) || icoFromHash(window.location.hash);
       if (fromUrl) setIco(fromUrl);
+      scrollToHashAnchor();
     }
   }, [defaultIco]);
 

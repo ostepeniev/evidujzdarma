@@ -1,0 +1,4 @@
+-- S2 (katalog firem): stránky obor × obec, „Podobné firmy v okolí“ a „Další firmy na stejné adrese“ (jen právnické osoby).
+-- V produkci je tabulka firms zatím prázdná, indexy vzniknou okamžitě; na plné tabulce by se stavěly několik minut.
+CREATE INDEX "firms_listable_city_name" ON "firms" USING btree ("city_code","name") WHERE "firms"."noindex" = false and "firms"."dissolved_at" is null;--> statement-breakpoint
+CREATE INDEX "firms_legal_address" ON "firms" USING btree ("city_code","street") WHERE "firms"."noindex" = false and "firms"."dissolved_at" is null and "firms"."is_natural_person" = false and "firms"."street" is not null;

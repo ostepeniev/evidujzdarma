@@ -1,12 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { parseHash } from "@/lib/hash-params";
 
 type State = { kind: "idle" } | { kind: "sending" } | { kind: "error"; message: string; field?: string } | { kind: "done" };
 
 /** Formulář námitky (čl. 21 GDPR) / žádosti o opravu údajů v katalogu. */
 export function ObjectionForm({ defaultIco = "", defaultIcp = "" }: { defaultIco?: string; defaultIcp?: string }) {
   const [state, setState] = useState<State>({ kind: "idle" });
+  const icoRef = useRef<HTMLInputElement>(null);
+  const icpRef = useRef<HTMLInputElement>(null);
+
+  // katalog odkazuje na /namitka#ico=…&icp=… (fragment, ne query – COMMON 9); staré odkazy ?ico= vyplní server
+  useEffect(() => {
+    const { params } = parseHash(window.location.hash);
+    const ico = params.get("ico");
+    const icp = params.get("icp");
+    if (ico && /^\d{1,8}$/.test(ico) && icoRef.current && !icoRef.current.value) icoRef.current.value = ico;
+    if (icp && /^\d{1,12}$/.test(icp) && icpRef.current && !icpRef.current.value) icpRef.current.value = icp;
+  }, []);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -70,13 +82,13 @@ export function ObjectionForm({ defaultIco = "", defaultIcp = "" }: { defaultIco
           <label htmlFor="ob-ico" className="label">
             IČO
           </label>
-          <input id="ob-ico" name="ico" inputMode="numeric" maxLength={10} defaultValue={defaultIco} className="input" aria-invalid={invalid("ico")} />
+          <input ref={icoRef} id="ob-ico" name="ico" inputMode="numeric" maxLength={10} defaultValue={defaultIco} className="input" aria-invalid={invalid("ico")} />
         </div>
         <div>
           <label htmlFor="ob-icp" className="label">
             IČP provozovny (nepovinné)
           </label>
-          <input id="ob-icp" name="icp" inputMode="numeric" maxLength={12} defaultValue={defaultIcp} className="input" aria-invalid={invalid("icp")} />
+          <input ref={icpRef} id="ob-icp" name="icp" inputMode="numeric" maxLength={12} defaultValue={defaultIcp} className="input" aria-invalid={invalid("icp")} />
         </div>
       </div>
       <p className="-mt-3 text-sm text-muted">Vyplňte IČO nebo IČP.</p>

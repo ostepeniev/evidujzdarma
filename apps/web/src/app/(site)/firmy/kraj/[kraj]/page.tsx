@@ -13,6 +13,9 @@ import { ToolCta } from "@/components/tool-cta";
 import { PER_PAGE, isIndexRegion, listFirms, catalogDataDate } from "@/lib/server/catalog";
 import { canonicalMeta } from "@/lib/metadata";
 
+// Katalog se renderuje na vyžádání, do ISR cache na disku nic neukládá – při milionech URL by ji zaplnil (R3.3, S2).
+export const dynamic = "force-dynamic";
+
 // Stránkování a filtr přes searchParams → renderuje se na vyžádání (dotazy jdou po indexu region_code).
 
 export async function generateMetadata({ params, searchParams }: PageProps<"/firmy/kraj/[kraj]">): Promise<Metadata> {

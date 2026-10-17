@@ -563,6 +563,14 @@ export const firms = pgTable(
     index("firms_listable_region_name")
       .on(t.regionCode, t.name)
       .where(sql`${t.noindex} = false and ${t.dissolvedAt} is null`),
+    // S2: obor × obec a „Podobné firmy v okolí“ – stránkování a sousedé podle názvu v obci bez řazení celé obce (Praha)
+    index("firms_listable_city_name")
+      .on(t.cityCode, t.name)
+      .where(sql`${t.noindex} = false and ${t.dissolvedAt} is null`),
+    // S2: „Další firmy na stejné adrese“ – jen právnické osoby (u OSVČ ulici neukládáme ani neukazujeme)
+    index("firms_legal_address")
+      .on(t.cityCode, t.street)
+      .where(sql`${t.noindex} = false and ${t.dissolvedAt} is null and ${t.isNaturalPerson} = false and ${t.street} is not null`),
   ],
 );
 

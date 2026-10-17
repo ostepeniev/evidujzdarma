@@ -4,13 +4,16 @@ import { notFound } from "next/navigation";
 import { KRAJE, classifyNaceList, krajBySlug, RELEVANCE_LABEL } from "@ez/cz";
 import { FirmList, Pagination } from "@/components/catalog/firm-list";
 import { CATALOG_INDUSTRIES, catalogIndustry } from "@/components/catalog/industry";
-import { formatCount, krajPath, oborKrajPath, pageParam } from "@/components/catalog/paths";
+import { formatCount, krajPath, oborKrajPath, oborObecPath, pageParam } from "@/components/catalog/paths";
 import { RelevanceChip } from "@/components/catalog/relevance";
 import { ListSource } from "@/components/catalog/list-source";
 import { PageHeader } from "@/components/page-header";
 import { ToolCta } from "@/components/tool-cta";
-import { PER_PAGE, isIndexRegion, listFirms, catalogDataDate } from "@/lib/server/catalog";
+import { OBEC_MIN_FIRMS, PER_PAGE, isIndexRegion, listFirms, catalogDataDate, regionObecStats, type ObecStats } from "@/lib/server/catalog";
 import { canonicalMeta } from "@/lib/metadata";
+
+// Katalog se renderuje na vyžádání, do ISR cache na disku nic neukládá – při milionech URL by ji zaplnil (R3.3, S2).
+export const dynamic = "force-dynamic";
 
 function resolve(oborSlug: string, krajSlug: string) {
   const industry = catalogIndustry(oborSlug);
@@ -38,12 +41,18 @@ export default async function IndustryRegionPage({ params, searchParams }: PageP
   const sp = await searchParams;
   const { industry, kraj } = resolve(obor, krajSlug);
   const page = pageParam(sp.strana);
-  const [{ items, total }, dataDate] = await Promise.all([
+  const [{ items, total }, dataDate, obceStats] = await Promise.all([
     listFirms({ regionCode: kraj.code, nacePrefixes: industry.nace }, page, PER_PAGE).catch(() => ({ items: [], total: 0 })),
     catalogDataDate().catch(() => null),
+    regionObecStats(kraj.code).catch(() => new Map<number, ObecStats>()),
   ]);
   if (page > 1 && items.length === 0) notFound();
   const { relevance } = classifyNaceList(industry.nace);
+  // stránky obor × obec (S2) – jen obce s aspoň OBEC_MIN_FIRMS subjekty, nejvíc subjektů první
+  const obce = [...obceStats.values()]
+    .filter((o) => (o.industries[industry.slug]?.listable ?? 0) >= OBEC_MIN_FIRMS)
+    .sort((a, b) => b.industries[industry.slug]!.listable - a.industries[industry.slug]!.listable || a.name.localeCompare(b.name, "cs"))
+    .slice(0, 40);
 
   return (
     <>
@@ -99,6 +108,21 @@ export default async function IndustryRegionPage({ params, searchParams }: PageP
         </div>
 
         <aside className="space-y-8">
+          {obce.length > 0 && (
+            <div>
+              <h2 className="mb-3 text-lg font-bold">{industry.headline} podle obcí</h2>
+              <ul className="space-y-1.5">
+                {obce.map((o) => (
+                  <li key={o.code}>
+                    <Link href={oborObecPath(industry.slug, o)} className="text-[15px] text-brand-700 hover:underline">
+                      {o.name}
+                    </Link>{" "}
+                    <span className="text-sm text-muted">({formatCount(o.industries[industry.slug]!.listable)})</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           <div>
             <h2 className="mb-3 text-lg font-bold">Další obory {kraj.locative}</h2>
             <ul className="space-y-1.5">

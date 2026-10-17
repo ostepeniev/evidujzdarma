@@ -5,6 +5,7 @@ import { useMemo, useRef, useState } from "react";
 import { parseIcoList } from "@ez/cz/ico";
 import type { Verdict } from "@/lib/eet-assessment";
 import { csvCell } from "@/lib/csv";
+import { kontrolaIcoHref } from "@/lib/hash-params";
 import {
   BULK_MAX_BATCH,
   BULK_MAX_TOTAL,
@@ -462,7 +463,7 @@ export function BulkCheck() {
                     <tr key={r.ico} className="border-t border-line align-top">
                       <td className="whitespace-nowrap px-3 py-2.5 font-mono">
                         <Link
-                          href={`/kontrola-ico?ico=${r.ico}`}
+                          href={kontrolaIcoHref(r.ico)}
                           target="_blank"
                           className="text-brand-700 underline decoration-brand-200 underline-offset-4 hover:decoration-brand-600"
                         >

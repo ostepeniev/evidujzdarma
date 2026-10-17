@@ -13,6 +13,7 @@ import {
   type Establishment as AresEstablishment,
 } from "@ez/cz";
 import { getDb, hasDatabase, schema } from "@ez/db";
+import { CATALOG_INDUSTRIES } from "@/components/catalog/industry";
 import { lookupCompany } from "./ares";
 
 /**
@@ -56,23 +57,67 @@ export function todayIso(): string {
   return new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Prague" }).format(new Date());
 }
 
-/* ─────────────────────────────── jednoduchá cache agregací ─────────────────────────────── */
+/* ─────────────────────────────── cache agregací v paměti (LRU) ─────────────────────────────── */
 
-const memo = new Map<string, { at: number; value: unknown }>();
+/**
+ * Agregace (počty po krajích, obcích a oborech) držíme v paměti procesu, ne v ISR cache na disku (R3.3): počet klíčů
+ * je omezený (MEMO_MAX, nejdéle nepoužité vypadnou), souběžné požadavky na stejný klíč čekají na jeden dotaz
+ * a se `swr` se zastaralá hodnota vrátí hned a obnoví na pozadí (těžký dotaz za velký kraj neblokuje stránku).
+ */
+const MEMO_MAX = 5_000;
+interface MemoEntry {
+  at: number;
+  value: Promise<unknown>;
+  refreshing?: boolean;
+}
+const memo = new Map<string, MemoEntry>();
 
-async function memoize<T>(key: string, ttlMs: number, load: () => Promise<T>): Promise<T> {
+function memoSet(key: string, entry: MemoEntry): void {
+  memo.delete(key);
+  memo.set(key, entry);
+  while (memo.size > MEMO_MAX) memo.delete(memo.keys().next().value!);
+}
+
+function memoize<T>(key: string, ttlMs: number, load: () => Promise<T>, opts: { swr?: boolean } = {}): Promise<T> {
+  const now = Date.now();
   const hit = memo.get(key);
-  if (hit && Date.now() - hit.at < ttlMs) return hit.value as T;
-  const value = await load();
-  memo.set(key, { at: Date.now(), value });
-  return value;
+  if (hit) {
+    memoSet(key, hit); // naposledy použité na konec (LRU)
+    if (now - hit.at < ttlMs) return hit.value as Promise<T>;
+    if (opts.swr) {
+      if (!hit.refreshing) {
+        hit.refreshing = true;
+        load().then(
+          (v) => memoSet(key, { at: Date.now(), value: Promise.resolve(v) }),
+          () => {
+            hit.refreshing = false;
+          },
+        );
+      }
+      return hit.value as Promise<T>;
+    }
+  }
+  const entry: MemoEntry = { at: now, value: load() };
+  memoSet(key, entry);
+  entry.value.catch(() => {
+    if (memo.get(key) === entry) memo.delete(key);
+  });
+  return entry.value as Promise<T>;
+}
+
+/** Jen pro testy: vyprázdnit cache agregací. */
+export function __clearCatalogMemo(): void {
+  memo.clear();
 }
 
 /* ─────────────────────────────── SQL podmínky ─────────────────────────────── */
 
-/** Firma smí být v seznamech: bez námitky a nezaniklá. */
+/**
+ * Firma smí být v seznamech: bez námitky a nezaniklá. Literál `false` (ne parametr), aby plánovač i u připraveného
+ * dotazu (generic plan) poznal, že platí podmínka částečných indexů firms_listable_* (migrace 0037).
+ */
 function listableSql(): SQL {
-  return and(eq(f.noindex, false), isNull(f.dissolvedAt))!;
+  return sql`(${f.noindex} = false and ${f.dissolvedAt} is null)`;
 }
 
 function inIndexRegionsSql(): SQL {
@@ -95,6 +140,11 @@ function activeEstablishmentSql(today: string): SQL {
   return or(isNull(e.endedAt), sql`${e.endedAt} > ${today}`)!;
 }
 
+/**
+ * Má subjekt aspoň jeden obor CZ-NACE začínající některým z prefixů? Do WHERE seznamů: u poddotazu EXISTS plánovač
+ * počítá s běžnou selektivitou a zvolí průchod indexem v pořadí názvu, který skončí po stránce řádků (ověřeno EXPLAIN
+ * nad 200 000 řádky); u regulárního výrazu by odhadl 0,5 % a v Praze četl celou obec.
+ */
 function nacePrefixSql(prefixes: readonly string[]): SQL {
   if (prefixes.length === 0) return sql`false`;
   const patterns = prefixes.map((p) => `${p.replace(/\D/g, "")}%`);
@@ -102,6 +152,16 @@ function nacePrefixSql(prefixes: readonly string[]): SQL {
     patterns.map((p) => sql`${p}`),
     sql`, `,
   )}]::text[]))`;
+}
+
+/**
+ * Totéž jako nacePrefixSql pro agregace `count(*) filter (where …)` přes celý kraj: kódy v DB jsou jen číslice
+ * (normalizeNaceCode), takže stačí regulární výraz nad spojeným polem – asi o třetinu rychlejší než unnest.
+ */
+function naceMatchAggSql(prefixes: readonly string[]): SQL {
+  const clean = prefixes.map((p) => p.replace(/\D/g, "")).filter(Boolean);
+  if (clean.length === 0) return sql`false`;
+  return sql`(array_to_string(${f.nace}, ' ') ~ ${`(^| )(${clean.join("|")})`})`;
 }
 
 /* ─────────────────────────────── view modely ─────────────────────────────── */
@@ -138,6 +198,8 @@ export interface FirmView {
   /** null u OSVČ */
   street: string | null;
   city: string | null;
+  /** kód obce (RÚIAN; u záznamů jen z RES může být kód základní územní jednotky) */
+  cityCode: number | null;
   /** null u OSVČ */
   postalCode: string | null;
   regionCode: number | null;
@@ -193,6 +255,7 @@ function firmViewFromRow(row: FirmRow, ests: EstablishmentRow[]): FirmView {
     dissolvedAt: row.dissolvedAt,
     street: natural ? null : row.street,
     city: row.city,
+    cityCode: row.cityCode,
     postalCode: natural ? null : row.postalCode,
     regionCode: row.regionCode,
     nace: row.nace,
@@ -262,6 +325,7 @@ async function liveFirmView(ico: string): Promise<FirmView | null> {
     dissolvedAt: s.dissolvedAt,
     street: natural ? null : s.address.street,
     city: s.address.city,
+    cityCode: s.address.cityCode,
     postalCode: natural ? null : s.address.postalCode,
     regionCode: s.address.regionCode,
     nace: s.nace,
@@ -359,6 +423,8 @@ const listColumns = {
 
 export interface ListFilter {
   regionCode?: number;
+  /** kód obce (firms.city_code) */
+  cityCode?: number;
   relevance?: EetRelevance;
   nacePrefixes?: readonly string[];
   /** YYYY-MM podle data vzniku */
@@ -376,10 +442,10 @@ export function listFirms(filter: ListFilter, page = 1, perPage = PER_PAGE): Pro
 
 const listFirmsCached = cache((filterJson: string, page: number, perPage: number) => listFirmsImpl(JSON.parse(filterJson) as ListFilter, page, perPage));
 
-async function listFirmsImpl(filter: ListFilter, page: number, perPage: number): Promise<{ items: FirmListItem[]; total: number }> {
-  if (!hasDatabase()) return { items: [], total: 0 };
+function listQuery(filter: ListFilter): { where: SQL; order: SQL[] } {
   const conds: SQL[] = [listableSql()];
   if (filter.regionCode != null) conds.push(eq(f.regionCode, filter.regionCode));
+  if (filter.cityCode != null) conds.push(eq(f.cityCode, filter.cityCode));
   if (filter.relevance) conds.push(eq(f.eetRelevance, filter.relevance));
   if (filter.nacePrefixes) conds.push(nacePrefixSql(filter.nacePrefixes));
   if (filter.onlyIndexRegions) conds.push(inIndexRegionsSql());
@@ -389,7 +455,32 @@ async function listFirmsImpl(filter: ListFilter, page: number, perPage: number):
     conds.push(sql`${f.foundedAt} >= ${start}::date and ${f.foundedAt} < (${start}::date + interval '1 month')`);
     order = [desc(f.foundedAt), asc(f.name), asc(f.ico)];
   }
-  const where = and(...conds);
+  return { where: and(...conds)!, order };
+}
+
+/**
+ * Jen položky stránky, bez count(*) – pro seznamy, jejichž počet už známe z agregace v paměti (obec × obor).
+ * Velká obec (Praha) by jinak při každém zobrazení počítala statisíce řádků.
+ */
+export function listFirmItems(filter: ListFilter, page = 1, perPage = PER_PAGE): Promise<FirmListItem[]> {
+  return listFirmItemsCached(JSON.stringify(filter), page, perPage);
+}
+
+const listFirmItemsCached = cache(async (filterJson: string, page: number, perPage: number): Promise<FirmListItem[]> => {
+  if (!hasDatabase()) return [];
+  const { where, order } = listQuery(JSON.parse(filterJson) as ListFilter);
+  return getDb()
+    .select(listColumns)
+    .from(f)
+    .where(where)
+    .orderBy(...order)
+    .limit(perPage)
+    .offset((page - 1) * perPage);
+});
+
+async function listFirmsImpl(filter: ListFilter, page: number, perPage: number): Promise<{ items: FirmListItem[]; total: number }> {
+  if (!hasDatabase()) return { items: [], total: 0 };
+  const { where, order } = listQuery(filter);
   const db = getDb();
   const [items, [{ total } = { total: 0 }]] = await Promise.all([
     db
@@ -478,6 +569,192 @@ export async function catalogDataDate(): Promise<string | null> {
       .from(f);
     return row?.d ?? null;
   });
+}
+
+/* ─────────────────────────────── obec × obor ─────────────────────────────── */
+
+/**
+ * Stránka obor × obec se indexuje (a je v sitemapě) jen s aspoň tolika indexovatelnými subjekty – tenké stránky
+ * se 2–3 firmami by jen ředily kvalitu katalogu. Méně = noindex, follow.
+ */
+export const OBEC_MIN_FIRMS = 5;
+
+export interface ObecIndustryCount {
+  /** subjekty v seznamu (bez námitky, nezaniklé) */
+  listable: number;
+  /** z toho indexovatelné (indexovaný kraj, ověřeno v ARES) */
+  indexable: number;
+}
+
+export interface ObecStats {
+  code: number;
+  /** nejčastější zápis názvu obce mezi subjekty s tímto kódem */
+  name: string;
+  regionCode: number;
+  /** všech subjektů v seznamu */
+  total: number;
+  /** klíč = slug oboru (CATALOG_INDUSTRIES) */
+  industries: Record<string, ObecIndustryCount>;
+}
+
+const SIX_HOURS = 6 * 3_600_000;
+
+/**
+ * Počty subjektů obec × obor za celý kraj – jeden průchod tabulkou na kraj, v paměti 6 h (data RES se mění 2× měsíčně),
+ * po zastarání se obnoví na pozadí. Slouží stránce obor × obec, odkazům mezi obcemi a obory i sitemapě.
+ */
+export function regionObecStats(regionCode: number): Promise<Map<number, ObecStats>> {
+  if (!hasDatabase()) return Promise.resolve(new Map());
+  return memoize(
+    `obecStats:${regionCode}`,
+    SIX_HOURS,
+    async () => {
+      const cols: Record<string, SQL<number>> = {};
+      CATALOG_INDUSTRIES.forEach((ind, i) => {
+        const m = naceMatchAggSql(ind.nace);
+        cols[`l${i}`] = sql<number>`(count(*) filter (where ${m}))::int`;
+        cols[`v${i}`] = sql<number>`(count(*) filter (where ${m} and ${f.aresUpdatedAt} is not null))::int`;
+      });
+      const rows = (await getDb()
+        .select({ code: f.cityCode, name: sql<string>`mode() within group (order by ${f.city})`, total: sql<number>`count(*)::int`, ...cols })
+        .from(f)
+        .where(and(listableSql(), eq(f.regionCode, regionCode), isNotNull(f.cityCode), isNotNull(f.city)))
+        .groupBy(f.cityCode)) as unknown as Record<string, number | string | null>[];
+      const indexRegion = isIndexRegion(regionCode);
+      const needAres = requireAresVerified();
+      const out = new Map<number, ObecStats>();
+      for (const r of rows) {
+        const code = Number(r.code);
+        if (!code || !r.name) continue;
+        const industries: Record<string, ObecIndustryCount> = {};
+        CATALOG_INDUSTRIES.forEach((ind, i) => {
+          const listable = Number(r[`l${i}`] ?? 0);
+          const verified = Number(r[`v${i}`] ?? 0);
+          industries[ind.slug] = { listable, indexable: indexRegion ? (needAres ? verified : listable) : 0 };
+        });
+        out.set(code, { code, name: String(r.name), regionCode, total: Number(r.total ?? 0), industries });
+      }
+      return out;
+    },
+    { swr: true },
+  );
+}
+
+/** Kraj obce podle subjektů v DB (cache 6 h); null = obec v katalogu nemáme. */
+export function obecRegion(code: number): Promise<number | null> {
+  if (!hasDatabase() || !Number.isSafeInteger(code) || code <= 0 || code > 2_147_483_647) return Promise.resolve(null);
+  return memoize(`obecRegion:${code}`, SIX_HOURS, async () => {
+    const [row] = await getDb()
+      .select({ region: f.regionCode })
+      .from(f)
+      .where(and(listableSql(), eq(f.cityCode, code), isNotNull(f.regionCode)))
+      .limit(1);
+    return row?.region ?? null;
+  });
+}
+
+/** Obec s počty, nebo null (neznámý kód). */
+export async function getObecStats(code: number): Promise<ObecStats | null> {
+  const region = await obecRegion(code);
+  if (region == null) return null;
+  return (await regionObecStats(region)).get(code) ?? null;
+}
+
+/** Indexovat stránku obor × obec? Indexovaný kraj a aspoň OBEC_MIN_FIRMS indexovatelných subjektů. */
+export function isObecIndustryIndexable(stats: ObecStats, industrySlug: string): boolean {
+  return isIndexRegion(stats.regionCode) && (stats.industries[industrySlug]?.indexable ?? 0) >= OBEC_MIN_FIRMS;
+}
+
+export interface ObecIndustryPageRef {
+  industry: string;
+  code: number;
+  name: string;
+  indexable: number;
+}
+
+/** Všechny indexovatelné stránky obor × obec v indexovaných krajích (pro sitemapu), seřazené stabilně. */
+export async function indexableObecIndustryPages(): Promise<ObecIndustryPageRef[]> {
+  if (!hasDatabase()) return [];
+  const out: ObecIndustryPageRef[] = [];
+  for (const region of indexRegions()) {
+    const stats = await regionObecStats(region);
+    for (const o of stats.values()) {
+      for (const ind of CATALOG_INDUSTRIES) {
+        if (isObecIndustryIndexable(o, ind.slug)) out.push({ industry: ind.slug, code: o.code, name: o.name, indexable: o.industries[ind.slug]!.indexable });
+      }
+    }
+  }
+  return out.sort((a, b) => (a.industry === b.industry ? a.code - b.code : a.industry < b.industry ? -1 : 1));
+}
+
+/* ─────────────────────────────── stránka firmy: okolí a stejná adresa ─────────────────────────────── */
+
+/**
+ * „Podobné firmy v okolí“: stejný obor ve stejné obci, sousedé podle abecedy (od názvu firmy dál, pak od začátku).
+ * Každá firma tak dostane odkazy od svých sousedů – ne všechny stránky na první firmy v abecedě. Dotaz jde po indexu
+ * firms_listable_city_name a skončí po `limit` řádcích i v Praze.
+ */
+export async function similarFirms(
+  firm: { ico: string; name: string; cityCode: number | null },
+  nacePrefixes: readonly string[],
+  limit = 6,
+): Promise<FirmListItem[]> {
+  if (!hasDatabase() || firm.cityCode == null || nacePrefixes.length === 0) return [];
+  const base = and(listableSql(), eq(f.cityCode, firm.cityCode), nacePrefixSql(nacePrefixes), sql`${f.ico} <> ${firm.ico}`)!;
+  const db = getDb();
+  const after = await db
+    .select(listColumns)
+    .from(f)
+    .where(and(base, sql`${f.name} > ${firm.name}`))
+    .orderBy(asc(f.name), asc(f.ico))
+    .limit(limit);
+  if (after.length >= limit) return after;
+  const before = await db
+    .select(listColumns)
+    .from(f)
+    .where(and(base, sql`${f.name} <= ${firm.name}`))
+    .orderBy(asc(f.name), asc(f.ico))
+    .limit(limit - after.length);
+  const seen = new Set(after.map((x) => x.ico));
+  return [...after, ...before.filter((x) => !seen.has(x.ico))];
+}
+
+/**
+ * „Další firmy na stejné adrese“ – JEN právnické osoby, a to na obou stranách: u OSVČ adresu sídla neukazujeme
+ * (bývá to bydliště), takže ji nesmíme prozradit ani nepřímo (AGENTS 11). Neznámá právní forma = fyzická osoba
+ * (fail-closed, isNaturalPerson). Index firms_legal_address.
+ */
+export async function sameAddressFirms(
+  firm: { ico: string; isNaturalPerson: boolean; legalForm: string | null; street: string | null; cityCode: number | null },
+  limit = 10,
+): Promise<{ items: FirmListItem[]; more: boolean }> {
+  if (!hasDatabase() || firm.isNaturalPerson || isNaturalPerson(firm.legalForm) || !firm.street || firm.cityCode == null) return { items: [], more: false };
+  const rows = await getDb()
+    .select(listColumns)
+    .from(f)
+    .where(
+      and(
+        legalAddressSql(),
+        eq(f.cityCode, firm.cityCode),
+        eq(f.street, firm.street),
+        sql`${f.ico} <> ${firm.ico}`,
+      ),
+    )
+    .orderBy(asc(f.name), asc(f.ico))
+    .limit(limit + 1);
+  const items = rows.filter((r) => !r.isNaturalPerson && !isNaturalPerson(r.legalForm)).slice(0, limit);
+  return { items, more: rows.length > limit };
+}
+
+/** Právnická osoba v seznamu se známou ulicí – stejné podmínky jako částečný index firms_legal_address. */
+function legalAddressSql(): SQL {
+  return and(
+    listableSql(),
+    sql`${f.isNaturalPerson} = false`,
+    isNotNull(f.street),
+    isNotNull(f.legalForm),
+    sql`${f.legalForm} !~ '^(10[0-9]|42[45])$'`,
+  )!;
 }
 
 /* ─────────────────────────────── sitemapy ─────────────────────────────── */

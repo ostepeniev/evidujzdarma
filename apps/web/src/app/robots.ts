@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { CATALOG_CLOSED, CLOSED_SECTIONS } from "@/lib/launch";
+import { QUERY_ID_DISALLOW } from "@/lib/robots-rules";
 import { SITE_URL } from "@/lib/site";
 import { extraSitemaps } from "@/lib/sitemap-registry";
 
@@ -34,8 +35,8 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
   const extra = CATALOG_CLOSED ? [] : await extraSitemaps();
   return {
     rules: [
-      { userAgent: AI_AND_SEARCH_BOTS, allow: "/", disallow: PRIVATE },
-      { userAgent: "*", allow: "/", disallow: PRIVATE },
+      { userAgent: AI_AND_SEARCH_BOTS, allow: "/", disallow: [...PRIVATE, ...QUERY_ID_DISALLOW] },
+      { userAgent: "*", allow: "/", disallow: [...PRIVATE, ...QUERY_ID_DISALLOW] },
     ],
     sitemap: [`${SITE_URL}/sitemap.xml`, ...extra.map((p) => `${SITE_URL}${p}`)],
   };

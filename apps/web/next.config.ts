@@ -1,5 +1,6 @@
 import path from "node:path";
 import type { NextConfig } from "next";
+import { catalogCacheHeaders } from "./src/lib/catalog-cache";
 
 const csp = [
   "default-src 'self'",
@@ -43,6 +44,8 @@ const nextConfig: NextConfig = {
       ...(process.env.NODE_ENV === "production"
         ? [{ source: "/((?!pokladna|u/|prihlaseni|kabinet|pozvanka/|admin).*)", headers: [{ key: "Content-Security-Policy", value: csp }] }]
         : []),
+      // seznamy katalogu: krátké s-maxage pro budoucí CDN, až bude katalog otevřený (S2)
+      ...catalogCacheHeaders(),
       // písmo má verzi v cestě (/fonts/v1/) – nový soubor = nová cesta, starý se smí cachovat napořád (S1)
       { source: "/fonts/:path*", headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }] },
       {

@@ -260,6 +260,13 @@
       "when": 1791634805809,
       "tag": "0036_account_acquisition",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1792231138373,
+      "tag": "0037_catalog_city_indexes",
+      "breakpoints": true
     }
   ]
 }

@@ -1,6 +1,7 @@
 /**
  * Cesty a formátování katalogu firem (čisté funkce — použitelné na serveru i v klientu).
  */
+import { slugify } from "@ez/cz/slug";
 
 export function firmPath(f: { ico: string; slug: string }): string {
   return `/firma/${f.ico}-${f.slug}`;
@@ -22,6 +23,26 @@ export function oborKrajPath(obor: string, krajSlug: string, page?: number): str
   return `/obor/${obor}/kraj/${krajSlug}${page && page > 1 ? `?strana=${page}` : ""}`;
 }
 
+/**
+ * Obec v URL: "{kód obce}-{slug názvu}" (jako /firma/{IČO}-{slug}). Kód je jednoznačný – jmen obcí je v ČR
+ * hodně stejných (Lhota, Nová Ves…), slug je jen pro čitelnost a kanonický tvar hlídá slugDecision().
+ */
+export function obecSlug(obec: { code: number; name: string }): string {
+  return `${obec.code}-${slugify(obec.name, 60) || "obec"}`;
+}
+
+export function oborObecPath(obor: string, obec: { code: number; name: string }, page?: number): string {
+  return `/obor/${obor}/obec/${obecSlug(obec)}${page && page > 1 ? `?strana=${page}` : ""}`;
+}
+
+/** "554961-karlovy-vary" → { code: 554961, suffix: "karlovy-vary" } */
+export function parseObecSlug(param: string): { code: number; suffix: string } | null {
+  const m = safeDecode(param).match(/^(\d{1,9})(?:-(.*))?$/);
+  if (!m) return null;
+  const code = Number(m[1]);
+  return code > 0 ? { code, suffix: m[2] ?? "" } : null;
+}
+
 export function monthPath(month: string, page?: number): string {
   return `/firmy/nove/${month}${page && page > 1 ? `?strana=${page}` : ""}`;
 }
@@ -30,12 +51,16 @@ export function aresUrl(ico: string): string {
   return `https://ares.gov.cz/ekonomicke-subjekty?ico=${ico}`;
 }
 
+/**
+ * Námitka k IČO/IČP: údaje ve fragmentu (#ico=…&icp=…), ne v query – z každé stránky firmy by jinak vedla
+ * jiná URL a roboti by procházeli milion variant /namitka (COMMON 9). Formulář si fragment přečte sám.
+ */
 export function objectionPath(q: { ico?: string; icp?: string }): string {
   const qs = new URLSearchParams();
   if (q.ico) qs.set("ico", q.ico);
   if (q.icp) qs.set("icp", q.icp);
   const s = qs.toString();
-  return `/namitka${s ? `?${s}` : ""}`;
+  return `/namitka${s ? `#${s}` : ""}`;
 }
 
 /** "12345679-jana-testovaci" → { ico, suffix }; IČO musí mít přesně 8 číslic. */
