@@ -61,6 +61,13 @@ const TOOLS = [
     time: "1 minuta",
   },
   {
+    href: "/faktura-zdarma",
+    title: "Faktura zdarma",
+    text: "Faktura pro plátce i neplátce DPH bez registrace: odběratel z ARES, QR platba k převodu, rekapitulace DPH podle sazeb a zálohová faktura. Tisk nebo PDF.",
+    tag: "Novinka",
+    time: "3 minuty",
+  },
+  {
     href: "/stav-eet",
     title: "Je EET dole?",
     text: "Funguje rozhraní Finanční správy právě teď? Měříme dostupnost a odezvu každých 5 minut a ukazujeme historii výpadků.",
