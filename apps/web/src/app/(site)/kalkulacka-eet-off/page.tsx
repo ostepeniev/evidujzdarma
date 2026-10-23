@@ -17,9 +17,10 @@ const r0 = calculateEetOff(DEFAULT_INPUT);
 const y0 = r0.eligible ? eetOffYear(DEFAULT_INPUT, r0) : null;
 
 export const metadata: Metadata = {
-  title: "Kalkulačka EET OFF 2027 – vyplatí se přirážka?",
+  // S4 (23. 10. 2026): hledá se „eet kalkulačka“ / „kalkulačka eet“ (~100 zobrazení za 28 dní, 0 kliků) – přesná fráze na začátek
+  title: "EET kalkulačka 2027: evidovat, nebo EET OFF?",
   description:
-    "Spočítejte, zda se vám vyplatí EET OFF: přirážka 1 400 Kč měsíčně (16 800 Kč ročně) k paušální dani místo evidence tržeb. Pro OSVČ v 1. pásmu s příjmy do 1 mil. Kč, i když začínáte v průběhu roku. Oznámení do 11. 1. 2027.",
+    "Za minutu a zdarma spočítáte, zda vás vyjde levněji evidovat tržby, nebo platit EET OFF 1 400 Kč měsíčně. Pro paušalisty v 1. pásmu. Oznámení do 11. 1. 2027.",
   ...canonicalMeta("/kalkulacka-eet-off"),
 };
 
@@ -63,7 +64,7 @@ export default function EetOffPage() {
     <>
       <JsonLd data={faqLd(FAQ)} />
       <PageHeader
-        title="Kalkulačka EET OFF"
+        title="EET kalkulačka: evidovat, nebo EET OFF?"
         crumbs={[
           { name: "Nástroje", path: "/nastroje" },
           { name: "Kalkulačka EET OFF", path: "/kalkulacka-eet-off" },

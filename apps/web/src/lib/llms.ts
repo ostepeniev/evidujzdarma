@@ -6,6 +6,7 @@ import { MYTHS, MYTHS_UPDATED } from "@/content/myths";
 import type { Block, Guide } from "@/content/guides/types";
 import { OPERATOR, SITE, absoluteUrl, REVIEWER } from "./site";
 import { STATIC_PAGES } from "./static-pages";
+import { OBOR_LANDINGS, landingPath } from "@/content/obor-landings";
 import { reviewedMoneyPaths } from "./money-review";
 
 /** S2 B1: kalkulačky a ověření v llms.txt */
@@ -93,6 +94,11 @@ export function llmsTxt(): string {
     "",
     // jen návody po odborné revizi – nerevidované mají noindex a nemají jít ani do AI (R2.9)
     ...indexedGuides().map((g) => `- [${g.h1 ?? g.title}](${absoluteUrl(`/navody/${g.slug}`)}): ${g.description}`),
+    "",
+    // S4: stránky pro obory – rychlá kontrola (fakta z revidovaných návodů) a pokladna pro obor
+    "## EET pro obory",
+    "",
+    ...OBOR_LANDINGS.map((l) => `- [${l.h1}](${absoluteUrl(landingPath(l))}): ${l.description()}`),
     "",
     "## Služba",
     "",

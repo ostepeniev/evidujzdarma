@@ -14,6 +14,7 @@ import { REVIEWER, SERVICE_COPY } from "@/lib/site";
 import { ExternalLink } from "@/components/external-link";
 import { PILLAR_SLUG, RelatedGuides, indexableGuides } from "@/components/related-guides";
 import { GuideCatalogLinks } from "@/components/catalog/guide-catalog-links";
+import { landingPath, landingsForGuide } from "@/content/obor-landings";
 
 export const dynamicParams = false;
 
@@ -41,6 +42,7 @@ export default async function GuidePage({ params }: PageProps<"/navody/[slug]">)
   const shown = new Set([g.slug, PILLAR_SLUG, ...related.map((r) => r.slug)]);
   const sameCategory = GUIDES.filter((x) => x.category === g.category && !shown.has(x.slug) && isIndexable(x)).slice(0, 3);
   const ld = guideJsonLd(g);
+  const landings = landingsForGuide(g.slug);
   const modified = guideModified(g);
 
   return (
@@ -87,6 +89,20 @@ export default async function GuidePage({ params }: PageProps<"/navody/[slug]">)
               </Link>
               .
             </p>
+          )}
+
+          {/* S4: rychlá kontrola a pokladna pro obor – stránky „EET pro …“ */}
+          {landings.length > 0 && (
+            <aside className="not-prose mt-8 rounded-2xl border-2 border-brand-200 bg-brand-50 p-5" aria-label="Rychlá kontrola pro váš obor">
+              <p className="m-0 text-base font-semibold text-ink">Rychlá kontrola za 30 vteřin: co z toho platí přímo pro vás – a pokladna zdarma.</p>
+              <div className="mt-4 flex flex-wrap gap-3">
+                {landings.map((l) => (
+                  <Link key={l.slug} href={landingPath(l)} className="btn-primary no-underline">
+                    {l.short} →
+                  </Link>
+                ))}
+              </div>
+            </aside>
           )}
 
           <aside className="not-prose my-8 rounded-2xl border border-line bg-surface p-6" aria-label="Stručně">

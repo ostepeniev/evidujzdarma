@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { landingPath, landingsForIndustry } from "@/content/obor-landings";
+import { industryOfNace } from "./industry";
 import type { EetRelevance } from "@ez/cz";
 import { getGuide, isIndexable } from "@/content/guides";
 import { eetGuideFor, eetVerdict, type EetGuideRef } from "@/lib/catalog-eet";
@@ -40,6 +42,9 @@ export function EetPanel({
   const v = eetVerdict(relevance);
   const guide = guideOverride && guideAvailable(guideOverride.slug) ? guideOverride : eetGuideFor(nace, relevance, guideAvailable);
   const t = TONE[relevance];
+  // S4: obor se stránkou „EET pro …“ (kadeřnictví, gastro) – rychlá kontrola a pokladna pro obor
+  const industry = industryOfNace(nace);
+  const landings = industry ? landingsForIndustry(industry.slug) : [];
   return (
     <section className={`rounded-2xl border-2 p-6 ${t.box}`} aria-labelledby="eet-panel-h">
       <div className="flex flex-wrap items-center gap-3">
@@ -70,6 +75,11 @@ export function EetPanel({
           {guide.label}
           <IconArrow />
         </Link>
+        {landings.map((l) => (
+          <Link key={l.slug} href={landingPath(l)} className="btn-ghost">
+            {l.posLabel}
+          </Link>
+        ))}
       </div>
     </section>
   );

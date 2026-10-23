@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { icoFromHash, scrollToHashAnchor } from "@/lib/hash-params";
 import { icoParam } from "@/lib/ico-param";
 import { SITE } from "@/lib/site";
-import { INDUSTRIES } from "@/content/industries";
+import { INDUSTRIES, type IndustrySlug } from "@/content/industries";
 
 type State =
   | { kind: "idle" }
@@ -36,7 +36,11 @@ export function icoFromSearch(search: string): string {
 /** Pole, která jsou v rozbalovacím bloku „Upřesnit…“ (R14.3) – při chybě u nich se blok otevře. */
 const OPTIONAL_FIELDS = ["establishments", "industry", "needs"];
 
-export function PreregForm({ defaultIco = "" }: { defaultIco?: string }) {
+/**
+ * `industry` předvybere obor (stránky „EET pro …“, S4) – blok „Upřesnit…“ zůstane zavřený, hodnota se ale odešle.
+ * `campaign`: když adresa nenese UTM, odešle se utm_source=web, utm_medium=obor, utm_campaign=<campaign> (S4).
+ */
+export function PreregForm({ defaultIco = "", industry, campaign }: { defaultIco?: string; industry?: IndustrySlug; campaign?: string }) {
   const [state, setState] = useState<State>({ kind: "idle" });
   const [ico, setIco] = useState(defaultIco);
 
@@ -73,7 +77,7 @@ export function PreregForm({ defaultIco = "" }: { defaultIco?: string }) {
           marketingConsent: fd.get("marketing") === "on",
           ref: refFromUrl(),
           website: fd.get("website") ?? "",
-          utm: readUtm(),
+          utm: readUtm() ?? (campaign ? { utm_source: "web", utm_medium: "obor", utm_campaign: campaign.slice(0, 100) } : undefined),
         }),
       });
       const data = await res.json();
@@ -149,7 +153,7 @@ export function PreregForm({ defaultIco = "" }: { defaultIco?: string }) {
               <label htmlFor="pr-ind" className="label">
                 Obor
               </label>
-              <select id="pr-ind" name="industry" className="input" defaultValue="">
+              <select id="pr-ind" name="industry" className="input" defaultValue={industry ?? ""}>
                 <option value="">Vyberte obor…</option>
                 {INDUSTRIES.map((i) => (
                   <option key={i.slug} value={i.slug}>

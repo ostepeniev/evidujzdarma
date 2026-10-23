@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { isClosed } from "@/lib/launch";
 import { SERVICE_COPY } from "@/lib/site";
 
 /**
@@ -11,10 +12,13 @@ import { SERVICE_COPY } from "@/lib/site";
  */
 export function MobileCta() {
   const [formInView, setFormInView] = useState(false);
+  // S4: stránka s vlastní předregistrací (#registrace, např. /eet-pro/…) – tlačítko vede na ni, ne na úvodní stránku
+  const [localForm, setLocalForm] = useState(false);
 
   // jakýkoli formulář předregistrace na stránce (úvodní stránka, /kontrola-ico…) – R16.4
   useEffect(() => {
     const forms = document.querySelectorAll("[data-prereg-form]");
+    if (isClosed("/pokladna") && document.querySelector("#registrace [data-prereg-form]")) setLocalForm(true);
     if (!forms.length || typeof IntersectionObserver === "undefined") return;
     const visible = new Set<Element>();
     const io = new IntersectionObserver((entries) => {
@@ -34,9 +38,15 @@ export function MobileCta() {
       <div data-mobile-cta-spacer="true" aria-hidden="true" className="h-20" />
       {!formInView && (
         <div className="no-print fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 px-4 py-3 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] backdrop-blur sm:hidden">
-          <Link href={SERVICE_COPY.startCta.href} className="btn-primary w-full py-3 text-base">
-            {SERVICE_COPY.startCta.label}
-          </Link>
+          {localForm ? (
+            <a href="#registrace" className="btn-primary w-full py-3 text-base">
+              {SERVICE_COPY.startCta.label}
+            </a>
+          ) : (
+            <Link href={SERVICE_COPY.startCta.href} className="btn-primary w-full py-3 text-base">
+              {SERVICE_COPY.startCta.label}
+            </Link>
+          )}
         </div>
       )}
     </div>
