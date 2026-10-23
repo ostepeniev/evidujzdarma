@@ -2,7 +2,7 @@ import { TRACKING, configuredTracking, type TrackingConfig } from "./tracking-co
 
 /**
  * Globální CSP marketingových stránek (next.config.ts; pokladna a další citlivé stránky mají vlastní přísnou CSP
- * s nonce v src/proxy.ts). S4-COOKIES: domény Google / Meta / Seznam se přidají JEN pro značky, které mají ID
+ * s nonce v src/proxy.ts). S4-COOKIES: domény Google / Meta / Seznam / Microsoft se přidají JEN pro značky, které mají ID
  * v lib/tracking-config.ts. Dokud jsou ID prázdná, je CSP přesně stejná jako předtím (hlídá test s4-cookies).
  * Import relativně – next.config.ts nezná alias „@/“.
  */
@@ -39,6 +39,14 @@ export function trackingCspSources(cfg: TrackingConfig = TRACKING): { script: st
   if (t.sklik) {
     script.add("https://c.seznam.cz");
     for (const d of ["https://c.seznam.cz", "https://h.seznam.cz"]) {
+      connect.add(d);
+      img.add(d);
+    }
+  }
+  // Microsoft Clarity – podle návodu Microsoftu „Clarity CSP“ (https://*.clarity.ms a https://c.bing.com)
+  if (t.clarity) {
+    for (const d of ["https://*.clarity.ms", "https://c.bing.com"]) {
+      script.add(d);
       connect.add(d);
       img.add(d);
     }

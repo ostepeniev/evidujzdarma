@@ -1,10 +1,16 @@
 import { plainText } from "@/components/rich-text";
 import { configuredTracking } from "@/lib/tracking-config";
 
-/** S4-COOKIES: dokud není zapnutá žádná měřicí ani reklamní značka, platí věta R15.3 doslovně. */
-export const WHY_FREE_CARD3 = configuredTracking().any
+/**
+ * S4-COOKIES: dokud není zapnutá žádná měřicí ani reklamní značka, platí věta R15.3 doslovně. S4b: jen analytické
+ * (Microsoft Clarity) → věta bez „reklamní“.
+ */
+const TRACKING_ON = configuredTracking();
+export const WHY_FREE_CARD3 = TRACKING_ON.marketing
   ? "Na webu nemáme reklamu, měřicí a reklamní cookies spouštíme jen s vaším souhlasem a vaše údaje nikomu neprodáváme."
-  : "Na webu nemáme reklamu ani sledovací cookies a vaše údaje nikomu neprodáváme.";
+  : TRACKING_ON.analytics
+    ? "Na webu nemáme reklamu, měřicí cookies spouštíme jen s vaším souhlasem a vaše údaje nikomu neprodáváme."
+    : "Na webu nemáme reklamu ani sledovací cookies a vaše údaje nikomu neprodáváme.";
 
 /**
  * Blok „Proč je to zdarma? A kde je háček?“ na úvodní stránce (R14.1, karta 3 podle R15.3) – texty doslovně.

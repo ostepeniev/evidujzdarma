@@ -41,7 +41,8 @@ const WHY = {
       title: "Vydělávat chceme na doplňcích",
       text: "Kdo bude chtít víc, si připlatí: Premium za 149 Kč měsíčně (účtenky SMS, exporty), platební terminál nebo nastavení na klíč. Doplňky připravujeme a nikdo je nemusí.",
     },
-    { title: "Nežijeme z reklamy ani z vašich dat", text: "Na webu nemáme reklamu ani sledovací cookies a vaše údaje nikomu neprodáváme." },
+    // S4b: v produkci je Microsoft Clarity (jen analytické, se souhlasem) – věta R15.3 platí jen bez značek (s4-cookies)
+    { title: "Nežijeme z reklamy ani z vašich dat", text: "Na webu nemáme reklamu, měřicí cookies spouštíme jen s vaším souhlasem a vaše údaje nikomu neprodáváme." },
   ],
   guarantee: "Bez závazku a bez platební karty.",
 };

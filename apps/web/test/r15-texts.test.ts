@@ -13,7 +13,8 @@ vi.mock("next/navigation", () => ({ usePathname: () => "/", useRouter: () => ({ 
 
 const MEASURING =
   "Měření návštěvnosti. Abychom věděli, které stránky lidem pomáhají, počítáme návštěvy webu vlastním nástrojem na našem serveru. Nepoužíváme cookies ani jiné ukládání do vašeho zařízení a vaši IP adresu neukládáme: z IP adresy a typu prohlížeče se po dobu jednoho dne vypočítá anonymní otisk, který se o půlnoci zahodí. Uchováváme jen souhrnná čísla za den (počet zobrazení stránek, počet návštěvníků, odkud přišli a z jakého typu zařízení) po dobu 25 měsíců. Pokud máte v prohlížeči zapnutý signál Do Not Track nebo Global Privacy Control, nepočítáme vás vůbec. Právním základem je náš oprávněný zájem na zlepšování webu.";
-const CARD3 = "Na webu nemáme reklamu ani sledovací cookies a vaše údaje nikomu neprodáváme.";
+// S4b: v produkci je Microsoft Clarity (jen analytické, se souhlasem); doslovná věta R15.3 bez značek – viz s4-cookies
+const CARD3 = "Na webu nemáme reklamu, měřicí cookies spouštíme jen s vaším souhlasem a vaše údaje nikomu neprodáváme.";
 const text = (h: string) => h.replace(/<[^>]+>/g, "").replace(/&#x27;|&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, "&").replace(/\s+/g, " ");
 const src = (p: string) => readFileSync(new URL(`../src/${p}`, import.meta.url), "utf8");
 
@@ -24,7 +25,7 @@ describe("R15.3 – texts", () => {
     expect(text(html)).toContain(MEASURING);
     expect(html).toContain("<strong>Měření návštěvnosti.</strong>");
     const { PRIVACY_VERSION, RETENTION } = await import("@/lib/legal");
-    expect(PRIVACY_VERSION).toBe("2026-10-23-s4"); // R17.4 (UTM), S3 (zveřejněný katalog) a S4 (souhlas s cookies) posunuly verzi dál
+    expect(PRIVACY_VERSION).toBe("2026-10-23-s4b"); // R17.4 (UTM), S3 (zveřejněný katalog), S4 (souhlas s cookies) a S4b (Clarity) posunuly verzi dál
     expect(RETENTION.analyticsMonths).toBe(25);
   });
 

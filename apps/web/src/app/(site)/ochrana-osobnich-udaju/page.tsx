@@ -8,7 +8,9 @@
 // název kanceláře v šablonách, kód doporučení se do prohlížeče neukládá (R7.10); měření návštěvnosti bez cookies (R15.3);
 // (6) identifikační údaje správce jsou v lib/site.ts (OPERATOR, ověřeno v OR 2. 10. 2026); (7) S4 (23. 10. 2026): souhlas
 // s cookies – první vrstva lišty bez „Odmítnout“ je rozhodnutí majitele (DECISIONS К10, ÚOOÚ/EDPB to vidí jako riziko);
-// po zapnutí značek ověřit u Meta Pixelu společné správcovství (čl. 26 GDPR, dodatek Meta pro správce) a doby cookies.
+// po zapnutí značek ověřit u Meta Pixelu společné správcovství (čl. 26 GDPR, dodatek Meta pro správce) a doby cookies;
+// (8) S4b (23. 10. 2026): zapnutý Microsoft Clarity (záznamy průchodu, teplotní mapy) – ověřit roli Microsoftu (podle FAQ
+// Clarity „data controller“, smluvní strana v EU Microsoft Ireland Operations Ltd.) a podmínky Clarity (Clarity Terms of Use).
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -45,6 +47,16 @@ const TRACKING_VENDORS: readonly { on: boolean; tool: string; category: string; 
     cookies: "_ga a _ga_<ID> (2 roky).",
     controller:
       "Google Ireland Limited; údaje mohou být předány společnosti Google LLC do USA na základě rámce EU-U.S. Data Privacy Framework.",
+  },
+  {
+    on: !!TRACKING_ON.clarity,
+    tool: "Microsoft Clarity",
+    category: "Analytické",
+    purpose:
+      "Záznamy průchodu stránkami (kliknutí, posouvání, pohyb myši) a teplotní mapy, abychom viděli, kde se lidé na webu zasekávají. Co napíšete do formulářů, se nezaznamenává; čísla a e-mailové adresy na stránce se v záznamu skryjí. Na pokladně a v kabinetu Clarity neběží.",
+    cookies: "_clck (1 rok) a _clsk (1 den); na doménách Microsoftu (clarity.ms, bing.com) například CLID a MUID (1 rok).",
+    controller:
+      "Microsoft Ireland Operations Limited; údaje mohou být předány společnosti Microsoft Corporation do USA na základě standardních smluvních doložek EU a rámce EU-U.S. Data Privacy Framework. Záznamy se uchovávají 30 dní, teplotní mapy nejvýš 9 měsíců.",
   },
   {
     on: !!TRACKING_ON.googleAds,
@@ -318,15 +330,17 @@ const SECTIONS: readonly { id: string; title: string; body: ReactNode }[] = [
           náhodný identifikátor do cookie <code>ez_voter</code> (platnost 1 rok), aby z jednoho prohlížeče šel jen jeden hlas;
           u hlasu ukládáme jen jeho otisk, ne IP adresu ani jméno (oprávněný zájem na férovém výsledku ankety, čl. 6 odst. 1
           písm. f) GDPR).{" "}
-          {TRACKING_ON.any
+          {TRACKING_ON.marketing
             ? "Analytické a reklamní cookies používáme jen s vaším souhlasem – podrobnosti níže."
-            : "Analytické ani reklamní cookies nepoužíváme; kdybychom to změnili, nejdřív vás požádáme o souhlas."}
+            : TRACKING_ON.analytics
+              ? "Analytické cookies používáme jen s vaším souhlasem – podrobnosti níže. Reklamní cookies nepoužíváme."
+              : "Analytické ani reklamní cookies nepoužíváme; kdybychom to změnili, nejdřív vás požádáme o souhlas."}
           Název kanceláře, který vyplníte v šablonách dopisů pro klienty, zůstává jen ve vašem prohlížeči a na server ho
           neposíláme.
         </p>
         {/* S4-COOKIES: souhlas s cookies (lib/consent.ts) */}
         <p id="souhlas-s-cookies">
-          <strong>Souhlas s cookies.</strong> Měřicí a reklamní nástroje třetích stran (Google, Meta, Seznam) načteme jen tehdy,
+          <strong>Souhlas s cookies.</strong> Měřicí a reklamní nástroje třetích stran (Google, Microsoft, Meta, Seznam) načteme jen tehdy,
           když nám k tomu dáte souhlas v liště cookies; bez souhlasu se z nich do vašeho prohlížeče nic nedostane. Vaši volbu
           uložíme do nezbytné cookie <code>{CONSENT_COOKIE}</code> na {Math.round(CONSENT_MAX_AGE_DAYS / 30)} měsíců (verze lišty,
           zda jste povolili analytické a marketingové cookies, a den rozhodnutí), pak se zeptáme znovu. Souhlas můžete kdykoli

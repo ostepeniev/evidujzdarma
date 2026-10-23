@@ -16,7 +16,7 @@ const NAV = [
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
-    <div lang="uk" className="min-h-dvh bg-surface">
+    <div lang="uk" className="min-h-dvh bg-surface" data-clarity-mask="true">
       <header className="border-b border-line bg-white">
         <nav aria-label="Адмін" className="container-page flex flex-wrap items-center gap-2 py-3">
           <span className="mr-4 font-bold text-ink">EvidujZdarma · адмін</span>

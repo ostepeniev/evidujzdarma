@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { icoFromHash, scrollToHashAnchor } from "@/lib/hash-params";
 import { icoParam } from "@/lib/ico-param";
 import { SITE } from "@/lib/site";
+import { clarityEvent } from "@/lib/clarity-event";
 import { INDUSTRIES, type IndustrySlug } from "@/content/industries";
 
 type State =
@@ -86,6 +87,7 @@ export function PreregForm({ defaultIco = "", industry, campaign }: { defaultIco
         return;
       }
       setState({ kind: "done" });
+      clarityEvent("prereg_done");
     } catch {
       setState({ kind: "error", message: "Nepodařilo se odeslat. Zkontrolujte připojení a zkuste to znovu." });
     }

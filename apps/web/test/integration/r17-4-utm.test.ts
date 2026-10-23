@@ -187,6 +187,6 @@ describe("R17.4 – privacy policy (verbatim)", () => {
     );
     expect(h).toContain("typ zařízení, označení kampaně z odkazu (UTM)");
     const { PRIVACY_VERSION } = await import("@/lib/legal");
-    expect(PRIVACY_VERSION).toBe("2026-10-23-s4"); // S3 (zveřejněný katalog) a S4 (souhlas s cookies) posunuly verzi dál
+    expect(PRIVACY_VERSION).toBe("2026-10-23-s4b"); // S3 (zveřejněný katalog), S4 (souhlas s cookies) a S4b (Clarity) posunuly verzi dál
   });
 });

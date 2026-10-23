@@ -8,10 +8,11 @@ export const TERMS_DATE_ISO = "2026-10-03";
 export const REFERRAL_RULES_VERSION_LABEL = "7. 10. 2026";
 /**
  * Verze zásad ochrany osobních údajů (R8.2: odhlášení z novinek ≠ zrušení předregistrace; R15.3: měření návštěvnosti; R17.4: UTM;
- * S3: zveřejněný katalog firem – informace podle čl. 14 GDPR; S4: souhlas s cookies a značky třetích stran po souhlasu).
+ * S3: zveřejněný katalog firem – informace podle čl. 14 GDPR; S4: souhlas s cookies a značky třetích stran po souhlasu;
+ * S4b: Microsoft Clarity).
  * Datum = den nasazení; posune-li se, upravte ho. Při zapnutí nové značky v lib/tracking-config.ts verzi zvyšte.
  */
-export const PRIVACY_VERSION = "2026-10-23-s4";
+export const PRIVACY_VERSION = "2026-10-23-s4b";
 export const PRIVACY_VERSION_LABEL = "23. 10. 2026";
 /** Datum platnosti zásad pro <time dateTime> (R8.5, Д-9). */
 export const PRIVACY_DATE_ISO = "2026-10-23";

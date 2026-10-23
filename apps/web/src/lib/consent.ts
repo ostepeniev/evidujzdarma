@@ -10,7 +10,10 @@ import { TRACKING, configuredTracking, type TrackingConfig } from "./tracking-co
  */
 export const FIRST_LAYER_REJECT = false;
 
-/** Zvyšte při změně kategorií nebo značek – lišta se pak zobrazí znovu všem. */
+/**
+ * Zvyšte při změně kategorií nebo značek – lišta se pak zobrazí znovu všem. S4b (Clarity) verzi nezvýšila: do 23. 10. 2026
+ * se lišta ukazovala jen v náhledu, který nic neukládá, takže žádný uložený souhlas verze 1 neexistuje.
+ */
 export const CONSENT_VERSION = 1;
 export const CONSENT_COOKIE = "ez_consent";
 /** 6 měsíců – pak se zeptáme znovu (obvyklá praxe; ÚOOÚ doporučuje souhlas po čase obnovit). */
@@ -107,7 +110,7 @@ export function gtagConsentUpdate(c: Pick<Consent, "analytics" | "marketing">): 
   return { ad_storage: m, ad_user_data: m, ad_personalization: m, analytics_storage: c.analytics ? "granted" : "denied" };
 }
 
-export type TagId = "gtag" | "meta" | "sklik";
+export type TagId = "gtag" | "meta" | "sklik" | "clarity";
 
 /** Které značky smí běžet. Bez souhlasu (null) žádná – žádný cizí skript před souhlasem. */
 export function allowedTags(c: Pick<Consent, "analytics" | "marketing"> | null, cfg: TrackingConfig = TRACKING): TagId[] {
@@ -117,6 +120,7 @@ export function allowedTags(c: Pick<Consent, "analytics" | "marketing"> | null, 
   if ((c.analytics && t.ga4) || (c.marketing && t.googleAds)) out.push("gtag");
   if (c.marketing && t.metaPixel) out.push("meta");
   if (c.marketing && t.sklik) out.push("sklik");
+  if (c.analytics && t.clarity) out.push("clarity");
   return out;
 }
 
@@ -127,10 +131,19 @@ export const TAG_SCRIPT_SRC: Record<TagId, (cfg: TrackingConfig) => string> = {
   },
   meta: () => "https://connect.facebook.net/en_US/fbevents.js",
   sklik: () => "https://c.seznam.cz/js/rc.js",
+  clarity: (cfg) => `https://www.clarity.ms/tag/${encodeURIComponent(configuredTracking(cfg).clarity)}`,
 };
 
+/**
+ * Microsoft Clarity – Consent API v2 (povinné v EHP od 31. 10. 2025). Clarity je u nás jen analytická: ad_Storage je vždy
+ * „denied“ (nic pro reklamu Microsoftu), analytics_Storage podle souhlasu s analytickými cookies.
+ */
+export function clarityConsent(c: Pick<Consent, "analytics"> | null): { ad_Storage: "denied"; analytics_Storage: "granted" | "denied" } {
+  return { ad_Storage: "denied", analytics_Storage: c?.analytics ? "granted" : "denied" };
+}
+
 /** Cookies, které značky třetích stran zakládají na naší doméně – po odvolání souhlasu je zkusíme smazat. */
-export const THIRD_PARTY_COOKIE_PREFIXES = ["_ga", "_gid", "_gat", "_gcl_", "_fbp", "_fbc"] as const;
+export const THIRD_PARTY_COOKIE_PREFIXES = ["_ga", "_gid", "_gat", "_gcl_", "_fbp", "_fbc", "_clck", "_clsk"] as const;
 
 /** Kategorie v Nastavení – jen ty se zapnutou značkou (v náhledu všechny, ať je majitel vidí). */
 export interface ConsentCategory {
@@ -156,8 +169,14 @@ export function consentCategories(cfg: TrackingConfig = TRACKING, preview = fals
     cats.push({
       id: "analytics",
       title: "Analytické",
-      text: "Pomáhají nám zjistit, které stránky a nástroje lidem pomáhají a co zlepšit.",
-      vendors: ["Google Analytics (Google Ireland Ltd.)"],
+      text:
+        t.clarity || preview
+          ? "Pomáhají nám zjistit, které stránky a nástroje lidem pomáhají a co zlepšit. Microsoft Clarity zaznamená, jak stránkou procházíte (kliknutí, posouvání), ale ne to, co napíšete do formulářů."
+          : "Pomáhají nám zjistit, které stránky a nástroje lidem pomáhají a co zlepšit.",
+      vendors: [
+        ...(t.ga4 || preview ? ["Google Analytics (Google Ireland Ltd.)"] : []),
+        ...(t.clarity || preview ? ["Microsoft Clarity (Microsoft Ireland Operations Ltd.)"] : []),
+      ],
     });
   }
   if (t.marketing || preview) {

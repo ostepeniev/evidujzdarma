@@ -15,10 +15,12 @@ export const viewport: Viewport = {
 };
 
 export default function AppLayout({ children }: LayoutProps<"/">) {
+  // S4b: pojistka – kdyby Microsoft Clarity z marketingových stránek běžel dál, obsah pokladny a kabinetu skryje
+  // (consent-manager.tsx ho při odchodu zastaví); display: contents nemění rozvržení
   return (
-    <>
+    <div data-clarity-mask="true" className="contents">
       <ServiceWorkerRegister />
       {children}
-    </>
+    </div>
   );
 }

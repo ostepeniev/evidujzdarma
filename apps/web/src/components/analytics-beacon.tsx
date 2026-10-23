@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
+import { clarityEvent } from "@/lib/clarity-event";
 
 /**
  * Měření návštěvnosti (R15.1, zásady „Měření návštěvnosti“) – vlastní skript, posílá jen na náš server (/api/m).
@@ -33,6 +34,8 @@ function send(data: Payload): void {
 /** Událost trychtýře z nástrojů (kvíz, kalkulačka) – jen název, nic dalšího. */
 export function trackEvent(name: "quiz_done" | "calculator_used"): void {
   send({ t: "e", e: name });
+  // S4b: tatáž událost do Microsoft Clarity – jen pokud běží (se souhlasem)
+  clarityEvent(name);
 }
 
 /** Označení kampaně z adresy (R17.4, K9): jen utm_source, utm_medium, utm_campaign; server je ještě prověří. */

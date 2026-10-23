@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   FIRST_LAYER_REJECT,
   GTAG_CONSENT_DEFAULT,
@@ -10,6 +10,7 @@ import {
   THIRD_PARTY_COOKIE_PREFIXES,
   acceptAll,
   allowedTags,
+  clarityConsent,
   bannerMode,
   consentCategories,
   consentCookieString,
@@ -28,6 +29,9 @@ import { CookieBannerView, CookieSettingsView } from "./cookie-views";
  * S4-COOKIES: vlastní správa souhlasu (bez služby třetí strany) – jen na marketingových stránkách ((site)/layout.tsx).
  * Před souhlasem se nenačte žádný cizí skript. Google Consent Mode v2 v základním režimu: gtag.js až po souhlasu,
  * nejdřív „default: denied“, pak „update“ podle souhlasu. Meta Pixel a Sklik jen se souhlasem s marketingem.
+ * Microsoft Clarity (S4b) jen se souhlasem s analytickými cookies; Consent API v2, ad_Storage vždy „denied“. Při odchodu
+ * z marketingových stránek (pokladna, kabinet, přihlášení – jiný layout bez této komponenty) se Clarity zastaví
+ * a po návratu znovu spustí; pokladna, kabinet a administrace mají navíc data-clarity-mask="true" (Clarity obsah skryje).
  * Náhled /?cookies=preview: lišta i nastavení fungují, ale nic se neuloží ani nenačte.
  */
 
@@ -40,10 +44,17 @@ declare global {
     fbq?: FbqFn;
     _fbq?: FbqFn;
     rc?: { retargetingHit?: (conf: { rtgId: number; consent: 0 | 1 }) => void };
+    clarity?: Fn & { q?: unknown[] };
   }
 }
 
 const cfg = TRACKING;
+/**
+ * Spuštěné značky – mimo komponentu: při přechodu na pokladnu a zpět (jiný layout) se komponenta odpojí a znovu připojí,
+ * skripty ale v okně zůstávají a nesmí se načíst podruhé.
+ */
+const loadedTags = new Set<TagId>();
+let clarityRunning = false;
 
 function addScript(src: string, onLoad?: () => void): void {
   const s = document.createElement("script");
@@ -88,6 +99,32 @@ function initMeta(): void {
   window.fbq("init", t.metaPixel);
 }
 
+/** Clarity: stejná fronta jako v oficiálním kódu Microsoftu, pak souhlas, pak skript (fronta se zpracuje po načtení). */
+function initClarity(c: Consent): void {
+  if (!window.clarity) {
+    const q = function clarity() {
+      // eslint-disable-next-line prefer-rest-params
+      (q.q = q.q ?? []).push(arguments);
+    } as Fn & { q?: unknown[] };
+    window.clarity = q;
+  }
+  window.clarity("consentv2", clarityConsent(c));
+  addScript(TAG_SCRIPT_SRC.clarity(cfg));
+  clarityRunning = true;
+}
+
+/** Odvolání souhlasu nebo odchod z marketingových stránek: Clarity přestane zaznamenávat. */
+function stopClarity(revoke: boolean): void {
+  if (!window.clarity || !clarityRunning) return;
+  if (revoke) {
+    window.clarity("consentv2", clarityConsent(null));
+    // smaže cookies Clarity (_clck, _clsk) – podle dokumentace Microsoftu
+    window.clarity("consent", false);
+  }
+  window.clarity("stop");
+  clarityRunning = false;
+}
+
 function sklikHit(): void {
   const id = Number(configuredTracking(cfg).sklik);
   window.rc?.retargetingHit?.({ rtgId: id, consent: 1 });
@@ -113,7 +150,6 @@ export function ConsentManager() {
   const [settings, setSettings] = useState(false);
   const [draft, setDraft] = useState({ analytics: false, marketing: false });
   const consentRef = useRef<Consent | null>(null);
-  const loaded = useRef(new Set<TagId>());
   const firstPath = useRef(true);
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const returnFocus = useRef<HTMLElement | null>(null);
@@ -122,7 +158,7 @@ export function ConsentManager() {
     const c = consentRef.current;
     if (!c) return;
     const t = configuredTracking(cfg);
-    const want = (tag: TagId) => loaded.current.has(tag) && (!only || only.has(tag));
+    const want = (tag: TagId) => loadedTags.has(tag) && (!only || only.has(tag));
     // page_view jen značkám Google, ke kterým trvá souhlas (po odvolání nic, ani bez cookies)
     const sendTo = [...(c.analytics && t.ga4 ? [t.ga4] : []), ...(c.marketing && t.googleAds ? [t.googleAds] : [])];
     if (want("gtag") && window.gtag && sendTo.length) {
@@ -139,31 +175,42 @@ export function ConsentManager() {
       const fresh = new Set<TagId>();
       consentRef.current = c;
       // Google: první spuštění, nebo jen změna stavu souhlasu
-      if (allow.includes("gtag") && !loaded.current.has("gtag")) {
+      if (allow.includes("gtag") && !loadedTags.has("gtag")) {
         initGtag(c);
-        loaded.current.add("gtag");
+        loadedTags.add("gtag");
         fresh.add("gtag");
-      } else if (loaded.current.has("gtag") && window.gtag) {
+      } else if (loadedTags.has("gtag") && window.gtag) {
         window.gtag("consent", "update", gtagConsentUpdate(c));
         const t = configuredTracking(cfg);
         // kategorie zapnutá až teď – doplnit konfiguraci její značky
         if (c.analytics && !prev?.analytics && t.ga4) window.gtag("config", t.ga4, { send_page_view: false });
         if (c.marketing && !prev?.marketing && t.googleAds) window.gtag("config", t.googleAds, { send_page_view: false });
       }
-      if (allow.includes("meta") && !loaded.current.has("meta")) {
+      if (allow.includes("meta") && !loadedTags.has("meta")) {
         initMeta();
-        loaded.current.add("meta");
+        loadedTags.add("meta");
         fresh.add("meta");
-      } else if (!allow.includes("meta") && loaded.current.has("meta")) {
+      } else if (!allow.includes("meta") && loadedTags.has("meta")) {
         window.fbq?.("consent", "revoke");
-        loaded.current.delete("meta");
+        loadedTags.delete("meta");
       }
-      if (allow.includes("sklik") && !loaded.current.has("sklik")) {
-        loaded.current.add("sklik");
+      if (allow.includes("sklik") && !loadedTags.has("sklik")) {
+        loadedTags.add("sklik");
         // první zásah až po načtení rc.js
         addScript(TAG_SCRIPT_SRC.sklik(cfg), sklikHit);
       } else if (!allow.includes("sklik")) {
-        loaded.current.delete("sklik");
+        loadedTags.delete("sklik");
+      }
+      // Clarity: první spuštění; po návratu z pokladny nebo znovu udělený souhlas = znovu spustit; odvolání = zastavit
+      if (allow.includes("clarity") && !loadedTags.has("clarity")) {
+        initClarity(c);
+        loadedTags.add("clarity");
+      } else if (allow.includes("clarity") && window.clarity && !clarityRunning) {
+        window.clarity("consentv2", clarityConsent(c));
+        window.clarity("start");
+        clarityRunning = true;
+      } else if (!allow.includes("clarity")) {
+        stopClarity(true);
       }
       if ((prev?.analytics && !c.analytics) || (prev?.marketing && !c.marketing)) deleteThirdPartyCookies();
       // úvodní page_view jen pro nově spuštěné značky
@@ -183,6 +230,9 @@ export function ConsentManager() {
     const c = parseConsent(readCookie(document.cookie));
     if (c) apply(null, c);
   }, [apply]);
+
+  // odchod z marketingových stránek (jiný layout): Clarity zastavit hned při odpojení, dřív než se vykreslí nová stránka
+  useLayoutEffect(() => () => stopClarity(false), []);
 
   // tlačítko „Nastavení cookies“ v patičce
   useEffect(() => {
