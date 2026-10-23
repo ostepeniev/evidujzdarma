@@ -89,7 +89,7 @@ const KADERNICE: OborLanding = {
   description: () =>
     `Kadeřnictví, kosmetika i barbershop: za 30 vteřin zjistíte, co od 1. 1. 2027 evidovat – poukazy, pronájem křesla, EET OFF – ${isClosed("/pokladna") ? "a předregistrujete pokladnu zdarma" : "a začnete evidovat zdarma"}.`,
   h1: "EET pro kadeřnice, kosmetičky a barbery",
-  lead: "Od **1. 1. 2027** evidujete každou platbu klientky na místě – hotovost, kartu i QR kód, službu i prodanou kosmetiku. Odpovězte na pět krátkých otázek a hned uvidíte, co z toho platí pro váš salon a co udělat od 1. listopadu.",
+  lead: "Od **1. 1. 2027** evidujete každou platbu klientky na místě – hotovost, kartu i QR kód, služby i prodej kosmetiky. Odpovězte na pět krátkých otázek a hned uvidíte, co z toho platí pro váš salon a co udělat od 1. listopadu.",
   chips: ["Salon", "Pronájem křesla", "Mobilní kadeřnice", "Kosmetika a nehty"],
   pains: [
     { title: "Eviduje se i karta a QR", text: "Nejen hotovost: každá platba klientky na místě – kartou i QR kódem – se od 1. 1. 2027 eviduje." },

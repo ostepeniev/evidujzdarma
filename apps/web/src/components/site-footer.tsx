@@ -29,6 +29,10 @@ const COLUMNS = [
       { href: "/navody/koho-se-eet-tyka", label: "Koho se EET týká" },
       { href: "/navody/evidencni-jednotka", label: "Evidenční jednotka" },
       { href: "/navody/eet-bez-internetu", label: "EET bez internetu" },
+      // S4: stránky pro obory s rychlou kontrolou a předregistrací
+      { href: "/eet-pro/kadernice", label: "EET pro kadeřnice" },
+      { href: "/eet-pro/bistro", label: "EET pro bistro a kavárnu" },
+      { href: "/eet-pro/restaurace", label: "EET pro restaurace" },
       { href: "/co-se-o-eet-pise-spatne", label: "Co se o EET píše špatně" },
       { href: "/navody", label: "Všechny návody" },
     ],
