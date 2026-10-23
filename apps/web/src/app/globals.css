@@ -221,3 +221,23 @@ body {
     padding: 6mm !important;
   }
 }
+
+/* S4-COOKIES: jemné vyjetí lišty a nastavení cookies; „omezit pohyb“ = bez animace */
+@keyframes ez-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.ez-rise {
+  animation: ez-rise 0.2s ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ez-rise {
+    animation: none;
+  }
+}

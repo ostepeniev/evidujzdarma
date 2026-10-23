@@ -1,4 +1,10 @@
 import { plainText } from "@/components/rich-text";
+import { configuredTracking } from "@/lib/tracking-config";
+
+/** S4-COOKIES: dokud není zapnutá žádná měřicí ani reklamní značka, platí věta R15.3 doslovně. */
+export const WHY_FREE_CARD3 = configuredTracking().any
+  ? "Na webu nemáme reklamu, měřicí a reklamní cookies spouštíme jen s vaším souhlasem a vaše údaje nikomu neprodáváme."
+  : "Na webu nemáme reklamu ani sledovací cookies a vaše údaje nikomu neprodáváme.";
 
 /**
  * Blok „Proč je to zdarma? A kde je háček?“ na úvodní stránce (R14.1, karta 3 podle R15.3) – texty doslovně.
@@ -19,7 +25,7 @@ export const WHY_FREE = {
     },
     {
       title: "Nežijeme z reklamy ani z vašich dat",
-      text: "Na webu nemáme reklamu ani sledovací cookies a vaše údaje nikomu neprodáváme.",
+      text: WHY_FREE_CARD3,
     },
   ],
   guarantee: "Bez závazku a bez platební karty.",

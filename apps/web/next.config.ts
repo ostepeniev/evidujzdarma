@@ -1,21 +1,10 @@
 import path from "node:path";
 import type { NextConfig } from "next";
 import { catalogCacheHeaders } from "./src/lib/catalog-cache";
+import { siteCsp } from "./src/lib/site-csp";
 
-const csp = [
-  "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
-  "font-src 'self' data:",
-  "connect-src 'self'",
-  "worker-src 'self'",
-  "manifest-src 'self'",
-  "frame-ancestors 'self'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  "object-src 'none'",
-].join("; ");
+// S4-COOKIES: CSP se skládá v src/lib/site-csp.ts – domény měřicích a reklamních značek jen pro ty, které mají ID
+const csp = siteCsp();
 
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },

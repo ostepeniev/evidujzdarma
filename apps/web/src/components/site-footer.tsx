@@ -3,6 +3,7 @@ import { isClosed } from "@/lib/launch";
 import { SITE, operatorLine } from "@/lib/site";
 import { Logo } from "./logo";
 import { ExternalLink } from "@/components/external-link";
+import { CookieSettingsButton } from "@/components/consent/cookie-settings-button";
 
 const COLUMNS = [
   {
@@ -88,6 +89,8 @@ export function SiteFooter() {
                   </Link>
                 </li>
               ))}
+              {/* S4-COOKIES: změna nebo odvolání souhlasu s cookies (jen když je zapnutá nějaká značka) */}
+              {col.title === "O nás" && <CookieSettingsButton />}
             </ul>
           </nav>
         ))}
