@@ -24,7 +24,7 @@ describe("R15.3 – texts", () => {
     expect(text(html)).toContain(MEASURING);
     expect(html).toContain("<strong>Měření návštěvnosti.</strong>");
     const { PRIVACY_VERSION, RETENTION } = await import("@/lib/legal");
-    expect(PRIVACY_VERSION).toBe("2026-10-17-s3"); // R17.4 (UTM) a S3 (zveřejněný katalog) posunuly verzi dál
+    expect(PRIVACY_VERSION).toBe("2026-10-23-s4"); // R17.4 (UTM), S3 (zveřejněný katalog) a S4 (souhlas s cookies) posunuly verzi dál
     expect(RETENTION.analyticsMonths).toBe(25);
   });
 

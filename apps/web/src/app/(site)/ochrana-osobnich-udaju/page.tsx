@@ -6,7 +6,9 @@
 // zpracovatelů (hosting v EU, doručování e-mailů, později platební partner a poskytovatel AI přehledu – u AI ověřit,
 // že data neopustí EU); (5) cookies – nyní jen nezbytné (přihlášení) a cookie ankety ez_voter; v localStorage jen
 // název kanceláře v šablonách, kód doporučení se do prohlížeče neukládá (R7.10); měření návštěvnosti bez cookies (R15.3);
-// (6) identifikační údaje správce jsou v lib/site.ts (OPERATOR, ověřeno v OR 2. 10. 2026).
+// (6) identifikační údaje správce jsou v lib/site.ts (OPERATOR, ověřeno v OR 2. 10. 2026); (7) S4 (23. 10. 2026): souhlas
+// s cookies – první vrstva lišty bez „Odmítnout“ je rozhodnutí majitele (DECISIONS К10, ÚOOÚ/EDPB to vidí jako riziko);
+// po zapnutí značek ověřit u Meta Pixelu společné správcovství (čl. 26 GDPR, dodatek Meta pro správce) a doby cookies.
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -16,6 +18,8 @@ import { PRIVACY_DATE_ISO, PRIVACY_VERSION_LABEL } from "@/lib/legal";
 import { SITE, operatorLine } from "@/lib/site";
 import { ExternalLink } from "@/components/external-link";
 import { canonicalMeta } from "@/lib/metadata";
+import { CONSENT_COOKIE, CONSENT_MAX_AGE_DAYS } from "@/lib/consent";
+import { configuredTracking } from "@/lib/tracking-config";
 
 const VERSION_DATE = PRIVACY_DATE_ISO;
 const VERSION_LABEL = PRIVACY_VERSION_LABEL;
@@ -26,6 +30,49 @@ export const metadata: Metadata = {
     "Jak EvidujZdarma zpracovává osobní údaje: předregistrace, marketing jen se souhlasem, data pokladny, katalog firem z veřejných registrů, doby uložení a práva.",
   ...canonicalMeta("/ochrana-osobnich-udaju"),
 };
+
+/**
+ * S4-COOKIES: značky třetích stran, které se načtou až po souhlasu. V zásadách jen ty, které jsou v lib/tracking-config.ts
+ * zapnuté. Názvy a doby cookies podle dokumentace poskytovatelů k 23. 10. 2026.
+ */
+const TRACKING_ON = configuredTracking();
+const TRACKING_VENDORS: readonly { on: boolean; tool: string; category: string; purpose: string; cookies: string; controller: string }[] = [
+  {
+    on: !!TRACKING_ON.ga4,
+    tool: "Google Analytics 4",
+    category: "Analytické",
+    purpose: "Statistiky návštěvnosti a používání stránek a nástrojů.",
+    cookies: "_ga a _ga_<ID> (2 roky).",
+    controller:
+      "Google Ireland Limited; údaje mohou být předány společnosti Google LLC do USA na základě rámce EU-U.S. Data Privacy Framework.",
+  },
+  {
+    on: !!TRACKING_ON.googleAds,
+    tool: "Google Ads",
+    category: "Marketingové",
+    purpose: "Měření konverzí z reklamy a zobrazování reklamy lidem, kteří náš web navštívili.",
+    cookies: "_gcl_au (90 dní); na doménách Googlu (doubleclick.net, google.com) například IDE (nejvýš 13 měsíců).",
+    controller:
+      "Google Ireland Limited; údaje mohou být předány společnosti Google LLC do USA na základě rámce EU-U.S. Data Privacy Framework.",
+  },
+  {
+    on: !!TRACKING_ON.metaPixel,
+    tool: "Meta Pixel",
+    category: "Marketingové",
+    purpose: "Měření výsledků reklamy na Facebooku a Instagramu a zobrazování reklamy lidem, kteří náš web navštívili.",
+    cookies: "_fbp a _fbc (90 dní); na doméně facebook.com například fr (90 dní).",
+    controller:
+      "Meta Platforms Ireland Limited; při shromáždění a předání údajů jsme s ní společnými správci. Údaje mohou být předány společnosti Meta Platforms, Inc. do USA na základě rámce EU-U.S. Data Privacy Framework.",
+  },
+  {
+    on: !!TRACKING_ON.sklik,
+    tool: "Sklik (retargeting)",
+    category: "Marketingové",
+    purpose: "Zobrazování reklamy v síti Seznam.cz lidem, kteří náš web navštívili, a měření jejích výsledků.",
+    cookies: "Cookies na doménách Seznam.cz podle zásad Seznam.cz.",
+    controller: "Seznam.cz, a.s., Praha; údaje zůstávají v EU.",
+  },
+];
 
 const PURPOSES: readonly { purpose: string; data: string; basis: string; retention: string }[] = [
   {
@@ -270,10 +317,51 @@ const SECTIONS: readonly { id: string; title: string; body: ReactNode }[] = [
           odešleme jen spolu s formulářem předregistrace; do prohlížeče ho neukládáme. Když hlasujete v anketě, uložíme
           náhodný identifikátor do cookie <code>ez_voter</code> (platnost 1 rok), aby z jednoho prohlížeče šel jen jeden hlas;
           u hlasu ukládáme jen jeho otisk, ne IP adresu ani jméno (oprávněný zájem na férovém výsledku ankety, čl. 6 odst. 1
-          písm. f) GDPR). Analytické ani reklamní cookies nepoužíváme; kdybychom to změnili, nejdřív vás požádáme o souhlas.
+          písm. f) GDPR).{" "}
+          {TRACKING_ON.any
+            ? "Analytické a reklamní cookies používáme jen s vaším souhlasem – podrobnosti níže."
+            : "Analytické ani reklamní cookies nepoužíváme; kdybychom to změnili, nejdřív vás požádáme o souhlas."}
           Název kanceláře, který vyplníte v šablonách dopisů pro klienty, zůstává jen ve vašem prohlížeči a na server ho
           neposíláme.
         </p>
+        {/* S4-COOKIES: souhlas s cookies (lib/consent.ts) */}
+        <p id="souhlas-s-cookies">
+          <strong>Souhlas s cookies.</strong> Měřicí a reklamní nástroje třetích stran (Google, Meta, Seznam) načteme jen tehdy,
+          když nám k tomu dáte souhlas v liště cookies; bez souhlasu se z nich do vašeho prohlížeče nic nedostane. Vaši volbu
+          uložíme do nezbytné cookie <code>{CONSENT_COOKIE}</code> na {Math.round(CONSENT_MAX_AGE_DAYS / 30)} měsíců (verze lišty,
+          zda jste povolili analytické a marketingové cookies, a den rozhodnutí), pak se zeptáme znovu. Souhlas můžete kdykoli
+          změnit nebo odvolat tlačítkem „Nastavení cookies“ v patičce webu; odvolání se netýká zpracování před ním. Právním
+          základem je váš souhlas (§ 89 odst. 3 zákona o elektronických komunikacích, čl. 6 odst. 1 písm. a) GDPR).
+        </p>
+        {TRACKING_ON.any ? (
+          <div className="overflow-x-auto">
+            <table>
+              <caption className="mb-2 text-left text-sm text-muted">Nástroje, které načteme jen s vaším souhlasem</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Nástroj</th>
+                  <th scope="col">Kategorie a účel</th>
+                  <th scope="col">Cookies (doba)</th>
+                  <th scope="col">Správce, předání mimo EU</th>
+                </tr>
+              </thead>
+              <tbody>
+                {TRACKING_VENDORS.filter((v) => v.on).map((v) => (
+                  <tr key={v.tool}>
+                    <td>{v.tool}</td>
+                    <td>
+                      {v.category}: {v.purpose}
+                    </td>
+                    <td>{v.cookies}</td>
+                    <td>{v.controller}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p>Teď žádný takový nástroj nepoužíváme, proto vám lištu cookies neukazujeme.</p>
+        )}
         {/* R15.3 – doslovně */}
         <p id="mereni-navstevnosti">
           <strong>Měření návštěvnosti.</strong> Abychom věděli, které stránky lidem pomáhají, počítáme návštěvy webu vlastním

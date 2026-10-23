@@ -85,7 +85,7 @@ describe("R7.8 – privacy policy and terms match the code", () => {
   it("versions are raised and dated with the R7 draft", async () => {
     const legal = await import("@/lib/legal");
     expect(legal.TERMS_VERSION > "2026-10-03").toBe(true);
-    expect(legal.PRIVACY_VERSION_LABEL).toBe("17. 10. 2026"); // S3: zveřejněný katalog firem
+    expect(legal.PRIVACY_VERSION_LABEL).toBe("23. 10. 2026"); // S3: zveřejněný katalog firem, S4: souhlas s cookies
     expect(readFileSync(new URL("../src/app/(site)/podminky/page.tsx", import.meta.url), "utf8")).toMatch(/TERMS_VERSION_LABEL/);
   });
 });
