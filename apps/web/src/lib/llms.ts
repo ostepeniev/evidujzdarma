@@ -6,6 +6,7 @@ import { MYTHS, MYTHS_UPDATED } from "@/content/myths";
 import type { Block, Guide } from "@/content/guides/types";
 import { OPERATOR, SITE, absoluteUrl, REVIEWER } from "./site";
 import { STATIC_PAGES } from "./static-pages";
+import { SETUP_SERVICE } from "@/content/services";
 import { OBOR_LANDINGS, landingPath } from "@/content/obor-landings";
 import { reviewedMoneyPaths } from "./money-review";
 
@@ -115,6 +116,8 @@ export function llmsTxt(): string {
     `- [Všechny návody](${absoluteUrl("/navody")}) a [všechny nástroje](${absoluteUrl("/nastroje")})`,
     `- [O nás a odborná revize](${absoluteUrl("/o-nas")}): kdo web provozuje, jak ověřujeme fakta a kdo návody reviduje.`,
     `- [Ceník](${absoluteUrl("/cenik")}): evidence tržeb zdarma navždy; Premium 149 Kč/měsíc.`,
+    // S5-SLUŽBY
+    `- [Nastavení EET na klíč](${absoluteUrl("/nastaveni-na-klic")}): placená technická pomoc (${SETUP_SERVICE.priceLabel}, platí se po dokončení) – postup na míru pro DIS+ a pokladní certifikát, kontrola a nastavení pokladny; písemně e-mailem. Daňové poradenství (EET ON/OFF) neposkytujeme.`,
     `- [Pro účetní](${absoluteUrl("/ucetni")})`,
     `- [Kompletní text návodů pro AI](${absoluteUrl("/llms-full.txt")})`,
     "",

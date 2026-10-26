@@ -7,7 +7,7 @@
  */
 import { WHY_FREE_FAQ } from "./why-free";
 
-export const PRICING_UPDATED = "2026-10-01";
+export const PRICING_UPDATED = "2026-10-26";
 
 /** Zobrazí se v FAQ (prostý text – FAQ a JSON-LD odkazy nevykreslují). */
 export const PRICING_NOTICE_TEXT =
@@ -16,12 +16,14 @@ export const PRICING_NOTICE_TEXT =
 export const PRICING_NOTICE =
   "Ceny placených doplňků jsou předběžné – teprve je ověřujeme a do spuštění se mohou změnit. Bezplatné jádro pokladny zůstane zdarma navždy ([čl. 6.2 podmínek](/podminky#zdarma)).";
 
-export type PlanStatus = "prereg" | "later" | "preparing";
+export type PlanStatus = "prereg" | "later" | "preparing" | "order";
 
 export const STATUS_LABEL: Record<PlanStatus, string> = {
   prereg: "Předregistrace otevřená",
   later: "Spustíme později",
   preparing: "Připravujeme",
+  /** S5-SLUŽBY: služba, kterou lze objednat už teď (Nastavení na klíč) */
+  order: "Lze objednat",
 };
 
 export interface Plan {
@@ -120,14 +122,15 @@ export const ADDONS: readonly Addon[] = [
   },
   {
     id: "nastaveni",
+    // S5-SLUŽBY (26. 10. 2026, rozhodnutí majitele): písemně bez telefonu, 990 Kč – content/services.ts
     name: "Nastavení na klíč",
-    price: 490,
-    priceLabel: "490 Kč",
+    price: 990,
+    priceLabel: "990 Kč",
     period: "jednorázově",
-    text: "Přes videohovor za 30 minut společně projdeme DIS+, pokladní certifikát a nastavení pokladny. Vy klikáte, my radíme.",
-    bullets: ["Přihlášení k evidenci a evidenční jednotky v DIS+", "Vygenerování a nahrání certifikátu", "První zkušební tržba"],
-    status: "preparing",
-    cta: { href: "/#registrace", label: "Chci pomoc s nastavením" },
+    text: "Písemně, bez telefonování: postup na míru pro DIS+ a pokladní certifikát, kontrola a příprava nastavení pokladny. Platíte až po dokončení.",
+    bullets: ["Přihlášení k evidenci a evidenční jednotky v DIS+", "Pokladní certifikát krok za krokem", "Nastavení pokladny a první zkušební tržba"],
+    status: "order",
+    cta: { href: "/nastaveni-na-klic", label: "Poptat nastavení" },
   },
   {
     id: "api",

@@ -179,6 +179,17 @@ describe("S4b – Microsoft Clarity is on in production (analytics only)", () =>
     expect(ev).not.toMatch(/https?:\/\//);
   });
 
+  it("gate: with analytics only the banner does not promise advertising (S5 fix 26. 10. 2026)", async () => {
+    const { BANNER_TEXT, BANNER_TEXT_ANALYTICS } = await import("@/components/consent/cookie-views");
+    const only = renderToStaticMarkup(createElement(CookieBannerView, { firstLayerReject: false, marketing: false }));
+    expect(only).toContain(BANNER_TEXT_ANALYTICS);
+    expect(only).not.toMatch(/reklam/);
+    expect(renderToStaticMarkup(createElement(CookieBannerView, { firstLayerReject: false, marketing: true }))).toContain(BANNER_TEXT);
+    expect(renderToStaticMarkup(createElement(CookieBannerView, { firstLayerReject: false, marketing: false, preview: true }))).toContain(BANNER_TEXT);
+    expect(src("components/consent/consent-manager.tsx")).toContain("marketing={configuredTracking(cfg).marketing}");
+    expect(configuredTracking().marketing).toBe(false);
+  });
+
   it("gate: settings show Analytické with Microsoft Clarity only; the footer button is visible", () => {
     const cats = consentCategories();
     expect(cats.map((c) => c.id)).toEqual(["necessary", "analytics"]);
@@ -187,7 +198,7 @@ describe("S4b – Microsoft Clarity is on in production (analytics only)", () =>
     expect(renderToStaticMarkup(createElement(CookieSettingsButton))).toContain("Nastavení cookies");
   });
 
-  it("gate: privacy policy lists Microsoft Clarity, says no ad cookies; PRIVACY_VERSION 2026-10-23-s4b", async () => {
+  it("gate: privacy policy lists Microsoft Clarity, says no ad cookies; PRIVACY_VERSION (S4b, posunuta v S5)", async () => {
     const { default: Privacy } = await import("@/app/(site)/ochrana-osobnich-udaju/page");
     const t = text(renderToStaticMarkup(createElement(Privacy as FC)));
     expect(t).toContain("Analytické cookies používáme jen s vaším souhlasem – podrobnosti níže. Reklamní cookies nepoužíváme.");
@@ -196,8 +207,9 @@ describe("S4b – Microsoft Clarity is on in production (analytics only)", () =>
     }
     for (const x of ["Google Analytics 4", "Google Ads", "Meta Pixel", "Sklik", "Teď žádný takový nástroj nepoužíváme"]) expect(t).not.toContain(x);
     const { PRIVACY_VERSION, PRIVACY_DATE_ISO } = await import("@/lib/legal");
-    expect(PRIVACY_VERSION).toBe("2026-10-23-s4b");
-    expect(PRIVACY_DATE_ISO).toBe("2026-10-23");
+    // S5-SLUŽBY (26. 10. 2026) posunul verzi dál
+    expect(PRIVACY_VERSION).toBe("2026-10-26-s5");
+    expect(PRIVACY_DATE_ISO).toBe("2026-10-26");
   });
 
   it("gate: why-free card 3 – no ads, analytics cookies only with consent", async () => {

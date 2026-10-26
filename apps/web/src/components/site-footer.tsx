@@ -47,6 +47,8 @@ const COLUMNS = [
       { href: "/ucetni/hromadna-kontrola", label: "Hromadná kontrola IČO" },
       { href: "/ucetni/sablony", label: "Šablony dopisů klientům" },
       { href: "/cenik", label: "Ceník" },
+      // S5-SLUŽBY
+      { href: "/nastaveni-na-klic", label: "Nastavení EET na klíč" },
       { href: "/srovnani/moje-eet", label: "Srovnání s MOJE eet" },
       { href: "/firmy", label: "Katalog firem" },
     ],

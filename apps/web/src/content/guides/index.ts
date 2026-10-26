@@ -7,12 +7,14 @@ import { eetEshopDobirka } from "./eet-eshop-dobirka";
 import { eetGastronomie } from "./eet-gastronomie";
 import { eetKadernictviKosmetika } from "./eet-kadernictvi-kosmetika";
 import { eetOff } from "./eet-off";
+import { eetOnNeboOffModeloveSituace } from "./eet-on-nebo-off-modelove-situace";
 import { eetRemeslnici } from "./eet-remeslnici";
 import { eetTrhyStanky } from "./eet-trhy-stanky";
 import { eetUbytovani } from "./eet-ubytovani";
 import { evidencniJednotka } from "./evidencni-jednotka";
 import { glosarEet } from "./glosar-eet";
 import { jakAktivovatDisACertifikat } from "./jak-aktivovat-dis-a-certifikat";
+import { kdoPomuzeSEet } from "./kdo-pomuze-s-eet";
 import { kohoSeEetTyka } from "./koho-se-eet-tyka";
 import { kontaktniPlatba } from "./kontaktni-platba";
 import { musimVydavatUctenku } from "./musim-vydavat-uctenku";
@@ -31,9 +33,12 @@ export const GUIDES: readonly Guide[] = [
   kohoSeEetTyka,
   kontaktniPlatba,
   eetOff,
+  // S5-SLUŽBY (26. 10. 2026): koncepty do revize
+  eetOnNeboOffModeloveSituace,
   eetAPausalniDan,
   evidencniJednotka,
   jakAktivovatDisACertifikat,
+  kdoPomuzeSEet,
   eetBezInternetu,
   pokladnaVMobiluZdarma,
   pokutyEet,

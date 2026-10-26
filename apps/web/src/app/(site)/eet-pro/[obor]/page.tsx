@@ -14,6 +14,7 @@ import { JsonLd, faqLd } from "@/lib/jsonld";
 import { isClosed } from "@/lib/launch";
 import { canonicalMeta } from "@/lib/metadata";
 import { REVIEWER, SERVICE_COPY } from "@/lib/site";
+import { SETUP_SERVICE } from "@/content/services";
 
 /**
  * S4 (23. 10. 2026): „EET pro kadeřnice / bistro / restaurace“ – trychtýř rychlá kontrola → co pro vás platí →
@@ -216,6 +217,12 @@ export default async function OborLandingPage({ params }: PageProps<"/eet-pro/[o
               <span className="text-sm font-semibold text-brand-700">Katalog firem</span>
               <strong className="mt-1 block text-ink">{l.catalog.label}</strong>
               <span className="mt-1 block text-[15px] text-ink-soft">Firmy z veřejných registrů a co pro ně EET 2.0 znamená.</span>
+            </Link>
+            {/* S5-SLUŽBY */}
+            <Link href="/nastaveni-na-klic" className="card block p-5 no-underline hover:border-brand-500" data-service-cta="obor">
+              <span className="text-sm font-semibold text-brand-700">Služba</span>
+              <strong className="mt-1 block text-ink">Nastavení EET na klíč za {SETUP_SERVICE.priceLabel}</strong>
+              <span className="mt-1 block text-[15px] text-ink-soft">Postup na míru pro DIS+ a certifikát, kontrola a příprava pokladny – písemně, bez telefonování.</span>
             </Link>
           </div>
           {guide && (

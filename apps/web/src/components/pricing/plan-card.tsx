@@ -14,7 +14,7 @@ function Check({ className = "text-brand-600" }: { className?: string }) {
 }
 
 function StatusChip({ status }: { status: Plan["status"] }) {
-  const tone = status === "prereg" ? "bg-brand-100 text-brand-700" : status === "later" ? "bg-surface-2 text-ink-soft" : "bg-sun-100 text-ink";
+  const tone = status === "prereg" || status === "order" ? "bg-brand-100 text-brand-700" : status === "later" ? "bg-surface-2 text-ink-soft" : "bg-sun-100 text-ink";
   return <span className={`chip ${tone}`}>{STATUS_LABEL[status]}</span>;
 }
 

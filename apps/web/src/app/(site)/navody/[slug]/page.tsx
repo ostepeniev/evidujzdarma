@@ -15,6 +15,7 @@ import { ExternalLink } from "@/components/external-link";
 import { PILLAR_SLUG, RelatedGuides, indexableGuides } from "@/components/related-guides";
 import { GuideCatalogLinks } from "@/components/catalog/guide-catalog-links";
 import { landingPath, landingsForGuide } from "@/content/obor-landings";
+import { SERVICE_CTA_GUIDES, SETUP_SERVICE } from "@/content/services";
 
 export const dynamicParams = false;
 
@@ -129,6 +130,20 @@ export default async function GuidePage({ params }: PageProps<"/navody/[slug]">)
               ))}
             </section>
           ))}
+
+          {/* S5-SLUŽBY: praktické návody → nastavení na klíč */}
+          {SERVICE_CTA_GUIDES.includes(g.slug) && (
+            <aside className="not-prose mt-12 rounded-2xl border-2 border-brand-200 bg-brand-50 p-6" aria-label="Nastavení na klíč" data-service-cta="guide">
+              <p className="text-lg font-semibold text-ink">Nechcete to řešit sami? Nastavíme vám EET na klíč.</p>
+              <p className="mt-2 text-[15px] text-ink-soft">
+                Postup pro DIS+ a pokladní certifikát na míru, kontrola a nastavení pokladny – písemně, bez telefonování. {SETUP_SERVICE.priceLabel}, platíte až po
+                dokončení.
+              </p>
+              <Link href="/nastaveni-na-klic" className="btn-primary mt-4 inline-flex no-underline">
+                Nastavení na klíč →
+              </Link>
+            </aside>
+          )}
 
           {g.faq && g.faq.length > 0 && (
             <section id="caste-otazky" className="not-prose mt-12 scroll-mt-24">

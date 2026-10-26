@@ -9,7 +9,7 @@ export const STATIC_PAGES: readonly { path: string; title: string; priority: num
   { path: "/", title: "EvidujZdarma – evidence tržeb EET 2.0 zdarma", priority: 1, changeFrequency: "daily", modified: "2026-10-09" },
   { path: "/kontrola-ico", title: "EET kontrola podle IČO", priority: 0.9, changeFrequency: "weekly", modified: "2026-10-09" },
   { path: "/musim-evidovat", title: "Kvíz: Musím evidovat tržby?", priority: 0.8, changeFrequency: "weekly", modified: "2026-10-02" },
-  { path: "/kalkulacka-eet-off", title: "EET kalkulačka: evidovat, nebo EET OFF?", priority: 0.9, changeFrequency: "weekly", modified: "2026-10-23" },
+  { path: "/kalkulacka-eet-off", title: "EET kalkulačka: evidovat, nebo EET OFF?", priority: 0.9, changeFrequency: "weekly", modified: "2026-10-26" },
   { path: "/evidencni-jednotky", title: "Průvodce evidenčními jednotkami", priority: 0.8, changeFrequency: "weekly", modified: "2026-10-02" },
   { path: "/qr-platba", title: "Generátor QR platby", priority: 0.7, changeFrequency: "monthly", modified: "2026-10-02" },
   { path: "/doklad-o-prodeji", title: "Doklad o prodeji: generátor zdarma", priority: 0.7, changeFrequency: "monthly", modified: "2026-10-17" },
@@ -27,7 +27,7 @@ export const STATIC_PAGES: readonly { path: string; title: string; priority: num
   { path: "/ucetni/hromadna-kontrola", title: "Hromadná kontrola IČO pro účetní", priority: 0.7, changeFrequency: "monthly", modified: "2026-10-01" },
   { path: "/ucetni/sablony", title: "Šablony dopisů klientům k EET 2.0", priority: 0.5, changeFrequency: "monthly", modified: "2026-10-01" },
   { path: "/ukazka", title: "Ukázka pokladny EvidujZdarma", priority: 0.7, changeFrequency: "monthly", modified: "2026-10-15" },
-  { path: "/cenik", title: "Ceník", priority: 0.6, changeFrequency: "monthly", modified: "2026-10-17" },
+  { path: "/cenik", title: "Ceník", priority: 0.6, changeFrequency: "monthly", modified: "2026-10-26" },
   { path: "/o-nas", title: "O nás a kontakt", priority: 0.4, changeFrequency: "monthly", modified: "2026-10-07" },
   { path: "/podminky", title: "Obchodní podmínky", priority: 0.2, changeFrequency: "monthly" },
   { path: "/ochrana-osobnich-udaju", title: "Ochrana osobních údajů", priority: 0.2, changeFrequency: "monthly" },
@@ -36,6 +36,8 @@ export const STATIC_PAGES: readonly { path: string; title: string; priority: num
   { path: "/eet-pro/kadernice", title: "EET pro kadeřnice, kosmetičky a barbery", priority: 0.8, changeFrequency: "weekly", modified: "2026-10-23" },
   { path: "/eet-pro/bistro", title: "EET pro bistro, kavárnu a food truck", priority: 0.8, changeFrequency: "weekly", modified: "2026-10-23" },
   { path: "/eet-pro/restaurace", title: "EET pro restaurace", priority: 0.8, changeFrequency: "weekly", modified: "2026-10-23" },
+  // S5-SLUŽBY: placená technická pomoc s nastavením EET (26. 10. 2026)
+  { path: "/nastaveni-na-klic", title: "Nastavení EET na klíč", priority: 0.8, changeFrequency: "monthly", modified: "2026-10-26" },
   // S2 B1: kalkulačky a ověření (17. 10. 2026)
   { path: "/nastroje/overeni-ico", title: "Ověření IČO: kontrolní číslice", priority: 0.6, changeFrequency: "monthly", modified: "2026-10-17" },
   { path: "/nastroje/overeni-dic", title: "Ověření DIČ: kontrola tvaru", priority: 0.6, changeFrequency: "monthly", modified: "2026-10-17" },

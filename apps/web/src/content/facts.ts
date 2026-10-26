@@ -150,6 +150,8 @@ export const SOURCES = {
   },
   dokumenty: { label: "eet.gov.cz: Dokumenty k EET 2.0", url: "https://eet.gov.cz/cs/o-eet/dokumenty-k-eet-2-0" },
   zdp: { label: "Zákon o daních z příjmů č. 586/1992 Sb.", url: "https://www.zakonyprolidi.cz/cs/1992-586" },
+  // S5-SLUŽBY (26. 10. 2026): kdo smí za úplatu radit ve věcech daní (§ 2: soustavně a za úplatu jen daňový poradce, advokát, auditor)
+  zakonDanPoradenstvi: { label: "Zákon o daňovém poradenství č. 523/1992 Sb., § 2 a § 3", url: "https://www.zakonyprolidi.cz/cs/1992-523" },
   leitnerNerezidenti: {
     label: "LeitnerLeitner: Evidence tržeb (EET 2.0) se vrací – poplatníci daně z příjmů i nerezidenti",
     url: "https://www.leitnerleitner.cz/novinky/evidence-trzeb-eet-2-0-se-vraci-povinnost-miri-na-poplatniky-dane-z-prijmu-a-za-urcitych-okolnosti-i-na-nerezidenty/",

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { RelatedGuides } from "@/components/related-guides";
 import { Faq } from "@/components/faq";
 import { PageHeader } from "@/components/page-header";
@@ -11,6 +12,7 @@ import { ExternalLink } from "@/components/external-link";
 import { canonicalMeta } from "@/lib/metadata";
 import { SERVICE_COPY } from "@/lib/site";
 import { DEFAULT_INPUT, calculateEetOff, eetOffYear } from "@/lib/eet-off";
+import { SETUP_SERVICE } from "@/content/services";
 
 // S2/B2: bod zvratu pro výchozí odhady (300 Kč/h, 21 pracovních dní) – stejný výpočet jako v kalkulačce
 const r0 = calculateEetOff(DEFAULT_INPUT);
@@ -96,6 +98,17 @@ export default function EetOffPage() {
           </p>
           <FactsVerified />
         </section>
+        {/* S5-SLUŽBY: kdo se rozhodl evidovat → nastavení na klíč (daňové rozhodnutí neděláme, viz content/services.ts) */}
+        <aside className="mx-auto mt-14 max-w-3xl rounded-2xl border-2 border-brand-200 bg-brand-50 p-6" aria-label="Nastavení na klíč" data-service-cta="calculator">
+          <p className="text-lg font-semibold text-ink">Vychází vám evidovat? Nastavíme vám to na klíč.</p>
+          <p className="mt-2 text-[15px] text-ink-soft">
+            Postup pro DIS+ a pokladní certifikát na míru, kontrola a nastavení pokladny – písemně, bez telefonování. {SETUP_SERVICE.priceLabel}, platíte až po
+            dokončení.
+          </p>
+          <Link href="/nastaveni-na-klic" className="btn-primary mt-4 inline-flex no-underline">
+            Nastavení na klíč →
+          </Link>
+        </aside>
         <RelatedGuides slugs={["eet-off", "eet-a-pausalni-dan", "eet-2-0-kompletni-pruvodce"]} title="Návody k EET OFF a paušální dani" className="mx-auto mt-14 max-w-5xl" />
         <ToolCta text={SERVICE_COPY.calculatorCta} />
       </div>

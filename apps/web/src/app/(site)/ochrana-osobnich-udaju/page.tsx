@@ -16,7 +16,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { PageHeader } from "@/components/page-header";
 import { CATALOG_DATA } from "@/content/catalog-data";
-import { PRIVACY_DATE_ISO, PRIVACY_VERSION_LABEL } from "@/lib/legal";
+import { PRIVACY_DATE_ISO, PRIVACY_VERSION_LABEL, RETENTION } from "@/lib/legal";
 import { SITE, operatorLine } from "@/lib/site";
 import { ExternalLink } from "@/components/external-link";
 import { canonicalMeta } from "@/lib/metadata";
@@ -129,6 +129,14 @@ const PURPOSES: readonly { purpose: string; data: string; basis: string; retenti
     data: "Jméno, e-mail, IČO či číslo provozovny, text žádosti.",
     basis: "Splnění právní povinnosti – čl. 6 odst. 1 písm. c) GDPR (výkon vašich práv).",
     retention: "3 roky od vyřízení.",
+  },
+  {
+    // S5-SLUŽBY (26. 10. 2026): poptávka z /nastaveni-na-klic – jde e-mailem provozovateli (outbox), vlastní tabulka není
+    purpose: "Poptávka služby Nastavení EET na klíč",
+    data: "E-mail, nepovinně IČO, počet provozoven a vaše zpráva. Poptávka nám přijde e-mailem, zvláštní databázi poptávek nevedeme.",
+    basis:
+      "Provedení opatření před uzavřením smlouvy na vaši žádost a plnění smlouvy – čl. 6 odst. 1 písm. b) GDPR; vystavení a uchování faktury je právní povinnost – písm. c).",
+    retention: `Záznam o odeslání e-mailu na našem serveru ${RETENTION.emailLogDays} dní. Korespondenci k poptávce, ze které nebyla objednávka, smažeme nejpozději do 12 měsíců. Fakturu uchováváme po dobu stanovenou účetními a daňovými předpisy.`,
   },
   {
     purpose: "Měření návštěvnosti webu",

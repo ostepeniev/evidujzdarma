@@ -17,16 +17,22 @@ import type { ConsentCategory } from "@/lib/consent";
 export const BANNER_TITLE = "Souhlas s cookies";
 export const BANNER_TEXT =
   "Rádi bychom měřili, které stránky vám pomáhají, a ukazovali naši reklamu jen lidem, kterým může pomoct. K tomu potřebujeme váš souhlas s cookies – změnit ho můžete kdykoli v patičce webu.";
+/** S5 (26. 10. 2026): jen analytické značky (teď Microsoft Clarity) – lišta nesmí slibovat reklamu, kterou nemáme. */
+export const BANNER_TEXT_ANALYTICS =
+  "Rádi bychom měřili, které stránky vám pomáhají a co na webu zlepšit. K tomu potřebujeme váš souhlas s cookies – změnit ho můžete kdykoli v patičce webu.";
 
 export function CookieBannerView({
   firstLayerReject,
   preview,
+  marketing = true,
   onAccept,
   onSettings,
   onReject,
 }: {
   firstLayerReject: boolean;
   preview?: boolean;
+  /** je zapnutá aspoň jedna marketingová značka (nebo náhled) – jinak text bez reklamy */
+  marketing?: boolean;
   onAccept?: () => void;
   onSettings?: () => void;
   onReject?: () => void;
@@ -42,7 +48,7 @@ export function CookieBannerView({
         {BANNER_TITLE}
       </h2>
       <p className="mt-1 text-sm leading-relaxed text-ink-soft">
-        {BANNER_TEXT}{" "}
+        {marketing || preview ? BANNER_TEXT : BANNER_TEXT_ANALYTICS}{" "}
         <Link href="/ochrana-osobnich-udaju#cookies" className="underline underline-offset-2">
           Více o cookies
         </Link>

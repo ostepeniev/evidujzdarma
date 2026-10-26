@@ -312,6 +312,7 @@ export function ConsentManager() {
         <CookieBannerView
           firstLayerReject={FIRST_LAYER_REJECT}
           preview={preview}
+          marketing={configuredTracking(cfg).marketing}
           onAccept={() => decide(acceptAll(new Date(), cfg))}
           onSettings={openSettings}
           onReject={() => decide(rejectAll(new Date(), cfg))}
