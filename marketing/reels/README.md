@@ -6,7 +6,8 @@ Pravidla obsahu: DECISIONS Ф15 a project doc `claude/CONTENT-plan-EET-2026-10-2
 ## Postup
 
 1. Scénář do `scripts/reels.json`: `{id, scenes: [{type, voice, …props}]}`.
-   - Typy scén: `title`, `number` (countdown / counter / value), `list`, `bars`, `timeline`, `cta`.
+   - Typy scén: `title`, `number` (countdown / counter / value), `list`, `bars`, `timeline`, `cta`, `photo`.
+   - `photo` (od r06): fotka AI průvodkyně z `public/ai/` pod zeleným panelem s nadpisem, pomalý nájezd, štítek „AI průvodkyně“. `photoY` posouvá výřez (0 % = horní část fotky).
    - `[[slovo]]` = žlutý marker. `seconds` dopočítá skript (≈ 14 znaků hlasu za sekundu + 0,8 s).
 2. `npm i` a pak `scripts/render_all.sh`: každá scéna se renderuje jako samostatný klip `out/<id>/sNN.mp4` (1080×1920, 30 fps).
    - Spodních ~700 px nechávají scény volných pro titulky.
@@ -18,6 +19,13 @@ Pravidla obsahu: DECISIONS Ф15 a project doc `claude/CONTENT-plan-EET-2026-10-2
    - `transition: slide`, `subtitles: karaoke`, `subtitle_style: box`, `subtitle_position: low`;
    - `color: #ffdf73`, `end_card: "EvidujZdarma.cz\nEET 2.0 bez stresu"`, `subtitle_langs: {}`.
    - Hudba: klíč ElevenLabs zatím nemá Music Generation, proto rilsy zatím běží bez hudby.
+   - Rilsy s AI průvodkyní: `voice_id: EXAVITQu4vr4xnSDxMaL` (ženský hlas ElevenLabs) a v textu postu věta „Ve videu vás provází virtuální průvodkyně EvidujZdarma, vytvořená s pomocí AI.“
 5. Pro každou síť zvlášť: `create_draft` (jedna síť → text jde doslova) → `attach_media` → `schedule_post`.
    - Časy (Europe/Kyiv): IG 13:15, FB 19:30, Threads 10:00.
    - `first_comment` s UTM `utm_campaign=reel-<id>`.
+
+## AI průvodkyně (pilot 28. 10. 2026)
+
+- Obraz B (blondýnka v kanceláři) vybral vlastník. Generováno v Sunra (projekt „EvidujZdarma – AI průvodkyně (pilot)“), model FLUX 3 Image Klein, 1 kredit za obrázek.
+- Další scény se stejnou ženou: Klein v režimu úprav s referencí `public/ai/b_real.jpg`.
+- Vždy otevřeně virtuální: štítek ve videu a věta v textu postu. Žádná nahota; nevydává se za účetní ani za Finanční správu.

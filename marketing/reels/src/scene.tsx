@@ -23,7 +23,7 @@ type Bar = { label: string; value: number; display: string; color?: string };
 type TItem = { date: string; text: string };
 
 export type SceneProps = {
-  type: "title" | "number" | "list" | "bars" | "timeline" | "cta";
+  type: "title" | "number" | "list" | "bars" | "timeline" | "cta" | "photo";
   seconds: number;
   kicker?: string;
   lines?: string[]; // [[slovo]] = žlutý marker
@@ -38,6 +38,9 @@ export type SceneProps = {
   url?: string;
   share?: string;
   tone?: "dark" | "sun" | "alarm";
+  photo?: string; // soubor v public/, např. "ai/b_real.jpg"
+  photoY?: string; // object-position Y, např. "0%" | "50%"
+  ai?: boolean; // štítek „AI průvodkyně“
 };
 
 const ease = Easing.bezier(0.16, 1, 0.3, 1);
@@ -317,6 +320,55 @@ export const Scene: React.FC<SceneProps> = (p) => {
           ))}
         </div>
       </Frame>
+    );
+  }
+
+  if (p.type === "photo") {
+    const PANEL = 400;
+    const lines = p.lines ?? [];
+    const longest = Math.max(0, ...lines.map((l) => l.replace(/\[\[|\]\]/g, "").length));
+    const size = longest > 20 ? 64 : longest > 16 ? 72 : 80;
+    const zoom = interpolate(frame, [0, p.seconds * fps], [1, 1.07], clamp);
+    return (
+      <AbsoluteFill style={{ fontFamily: "Inter, sans-serif", color: C.white, background: C.bgTop }}>
+        <div style={{ position: "absolute", top: PANEL, left: 0, right: 0, bottom: 0, overflow: "hidden" }}>
+          <Img
+            src={staticFile(p.photo ?? "ai/b_real.jpg")}
+            style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: `50% ${p.photoY ?? "0%"}`, scale: zoom, transformOrigin: "50% 30%" }}
+          />
+          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 70, background: `linear-gradient(${C.bgTop}, rgba(5,58,42,0))` }} />
+        </div>
+        <AbsoluteFill style={{ clipPath: `inset(0 0 ${1920 - PANEL}px 0)` }}>
+          <Bg tone={p.tone} />
+        </AbsoluteFill>
+        <Brand />
+        {p.ai !== false && (
+          <div
+            style={{
+              ...appear(frame, 6, 10),
+              position: "absolute",
+              top: PANEL + 26,
+              right: 36,
+              background: "rgba(0,0,0,0.5)",
+              border: "2px solid rgba(255,255,255,0.7)",
+              color: C.white,
+              fontSize: 30,
+              fontWeight: 700,
+              padding: "8px 20px",
+              borderRadius: 999,
+            }}
+          >
+            ✦ AI průvodkyně
+          </div>
+        )}
+        <div style={{ position: "absolute", top: 178, left: 80, right: 80 }}>
+          {lines.map((l, i) => (
+            <div key={i} style={{ ...appear(frame, 3 + i * 5), fontSize: size, fontWeight: 900, lineHeight: 1.08, letterSpacing: -1.5, marginBottom: 6 }}>
+              <Marked text={l} frame={frame} start={3 + i * 5} />
+            </div>
+          ))}
+        </div>
+      </AbsoluteFill>
     );
   }
 

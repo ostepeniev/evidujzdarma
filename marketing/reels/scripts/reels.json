@@ -302,5 +302,67 @@
     "seconds": 7.1
    }
   ]
+ },
+ {
+  "id": "r06-uctenka",
+  "scenes": [
+   {
+    "type": "photo",
+    "photo": "ai/b_real.jpg",
+    "photoY": "0%",
+    "lines": [
+     "Účtenka ke každé kávě?",
+     "[[Od ledna ne.]]"
+    ],
+    "voice": "Pamatujete na staré EET a účtenku ke každé kávě? Od ledna to tak nebude.",
+    "seconds": 5.9
+   },
+   {
+    "type": "photo",
+    "photo": "ai/b_cafe.jpg",
+    "photoY": "50%",
+    "lines": [
+     "EET 2.0 účtenku",
+     "[[nevyžaduje.]]"
+    ],
+    "voice": "Nové EET dva nula povinnost vydat účtenku neukládá. Tržba se ale eviduje dál.",
+    "seconds": 6.3
+   },
+   {
+    "type": "list",
+    "kicker": "Ale pozor",
+    "title": "Když si o ni [[řeknete]]:",
+    "items": [
+     {
+      "icon": "yes",
+      "text": "Doklad dostat musíte",
+      "sub": "§ 16 zákona o ochraně spotřebitele"
+     },
+     {
+      "icon": "dot",
+      "text": "Datum, zboží, cena",
+      "sub": "a jméno a IČO prodávajícího"
+     },
+     {
+      "icon": "dot",
+      "text": "I elektronicky",
+      "sub": "podle běžného výkladu"
+     }
+    ],
+    "voice": "Když si o ni ale řeknete, doklad dostat musíte. S datem, zbožím, cenou, jménem a IČO prodávajícího. Podle běžného výkladu i elektronicky.",
+    "seconds": 10.6
+   },
+   {
+    "type": "photo",
+    "photo": "ai/b_point.jpg",
+    "photoY": "25%",
+    "lines": [
+     "Chcete účtenku?",
+     "[[ANO]], nebo [[NE]]?"
+    ],
+    "voice": "A vy? Chcete účtenku, nebo ne? Napište do komentářů. A pošlete to své pokladní.",
+    "seconds": 6.4
+   }
+  ]
  }
 ]
