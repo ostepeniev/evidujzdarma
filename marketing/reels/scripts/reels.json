@@ -1,0 +1,306 @@
+[
+ {
+  "id": "r01-data",
+  "scenes": [
+   {
+    "type": "title",
+    "kicker": "Za 4 dny",
+    "lines": [
+     "1. listopadu se otevře [[DIS+]].",
+     "Víte, co tam máte udělat?"
+    ],
+    "voice": "Za čtyři dny se otevře DIS plus. Víte, co tam máte udělat?",
+    "seconds": 4.9
+   },
+   {
+    "type": "timeline",
+    "title": "Čtyři data, která si [[uložte]]",
+    "timeline": [
+     {
+      "date": "1. 11.",
+      "text": "DIS+: provozovny a certifikát"
+     },
+     {
+      "date": "1. 12.",
+      "text": "Státní aplikace MOJE eet"
+     },
+     {
+      "date": "1. 1. 2027",
+      "text": "Evidujete od prvního dne"
+     },
+     {
+      "date": "11. 1. 2027",
+      "text": "Poslední den pro EET OFF"
+     }
+    ],
+    "voice": "Prvního listopadu DIS plus: provozovny a certifikát. Prvního prosince státní aplikace MOJE eet. Prvního ledna evidujete. A jedenáctého ledna je poslední šance na EET OFF.",
+    "seconds": 12.9
+   },
+   {
+    "type": "title",
+    "kicker": "Pozor",
+    "lines": [
+     "Leden je „pilotní“?",
+     "Evidovat se musí [[od 1. 1.]]"
+    ],
+    "voice": "A pozor: pilotní leden neznamená, že evidovat nemusíte. Zákon platí od prvního ledna.",
+    "seconds": 6.9
+   },
+   {
+    "type": "cta",
+    "lines": [
+     "Znáte někoho,",
+     "kdo to [[ještě neřeší]]?"
+    ],
+    "share": "Pošlete mu to video",
+    "url": "evidujzdarma.cz",
+    "voice": "Znáte podnikatele, který to ještě neřeší? Pošlete mu tohle video.",
+    "seconds": 5.4
+   }
+  ]
+ },
+ {
+  "id": "r02-spropitne",
+  "scenes": [
+   {
+    "type": "title",
+    "kicker": "Gastro",
+    "lines": [
+     "Host nechal [[dýško]] na kartě.",
+     "Je to tržba?"
+    ],
+    "voice": "Host vám nechal dýško na kartě. Je to od ledna tržba?",
+    "seconds": 4.6
+   },
+   {
+    "type": "list",
+    "title": "Záleží, [[čí]] je",
+    "items": [
+     {
+      "icon": "yes",
+      "text": "Podniku nebo číšníkovi na IČO",
+      "sub": "evidovaná tržba"
+     },
+     {
+      "icon": "no",
+      "text": "Zaměstnanci",
+      "sub": "evidovat nemusíte – ale smíte"
+     }
+    ],
+    "voice": "Záleží, čí je. Dýško pro podnik nebo pro číšníka na živnost je evidovaná tržba. Dýško zaměstnance evidovat nemusíte, ale smíte.",
+    "seconds": 9.9
+   },
+   {
+    "type": "bars",
+    "title": "Bonus: dýško [[bez daně]]",
+    "bars": [
+     {
+      "label": "Tržby restaurace za měsíc",
+      "value": 1000000,
+      "display": "1 000 000 Kč",
+      "color": "#cdeedf"
+     },
+     {
+      "label": "Spropitné zaměstnanců bez daně",
+      "value": 70000,
+      "display": "70 000 Kč",
+      "color": "#ffdf73"
+     }
+    ],
+    "caption": [
+     "Jen u [[jídla na místě]]. Stánek ani take away ne."
+    ],
+    "voice": "Bonus: spropitné zaměstnanců je od ledna bez daně až do sedmi procent tržeb. Ale jen u jídla na místě, ne u stánku ani take away.",
+    "seconds": 10.0
+   },
+   {
+    "type": "cta",
+    "lines": [
+     "Máte kamaráda",
+     "s [[kavárnou]]?"
+    ],
+    "share": "Pošlete mu to dřív než 1. 1.",
+    "url": "evidujzdarma.cz",
+    "voice": "Máte kamaráda s kavárnou? Pošlete mu to. A napište: dýško hotově, nebo kartou?",
+    "seconds": 6.4
+   }
+  ]
+ },
+ {
+  "id": "r03-48-hodin",
+  "scenes": [
+   {
+    "type": "number",
+    "tone": "alarm",
+    "kicker": "Vypadl internet",
+    "countdown": {
+     "fromSeconds": 172800,
+     "toSeconds": 171300
+    },
+    "caption": [
+     "Máte [[48 hodin]].",
+     "Nebo ne?"
+    ],
+    "voice": "Vypadl vám internet. Máte čtyřicet osm hodin. Nebo ne?",
+    "seconds": 4.7
+   },
+   {
+    "type": "list",
+    "title": "Co říká [[Finanční správa]]",
+    "items": [
+     {
+      "icon": "yes",
+      "text": "Prodávejte dál"
+     },
+     {
+      "icon": "warn",
+      "text": "Odešlete, hned jak je signál",
+      "sub": "ne „někdy do 48 hodin“"
+     },
+     {
+      "icon": "warn",
+      "text": "Nejpozději do 48 hodin"
+     }
+    ],
+    "voice": "Prodávat můžete dál. Ale tržbu musíte odeslat hned, jak se spojení vrátí. Ne kdykoli. A nejpozději do čtyřiceti osmi hodin.",
+    "seconds": 9.6
+   },
+   {
+    "type": "number",
+    "tone": "alarm",
+    "value": "500 000 Kč",
+    "caption": [
+     "Pokuta [[až]] do této výše.",
+     "A odeslat musíte [[i potom]]."
+    ],
+    "voice": "Když to nestihnete, hrozí pokuta až pět set tisíc korun. A tržbu musíte odeslat i potom.",
+    "seconds": 7.1
+   },
+   {
+    "type": "cta",
+    "lines": [
+     "Prodáváte",
+     "na [[trzích]] nebo",
+     "na horách?"
+    ],
+    "share": "Pošlete to stánkaři, kterého znáte",
+    "url": "evidujzdarma.cz",
+    "voice": "Prodáváte na trzích nebo na horách? Napište, kde vám nejde signál, a pošlete to stánkaři, kterého znáte.",
+    "seconds": 8.2
+   }
+  ]
+ },
+ {
+  "id": "r04-kauce",
+  "scenes": [
+   {
+    "type": "title",
+    "kicker": "Ubytování",
+    "lines": [
+     "Host rozbil hrnek.",
+     "Strhnete mu 300 Kč z kauce.",
+     "[[Gratulujeme, máte tržbu.]]"
+    ],
+    "voice": "Host rozbil hrnek. Strhnete mu tři sta korun z kauce. Gratulujeme, máte tržbu.",
+    "seconds": 6.4
+   },
+   {
+    "type": "list",
+    "title": "Kauce v EET 2.0",
+    "items": [
+     {
+      "icon": "no",
+      "text": "Host kauci složí",
+      "sub": "neevidujete"
+     },
+     {
+      "icon": "no",
+      "text": "Vrátíte ji celou",
+      "sub": "neevidujete – ani stornem"
+     },
+     {
+      "icon": "yes",
+      "text": "Část si ponecháte",
+      "sub": "evidujete jen tuhle částku"
+     }
+    ],
+    "voice": "Když host kauci složí, neevidujete. Když ji vrátíte, taky ne, ani stornem. Evidujete jen tu část, kterou si ponecháte.",
+    "seconds": 9.2
+   },
+   {
+    "type": "title",
+    "lines": [
+     "Ale jen když ji host složil [[na místě]].",
+     "Převodem předem? Neevidujete."
+    ],
+    "voice": "Ale jen tehdy, když host kauci složil na místě. Kauce poslaná převodem předem se neeviduje.",
+    "seconds": 7.3
+   },
+   {
+    "type": "cta",
+    "lines": [
+     "Máte [[penzion]]",
+     "nebo apartmán?"
+    ],
+    "share": "Pošlete to majiteli penzionu",
+    "url": "evidujzdarma.cz",
+    "voice": "Znáte někoho s penzionem nebo apartmánem? Pošlete mu to.",
+    "seconds": 4.8
+   }
+  ]
+ },
+ {
+  "id": "r05-komise",
+  "scenes": [
+   {
+    "type": "title",
+    "kicker": "Obchod",
+    "lines": [
+     "Prodáváte cizí zboží",
+     "[[v komisi]]?"
+    ],
+    "voice": "Prodáváte v obchodě cizí zboží v komisi?",
+    "seconds": 3.7
+   },
+   {
+    "type": "number",
+    "value": "100 %",
+    "caption": [
+     "Evidujete [[celou částku]].",
+     "I tu, která není vaše."
+    ],
+    "voice": "Pak od ledna evidujete celou částku. I tu část, která vám vůbec nepatří.",
+    "seconds": 5.9
+   },
+   {
+    "type": "list",
+    "title": "Podle [[Finanční správy]]",
+    "items": [
+     {
+      "icon": "yes",
+      "text": "Svým jménem",
+      "sub": "vaše provozovna, váš certifikát"
+     },
+     {
+      "icon": "no",
+      "text": "Výrobce ve zprávě není",
+      "sub": "tyhle prodeje neeviduje"
+     }
+    ],
+    "voice": "Evidujete svým jménem, na svou provozovnu a svým certifikátem. Výrobce, na jehož účet prodáváte, ve zprávě vůbec není.",
+    "seconds": 9.2
+   },
+   {
+    "type": "cta",
+    "lines": [
+     "Máte své výrobky",
+     "v [[cizím obchodě]]?"
+    ],
+    "share": "Pošlete to tomu obchodu",
+    "url": "evidujzdarma.cz",
+    "voice": "Máte své výrobky v cizím obchodě? Pošlete to tomu obchodu, ať to od ledna nemají špatně.",
+    "seconds": 7.1
+   }
+  ]
+ }
+]
