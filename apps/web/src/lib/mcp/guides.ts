@@ -1,6 +1,6 @@
 /** Vyhledávání v návodech pro MCP (jednoduché skórování bez externího indexu – návodů jsou desítky). */
 import { plainText } from "@/components/rich-text";
-import { GUIDES, getGuide, guideModified, isIndexable } from "@/content/guides";
+import { GUIDES, getGuide, guideModified, isMachineReadable } from "@/content/guides";
 import type { Block, Guide } from "@/content/guides/types";
 
 const fold = (s: string) =>
@@ -17,6 +17,10 @@ function blockText(b: Block): string {
   if ("table" in b) return [...b.table.head, ...b.table.rows.flat()].join(" ");
   if ("note" in b) return b.note;
   if ("quote" in b) return b.quote;
+  if ("stats" in b) return b.stats.map((x) => `${x.value} ${x.label} ${x.note ?? ""}`).join(" ");
+  if ("timeline" in b) return b.timeline.map((x) => `${x.date} ${x.title} ${x.text ?? ""}`).join(" ");
+  if ("story" in b) return b.story.map((x) => `${x.time} ${x.title} ${x.text}`).join(" ");
+  if ("conditions" in b) return b.conditions.map((x) => `${x.title} ${x.text}`).join(" ");
   return "";
 }
 
@@ -44,16 +48,16 @@ function count(hay: string, needle: string): number {
 }
 
 /**
- * Návody, které smí strojové kanály vydat (Ф9): jen po odborné revizi (isIndexable, stejně jako
+ * Návody, které smí strojové kanály vydat (Ф9): jen po odborné revizi (isMachineReadable, stejně jako
  * llms.txt). Rozhoduje se při každém dotazu, takže po revizi se návod objeví bez restartu.
  */
 export function publicGuides(): Guide[] {
-  return GUIDES.filter(isIndexable);
+  return GUIDES.filter(isMachineReadable);
 }
 
 export function publicGuide(slug: string): Guide | undefined {
   const g = getGuide(slug);
-  return g && isIndexable(g) ? g : undefined;
+  return g && isMachineReadable(g) ? g : undefined;
 }
 
 /** Odkaz na návod jen tehdy, smí-li ho MCP vydat. */
@@ -67,7 +71,7 @@ export function searchGuides(query: string, limit: number): GuideHit[] {
     .filter((t) => t.length >= 2);
   if (!terms.length) return [];
   return index
-    .filter((x) => isIndexable(x.guide))
+    .filter((x) => isMachineReadable(x.guide))
     .map((x) => ({
       x,
       score: terms.reduce((s, t) => s + 6 * count(x.title, t) + 3 * count(x.description, t) + 2 * count(x.lead, t) + Math.min(5, count(x.body, t)), 0),

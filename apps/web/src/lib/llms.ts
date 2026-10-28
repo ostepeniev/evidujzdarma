@@ -1,7 +1,7 @@
 import { isClosed } from "@/lib/launch";
 import { plainText } from "@/components/rich-text";
 import { FACTS, FACTS_UPDATED, TIMELINE } from "@/content/facts";
-import { GUIDES, guideModified, isIndexable } from "@/content/guides";
+import { GUIDES, guideModified, isMachineReadable } from "@/content/guides";
 import { MYTHS, MYTHS_UPDATED } from "@/content/myths";
 import type { Block, Guide } from "@/content/guides/types";
 import { OPERATOR, SITE, absoluteUrl, REVIEWER } from "./site";
@@ -22,7 +22,7 @@ const CALC_TOOLS = [
 ];
 
 function indexedGuides() {
-  return GUIDES.filter(isIndexable);
+  return GUIDES.filter(isMachineReadable);
 }
 
 function factsSection(): string {
@@ -132,6 +132,10 @@ function blockText(b: Block): string {
   if ("table" in b) return [b.table.head.map(plainText).join(" | "), ...b.table.rows.map((r) => r.map(plainText).join(" | "))].join("\n");
   if ("note" in b) return `> ${plainText(b.note)}`;
   if ("quote" in b) return `> „${plainText(b.quote)}“ — ${b.cite}`;
+  if ("stats" in b) return b.stats.map((x) => `- ${plainText(x.value)}: ${plainText(x.label)}${x.note ? ` (${plainText(x.note)})` : ""}`).join("\n");
+  if ("timeline" in b) return b.timeline.map((x) => `- ${x.date}: ${plainText(x.title)}${x.text ? ` – ${plainText(x.text)}` : ""}`).join("\n");
+  if ("story" in b) return b.story.map((x) => `- ${x.time} ${plainText(x.title)}: ${plainText(x.text)}`).join("\n");
+  if ("conditions" in b) return b.conditions.map((x, i) => `${i + 1}. ${plainText(x.title)}: ${plainText(x.text)}`).join("\n");
   return "";
 }
 

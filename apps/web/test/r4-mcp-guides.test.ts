@@ -8,7 +8,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { mapRzp, mapSubject } from "@ez/cz";
-import { GUIDES, isIndexable } from "@/content/guides";
+import { GUIDES, isMachineReadable } from "@/content/guides";
 import { ARES_FIXTURES } from "@/lib/server/ares-fixtures";
 import { createEetMcpServer, type McpDeps } from "@/lib/mcp/server";
 
@@ -83,7 +83,7 @@ describe("Ф9 – MCP serves only reviewed guides", () => {
 
   it("gate: no MCP tool (all of them, eet_check_ico with ARES fixtures) returns a slug or a link of a guide without review", async () => {
     expect(unreviewed.length).toBeGreaterThan(0);
-    expect(unreviewed.every((g) => !isIndexable(g))).toBe(true);
+    expect(unreviewed.every((g) => !isMachineReadable(g))).toBe(true);
     const all = await everything(await connect());
     // slug jako samostatné slovo nebo náš odkaz /navody/…; cesta v URL zdroje (eet.gov.cz/cs/eet-off/…) se nepočítá
     const leaked = unreviewed.filter((g) => all.includes(`/navody/${g.slug}`) || new RegExp(`(?<![\\w/.-])${g.slug}(?![\\w/-])`).test(all));

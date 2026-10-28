@@ -48,6 +48,7 @@ export const eet20KompletniPruvodce: Guide = {
       id: "harmonogram",
       heading: "Harmonogram: klíčová data 2026–2027",
       blocks: [
+        { timeline: TIMELINE.map((t) => ({ date: t.dateLabel, title: t.title })) },
         {
           table: {
             head: ["Datum", "Co se děje", "Co udělat"],
@@ -85,6 +86,14 @@ export const eet20KompletniPruvodce: Guide = {
       id: "co-se-eviduje",
       heading: "Co se eviduje: kontaktní platby",
       blocks: [
+        { p: "Evidovat musíte platbu, u které platí **tři věci najednou**:" },
+        {
+          conditions: [
+            { title: "Příjem z podnikání", text: "Platba je vaší tržbou z podnikání – ne příjmem ze zaměstnání, z nájmu ani ojedinělou tržbou." },
+            { title: "Kontaktní platba", text: "Zaplaceno při osobním kontaktu, v provozovně nebo hotově – kartou, hotově, QR kódem i stravenkou." },
+            { title: "Žádná výjimka", text: "Vaše činnost není mezi zákonnými výjimkami (§ 11–13), jako jsou prodejní automaty nebo veřejné toalety." },
+          ],
+        },
         {
           p: "Klíčový pojem nového zákona je **kontaktní platba** – platba přijatá při osobním kontaktu se zákazníkem nebo v souvislosti s objednáním či převzetím zboží a služby v provozovně. Rozhoduje okolnost platby, ne platební prostředek.",
         },

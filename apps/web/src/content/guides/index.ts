@@ -1,5 +1,6 @@
 import type { Guide } from "./types";
 import { eet20KompletniPruvodce } from "./eet-2-0-kompletni-pruvodce";
+import { eet20VPrikladech } from "./eet-2-0-v-prikladech";
 import { eet20VsEet10 } from "./eet-2-0-vs-eet-1-0";
 import { eetAPausalniDan } from "./eet-a-pausalni-dan";
 import { eetBezInternetu } from "./eet-bez-internetu";
@@ -20,7 +21,9 @@ import { kontaktniPlatba } from "./kontaktni-platba";
 import { musimVydavatUctenku } from "./musim-vydavat-uctenku";
 import { pokladnaVMobiluZdarma } from "./pokladna-v-mobilu-zdarma";
 import { pokutyEet } from "./pokuty-eet";
+import { prvniTydenSEet } from "./prvni-tyden-s-eet";
 import { slevaNaDaniZaEet } from "./sleva-na-dani-za-eet";
+import { spropitneAEet } from "./spropitne-a-eet";
 import { stornoAVraceniEet } from "./storno-a-vraceni-eet";
 import { trzbaZaJineho } from "./trzba-za-jineho";
 
@@ -32,6 +35,10 @@ export const GUIDES: readonly Guide[] = [
   eet20KompletniPruvodce,
   kohoSeEetTyka,
   kontaktniPlatba,
+  // S7-VIZ (28. 10. 2026): oficiální příklady MF a FS – indexují se hned (basis "official", Ф15)
+  eet20VPrikladech,
+  spropitneAEet,
+  prvniTydenSEet,
   eetOff,
   // S5-SLUŽBY (26. 10. 2026): koncepty do revize
   eetOnNeboOffModeloveSituace,
@@ -67,6 +74,11 @@ export function getGuide(slug: string): Guide | undefined {
  * GUIDES_INDEX_UNREVIEWED=1 indexuje i nerevidované — jen po rozhodnutí týmu.
  */
 export function isIndexable(g: Guide): boolean {
+  return !!g.reviewedBy || g.basis === "official" || process.env.GUIDES_INDEX_UNREVIEWED === "1";
+}
+
+/** Strojové kanály (llms.txt, MCP) vydají návod až po odborné revizi (Ф9) – i ten, který jen převypráví oficiální příklady. */
+export function isMachineReadable(g: Guide): boolean {
   return !!g.reviewedBy || process.env.GUIDES_INDEX_UNREVIEWED === "1";
 }
 

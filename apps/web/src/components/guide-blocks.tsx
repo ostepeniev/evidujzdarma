@@ -91,6 +91,85 @@ export function GuideBlock({ block }: { block: Block }) {
         <figcaption className="mt-2 text-base text-ink-soft">— {block.cite}</figcaption>
       </figure>
     );
+  // S7-VIZ: vizuální bloky – velká čísla, časová osa, příběh po hodinách, podmínky „+“
+  if ("stats" in block)
+    return (
+      <div className={`not-prose my-8 grid gap-4 ${block.stats.length >= 3 ? "sm:grid-cols-3" : "sm:grid-cols-2"}`} data-block="stats">
+        {block.stats.map((x, i) => (
+          <div key={i} className="rounded-2xl bg-brand-900 p-6 text-white shadow-sm">
+            <p className="m-0 text-4xl font-extrabold tracking-tight text-sun-300 sm:text-5xl">{x.value}</p>
+            <p className="m-0 mt-2 text-base font-semibold leading-snug">
+              <RichText text={x.label} />
+            </p>
+            {x.note && (
+              <p className="m-0 mt-1 text-sm leading-snug text-brand-100">
+                <RichText text={x.note} />
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  if ("timeline" in block)
+    return (
+      <ol className="not-prose relative my-8 ml-3 list-none border-l-4 border-sun-300 p-0" data-block="timeline">
+        {block.timeline.map((x, i) => (
+          <li key={i} className="relative mb-6 pl-7 last:mb-0">
+            <span aria-hidden="true" className="absolute -left-[16px] top-1 h-7 w-7 rounded-full border-4 border-white bg-sun-500" />
+            <p className="m-0 text-lg font-extrabold text-brand-700">{x.date}</p>
+            <p className="m-0 text-base font-semibold text-ink">
+              <RichText text={x.title} />
+            </p>
+            {x.text && (
+              <p className="m-0 mt-1 text-base text-ink-soft">
+                <RichText text={x.text} />
+              </p>
+            )}
+          </li>
+        ))}
+      </ol>
+    );
+  if ("story" in block)
+    return (
+      <div className="not-prose my-8 space-y-4" data-block="story">
+        {block.story.map((x, i) => (
+          <div key={i} className="flex gap-4">
+            <span className="h-fit shrink-0 rounded-xl bg-ink px-3 py-2 font-mono text-base font-bold text-sun-300">{x.time}</span>
+            <div className="flex-1 rounded-2xl border border-line bg-white p-5 shadow-sm">
+              <p className="m-0 text-lg font-bold text-ink">
+                <RichText text={x.title} />
+              </p>
+              <p className="m-0 mt-2 text-base leading-relaxed text-ink-soft">
+                <RichText text={x.text} />
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  if ("conditions" in block)
+    return (
+      <div className="not-prose my-8 flex flex-col items-stretch gap-3 sm:flex-row" data-block="conditions">
+        {block.conditions.map((x, i) => (
+          <div key={i} className="contents">
+            {i > 0 && (
+              <span aria-hidden="true" className="flex items-center justify-center text-3xl font-extrabold text-sun-500">
+                +
+              </span>
+            )}
+            <div className="flex-1 rounded-2xl border-2 border-brand-200 bg-brand-50 p-5">
+              <p className="m-0 text-sm font-bold uppercase tracking-wide text-brand-700">{i + 1}.</p>
+              <p className="m-0 mt-1 text-lg font-bold text-ink">
+                <RichText text={x.title} />
+              </p>
+              <p className="m-0 mt-2 text-base text-ink-soft">
+                <RichText text={x.text} />
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
   const cta = CTAS[block.cta];
   return (
     <div className="not-prose my-8 flex flex-col items-start gap-3 rounded-2xl border border-brand-200 bg-brand-50 p-5 sm:flex-row sm:items-center sm:justify-between">

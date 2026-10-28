@@ -43,6 +43,14 @@ export const eetBezInternetu: Guide = {
           ],
         },
         {
+          timeline: [
+            { date: "Pondělí 10:00", title: "Platba bez signálu", text: "Prodáváte dál, pokladna tržbu uloží." },
+            { date: "Pondělí 12:30", title: "Signál je zpět", text: "Tržbu odešlete hned – bezodkladně." },
+            { date: "Středa 10:00", title: "Konec lhůty 48 hodin", text: "Nejpozději teď musí být tržba odeslána." },
+            { date: "Potom", title: "Povinnost trvá dál", text: "Neodeslanou tržbu pošlete i po lhůtě – za neodeslání ale hrozí pokuta." },
+          ],
+        },
+        {
           // čas slovesa podle stavu pokladny (R12.1) – fakta stejná, nová revize ani záznam v historii nejsou potřeba
           note: SERVICE_COPY.offlineNote,
         },

@@ -14,7 +14,15 @@ export type Block =
   | { note: string; tone?: "info" | "warn" }
   | { cta: "registrace" | "kontrola-ico" | "eet-off" | "jednotky" | "qr" | "kviz" }
   /** citát s podpisem (bez „—“), např. recenzentky (R10.5) */
-  | { quote: string; cite: string };
+  | { quote: string; cite: string }
+  /** S7-VIZ: velká čísla (2–4 dlaždice) – hodnota, popisek, volitelně poznámka */
+  | { stats: { value: string; label: string; note?: string }[] }
+  /** S7-VIZ: časová osa – datum, titulek, volitelně text */
+  | { timeline: { date: string; title: string; text?: string }[] }
+  /** S7-VIZ: příběh po hodinách – čas, titulek, text (co se stalo a co platí) */
+  | { story: { time: string; title: string; text: string }[] }
+  /** S7-VIZ: podmínky, které musí platit všechny najednou (zobrazí se se znaménkem +) */
+  | { conditions: { title: string; text: string }[] };
 
 export interface GuideSection {
   /** kotva pro obsah, např. "kdo-eviduje" */
@@ -58,4 +66,10 @@ export interface Guide {
   author?: string;
   /** kdo návod odborně revidoval (REVIEWER.name, R8.10); do té doby null = noindex (Ф9) */
   reviewedBy: string | null;
+  /**
+   * S7-VIZ (rozhodnutí vlastníka 28. 10. 2026, DECISIONS Ф15): "official" = návod jen převypráví oficiální příklady
+   * MF a FS a znění zákona se zdroji, bez vlastního daňového výkladu → indexuje se hned, i před odbornou revizí.
+   * Strojové kanály (llms.txt, MCP) ho dál vydají až po revizi (Ф9).
+   */
+  basis?: "official";
 }

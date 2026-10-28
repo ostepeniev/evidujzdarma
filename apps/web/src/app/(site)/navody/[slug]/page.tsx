@@ -71,6 +71,8 @@ export default async function GuidePage({ params }: PageProps<"/navody/[slug]">)
             </span>
           ) : g.reviewedBy ? (
             <span>Odborná revize: {g.reviewedBy}</span>
+          ) : g.basis === "official" ? (
+            <span>Podle oficiálních příkladů Ministerstva financí a Finanční správy · odbornou revizi připravujeme</span>
           ) : (
             <span>Před odbornou revizí</span>
           )}

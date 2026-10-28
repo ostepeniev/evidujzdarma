@@ -26,6 +26,9 @@ export const SERVICE_COPY = isClosed("/pokladna")
       offlineNote:
         "Pokladna EvidujZdarma, kterou připravujeme, bude u každé neodeslané tržby ukazovat, kolik času do konce lhůty zbývá, a upozorní vás dřív, než lhůta vyprší.",
       certificateComment: "Pro podnikatele je to detail – důležité je, že bez certifikátu z DIS+ evidovat nejde. Naše pokladna bude podpis řešit sama, certifikát jen nahrajete.",
+      /** S7-VIZ: návod Spropitné a EET 2.0, oddíl „Spropitné v pokladně“ */
+      tipsNote:
+        "V pokladně EvidujZdarma, kterou připravujeme, budete spropitné zadávat u platby kartou do samostatného pole. Bude se evidovat spolu s platbou a v přehledu dne i v exportu pro účetní ho uvidíte zvlášť. Při vrácení zboží se spropitné nevrací.",
       /** tlačítko bloku „Proč je to zdarma?“ a tlačítka dole na telefonu (R14.1, R14.5) */
       startCta: { label: "Předregistrovat se zdarma", href: "/#registrace" },
     }
@@ -42,6 +45,8 @@ export const SERVICE_COPY = isClosed("/pokladna")
       offlineFaq: "Naše pokladna tržbu uloží v zařízení, odešle ji sama, jakmile je spojení, a ukazuje, kolik času do konce lhůty zbývá.",
       offlineNote: "Pokladna EvidujZdarma ukazuje u každé neodeslané tržby, kolik času do konce lhůty zbývá, a upozorní vás dřív, než lhůta vyprší.",
       certificateComment: "Pro podnikatele je to detail – důležité je, že bez certifikátu z DIS+ evidovat nejde. Naše pokladna podpis řeší sama, certifikát jen nahrajete.",
+      tipsNote:
+        "V pokladně EvidujZdarma zadáte spropitné u platby kartou do samostatného pole. Eviduje se spolu s platbou a v přehledu dne i v exportu pro účetní ho uvidíte zvlášť. Při vrácení zboží se spropitné nevrací.",
       // po otevření pokladny vede rovnou na přihlášení – účet se založí při prvním přihlášení (R17.2)
       startCta: { label: "Začít zdarma", href: "/prihlaseni" },
     };

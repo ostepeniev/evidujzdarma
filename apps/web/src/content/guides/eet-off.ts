@@ -62,6 +62,13 @@ export const eetOff: Guide = {
       heading: "Kolik vás EET OFF stojí",
       blocks: [
         {
+          stats: [
+            { value: formatKc(FACTS.eetOff.surchargeMonthly), label: "přirážka měsíčně", note: "k paušální záloze v 1. pásmu" },
+            { value: formatKc(FACTS.eetOff.surchargeYearly), label: "navíc za celý rok", note: "volba platí na celý kalendářní rok" },
+            { value: FACTS.eetOff.deadline, label: "poslední den pro přihlášení", note: "pozdní oznámení je neúčinné" },
+          ],
+        },
+        {
           table: {
             head: ["", "Bez EET OFF", "S EET OFF"],
             rows: [

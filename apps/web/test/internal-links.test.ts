@@ -5,7 +5,7 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
-import { GUIDES, isIndexable } from "@/content/guides";
+import { GUIDES, isMachineReadable } from "@/content/guides";
 import { llmsFullTxt, llmsTxt } from "@/lib/llms";
 import { STATIC_PAGES } from "@/lib/static-pages";
 
@@ -67,12 +67,13 @@ describe("R2.9 – no internal 404", () => {
     expect(STATIC_PAGES.filter((p) => !resolves(p.path)).map((p) => p.path)).toEqual([]);
   });
 
+  // S7-VIZ: strojové kanály vydají jen revidované návody (isMachineReadable, Ф9) – i když je návod z oficiálních příkladů indexovaný
   it("llms.txt and llms-full.txt list only indexable guides", () => {
-    const hidden = GUIDES.filter((g) => !isIndexable(g));
+    const hidden = GUIDES.filter((g) => !isMachineReadable(g));
     for (const g of hidden) {
       expect(llmsTxt(), g.slug).not.toContain(`/navody/${g.slug})`);
       expect(llmsFullTxt(), g.slug).not.toContain(`/navody/${g.slug} ·`);
     }
-    for (const g of GUIDES.filter(isIndexable)) expect(llmsTxt()).toContain(`/navody/${g.slug})`);
+    for (const g of GUIDES.filter(isMachineReadable)) expect(llmsTxt()).toContain(`/navody/${g.slug})`);
   });
 });

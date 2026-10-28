@@ -112,6 +112,10 @@ function blockText(b: Block): string[] {
   if ("table" in b) return [...b.table.head, ...b.table.rows.flat(), b.table.caption ?? ""];
   if ("note" in b) return [b.note];
   if ("quote" in b) return [b.quote];
+  if ("stats" in b) return b.stats.flatMap((x) => [x.value, x.label, x.note ?? ""]);
+  if ("timeline" in b) return b.timeline.flatMap((x) => [x.date, x.title, x.text ?? ""]);
+  if ("story" in b) return b.story.flatMap((x) => [x.time, x.title, x.text]);
+  if ("conditions" in b) return b.conditions.flatMap((x) => [x.title, x.text]);
   return [];
 }
 

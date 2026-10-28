@@ -95,6 +95,12 @@ export const eetGastronomie: Guide = {
         },
         { h3: "Osvobození spropitného zaměstnanců od daně" },
         {
+          stats: [
+            { value: "7 %", label: "měsíčních tržeb restaurace", note: "strop pro všechny zaměstnance dohromady" },
+            { value: "70 000 Kč", label: "osvobozené spropitné při tržbách 1 000 000 Kč", note: "příklad Ministerstva financí" },
+          ],
+        },
+        {
           p: "Zákon č. 180/2026 Sb. zároveň od 1. 1. 2027 mění daň z příjmů: **spropitné ze stravovacích služeb**, které dostane zaměstnanec, je osvobozené až do **7 %** měsíčních příjmů podniku ze stravovacích služeb (rozpočítaných na zaměstnance, kteří spropitné dostali). Za plátce tohoto příjmu se považuje zaměstnavatel.",
         },
         {
@@ -210,7 +216,7 @@ export const eetGastronomie: Guide = {
     SOURCES.zos,
     SOURCES.zdp,
   ],
-  related: ["kontaktni-platba", "trzba-za-jineho", "eet-bez-internetu", "evidencni-jednotka"],
+  related: ["spropitne-a-eet", "kontaktni-platba", "trzba-za-jineho", "eet-bez-internetu"],
   published: "2026-10-15",
   updated: "2026-10-28",
   changelog: [
