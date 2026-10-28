@@ -77,7 +77,18 @@ export const kohoSeEetTyka: Guide = {
               ["Finance a veřejný sektor", "Banky, pojišťovny, investiční společnosti, nebankovní spotřebitelské úvěry, platební instituce; stát, obce, příspěvkové organizace", "§ 11, § 12 odst. 2"],
               ["Spolky a neziskovky", "Drobná vedlejší podnikatelská činnost veřejně prospěšných poplatníků; akce v rámci hlavní činnosti (ples, slavnost) nejsou podnikáním", "§ 12 odst. 1 (limity Finanční správa zatím nezveřejnila)"],
               ["Automaty", "Prodejní automaty; samoobslužná zařízení mimo provozovnu, pokud evidence není ani s přiměřenými náklady možná", "§ 13 odst. 2–4"],
-              ["Další", "Veřejné toalety; prodej sladkovodních ryb od 18. do 24. 12. v provozovně, která v tu dobu prodává jen je", "§ 13 odst. 5"],
+              ["Zaměstnanci a školy", "Tržby ze vztahu souvisejícího s pracovněprávním vztahem (například obědy pro vlastní zaměstnance); stravování a ubytování dětí, žáků a studentů, které poskytuje škola nebo školské zařízení", "§ 12 odst. 1"],
+              [
+                "Nevidomí a hluchoslepí",
+                "Podnikatel s nárokem na průkaz ZTP nebo ZTP/P kvůli oboustranné těžké ztrátě zraku, úplné nebo praktické nevidomosti či hluchoslepotě – pokud nevyužívá zaměstnance ani spolupracující osoby, které tuto podmínku nesplňují",
+                "§ 11 odst. 4 a 5",
+              ],
+              ["Nová firma", "Tržby právnické osoby do přidělení DIČ a 10 dní po jeho přidělení", "§ 13 odst. 1"],
+              [
+                "Další",
+                "Veřejné toalety; prodej sladkovodních ryb od 18. do 24. 12. v provozovně, která v tu dobu prodává jen je; platba za služby přes veřejnou mobilní síť, která je čerpáním jiné platby",
+                "§ 13 odst. 5",
+              ],
             ],
             caption: "Výjimka se vztahuje jen na danou činnost. Kdo má vedle ní i jiné tržby, eviduje je.",
           },
@@ -86,7 +97,7 @@ export const kohoSeEetTyka: Guide = {
           p: "Výjimka je vždy **věcná**: týká se jen konkrétní činnosti, ne podnikatele jako celku. Pokud provozujete například hernu a vedle ní bar, tržby z baru evidujete.",
         },
         {
-          note: "Výčet jsme 15. 10. 2026 ověřili podle zákona č. 180/2026 Sb. (§ 11–13). Pokud vaše činnost leží na hraně výjimky (samoobslužná zařízení, spolky, doprava), ověřte si to na [eet.gov.cz](https://eet.gov.cz) nebo u daňového poradce.",
+          note: "Výčet jsme 28. 10. 2026 ověřili podle zákona č. 180/2026 Sb. (§ 11–13). Pokud vaše činnost leží na hraně výjimky (samoobslužná zařízení, spolky, doprava), ověřte si to na [eet.gov.cz](https://eet.gov.cz) nebo u daňového poradce.",
           tone: "warn",
         },
       ],
@@ -170,8 +181,12 @@ export const kohoSeEetTyka: Guide = {
   ],
   related: ["kontaktni-platba", "eet-off", "eet-2-0-kompletni-pruvodce"],
   published: "2026-10-01",
-  updated: "2026-10-02",
+  updated: "2026-10-28",
   changelog: [
+    {
+      date: "2026-10-28",
+      text: "Doplněny výjimky podle zákona č. 180/2026 Sb.: nevidomí a hluchoslepí podnikatelé, pracovněprávní vztahy a školní stravování, nová právnická osoba do přidělení DIČ a platby přes mobilní síť.",
+    },
     { date: "2026-10-15", text: "Výčet vyjmutých činností ověřen podle zákona č. 180/2026 Sb. (§ 11–13): doplněny veřejné toalety, upřesněny automaty a prodej ryb před Vánoci." },
     { date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
     {

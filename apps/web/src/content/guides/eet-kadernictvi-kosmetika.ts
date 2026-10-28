@@ -88,7 +88,7 @@ export const eetKadernictviKosmetika: Guide = {
       heading: "Spropitné",
       blocks: [
         {
-          p: "Výslovné stanovisko Finanční správy ke spropitnému v EET 2.0 jsme k 1. 10. 2026 nenašli. Prakticky: když klient zaplatí kartou částku včetně spropitného, terminál i pokladna pracují s celkovou částkou, kterou salon přijal. Spropitné dané přímo do ruky kadeřnici je jiná situace. Jak spropitné správně zdanit a evidovat, doporučujeme probrat s daňovým poradcem.",
+          p: "Podle prezentace Ministerstva financí a Finanční správy k EET 2.0 rozhoduje, **čí je spropitné příjem**. Spropitné pro salon nebo pro kadeřnici, která je OSVČ, je příjmem z podnikání, a tedy evidovanou tržbou – eviduje ho ten, komu patří. Spropitné, které je příjmem zaměstnankyně, evidenci nepodléhá; evidovat ho lze dobrovolně. Když klient zaplatí kartou částku včetně spropitného, pokladna ji může evidovat celou. Nové osvobození spropitného od daně z příjmů se týká jen spropitného ze stravovacích služeb, ne salonů. Jak spropitné zdanit, proberte s účetní.",
         },
       ],
     },
@@ -141,8 +141,9 @@ export const eetKadernictviKosmetika: Guide = {
   sources: [SOURCES.mfPredstavuje, SOURCES.kdoMusi, SOURCES.jakZacit, SOURCES.eetOff, SOURCES.mojeEet, SOURCES.podnikatelDetail, SOURCES.seminarVyvojari],
   related: ["trzba-za-jineho", "eet-off", "musim-vydavat-uctenku"],
   published: "2026-10-01",
-  updated: "2026-10-03",
+  updated: "2026-10-28",
   changelog: [
+    { date: "2026-10-28", text: "Spropitné doplněno podle prezentace Ministerstva financí a Finanční správy: eviduje se, když je příjmem salonu nebo OSVČ." },
     { date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
     { date: "2026-10-03", text: "Opraveno podle semináře Finanční správy pro vývojáře: záloha a doplatek jsou dvě běžné platby, dárkový poukaz se eviduje jen při prodeji (jeho uplatnění není platbou) a částku určenou k čerpání a čerpání uvádí pokladna jen u kreditu." },{ date: "2026-10-01", text: "Opraveno podle schváleného znění zákona: evidovat se musí od 1. 1. 2027, ne od 1. 2. 2027." }],
   reviewedBy: REVIEWER.name,

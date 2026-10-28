@@ -6,7 +6,9 @@ const DIS = timelineAt("2026-11-01");
 
 /**
  * S1 (15. 10. 2026): návod pro gastro – v audit chyběl (M3). Koncept před odbornou revizí (Ф9): reviewedBy null = noindex.
- * Spropitné a rozvoz bez výslovného stanoviska FS = „zatím není jisté“ + doporučení probrat s účetní.
+ * Rozvoz bez výslovného stanoviska FS = „zatím není jisté“ + doporučení probrat s účetní.
+ * S6-FS (28. 10. 2026): spropitné podle prezentace MF a FS pro vývojáře (SOURCES.seminarVyvojari, slajdy „Spropitné“
+ * a „Osvobození spropitného v ZDP“).
  */
 export const eetGastronomie: Guide = {
   slug: "eet-gastronomie",
@@ -86,13 +88,27 @@ export const eetGastronomie: Guide = {
       heading: "Spropitné",
       blocks: [
         {
-          p: "Výslovné stanovisko Finanční správy, jak spropitné v EET 2.0 evidovat, jsme k 15. 10. 2026 nenašli. Prakticky: když host zaplatí kartou částku včetně spropitného, terminál i pokladna pracují s celkovou přijatou částkou. Spropitné, které host dá číšníkovi přímo do ruky, je jiná situace.",
+          p: "Ministerstvo financí a Finanční správa v prezentaci k EET 2.0 vysvětlují, že u spropitného rozhoduje, **čí je to příjem**. Když je spropitné příjmem z podnikání – host ho dává restauraci nebo číšníkovi, který je OSVČ –, je evidovanou tržbou a eviduje ho ten, komu spropitné patří. Když je příjmem zaměstnance (číšníka, kuchaře), evidenci nepodléhá. Evidovat ho ale lze dobrovolně, například kvůli osvobození na straně zaměstnance.",
         },
+        {
+          p: "Pokladna, která spropitné zadané u platby kartou eviduje spolu s platbou, tak postupuje správně v obou případech: u spropitného podniku nebo OSVČ je to povinné, u spropitného zaměstnanců dobrovolné.",
+        },
+        { h3: "Osvobození spropitného zaměstnanců od daně" },
         {
           p: "Zákon č. 180/2026 Sb. zároveň od 1. 1. 2027 mění daň z příjmů: **spropitné ze stravovacích služeb**, které dostane zaměstnanec, je osvobozené až do **7 %** měsíčních příjmů podniku ze stravovacích služeb (rozpočítaných na zaměstnance, kteří spropitné dostali). Za plátce tohoto příjmu se považuje zaměstnavatel.",
         },
         {
-          note: "Jak spropitné v pokladně účtovat, evidovat a rozdělovat mezi zaměstnance, doporučujeme probrat s účetní nebo daňovým poradcem. Návod doplníme, až Finanční správa vydá výklad.",
+          ul: [
+            "**Jen zaměstnanci.** Spropitné majitele ani OSVČ osvobozené není.",
+            "**Jen tam, kde se jí na místě.** Neplatí pro stánky, food trucky ani prodej přes okénko („take away“).",
+            "**Limit pro celý podnik.** 7 % z měsíčních tržeb restaurace platí pro všechny zaměstnance dohromady, ne pro každého číšníka zvlášť. Při tržbách 1 000 000 Kč za měsíc může být osvobozeno až 70 000 Kč spropitného; zbytek se zdaní běžně.",
+            "**Jen dobrovolné spropitné.** Neplatí pro povinné poplatky typu couvert ani pro servisní přirážku.",
+            "**Hotovost i karta.** Nezáleží na tom, zda host nechá spropitné v hotovosti, nebo ho připíše k platbě kartou – i když projde přes účet provozovny.",
+            "**Přehled o spropitném.** Restaurace jako plátce musí mít přehled o tom, kolik spropitného zaměstnanci dostali.",
+          ],
+        },
+        {
+          note: "Jak spropitné účtovat, zdanit a rozdělovat mezi zaměstnance, proberte s účetní nebo daňovým poradcem.",
           tone: "info",
         },
       ],
@@ -162,7 +178,7 @@ export const eetGastronomie: Guide = {
     },
     {
       q: "Eviduje se spropitné?",
-      a: "Výslovné stanovisko Finanční správy zatím není. Když host zaplatí kartou i se spropitným, pokladna pracuje s celkovou přijatou částkou. Postup doporučujeme probrat s účetní.",
+      a: "Záleží na tom, čí je to příjem. Spropitné pro restauraci nebo pro číšníka, který je OSVČ, je evidovanou tržbou. Spropitné, které je příjmem zaměstnance, evidenci nepodléhá, evidovat ho ale lze dobrovolně. Daňové zacházení proberte s účetní.",
     },
     { q: "Musím hostům vydávat účtenky?", a: FACTS.receipt.summary },
     {
@@ -196,8 +212,12 @@ export const eetGastronomie: Guide = {
   ],
   related: ["kontaktni-platba", "trzba-za-jineho", "eet-bez-internetu", "evidencni-jednotka"],
   published: "2026-10-15",
-  updated: "2026-10-17",
+  updated: "2026-10-28",
   changelog: [
+    {
+      date: "2026-10-28",
+      text: "Spropitné doplněno podle prezentace Ministerstva financí a Finanční správy: kdy se eviduje a za jakých podmínek je u zaměstnanců osvobozené.",
+    },
     { date: "2026-10-17", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
     { date: "2026-10-15", text: "Koncept návodu – před odbornou revizí." },
   ],

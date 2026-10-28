@@ -63,9 +63,12 @@ describe("R12.1 – the last present-tense texts about the register", () => {
     expect(pages.page).toContain(`${FACTS.offline.summary} ${CLOSED.offlineFaq}`);
     expect(pages.guide).toContain(CLOSED.offlineNote);
     expect(pages["co-se-o-eet-pise-spatne/page"]).toContain(CLOSED.certificateComment);
-    // ověřený návod: mění se jen čas slovesa, historie změn bez nového záznamu
+    // ověřený návod: R12.1 měnil jen čas slovesa, historie změn bez záznamu R12.1
+    // (pozdější věcné doplnění S6-FS 28. 10. 2026 přidává vlastní záznam nahoru)
     const { getGuide } = await import("@/content/guides");
-    expect(getGuide("eet-bez-internetu")!.changelog?.[0]?.text).toBe("Návod prošel odbornou revizí (Helena Jeřábková).");
+    const log = getGuide("eet-bez-internetu")!.changelog ?? [];
+    expect(log).toContainEqual({ date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." });
+    expect(log.filter((c) => c.date > "2026-10-07").map((c) => c.date)).toEqual(["2026-10-28"]);
   });
 
   it("open (mock) – today's texts come back", async () => {

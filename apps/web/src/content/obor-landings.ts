@@ -259,7 +259,7 @@ const RESTAURACE: OborLanding = {
   chips: ["Restaurace", "Hospoda", "Bar", "Zahrádka"],
   pains: [
     { title: "Každý host zvlášť", text: "Když hosté platí každý sám, eviduje se každá platba zvlášť." },
-    { title: "Spropitné: osvobození až 7 %", text: "Od 1. 1. 2027 je spropitné zaměstnanců ze stravovacích služeb osvobozené až do 7 % měsíčních příjmů podniku z těchto služeb." },
+    { title: "Spropitné: osvobození až 7 %", text: "Od 1. 1. 2027 je spropitné zaměstnanců osvobozené až do 7 % měsíčních tržeb restaurace – jen tam, kde hosté jedí na místě." },
     { title: "Zahrádka patří k provozovně", text: "Bar a restauraci pod jednou střechou můžete oznámit jako samostatné funkční části." },
     { title: "Obědy zaměstnanců ne", text: "Jídla pro vlastní zaměstnance zákon z evidence vyjímá (§ 12). Hosté zvenku se evidují." },
   ],
@@ -275,8 +275,8 @@ const RESTAURACE: OborLanding = {
       id: "spropitne",
       q: "Nechávají vám hosté spropitné na kartě?",
       yes: {
-        tone: "maybe",
-        text: "Výslovné stanovisko Finanční správy ke spropitnému v EET 2.0 zatím není. Když host zaplatí kartou i se spropitným, pokladna pracuje s celkovou přijatou částkou. Od **1. 1. 2027** je spropitné zaměstnanců ze stravovacích služeb osvobozené až do **7 %** měsíčních příjmů podniku z těchto služeb. Postup proberte s účetní.",
+        tone: "info",
+        text: "Záleží na tom, čí je spropitné příjem. Spropitné pro restauraci nebo pro číšníka, který je OSVČ, je evidovanou tržbou. Spropitné, které je příjmem zaměstnance, evidenci nepodléhá, evidovat ho ale lze dobrovolně – pokladna ho tak může evidovat spolu s platbou kartou. Od **1. 1. 2027** je spropitné zaměstnanců osvobozené od daně až do **7 %** měsíčních tržeb restaurace (jen u jídla na místě, ne u take away). Daňové zacházení proberte s účetní.",
       },
     },
     {

@@ -44,6 +44,7 @@ async function renderHelp(slug?: string): Promise<string> {
 
 describe("S3-OPEN 1a – guides sleva-na-dani-za-eet and storno-a-vraceni-eet reviewed", () => {
   const SLUGS = ["sleva-na-dani-za-eet", "storno-a-vraceni-eet"] as const;
+  const S6_MODIFIED: Record<(typeof SLUGS)[number], string> = { "sleva-na-dani-za-eet": "2026-10-17", "storno-a-vraceni-eet": "2026-10-28" };
 
   it("gate: reviewedBy, changelog 2026-10-17 on top, indexable, robots not set, reviewedBy in JSON-LD", async () => {
     const { getGuide, guideModified, isIndexable } = await import("@/content/guides");
@@ -52,8 +53,9 @@ describe("S3-OPEN 1a – guides sleva-na-dani-za-eet and storno-a-vraceni-eet re
     for (const slug of SLUGS) {
       const g = getGuide(slug)!;
       expect(g.reviewedBy, slug).toBe(REVIEWER.name);
-      expect(g.changelog?.[0], slug).toEqual({ date: "2026-10-17", text: "Návod prošel odbornou revizí (Helena Jeřábková)." });
-      expect(guideModified(g), slug).toBe("2026-10-17");
+      // S6-FS (28. 10. 2026) doplnilo storno podle prezentace MF a FS – záznam nad revizí, datum změny 28. 10.
+      expect(g.changelog?.filter((c) => c.date <= "2026-10-17")[0], slug).toEqual({ date: "2026-10-17", text: "Návod prošel odbornou revizí (Helena Jeřábková)." });
+      expect(guideModified(g), slug).toBe(S6_MODIFIED[slug]);
       expect(isIndexable(g), slug).toBe(true);
       expect(guideMetadata(g).robots, slug).toBeUndefined();
       expect(guideJsonLd(g).find((x) => x["@type"] === "Article"), slug).toHaveProperty("reviewedBy");
@@ -69,7 +71,7 @@ describe("S3-OPEN 1a – guides sleva-na-dani-za-eet and storno-a-vraceni-eet re
     for (const slug of SLUGS) {
       const e = sitemap().find((x) => x.url === absoluteUrl(`/navody/${slug}`));
       expect(e, slug).toBeTruthy();
-      expect(String(e!.lastModified), slug).toBe("2026-10-17");
+      expect(String(e!.lastModified), slug).toBe(S6_MODIFIED[slug]);
       expect(llmsTxt(), slug).toContain(`(${absoluteUrl(`/navody/${slug}`)})`);
       expect(llmsFullTxt(), slug).toContain(`URL: ${absoluteUrl(`/navody/${slug}`)}`);
       expect(publicGuides().map((g) => g.slug), slug).toContain(slug);

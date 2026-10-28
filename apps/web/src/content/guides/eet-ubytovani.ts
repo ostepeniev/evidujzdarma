@@ -10,12 +10,12 @@ export const eetUbytovani: Guide = {
   description:
     "Penzion, apartmány, Airbnb: co se od 1. 1. 2027 eviduje v EET 2.0 – platba na recepci, záloha převodem, Booking, kauce a místní poplatek z pobytu.",
   lead:
-    "Ubytovatel eviduje od **1. 1. 2027** všechny platby, které host zaplatí na místě – hotově, kartou nebo QR kódem na recepci. Neeviduje se záloha poslaná převodem ani platba přes Booking.com či Airbnb online. Jak naložit s vratnou kaucí a místním poplatkem z pobytu, Finanční správa k **1. 10. 2026** podrobně nevysvětlila.",
+    "Ubytovatel eviduje od **1. 1. 2027** všechny platby, které host zaplatí na místě – hotově, kartou nebo QR kódem na recepci. Neeviduje se záloha poslaná převodem ani platba přes Booking.com či Airbnb online. Vratná kauce se eviduje, až když ji započtete, například na škodu; místní poplatek z pobytu Finanční správa zatím podrobně nevysvětlila.",
   summary: [
     "Platby hostů na místě (recepce, check-in, check-out) se evidují – hotovost, karta i QR kód.",
     "Záloha nebo celá platba převodem, platební bránou či přes platformu online se neeviduje.",
     "Záloha zaplacená na místě se eviduje jako běžná platba, doplatek na místě také.",
-    "U vratné kauce a místního poplatku z pobytu zatím chybí metodika Finanční správy – ověřte u poradce.",
+    "Vratná kauce se při složení ani při vrácení neeviduje – jen částka, kterou z kauce složené na místě použijete.",
     "Horská chata bez signálu: tržbu lze odeslat dodatečně, nejpozději do 48 hodin.",
   ],
   sections: [
@@ -80,11 +80,14 @@ export const eetUbytovani: Guide = {
       heading: "Vratná kauce",
       blocks: [
         {
-          p: "Vratná kauce (jistota pro případ škody) není platbou za ubytování – po odjezdu ji hostovi vracíte. Podle dostupných výkladů se proto neeviduje. Jinak to může být, když kauci celou nebo zčásti ponecháte jako úhradu škody, úklidu nebo služby: pak se z ponechané částky může stát tržba.",
+          p: "Ministerstvo financí a Finanční správa v prezentaci k EET 2.0 popisují kauci takto: když ji host složí, platba se **neeviduje**. Když ji po odjezdu vrátíte, neeviduje se také – ani jako storno. Evidovanou tržbou se stane až tehdy, když kauci **použijete (započtete)**, například na úhradu škody, úklidu nebo služby. Eviduje se jen použitá částka, a to jen tehdy, když host kauci složil kontaktně – na recepci nebo jinak v osobním kontaktu.",
         },
         {
-          note: "Výslovné stanovisko Finanční správy ke kaucím v EET 2.0 jsme k 1. 10. 2026 nenašli. Pokud kauce vybíráte často a ve vyšších částkách, nechte si postup potvrdit daňovým poradcem.",
-          tone: "warn",
+          ul: [
+            "Host složí na recepci kauci 3 000 Kč v hotovosti a po odjezdu ji dostane celou zpět: neevidujete nic.",
+            "Z téže kauce si ponecháte 500 Kč na úhradu poškozeného povlečení: evidujete 500 Kč.",
+            "Kauci host poslal předem převodem a vy si z ní ponecháte 500 Kč: nejde o kontaktní platbu, neevidujete.",
+          ],
         },
       ],
     },
@@ -128,7 +131,7 @@ export const eetUbytovani: Guide = {
     },
     {
       q: "Eviduje se vratná kauce?",
-      a: "Podle dostupných výkladů ne, protože nejde o platbu za službu. Pokud ji ale ponecháte jako úhradu škody nebo služby, může se z ní stát tržba. Výslovné stanovisko Finanční správy zatím chybí.",
+      a: "Při složení ani při vrácení ne – ani stornem. Eviduje se až částka, kterou z kauce použijete (například na škodu), a jen tehdy, když host kauci složil kontaktně, třeba na recepci.",
     },
     {
       q: "Patří místní poplatek z pobytu do tržby v EET?",
@@ -142,8 +145,12 @@ export const eetUbytovani: Guide = {
   sources: [SOURCES.mfPredstavuje, SOURCES.kdoMusi, SOURCES.danovkyKontaktni, SOURCES.prakticke, SOURCES.jakZacit, SOURCES.vyvojari, SOURCES.zmp, SOURCES.seminarVyvojari],
   related: ["kontaktni-platba", "eet-bez-internetu", "evidencni-jednotka"],
   published: "2026-10-01",
-  updated: "2026-10-03",
+  updated: "2026-10-28",
   changelog: [
+    {
+      date: "2026-10-28",
+      text: "Vratná kauce doplněna podle prezentace Ministerstva financí a Finanční správy: eviduje se jen použitá částka z kauce složené na místě.",
+    },
     { date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
     { date: "2026-10-03", text: "Opraveno podle semináře Finanční správy pro vývojáře: záloha a doplatek jsou dvě běžné platby, dárkový poukaz se eviduje jen při prodeji (jeho uplatnění není platbou) a částku určenou k čerpání a čerpání uvádí pokladna jen u kreditu." },{ date: "2026-10-01", text: "Opraveno podle schváleného znění zákona: evidovat se musí od 1. 1. 2027, ne od 1. 2. 2027." }],
   reviewedBy: REVIEWER.name,

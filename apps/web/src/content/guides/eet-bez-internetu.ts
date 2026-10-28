@@ -39,7 +39,7 @@ export const eetBezInternetu: Guide = {
             "Prodávejte dál – přijetí platby výpadek neblokuje.",
             "Pokladna tržbu uloží v zařízení a zařadí ji do fronty k odeslání.",
             "Jakmile je spojení zpět, pokladna tržbu odešle znovu – s příznakem, že nejde o první zaslání.",
-            "Hlídejte lhůtu: nejpozději **48 hodin** od přijetí platby musí být tržba odeslána.",
+            "Hlídejte lhůtu: tržbu je třeba odeslat bezodkladně, jakmile výpadek pomine – ne kdykoliv později. Nejpozději **48 hodin** od přijetí platby musí být tržba odeslána.",
           ],
         },
         {
@@ -56,7 +56,7 @@ export const eetBezInternetu: Guide = {
           ul: [
             "**Nemažte data prohlížeče ani neodinstalujte aplikaci, dokud fronta neodeslaných tržeb není prázdná** – tržby čekají v paměti zařízení.",
             "**Dlouhý výpadek** (například na horách nebo na trhu bez signálu): po návratu na místo se signálem otevřete pokladnu, aby frontu odeslala.",
-            "**Opakované odeslání nevytváří novou tržbu** – pokladna posílá stejnou tržbu (stejné pořadové číslo, datum a částku), dokud nedostane POK. Tržby, ke kterým POK už přišel, se znovu neposílají.",
+            "**Opakované odeslání nevytváří novou tržbu** – pokladna posílá stejnou tržbu (stejné pořadové číslo, datum a částku), dokud nedostane POK. Nová je jen hlavička zprávy: identifikátor zprávy (UUID), datum a čas odeslání a příznak, že nejde o první zaslání. Tržby, ke kterým POK už přišel, se znovu neposílají.",
           ],
         },
         { cta: "registrace" },
@@ -70,7 +70,7 @@ export const eetBezInternetu: Guide = {
     },
     {
       q: "Co když se tržbu do 48 hodin nepodaří odeslat?",
-      a: `Neodeslání datové zprávy je porušení povinnosti, za které hrozí pokuta. ${FACTS.penalties.summary} Proto pokladna upozorňuje s předstihem.`,
+      a: `Odeslat ji musíte i tak – podle Finanční správy povinnost zaslat tržbu trvá i po uplynutí 48 hodin. Neodeslání včas je ale porušení povinnosti, za které hrozí pokuta. ${FACTS.penalties.summary} Proto pokladna upozorňuje s předstihem.`,
     },
     {
       q: "Jak dlouho má pokladna čekat na odpověď Finanční správy?",
@@ -81,11 +81,15 @@ export const eetBezInternetu: Guide = {
       a: "Finanční správa zatím nezveřejnila, zda MOJE eet bude fungovat bez připojení; podle dostupných informací ([Podnikatel.cz](https://www.podnikatel.cz/clanky/jak-bude-fungovat-aplikace-zdarma-moje-eet-zjistili-jsme-detaily-od-financni-spravy/)) připojení vyžaduje. Pokladna EvidujZdarma tržby bez signálu ukládá a odešle je automaticky později.",
     },
   ],
-  sources: [SOURCES.prakticke, SOURCES.fsFaq, SOURCES.prezident, SOURCES.pokuty, SOURCES.mojeEet],
+  sources: [SOURCES.prakticke, SOURCES.fsFaq, SOURCES.seminarVyvojari, SOURCES.prezident, SOURCES.pokuty, SOURCES.mojeEet],
   related: ["eet-2-0-kompletni-pruvodce", "evidencni-jednotka", "pokuty-eet", "eet-trhy-stanky"],
   published: "2026-10-01",
-  updated: "2026-10-02",
+  updated: "2026-10-28",
   changelog: [
+    {
+      date: "2026-10-28",
+      text: "Doplněno podle prezentace Ministerstva financí a Finanční správy: tržbu odeslat bezodkladně po výpadku, povinnost trvá i po 48 hodinách a co se při opakovaném odeslání mění.",
+    },
     { date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
     {
       date: "2026-10-01",

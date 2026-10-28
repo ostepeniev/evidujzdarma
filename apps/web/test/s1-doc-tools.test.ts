@@ -117,7 +117,8 @@ describe("S1 – /vzor-povereni (reviewed by the accountant on 17. 10. 2026, S3-
     const { getGuide } = await import("@/content/guides");
     const g = getGuide("trzba-za-jineho")!;
     expect(JSON.stringify(g.sections)).toContain("](/vzor-povereni)");
-    expect(g.changelog?.[0]).toEqual({ date: "2026-10-17", text: "Doplněn odkaz na vzor pověření k evidování tržeb." });
+    // S6-FS (28. 10. 2026) přidalo nad něj záznam o zastoupení
+    expect(g.changelog?.filter((c) => c.date <= "2026-10-17")[0]).toEqual({ date: "2026-10-17", text: "Doplněn odkaz na vzor pověření k evidování tržeb." });
     const { default: Page } = await import("@/app/(site)/vzor-povereni/page");
     expect(pageText(Page)).toContain("Odborná revize: Helena Jeřábková, účetní · 17. 10. 2026");
   });

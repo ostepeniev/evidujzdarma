@@ -30,7 +30,8 @@ describe("C1 – three guides (drafts until 17. 10. 2026, then reviewed)", () =>
       const g = getGuide(slug);
       expect(g, slug).toBeTruthy();
       expect(g!.reviewedBy, slug).toBe(REVIEWER.name);
-      expect(g!.changelog?.[0], slug).toEqual({ date: "2026-10-17", text: "Návod prošel odbornou revizí (Helena Jeřábková)." });
+      // S6-FS (28. 10. 2026) přidalo věcné doplnění nad záznam o revizi – revize zůstává nejnovějším záznamem do 17. 10.
+      expect(g!.changelog?.filter((c) => c.date <= "2026-10-17")[0], slug).toEqual({ date: "2026-10-17", text: "Návod prošel odbornou revizí (Helena Jeřábková)." });
       expect(isIndexable(g!), slug).toBe(true);
       expect(guideMetadata(g!).robots, slug).toBeUndefined();
       expect(guideJsonLd(g!).find((x) => x["@type"] === "Article"), slug).toHaveProperty("reviewedBy");

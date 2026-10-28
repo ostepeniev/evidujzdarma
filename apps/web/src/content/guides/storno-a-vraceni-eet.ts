@@ -17,7 +17,7 @@ export const stornoAVraceniEet: Guide = {
     "Když od **1. 1. 2027** vracíte zákazníkovi peníze za evidovanou tržbu nebo opravujete chybnou částku, evidujete to stejně jako tržbu, jen se **zápornou částkou** (§ 8 zákona o evidenci tržeb). Prodej, který zákazník ještě nezaplatil, se neeviduje, takže ho není co stornovat.",
   summary: [
     "Vrácení evidované tržby nebo její části se eviduje jako záporná tržba (§ 8).",
-    "Oprava chybné částky: storno původní tržby a nová tržba se správnou částkou.",
+    "Oprava chybné částky: storno a nová tržba se správnou částkou, nebo jedna rozdílová tržba – vždy s aktuálním datem a časem.",
     "Nezaplacený a zrušený účet se neeviduje – tržba vzniká až platbou.",
     "Storno se eviduje stejně jako tržba: při vrácení, bez signálu nejpozději do 48 hodin.",
     "Vrácení převodem k tržbě přijaté hotově Finanční správa zatím podrobně nepopsala.",
@@ -29,6 +29,9 @@ export const stornoAVraceniEet: Guide = {
       blocks: [
         {
           p: "Paragraf 8 zákona č. 180/2026 Sb. je krátký: vrací-li se evidovaná tržba nebo její část nebo provádí-li se její oprava, postupuje se obdobně jako při evidenci tržby, jen se tržba eviduje jako **záporná**. Pro storno tedy platí stejná pravidla jako pro prodej – stejná pokladna, stejný certifikát, stejná lhůta.",
+        },
+        {
+          p: "Ministerstvo financí a Finanční správa v prezentaci k EET 2.0 upřesňují, že storno ani oprava se na původní tržbu neváží. Storno je zpráva se zápornou částkou. Chybnou tržbu opravíte buď stornem a novou zprávou se správnou částkou, nebo jednou „rozdílovou“ zprávou. Obojí se posílá s **aktuálním datem a časem**, ne s datem a časem původní tržby, a vždy s novým identifikátorem zprávy (UUID).",
         },
         { p: FACTS.offline.summary },
       ],
@@ -44,7 +47,7 @@ export const stornoAVraceniEet: Guide = {
               ["Zákazník vrátí zboží a dostane peníze zpět hotově", "Zápornou tržbu ve výši vrácené částky"],
               ["Reklamace s vrácením části ceny", "Zápornou tržbu ve výši vrácené části"],
               ["Vrácení peněz na kartu přes terminál v provozovně", "Zápornou tržbu ve výši vrácené částky"],
-              ["Pokladní namarkovala 1 500 Kč místo 150 Kč a zákazník zaplatil správně", "Storno chybné tržby a novou tržbu 150 Kč"],
+              ["Pokladní namarkovala 1 500 Kč místo 150 Kč a zákazník zaplatil správně", "Storno chybné tržby a novou tržbu 150 Kč, nebo jednu rozdílovou tržbu −1 350 Kč"],
               ["Účet se zrušil dřív, než zákazník zaplatil", "Nic – tržba vzniká až platbou"],
               ["Výměna zboží za jiné za stejnou cenu", "Nic, pokud se neplatí ani nevrací peníze"],
             ],
@@ -83,7 +86,7 @@ export const stornoAVraceniEet: Guide = {
     },
     {
       q: "Pokladní se překlepla v částce. Co teď?",
-      a: "Chybnou tržbu stornujte (záporná tržba ve stejné výši) a zaevidujte novou se správnou částkou.",
+      a: "Chybnou tržbu stornujte (záporná tržba ve stejné výši) a zaevidujte novou se správnou částkou. Podle Finanční správy můžete poslat i jednu „rozdílovou“ zprávu na rozdíl mezi chybnou a správnou částkou. V obou případech s aktuálním datem a časem, ne s datem původní tržby.",
     },
     {
       q: "Musím evidovat zrušený účet, který zákazník nezaplatil?",
@@ -111,8 +114,12 @@ export const stornoAVraceniEet: Guide = {
   sources: [SOURCES.zakonUplne, SOURCES.sbirka, SOURCES.seminarVyvojari, SOURCES.prakticke, SOURCES.zos],
   related: ["kontaktni-platba", "musim-vydavat-uctenku", "eet-bez-internetu", "eet-ubytovani"],
   published: "2026-10-15",
-  updated: "2026-10-17",
+  updated: "2026-10-28",
   changelog: [
+    {
+      date: "2026-10-28",
+      text: "Doplněno podle prezentace Ministerstva financí a Finanční správy: storno se neváže na původní tržbu, posílá se s aktuálním datem a opravu lze poslat i jednou rozdílovou zprávou.",
+    },
     { date: "2026-10-17", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
     { date: "2026-10-15", text: "Koncept návodu – před odbornou revizí." },
   ],

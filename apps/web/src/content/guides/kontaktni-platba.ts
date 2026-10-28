@@ -75,7 +75,7 @@ export const kontaktniPlatba: Guide = {
     },
     {
       id: "zalohy-a-poukazy",
-      heading: "Zálohy, dárkové poukazy a kredit",
+      heading: "Zálohy, poukazy, kredit, kauce a další případy",
       blocks: [
         { p: FACTS.evidenced.prepayments },
         {
@@ -91,12 +91,16 @@ export const kontaktniPlatba: Guide = {
               ["Zákazník si dobije čip na 500 Kč", "Tržba 500 Kč jako částka určená k čerpání"],
               ["Zaplatí z čipu 120 Kč za službu", "Tržba s čerpáním 120 Kč"],
               ["Záloha převodem na účet dva týdny předem", "Neeviduje se (vzdálená platba)"],
+              ["Účet 1 000 Kč: host zaplatí 200 Kč stravenkou a 800 Kč kartou", "Jedna tržba 1 000 Kč (jedna platba dvěma způsoby)"],
+              ["Faktura 1 000 Kč: 200 Kč kartou na místě, 800 Kč druhý den převodem", "Tržba 200 Kč; převod se neeviduje"],
+              ["Host složí na místě vratnou kauci, po odjezdu ji dostane zpět", "Neeviduje se – ani složení, ani vrácení"],
+              ["Z kauce složené na místě si ponecháte 500 Kč na škodu", "Tržba 500 Kč"],
             ],
             caption: "Ilustrační příklady podle semináře Finanční správy pro vývojáře (prezentace, „Specifické případy“).",
           },
         },
         {
-          p: "Detaily pro jednotlivé obory – například zálohy a kauce u ubytování – rozebíráme v návodu [EET u ubytování](/navody/eet-ubytovani). Úplné vratné kauce (jistoty) zákon podle dostupných informací výslovně neřeší; postup zatím ověřte u daňového poradce.",
+          p: "Detaily pro jednotlivé obory – například zálohy a kauce u ubytování – rozebíráme v návodu [EET u ubytování](/navody/eet-ubytovani). U vratné kauce se podle Finanční správy neeviduje ani její složení, ani vrácení (ani stornem); evidovanou tržbou je až částka, kterou z kauce složené kontaktně použijete. U faktury rozhoduje skutečný způsob úhrady, ne forma uvedená na faktuře.",
         },
       ],
     },
@@ -158,8 +162,12 @@ export const kontaktniPlatba: Guide = {
   ],
   related: ["koho-se-eet-tyka", "eet-ubytovani", "eet-remeslnici", "eet-eshop-dobirka"],
   published: "2026-10-01",
-  updated: "2026-10-03",
+  updated: "2026-10-28",
   changelog: [
+    {
+      date: "2026-10-28",
+      text: "Doplněno podle prezentace Ministerstva financí a Finanční správy: kauce, platba kombinací stravenky a karty a faktura zaplacená zčásti na místě.",
+    },
     { date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
     { date: "2026-10-03", text: "Opraveno podle semináře Finanční správy pro vývojáře: záloha a doplatek jsou dvě běžné platby, dárkový poukaz se eviduje jen při prodeji (jeho uplatnění není platbou) a částku určenou k čerpání a čerpání uvádí pokladna jen u kreditu." },
     {
