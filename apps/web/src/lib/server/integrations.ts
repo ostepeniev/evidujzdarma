@@ -89,6 +89,12 @@ export async function createIntegration(accountId: string, userId: string | null
   if (input.environment === "live") {
     const refusal = await liveRefusal(accountId);
     if (refusal) throw new HttpError(400, refusal);
+    // ČEKPOINT „ostré prostředí“ (S8, rozd. 11): ostré tokeny cizích partnerů až po schválení podmínek (API_LIVE_PUBLIC=1);
+    // ALiSiO a vlastní integrace vlastníka (bez partnera) hned
+    if (input.partnerAppId && process.env.API_LIVE_PUBLIC !== "1") {
+      const partner = await db.query.partnerApps.findFirst({ where: eq(schema.partnerApps.id, input.partnerAppId) });
+      if (partner?.name !== "ALiSiO") throw new HttpError(400, "Ostré prostředí je pro aplikace partnerů zatím jen v pilotním provozu. Použijte testovací prostředí.");
+    }
   }
   const token = newApiToken(input.environment);
   const registerId = await freeRegisterId(accountId, name);

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ExternalLink } from "@/components/external-link";
 import { PageHeader } from "@/components/page-header";
 import { ApiReference } from "@/components/api-docs/api-reference";
+import { HOTEL_EXAMPLE_DEPOSIT, HOTEL_EXAMPLE_DEPOSIT_KEPT, HOTEL_ROWS } from "@/content/api-hotel";
 import { FACTS, SOURCES } from "@/content/facts";
 import { ERROR_CATALOG } from "@/lib/server/api/errors";
 import { API_LIMITS } from "@/lib/server/api/http";
@@ -102,6 +103,7 @@ const SECTIONS = [
   ["limity", "Limity"],
   ["playground", "Playground"],
   ["co-se-eviduje", "Co se eviduje"],
+  ["hotel", "Hotel a PMS"],
   ["reference", "Reference (OpenAPI)"],
   ["changelog", "Changelog API"],
 ] as const;
@@ -355,6 +357,41 @@ export default function ApiDocsPage() {
               </Link>
               . Rozhodnutí, co evidovat, zůstává na podnikateli – API odešle to, co pošlete.
             </p>
+          </section>
+
+          <section id="hotel" aria-labelledby="hotel-h">
+            <h2 id="hotel-h" className="text-2xl font-bold">
+              Hotel a PMS
+            </h2>
+            <p className="mt-3">
+              Které platby z hotelového PMS poslat do API – podle návodu{" "}
+              <Link href="/navody/eet-ubytovani" className="text-brand-700 underline underline-offset-4">
+                EET u ubytování
+              </Link>
+              . Co evidovat, rozhoduje podnikatel; API odešle to, co PMS pošle.
+            </p>
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="text-muted">
+                    <th className="py-1 pr-3 font-medium">Událost v PMS</th>
+                    <th className="py-1 pr-3 font-medium">Volat API?</th>
+                    <th className="py-1 font-medium">Jak</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line">
+                  {HOTEL_ROWS.map((r) => (
+                    <tr key={r.event}>
+                      <td className="py-1.5 pr-3">{r.event}</td>
+                      <td className="py-1.5 pr-3 font-semibold">{r.call}</td>
+                      <td className="py-1.5">{r.how.replace(/`/g, "")}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <Code label="Záloha na recepci a doplatek kartou při odjezdu (dvě tržby)">{JSON.stringify(HOTEL_EXAMPLE_DEPOSIT, null, 2)}</Code>
+            <Code label="Kauce 3 000 Kč složená na recepci, ponecháno 300 Kč">{JSON.stringify(HOTEL_EXAMPLE_DEPOSIT_KEPT, null, 2)}</Code>
           </section>
 
           <section id="reference" aria-labelledby="reference-h">

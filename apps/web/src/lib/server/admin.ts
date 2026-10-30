@@ -197,3 +197,32 @@ export function preregCsv(rows: AdminPrereg[]): string {
   );
   return `${head.join(";")}\n${lines.join("\n")}\n`;
 }
+
+/**
+ * Evidence využití EET API (S8, rozd. 11) – za aktuální kalendářní měsíc v Praze: integrace, účet, aktivní jednotky
+ * (různé jednotky s tržbou z API) a počet požadavků. Jen evidence, ne účtování.
+ */
+export async function apiUsageThisMonth(now = new Date()) {
+  const { pragueDate } = await import("./api/http");
+  const { pragueMidnight } = await import("./api/v1");
+  const day = pragueDate(now);
+  const monthStart = `${day.slice(0, 7)}-01`;
+  const from = pragueMidnight(monthStart);
+  const db = getDb();
+  const rows = await db
+    .select({
+      id: schema.integrations.id,
+      name: schema.integrations.name,
+      environment: schema.integrations.environment,
+      revokedAt: schema.integrations.revokedAt,
+      lastUsedAt: schema.integrations.lastUsedAt,
+      accountName: schema.accounts.name,
+      requests: sql<number>`coalesce((select sum(${schema.apiUsageDaily.requests}) from ${schema.apiUsageDaily} where ${schema.apiUsageDaily.integrationId} = ${schema.integrations.id} and ${schema.apiUsageDaily.date} >= ${monthStart}), 0)::int`,
+      salesAccepted: sql<number>`coalesce((select sum(${schema.apiUsageDaily.salesAccepted}) from ${schema.apiUsageDaily} where ${schema.apiUsageDaily.integrationId} = ${schema.integrations.id} and ${schema.apiUsageDaily.date} >= ${monthStart}), 0)::int`,
+      activeUnits: sql<number>`(select count(distinct ${schema.sales.unitId}) from ${schema.sales} where ${schema.sales.integrationId} = ${schema.integrations.id} and ${schema.sales.receivedAt} >= ${from.toISOString()}::timestamptz)::int`,
+    })
+    .from(schema.integrations)
+    .innerJoin(schema.accounts, eq(schema.accounts.id, schema.integrations.accountId))
+    .orderBy(desc(schema.integrations.createdAt));
+  return { month: day.slice(0, 7), rows };
+}
