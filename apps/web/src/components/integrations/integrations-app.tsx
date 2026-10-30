@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import { call } from "@/components/setup/api";
+import { ENV_LABEL, SCOPES } from "@/content/api-scopes";
 import { SITE } from "@/lib/site";
+
+export { SCOPES };
 
 /**
  * Obrazovka „Integrace“ (S8, rozd. 7): propojení s rezervačním systémem, PMS nebo fakturací přes EET API.
@@ -33,16 +36,7 @@ export const TOKEN_ONCE = "Token se zobrazí jen jednou. Uložte ho do systému,
 export const REVOKE_CONFIRM = "Integrace přestane fungovat okamžitě. Tržby, které už přijala, se do EET odešlou.";
 export const LIVE_HINT = "Ostré prostředí zapnete, až budete mít produkční certifikát.";
 
-export const SCOPES: { id: string; label: string; hint?: string }[] = [
-  { id: "sales:write", label: "Odesílat tržby" },
-  { id: "sales:read", label: "Číst stav tržeb" },
-  { id: "refunds:write", label: "Vracet tržby (bez PINu vlastníka)", hint: "Systém bude moct vracet peníze za tržby, které sám poslal, bez vašeho PINu." },
-  { id: "units:read", label: "Číst jednotky" },
-  { id: "closings:read", label: "Číst denní přehledy" },
-  { id: "webhooks:manage", label: "Spravovat webhooky" },
-];
 
-const ENV_LABEL = { test: "Testovací (Playground)", live: "Ostré (produkce)" } as const;
 
 const dateTime = (iso: string) => new Date(iso).toLocaleString("cs-CZ", { timeZone: "Europe/Prague", day: "numeric", month: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
 

@@ -96,6 +96,7 @@ const WEBHOOK_VERIFY_PHP = `function ez_verify(string $rawBody, string $header, 
 const SECTIONS = [
   ["zaciname", "Začínáme"],
   ["autentizace", "Autentizace"],
+  ["pripojeni", "Připojení (OAuth)"],
   ["trzby", "Tržby"],
   ["vratky", "Vratky"],
   ["webhooky", "Webhooky"],
@@ -186,6 +187,27 @@ export default function ApiDocsPage() {
               Token vidí jen jednotky, které mu vlastník přidělil, a jen tržby, které sám poslal. Cizí jednotka nebo tržba vrací <code>404</code>. Když vlastník integraci odpojí, další
               požadavek dostane <code>401 token_revoked</code>; tržby, které už API přijalo, se do EET odešlou.
             </p>
+          </section>
+
+          <section id="pripojeni" aria-labelledby="pripojeni-h">
+            <h2 id="pripojeni-h" className="text-2xl font-bold">
+              Připojení jedním klikem (OAuth)
+            </h2>
+            <p className="mt-3">
+              Místo kopírování tokenu může váš systém použít OAuth 2.0 (authorization code + PKCE S256). Aplikaci partnera s adresami pro návrat (redirect_uri) u nás
+              zaregistrujeme a dostanete <code>client_id</code> a <code>client_secret</code>.
+            </p>
+            <ol className="mt-3 list-decimal space-y-2 pl-5">
+              <li>
+                Přesměrujte vlastníka na <code>{absoluteUrl("/pripojit")}?client_id=…&amp;redirect_uri=…&amp;state=…&amp;code_challenge=…&amp;code_challenge_method=S256&amp;scope=sales:write sales:read&amp;environment=test</code>.
+              </li>
+              <li>Vlastník se přihlásí, vybere účet a jednotky a klikne „Povolit“. Vrátíme ho na redirect_uri s parametry code a state (při „Zrušit“ error=access_denied).</li>
+              <li>
+                Kód (platí 10 minut, jednou) vyměňte na serveru: <code>POST /api/v1/oauth/token</code> s grant_type=authorization_code, code, redirect_uri, client_id,
+                client_secret a code_verifier. Odpověď: access_token (token integrace bez expirace), scope, unit_ids, environment, integration_id.
+              </li>
+            </ol>
+            <p className="mt-3">redirect_uri musí přesně odpovídat registraci, jinak připojení zastavíme bez přesměrování. Opakované použití kódu vrátí invalid_grant a token vydaný tímto kódem odvoláme.</p>
           </section>
 
           <section id="trzby" aria-labelledby="trzby-h">
@@ -408,7 +430,7 @@ export default function ApiDocsPage() {
             </h2>
             <ul className="mt-3 list-disc space-y-1 pl-5">
               <li>
-                <strong>v1 (30. 10. 2026)</strong> – první verze: tržby, stav, vratky, jednotky, denní přehledy, webhooky, Playground.
+                <strong>v1 (30. 10. 2026)</strong> – první verze: tržby, stav, vratky, jednotky, denní přehledy, webhooky, připojení přes OAuth, Playground.
               </li>
             </ul>
           </section>

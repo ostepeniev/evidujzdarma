@@ -15,7 +15,7 @@ export const COOKIE_API = /^\/api\/(ucet|kabinet|pozvanka|auth|admin)(\/|$)/;
 
 const READ_ONLY = new Set(["GET", "HEAD", "OPTIONS"]);
 /** Trasy, kam posílá data obyčejný HTML formulář na našich stránkách (původ se kontroluje i tak). */
-const FORM_POST = new Set(["/api/auth/callback"]);
+const FORM_POST = new Set(["/api/auth/callback", "/api/ucet/pripojit"]);
 
 function siteOrigin(): string | null {
   try {

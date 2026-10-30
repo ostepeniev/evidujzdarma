@@ -6,11 +6,26 @@ import { COOKIE_API, guardApiRequest } from "@/lib/server/request-guard";
  * Bez 'unsafe-inline' ve script-src a bez možnosti vložit stránku do rámu. Ostatní stránky mají
  * globální CSP z next.config.ts (statické stránky nonce mít nemohou).
  */
-export const STRICT_CSP_PATHS = ["/pokladna", "/u/", "/prihlaseni", "/kabinet", "/pozvanka/", "/admin"] as const;
+export const STRICT_CSP_PATHS = ["/pokladna", "/u/", "/prihlaseni", "/kabinet", "/pozvanka/", "/admin", "/pripojit"] as const;
 
 const isStrict = (path: string) => STRICT_CSP_PATHS.some((p) => (p.endsWith("/") ? path.startsWith(p) : path === p || path.startsWith(`${p}/`)));
 
-export function strictCsp(nonce: string): string {
+/**
+ * /pripojit (OAuth, S8 rozd. 6): po „Povolit“ vrací server 303 na redirect_uri partnera a prohlížeč uplatní form-action
+ * i na přesměrování po odeslání formuláře. Proto se k form-action přidá origin z redirect_uri v adrese (jen https, bez
+ * cesty). Formulář sám míří vždy na náš původ; redirect_uri ověřuje server proti registraci partnera.
+ */
+export function formActionExtra(url: URL): string | null {
+  if (url.pathname !== "/pripojit") return null;
+  try {
+    const target = new URL(url.searchParams.get("redirect_uri") ?? "");
+    return target.protocol === "https:" ? target.origin : null;
+  } catch {
+    return null;
+  }
+}
+
+export function strictCsp(nonce: string, formAction: string | null = null): string {
   const dev = process.env.NODE_ENV === "development";
   return [
     "default-src 'self'",
@@ -24,7 +39,7 @@ export function strictCsp(nonce: string): string {
     "manifest-src 'self'",
     "frame-ancestors 'none'",
     "base-uri 'self'",
-    "form-action 'self'",
+    `form-action 'self'${formAction ? ` ${formAction}` : ""}`,
     "object-src 'none'",
   ].join("; ");
 }
@@ -43,7 +58,7 @@ export function proxy(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith("/api/")) return apiProxy(request);
   if (!isStrict(request.nextUrl.pathname)) return NextResponse.next();
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
-  const policy = strictCsp(nonce);
+  const policy = strictCsp(nonce, formActionExtra(request.nextUrl));
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
   // Next.js z hlavičky požadavku vyčte nonce a doplní ho ke svým skriptům
@@ -58,14 +73,14 @@ export const config = {
   matcher: [
     "/api/:path*",
     {
-      source: "/(pokladna|u|prihlaseni|kabinet|pozvanka|admin)/:path*",
+      source: "/(pokladna|u|prihlaseni|kabinet|pozvanka|admin|pripojit)/:path*",
       missing: [
         { type: "header", key: "next-router-prefetch" },
         { type: "header", key: "purpose", value: "prefetch" },
       ],
     },
     {
-      source: "/(pokladna|prihlaseni|kabinet|admin)",
+      source: "/(pokladna|prihlaseni|kabinet|admin|pripojit)",
       missing: [
         { type: "header", key: "next-router-prefetch" },
         { type: "header", key: "purpose", value: "prefetch" },

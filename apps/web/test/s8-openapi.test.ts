@@ -131,7 +131,8 @@ describe("S8 – /api-docs", () => {
     expect(sitePages().some((p) => p.path === "/api-docs")).toBe(true);
     const { llmsTxt } = await import("@/lib/llms");
     expect(llmsTxt()).toMatch(/\/api-docs\).*REST API/);
-    const robots = (await import("@/app/robots")).default();
+    const robots = await (await import("@/app/robots")).default();
+    expect(JSON.stringify(robots)).toContain("/pripojit");
     expect(JSON.stringify(robots)).not.toMatch(/"\/api-docs/);
   });
 });

@@ -239,6 +239,40 @@ export function openApiDocument() {
       "/v1/webhooks/{id}/test": {
         post: { operationId: "testWebhook", summary: "Queue a webhook.test event (webhooks:manage).", parameters: [idParam("Webhook id")], responses: { "202": { description: "Queued" }, "404": err("webhook_not_found"), ...COMMON } },
       },
+      "/v1/oauth/token": {
+        post: {
+          operationId: "oauthToken",
+          summary: "OAuth 2.0 authorization code + PKCE (S256): exchange the code from /pripojit for an integration token. Client authentication with client_secret. A reused code returns invalid_grant and revokes the token issued with it.",
+          security: [],
+          requestBody: {
+            required: true,
+            content: {
+              "application/x-www-form-urlencoded": {
+                schema: {
+                  type: "object",
+                  required: ["grant_type", "code", "redirect_uri", "client_id", "client_secret", "code_verifier"],
+                  properties: { grant_type: { const: "authorization_code" }, code: { type: "string" }, redirect_uri: { type: "string" }, client_id: { type: "string" }, client_secret: { type: "string" }, code_verifier: { type: "string" } },
+                },
+              },
+            },
+          },
+          responses: {
+            "200": {
+              description: "Token",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: { access_token: { type: "string" }, token_type: { const: "Bearer" }, scope: { type: "string" }, unit_ids: { type: "array", items: { type: "string", format: "uuid" } }, environment: { enum: ["test", "live"] }, integration_id: { type: "string", format: "uuid" } },
+                  },
+                },
+              },
+            },
+            "400": { description: "invalid_request / invalid_grant / unsupported_grant_type (RFC 6749 error object)" },
+            "401": { description: "invalid_client" },
+          },
+        },
+      },
       "/v1/closings": {
         get: {
           operationId: "listClosings",

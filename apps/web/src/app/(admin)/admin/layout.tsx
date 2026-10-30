@@ -13,6 +13,7 @@ const NAV = [
   { href: "/admin/predregistrace", label: "Передреєстрації" },
   { href: "/admin/ucty", label: "Акаунти" },
   { href: "/admin/api", label: "API" },
+  { href: "/admin/partneri", label: "Партнери API" },
 ] as const;
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
