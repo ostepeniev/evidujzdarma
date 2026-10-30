@@ -288,3 +288,97 @@
     `EZ_API_BASE=https://evidujzdarma.cz/api EZ_TOKEN=ezk_test_… EZ_UNIT_ID=<uuid> pnpm --filter @ez/web api-smoke` (після коміту 3 — ще й з `EZ_WEBHOOK_URL`). Або передати мені тестовий .p12 і пароль поза репозиторієм.
 - **Приклади curl на `/api-docs`** проти Playground не виконувались з тієї ж причини. Їх синтаксис перевірено проти локального інстансу (`GET /v1/account` → 200).
 - **Міграція 0040** прогнана на локальному PostgreSQL 16 (повний ланцюжок 0000–0040, `migrations applied`) і на PGlite зі станом 0039 + дані (гейт). Копії продової бази в мене немає.
+
+---
+
+## Коміт 3 — розд. 8 (вебхуки)
+
+### 1. Коміти
+
+- `586ec08` — вебхуки: outbox, підпис, повтори, вимкнення, SSRF, планові події, CRUD `/v1/webhooks`, тестова подія, документація, картка в ціннику, вебхуки в деталі інтеграції.
+
+### 2. Було → стало
+
+**Outbox** (`lib/server/webhooks.ts`). Події стають рядками `webhook_deliveries` (`emit`). HTTP шле тільки cron (`deliverWebhooks`), ніколи всередині транзакції тржби.
+- `processSale` (`lib/server/fiscal.ts`) після запису результату для тржби інтеграції ставить `sale.confirmed` / `sale.rejected` в outbox через динамічний імпорт. Помилка outbox тржбу не зачіпає; у лог іде лише ім'я помилки.
+- Карантин тржби з API (у `submitSales` / `refundSale`) → `sale.rejected` зі `status: quarantined`.
+
+**Події:**
+- `sale.confirmed`, `sale.rejected`;
+- `sale.deadline_soon` — немає POK, до `deadlineAt` ≤ 24 год; один раз на тржбу (унікальний `dedupe_key` на endpoint);
+- `certificate.expiring` — пороги 31 / 14 / 3 дні, по разу кожен;
+- `certificate.expired`;
+- `integration.revoked` — з `revokeIntegration` на всі endpoints, доставляється і після відкликання;
+- `webhook.test`.
+
+Payload: `{ id, type, createdAt, data }`. Для тржб `data` = той самий `SaleStatusV1` (`statusForWebhook`).
+
+**Підпис:** `EZ-Signature: t=<unix>,v1=<hex hmac_sha256(secret, t + "." + rawBody)>`, додатково `EZ-Event-Id`.
+- Секрет `whsec_…` (40 base62) шифрується `encryptSecret` (envelope, AAD `webhook:<id>`) і віддається один раз.
+- Приклад перевірки з допуском 5 хв: `lib/webhook-signature.ts` (його ж перевіряє тест), на `/api-docs` — Node.js і PHP.
+
+**Доставка:**
+- тайм-аут 5 с, 2xx — доставлено;
+- повтори через 1 / 5 / 30 / 120 / 360 / 1440 хв, далі `failed`;
+- 3 доби безперервних невдач (`failingSince`) → `active = false` і лист власникові дослівно: «Webhook pro integraci {name} nefunguje 3 dny a byl vypnut. Tržby se evidují dál, jen o nich systém {name} nedostává zprávy.»;
+- успіх скидає `failingSince`;
+- вимкнений endpoint нових подій не отримує.
+
+**SSRF:**
+- лише https, без логіна/пароля в URL, `localhost` заборонено;
+- при реєстрації DNS-резолв: усі адреси мають бути публічними (`isPublicAddress`, `BlockList`: private, loopback, link-local, у т. ч. metadata 169.254.169.254, CGNAT, multicast, документаційні, IPv6 ULA/link-local, IPv4-mapped);
+- при **кожній** доставці новий резолв, і з'єднання йде саме на перевірену адресу (`lookup`, захист від DNS rebinding);
+- редиректи не відстежуються (`node:https` не йде за ними; 3xx — невдача);
+- тіло відповіді не читається.
+- Для локального smoke-тесту поза production — `WEBHOOK_ALLOW_PRIVATE=1` (http://localhost).
+
+**Маршрути** (`webhooks:manage`):
+- `POST /v1/webhooks` (201, з `secret`), `GET /v1/webhooks`;
+- `DELETE /v1/webhooks/{id}`, `POST /v1/webhooks/{id}/test` (202);
+- новий код `webhook_not_found` (404) — у каталозі й снапшоті.
+
+**Cron** (`api/internal/cron`): щохвилини `scanWebhookEvents` + `deliverWebhooks` в окремому `try`, тож збій вебхуків не зупиняє тржби й листи. Retention: `webhook_deliveries` старші 30 днів.
+
+**OpenAPI:** шляхи вебхуків і схеми `WebhookCreate`, `Webhook`, `WebhookCreated`, `WebhookEvent`.
+
+**`/api-docs`, розділ «Webhooky»** (замість «připravujeme»): події, формат, «deduplikujte podle id», повтори, вимкнення, перевірка підпису. Changelog згадує вебхуки.
+
+**Ціник** (`content/pricing.ts`): картка «API pro vývojáře» — «REST API, webhooky, Playground, vratky», CTA → `/api-docs` «Dokumentace API». Статус лишається `preparing`; ціну не чіпав (ЧЕКПОІНТ). Дату `/cenik` у `STATIC_PAGES` змінено на 2026-10-30.
+
+**UI власника:** у «Poslední požadavky» додано блок «Webhooky»: URL, події, «vypnuto», кнопка «Poslat testovací událost», стан останніх доставок (без тіл). Маршрут кнопки — `POST /api/ucet/integrace/{id}/webhooky/{wid}`.
+
+### 3. Гейти, що були червоними
+
+- **`test/integration/s8-webhooks.test.ts`** (15). До коду падали на `Cannot find package '@/app/api/v1/webhooks/route'`.
+  - CRUD і секрет один раз, без області → 403;
+  - SSRF для 10 адрес: http, 127/8, 10/8, metadata, `[::1]`, `fd00:ec2::254`, 192.168, DNS → 10.x, localhost, credentials;
+  - DNS rebinding при доставці → не викликано, `blocked address`;
+  - 302 → невдача;
+  - outbox без HTTP у запиті тржби, точний HMAC, приклад перевірки (підмінене тіло, чужий секрет, підпис старший 5 хв → false);
+  - розклад [1, 5, 30, 120, 360, 1440] і `failed` після 7 спроб, до терміну не викликається;
+  - 3 доби → вимкнено + лист дослівно, нові тржби `confirmed` без нових доставок;
+  - успіх скидає серію;
+  - `sale.rejected` для відмови FS і для карантину;
+  - `deadline_soon` рівно один раз;
+  - сертифікат [31, 14, 3] + `expired` один раз, без ключів у payload;
+  - `integration.revoked` на два endpoints і доставляється;
+  - тестова подія;
+  - retention;
+  - фільтр адрес (`isPublicAddress`).
+- **`s8-integrations-ui`** +1: деталь містить вебхуки й доставки без payload і секретів; кнопка тестової події; компонент `WebhookList`.
+- **`s8-openapi`:** розділ «Webhooky» з підписом, 5 хвилинами, розкладом, усіма подіями, «deduplikujte podle id», `createHmac`; більше немає «připravujeme». Падав на старому тексті.
+- **Разом:** web 1027, fiscal-core 105, cz 29, typecheck 0.
+
+### 4. Самостійні рішення
+
+1. **Подія `webhook.test`** — у переліку розд. 8 немає типу тестової події, тому окремий тип. Вона й `integration.revoked` приходять незалежно від підписки endpoint (`events`).
+2. **Порожній `events` = всі події.**
+3. **Після 7-ї невдалої спроби доставка `failed`.** Вимкнення endpoint перевіряється на кожній невдачі, тобто потрібні невдачі протягом 3 діб (кілька подій). Одна подія сама по собі endpoint не вимкне: її повтори закінчуються приблизно через 33 год.
+4. **Сертифікат:** подія для сертифіката середовища інтеграції (test → Playground, live → production). Пропущені пороги (якщо cron стояв) не доганяються — шлеться найнижчий досягнутий.
+5. **Скан подій щохвилини** (не лише в годинному блоці `reminders`), щоб `deadline_soon` не запізнювався. Повторів не буде: працює dedupe.
+6. **`WEBHOOK_ALLOW_PRIVATE=1`** діє лише при `NODE_ENV ≠ production` — для локального smoke-тесту. У production ігнорується.
+7. **Документаційні діапазони** (192.0.2/24, 198.51.100/24, 2001:db8::/32) теж заблоковані.
+
+### 5. Що не вдалося і чому
+
+- **Доставка з прод-мережі** (реальний https-приймач) не перевірялась — у тестах мережа підмінена. Приймання «вебхук `sale.confirmed` з валідним підписом» — у `api-smoke.ts` (`EZ_WEBHOOK_URL`) разом із Playground (див. коміт 2, п. 5).
