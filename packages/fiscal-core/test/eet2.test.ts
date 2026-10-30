@@ -360,5 +360,8 @@ describe("R5.9 – certificate environment from the policy OID", () => {
     expect(none.info.policies).toEqual([]);
     expect(certificateEnvironment(none.info.policies)).toBeNull();
     expect(certificateEnvironment(["1.2.203.19122063.10.1.1020.1"])).toBeNull(); // jen celý segment, ne předpona čísla
+    // sdílené testovací certifikáty FS (CAEET_Playground_2026_v1.zip) mají OID 10.2.102.0.1 → Playground, nikdy produkce
+    expect(certificateEnvironment(["1.2.203.19122063.10.2.102.0.1"])).toBe("playground");
+    expect(certificateEnvironment(["1.2.203.19122063.10.2.1020.1"])).toBeNull();
   });
 });

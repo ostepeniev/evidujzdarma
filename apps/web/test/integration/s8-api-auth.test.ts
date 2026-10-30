@@ -154,6 +154,9 @@ describe("S8 – closed account (9.9, R5.8)", () => {
 describe("S8 – limits (9.6)", () => {
   it("gate: 120 requests/min per token, then 429 rate_limited with Retry-After and RateLimit-* headers", async () => {
     const s = await seedApi();
+    // okno limitu je minutové (pevné): 120 požadavků nesmí přejít přes hranici minuty (R-S8.1)
+    const sec = new Date().getSeconds();
+    if (sec > 45) await new Promise((r) => setTimeout(r, (61 - sec) * 1000));
     let last;
     for (let i = 0; i < 120; i++) {
       last = await call(accountGET, { path: "/api/v1/account", token: s.token });

@@ -143,8 +143,8 @@ export const ADDONS: readonly Addon[] = [
     text: "EET Gateway: odesílání tržeb do EET 2.0 z vašeho rezervačního systému, CRM nebo hotelového PMS bez vlastní implementace podpisu a certifikátů.",
     // S8 (30. 10. 2026): text podle toho, co API v1 umí; stav „připravujeme“ a cena do rozhodnutí majitele (ČEKPOINT cena)
     bullets: ["REST API, webhooky, Playground, vratky", "My se postaráme o komunikaci s Finanční správou, frontu a opakované odeslání při výpadku"],
-    status: "preparing",
-    cta: { href: "/api-docs", label: "Dokumentace API" },
+    status: "order",
+    cta: { href: "/eet-api", label: "EET API pro vývojáře" },
   },
 ];
 

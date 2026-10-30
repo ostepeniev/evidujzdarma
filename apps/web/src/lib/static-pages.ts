@@ -21,6 +21,7 @@ export const STATIC_PAGES: readonly { path: string; title: string; priority: num
   { path: "/mcp", title: "EET 2.0 pro AI asistenty (MCP server)", priority: 0.6, changeFrequency: "monthly", modified: "2026-10-02" },
   // S8: dokumentace EET API pro vývojáře (30. 10. 2026)
   { path: "/api-docs", title: "EET API pro vývojáře", priority: 0.6, changeFrequency: "monthly", modified: "2026-10-30" },
+  { path: "/eet-api", title: "EET API: EET 2.0 do PMS, rezervací a fakturace", priority: 0.8, changeFrequency: "monthly", modified: "2026-10-30" },
   { path: "/navody", title: "Návody k EET 2.0", priority: 0.8, changeFrequency: "weekly" },
   { path: "/co-se-o-eet-pise-spatne", title: "Co se o EET 2.0 píše špatně", priority: 0.8, changeFrequency: "weekly" },
   { path: "/srovnani/moje-eet", title: "Srovnání EvidujZdarma a MOJE eet", priority: 0.8, changeFrequency: "weekly", modified: "2026-10-17" },

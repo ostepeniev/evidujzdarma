@@ -19,6 +19,7 @@ const COLUMNS = [
       { href: "/faktura-zdarma", label: "Faktura zdarma" },
       { href: "/nastroje#kalkulacky", label: "Kalkulačky a ověření (DPH, IČO, IBAN)" },
       { href: "/stav-eet", label: "Je EET dole? Stav EET" },
+      { href: "/eet-api", label: "EET API pro PMS a rezervace" },
       { href: "/mcp", label: "Pro AI asistenty (MCP)" },
     ],
   },
