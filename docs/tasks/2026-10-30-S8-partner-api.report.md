@@ -441,3 +441,124 @@ Payload: `{ id, type, createdAt, data }`. Для тржб `data` = той сам
 - **ЧЕКПОІНТ «умови»:** «Передайте, будь ласка, чернетки docs/legal/podminky-api-navrh.md і docs/legal/dpa-api-navrh.md юристові. Відкриті пункти — у розділах „Otevřené body“ обох файлів (ліміт відповідальності, субпроцесори, аудит, відносини з вендором PMS).»
 - **ЧЕКПОІНТ «ostré prostředí»:** «Після схвалення умов поставити на сервері `API_LIVE_PUBLIC=1` у .env (зараз за замовчуванням вимкнено). Для ALiSiO і для власних інтеграцій власників live вже дозволено.»
 - **Для `docs/LATER.md`** (контролеру, розд. 12): refresh-токени; SDK (npm, composer); білінг; pověření (§ 10); KMS/HSM замість envelope + master key (до масового продажу); SLA і статус-сторінка; англомовна документація; `POST /v1/closings`; мульти-акаунт одного вендора; експорт для звірки з DIS+. Із сесії додаю: «Спробувати запит» в інтерактивній референції (Scalar як статичний бандл); підписи тржб з API назвою інтеграції в přehledech і карантині PWA (після рецензії).
+
+---
+
+## Коміт 5 — розд. 6 (OAuth 2.0 authorization code + PKCE)
+
+### 1. Коміти
+
+- `4710a52` — підключення в один клік: сторінка згоди, маршрут згоди, обмін коду на токен, реєстрація партнера в `/admin`, CSP, скріншоти, гейт межі RSC.
+
+### 2. Було → стало
+
+- **`lib/server/oauth.ts`.**
+  - `createPartnerApp`: `client_id` `ezc_…`, `client_secret` `ezs_…` (40 base62, лише sha256 у БД, показується один раз), `redirect_uris` тільки https без `#`.
+  - `checkAuthorize`: невідомий клієнт або `redirect_uri` не з точного списку → помилка **без редиректу**; інші помилки (PKCE, scope, environment) → редирект з `error`.
+  - `issueCode`: код на 48 base62, у БД лише хеш; діє 10 хв; прив'язаний до партнера, акаунта, користувача, `redirect_uri` і `code_challenge`; одиниці — тільки обраного акаунта; для live — `liveRefusal`.
+  - `exchangeCode`: `client_secret` (`invalid_client` 401), код партнера, строк, точний `redirect_uri`, PKCE S256 (`code_verifier` → base64url(sha256) = challenge).
+  - Код спалюється атомарно. Повторне використання → `invalid_grant` + `revokeIntegration` токена, виданого цим кодом.
+  - Інтеграція створюється через ту саму `createIntegration`: назва = партнер, `partnerAppId`, `createdBy`. Діють і `liveRefusal`, і `API_LIVE_PUBLIC`.
+- **`GET /pripojit`** (`app/(app)/pripojit/page.tsx`).
+  - Без сесії → `/prihlaseni?redirect=<та сама адреса>`.
+  - Кілька акаунтів власника → «Vyberte účet».
+  - Далі: назва партнера, акаунт, prostředí, чекбокси одиниць, перелік прав чеською (ті самі підписи, що в «Integrace»), «Povolit» / «Zrušit». Плашка незалежності.
+  - Звичайна HTML-форма без JS.
+- **`POST /api/ucet/pripojit`** — session, лише наш origin, form-urlencoded (додано до `FORM_POST`). «Povolit» → `303 redirect_uri?code&state`; «Zrušit» → `error=access_denied&state`.
+- **`POST /api/v1/oauth/token`** — form-urlencoded або JSON. Відповідь: `{ access_token, token_type: "Bearer", scope, unit_ids, environment, integration_id }`; помилки у форматі RFC 6749. Обмеження — 30 запитів за хвилину з IP. Шлях є в OpenAPI (`security: []`).
+- **Партнера реєструє адмін:** `/admin/partneri` (форма + список) і `POST /api/admin/partneri` (лише адмін, JSON, наш origin, запис в аудит).
+- **Безпека сторінки згоди:**
+  - `/pripojit` додано до `STRICT_CSP_PATHS` і matcher у `proxy.ts`: nonce-CSP, `frame-ancestors 'none'` і `X-Frame-Options: DENY` проти clickjacking;
+  - у robots — `Disallow: /pripojit`;
+  - `noindex`.
+- **`/api-docs`:** розділ «Připojení jedním klikem (OAuth)», у Changelog згадано OAuth.
+
+### 3. Гейти, що були червоними
+
+- **`test/integration/s8-oauth.test.ts`** (12 до коду, плюс 1 після, див. п. 4). До коду падали на `Cannot find package '@/lib/server/oauth'`.
+  - щасливий шлях: сторінка → 303 з кодом (у БД коду немає) → токен → `/v1/account` 200, інтеграція прив'язана до партнера;
+  - без сесії → вхід із поверненням на `/pripojit?…`;
+  - кілька акаунтів → вибір;
+  - «Zrušit» → `access_denied`;
+  - `redirect_uri` не зі списку (чужий, довший, з query, http) → сторінка помилки й 400 без `Location`; невідомий клієнт;
+  - PKCE: без challenge або `plain` → `error=invalid_request`; неправильний verifier → `invalid_grant`;
+  - повторний код → `invalid_grant` і перший токен → 401;
+  - прострочений код, чужий клієнт, неправильний секрет (401 `invalid_client`), жодної інтеграції не створено;
+  - одиниця чужого акаунта → 400; код діє 10 хв;
+  - CSP-шлях і robots;
+  - `createPartnerApp` — секрет лише як хеш, http-адреса відкинута.
+- **Тест `/api/admin/partneri`** (лише адмін, секрет один раз) написано **після** коду — зелений одразу.
+- **Гейт CSP `form-action`** — перевіряє, що в CSP `/pripojit` дозволено https-origin з `redirect_uri` і більше нічого. Додано разом із виправленням вади (див. нижче).
+- **`test/s8-client-boundary.test.ts`** — статичний гейт межі RSC (див. нижче). Перевірено, що на початковій ваді він червоний: `src/app/(app)/pripojit/page.tsx: SCOPES from @/components/integrations/integrations-app`.
+- **`s8-openapi`:** перевірка robots тепер чекає результат асинхронної функції — раніше вона проходила порожньо. Новий шлях `/v1/oauth/token` теж мусив потрапити в специфікацію.
+- **Разом:** web 1047, fiscal-core 105, cz 29, typecheck 0. Зі змодельованим відкриттям (`CLOSED_SECTIONS = []`, `CLOSED_API = []`, потім `git checkout`) — web 1047 зелені.
+
+**Дві вади, знайдені в браузері (не тестами) і виправлені:**
+1. **Межа RSC.** Серверна сторінка `/pripojit` імпортувала масив `SCOPES` з модуля `"use client"`. У RSC це клієнтське посилання: `SCOPES.filter is not a function`, сторінка падала.
+   - Підписи перенесено в `src/content/api-scopes.ts`.
+   - Новий гейт `s8-client-boundary`: серверні файли беруть із клієнтських модулів лише компоненти (PascalCase).
+2. **CSP `form-action 'self'`.** Chrome застосовує його й до 303-редиректу після відправки форми: код видавався, але браузер не переходив на `redirect_uri`.
+   - До `form-action` для `/pripojit` додається https-origin з `redirect_uri` у запиті (`formActionExtra`).
+   - Форма однаково шле на наш маршрут, а `redirect_uri` перевіряє сервер.
+
+### Докази в браузері
+
+На локальному Postgres 16 + `next dev`:
+- `docs/tasks/s8-screens/pripojit-desktop.png`, `pripojit-mobile.png`;
+- CSP `/pripojit` містить `frame-ancestors 'none'`;
+- «Povolit» → `redirected to: https://pms.alisio.example/eet/callback?code=<redacted>&state=abc`.
+
+### 4. Самостійні рішення
+
+1. **Підсумок усього блоку — нижче, окремим розділом.**
+2. **Без refresh-токенів:** access-токен = токен інтеграції без строку дії, як у задачі.
+3. **`response_type`** необов'язковий; якщо переданий — лише `code`.
+4. **Кілька областей** в `scope` можна розділяти пробілом, комою або `+`.
+5. **Обмеження на token endpoint** — у пам'яті процесу за IP (як інші публічні маршрути), не в Postgres: клієнт ще не автентифікований.
+6. **`/pripojit` не додано до `CLOSED_SECTIONS`** — щоб не зламати коміт відкриття контролера (диф по рядку). До відкриття сторінка без сесії однаково веде на вхід, а `/prihlaseni` закритий nginx-ом.
+7. **Відмова live для партнерів** показується вже на сторінці згоди (кнопка «Povolit» неактивна, причина під нею).
+
+### 5. Що не вдалося
+
+- **Обмін коду на токен з реального сервера ALiSiO** не перевірявся — немає доступу до їхнього модуля. У тестах і в браузері перевірено до редиректу з кодом.
+
+---
+
+## Підсумок блоку S8
+
+**Зроблено:** розд. 1–11 у порядку з «Порядок робіт і звіт». Коміти:
+- `179008b` — задача;
+- `a09b345` — розд. 1–3 + 9;
+- `6616277` — розд. 4, 5, 7;
+- `586ec08` — розд. 8;
+- `ba1dd58` — розд. 10–11;
+- `4710a52` — розд. 6;
+- звіти після кожного коміту.
+
+`/api/pokladna/*` і екрани PWA не змінювались; усі наявні тести зелені без правок.
+
+**Доведено тестами** (13 файлів `s8-*`, ~110 сцен):
+- ізоляція;
+- ідемпотентність, у т. ч. паралельна;
+- номери без пропусків;
+- бюджет 2,5 с;
+- вратки;
+- вебхуки (підпис, розклад, вимкнення, SSRF, `deadline_soon`);
+- OAuth (PKCE, `redirect_uri`, повторний код);
+- OpenAPI проти маршрутів і снапшот каталогу помилок;
+- немає тіл, токенів і EIČ у логах;
+- міграція 0040 на базі зі станом 0039.
+
+**Не доведено у v1:**
+- **POK із FS Playground через API** (`api-smoke.ts`) — немає тестового сертифіката FS (див. коміт 2, п. 5). Потрібен запуск на сервері.
+- **Вебхук `sale.confirmed` на реальний https-приймач** — разом із цим запуском.
+- **Production-POK через API** — лише після ЧЕКПОІНТу «ostré» і справжнього сертифіката готелю ALiSiO.
+- **Навантаження понад 10 тржб/с** не вимірювалось.
+
+**ЧЕКПОІНТИ** — питання дослівно в коміті 4, п. 5: ціна, умови (юрист), `API_LIVE_PUBLIC`.
+
+**Для контролера:**
+1. **nginx:** `/api/v1/*` і `/pripojit` не закривати basic auth після рецензії.
+2. **`docs/LATER.md`:** пункти розд. 12 + два від сесії (коміт 4, п. 5).
+3. **Після рецензії, з дозволу:** посилання «Integrace» з налаштувань каси і підпис тржб API назвою інтеграції в přehledech і карантині (зміна `components/setup/*`).
+4. **Деплой:** міграція 0040; нові змінні середовища не обов'язкові (`API_LIVE_PUBLIC` за замовчуванням вимкнено).
