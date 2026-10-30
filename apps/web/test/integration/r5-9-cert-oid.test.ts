@@ -71,4 +71,15 @@ describe("R5.9 – production accepts sales from 1. 11. 2026", () => {
     const [r] = await ingestSales(await deviceContext(s.device.id), [sale as never]);
     expect(r!.ok).toBe(true);
   });
+
+  it("FS shared Playground test certificate (OID 10.2.102, EIČ CZ00000019) → accepted for any account, only as Playground, account EIČ unchanged", async () => {
+    const s = await seedAccount({ eic: "CZ12345679" });
+    const r = await importCertificate(s.account.id, { file: testCert({ eic: "CZ00000019", issuer: "playground EETv2 NCA SubCA RSA 05/2026", policyOid: "1.2.203.19122063.10.2.102.0.1" }).p12, password: "x" });
+    expect(r.environment).toBe("playground");
+    const acc = await getDb().query.accounts.findFirst({ where: eq(schema.accounts.id, s.account.id) });
+    expect(acc!.eic).toBe("CZ12345679");
+    // stejné EIČ s produkčním OID ani cizí EIČ s Playground OID výjimku nedostane
+    expect(await status(importCertificate(s.account.id, { file: testCert({ eic: "CZ00000019", policyOid: PROD_OID }).p12, password: "x" }))).toBe(400);
+    expect(await status(importCertificate(s.account.id, { file: testCert({ eic: "CZ99999999", policyOid: PG_OID }).p12, password: "x" }))).toBe(400);
+  });
 });

@@ -28,6 +28,9 @@ export const CA_EET_FORGED_MESSAGE =
  * Účet v ostrém provozu přijme z CA EET (ověřeno podpisem řetězce, R12.2) produkční certifikát a Playground certifikát
  * s Policy OID Playground – ten jen pro ověření (R13.1).
  */
+/** EIČ sdílených testovacích certifikátů Playgroundu FS (fyzická osoba, právnická osoba, plátce s VČP). */
+export const FS_PLAYGROUND_TEST_EICS = ["CZ8551015704", "CZ00000019", "CZ683555118"] as const;
+
 export async function importCertificate(accountId: string, input: { file: Buffer; password: string; expected?: CertEnvironment }) {
   let cert;
   try {
@@ -68,11 +71,15 @@ export async function importCertificate(accountId: string, input: { file: Buffer
   }
 
   const accountEic = account.eic ?? account.dic;
-  if (accountEic && cert.info.dic !== accountEic) {
+  // Playground: FS vydává jen sdílené testovací certifikáty pro 3 EIČ (CAEET_Playground_2026_v1.zip, provozní informace
+  // Playground 3.1.4–3.1.8) – vlastní EIČ podnikatel na Playgroundu mít nemůže. Takový certifikát přijmeme k libovolnému účtu
+  // jen pro Playground (bez právních účinků; nesoulad EIČ je podle FS propustná chyba) a EIČ účtu jím nikdy nenastavíme.
+  const fsSharedTestCert = environment === "playground" && FS_PLAYGROUND_TEST_EICS.includes(cert.info.dic as (typeof FS_PLAYGROUND_TEST_EICS)[number]);
+  if (accountEic && cert.info.dic !== accountEic && !fsSharedTestCert) {
     throw new HttpError(400, `Certifikát patří EIČ ${cert.info.dic}, ale u účtu je ${accountEic}. Zkontrolujte EIČ v nastavení.`);
   }
 
-  const id = await storeCertificate(accountId, cert, environment, accountEic ? {} : { setAccountEic: cert.info.dic });
+  const id = await storeCertificate(accountId, cert, environment, accountEic || fsSharedTestCert ? {} : { setAccountEic: cert.info.dic });
   // bezpečnostní upozornění vlastníkům (B Дрібне 2)
   await notifyOwners(
     accountId,
