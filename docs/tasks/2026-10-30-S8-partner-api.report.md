@@ -163,3 +163,128 @@
 
 - **Playground ще не доведено** (`api-smoke.ts` проти FS) — це приймання розд. 5, коміт 2.
 - **nginx.** `/api/v1` не входить у закриті регекспи nginx (`CLOSED_API` у `lib/launch.ts` його не містить), тож після деплою API буде доступне без basic auth, як `/api/pokladna`. Ліміт тіла 1 МБ у nginx уже є. Потрібно від контролера: підтвердити, що `/api/v1/*` у nginx не закривається basic auth (`infra/nginx` я не чіпав).
+
+---
+
+## Коміт 2 — розд. 4, 5, 7
+
+### 1. Коміти
+
+- `6616277` — дані для докладу, OpenAPI 3.1, сторінка `/api-docs`, скрипт `api-smoke.ts`, екран власника «Integrace» і його маршрути, скріншоти.
+
+### 2. Було → стало
+
+**Розд. 4 — дані докладу**
+- `ReceiptFiscalV1` — поле `receipt` у кожному `SaleStatusV1`. Будується в `lib/server/api/v1.ts` (`receiptOf`) з тієї самої функції `receiptDataFrom` (`lib/server/receipts.ts`), що й `/u/[id]` та e-mail.
+  - `loadReceipt` тепер викликає `receiptDataFrom`; поведінка для PWA та сама.
+  - Поля: `seller`, `unit {fsUnitId, label}`, `registerId`, `sequence`, `soldAt`, `total`, `evidencedAmount`, `vatBreakdown` (`null` у неплатника DPH), `pok`, `mode`, `offline`.
+  - `note` дослівно «Tržba bude odeslána nejpozději do 48 hodin.» — лише коли `offline`. Тржба тільки з переказу (`not_evidenced`) не `offline`.
+- **Перевірка `/u/[id]`.** Публічна сторінка показує лише реквізити докладу за § 16 ZOS: назва, адреса одиниці, IČO, DIČ, позиції, платежі, DPH, дата, номер, pokladna/jednotka, POK.
+  - Проблема для API: `id` тржби обирає PMS. Якщо PMS бере UUID v1/v7 (час, послідовність), адреси докладів можна підібрати.
+  - Рішення: для тржб інтеграції `receiptUrl` = `/u/{id}?k=<HMAC>` (`receiptKey`), а `loadReceipt` без правильного `k` повертає 404.
+  - Доклади PWA без змін: `id` генерує каса випадково.
+  - Змінено `src/app/(app)/u/[id]/page.tsx` — він передає `k` із `searchParams`.
+- **DIČ у `receipt.seller`** — лише для платника DPH. У фізичної особи DIČ = CZ + rodné číslo, а API маскує EIČ саме з цієї причини (див. самостійні рішення).
+
+**Розд. 5 — документація й пісочниця**
+- **OpenAPI 3.1** — `lib/server/api/openapi.ts`, віддається на `GET /api/v1/openapi.json` (без токена, CORS `*`).
+  - Схеми тіл запитів — ті самі zod-схеми, якими API валідує (`SaleV1Schema`, `RefundV1Schema`). Схеми відповідей описані в zod поруч; тест перевіряє, що реальна відповідь проходить `SaleStatusV1Schema`.
+  - JSON Schema — нативним `z.toJSONSchema` zod 4 (Т-рішення нижче).
+- **Сторінка `/api-docs`** (`app/(site)/api-docs/page.tsx`), чеською.
+  - Розділи: Začínáme (5 kroků), Autentizace, Tržby, Vratky, Webhooky, Chyby (таблиця з `ERROR_CATALOG`), Limity, Playground (покроково до POK на «ff»), Co se eviduje (тексти з `FACTS.evidenced` + посилання на гайди), Reference (OpenAPI), Changelog API.
+  - Приклади: curl, JavaScript (fetch), PHP.
+  - Референція рендериться на сервері з `openApiDocument()` (`components/api-docs/api-reference.tsx`), розгортається нативним `<details>`. Без скриптів і CDN.
+  - Розділ «Webhooky» поки чесно каже «připravujeme» (розд. 8 — коміт 3).
+  - Сторінка в `STATIC_PAGES` (sitemap, вимірювання), у `llms.txt` додано рядок про API. robots `/api-docs` не блокує (правило `/api/` зі слешем).
+- **`apps/web/scripts/api-smoke.ts`** (`pnpm --filter @ez/web api-smoke`). Кроки:
+  - account і units;
+  - тржба з очікуванням POK на «-ff»;
+  - повтор з тим самим тілом → той самий POK;
+  - пошук за `externalRef`;
+  - часткове повернення → POK;
+  - за `EZ_WEBHOOK_URL` — реєстрація вебхука і локальний приймач із перевіркою `EZ-Signature` (крок для коміту 3).
+
+  Токен у лог не потрапляє — лише перші 12 символів.
+- **Ціник** не змінювався: оновлений текст картки згадує вебхуки, тож перенесено в коміт 3 разом із ними (інваріант 10).
+- **Обмеження розміру тіла.** `lib/server/request-guard.ts` більше не відповідає 413 для `/api/v1/*` власним форматом: обмеження 1 МБ перевіряє обгортка API і відповідає `payload_too_large` у форматі API. Для session-API нічого не змінилось.
+
+**Розд. 7 — UI власника «Integrace»**
+- **Нова сторінка** `/pokladna/integrace` (`app/(app)/pokladna/integrace/page.tsx`):
+  - лише власник бізнес-акаунта, без сесії → `/prihlaseni?redirect=/pokladna/integrace`;
+  - компонент — `components/integrations/integrations-app.tsx`.
+- **Тексти дослівно:**
+  - заголовок, підзаголовок, «Nová integrace»;
+  - форма: «Název» з placeholder «např. ALiSiO»; «Prostředí» — «Testovací (Playground)» / «Ostré (produkce)», ostré неактивне з підказкою; «Evidenční jednotky»; «Oprávnění» — шість пунктів;
+  - після створення: текст про токен, «Zkopírovat», «Hotovo»;
+  - список: назва, prostředí, jednotky, «Naposledy použito», «Odpojit» з текстом підтвердження;
+  - деталь: «Poslední požadavky» — час, маршрут, статус, kód chyby, без даних тржб.
+
+  Біля «Vracet tržby (bez PINu vlastníka)» — пояснення: «Systém bude moct vracet peníze za tržby, které sám poslal, bez vašeho PINu.»
+- **Маршрути** (session власника, `ownerRoute`, перевірка origin):
+  - `GET`/`POST /api/ucet/integrace` — список без токенів; створення повертає токен один раз;
+  - `GET`/`DELETE /api/ucet/integrace/{id}` — деталь з останніми 50 запитами; відключення.
+- **Плашка** `SITE.independenceNotice` унизу сторінки (інваріант 9).
+- **Скріншоти** — `docs/tasks/s8-screens/`:
+  - `integrace-desktop.png` / `integrace-mobile.png` — список і «Poslední požadavky»;
+  - `integrace-nova-*.png` — форма;
+  - `integrace-token-*.png` — токен (на знімку замаскований);
+  - `api-docs-*.png`.
+
+  Знято на локальному Postgres 16 з `next dev` і засіяним акаунтом. Сторінка підключення OAuth буде в коміті 5.
+
+### 3. Гейти, що були червоними
+
+- **`test/integration/s8-receipt.test.ts`** (3). До коду падали: поле `receipt` було `undefined`, `loadReceipt` приймав тржбу API без ключа, сторінка не передавала `k`.
+  - повний `ReceiptFiscalV1` для підтвердженої тржби платника DPH (DPH 12 %: 285714 + 34286) і відповідь проходить схему OpenAPI;
+  - `offline` з `note` дослівно; переказ не `offline`;
+  - `receiptUrl` з ключем: без ключа і з неправильним → `null`, з правильним → дані; доклад PWA без ключа працює.
+- **`test/s8-openapi.test.ts`** (5). До коду падали на `Cannot find package '@/app/api/v1/openapi.json/route'`, `'@/lib/server/api/openapi'`, `'@/app/(site)/api-docs/page'` і на відсутньому `/api-docs` у `sitePages()`.
+  - структурна валідність 3.1: усі `$ref` резолвляться, унікальні `operationId`, path-параметри описані, у `SaleV1` немає «prepayment»;
+  - кожен файл маршруту і метод у `src/app/api/v1` є у специфікації — і нічого зайвого;
+  - снапшот каталогу помилок (код → HTTP) і enum кодів у схемі `Error`;
+  - `/api-docs`: усі 10 розділів, curl/JavaScript/PHP, усі шляхи, «ff», немає `<script src>` і CDN;
+  - sitemap і `llms.txt`.
+- **`test/integration/s8-integrations-ui.test.ts`** (6). До коду падали на `Cannot find package '@/app/api/ucet/integrace/route'`.
+  - лише сесія власника (без сесії 401, касир 403), токен один раз, у списку токена немає;
+  - live відмовлено з підказкою дослівно, з production-сертифікатом — дозволено;
+  - «Odpojit» → наступний запит API 401; деталь містить лише `at`/`method`/`route`/`status`/`errorCode`; чужий акаунт → 404;
+  - дослівні тексти форми і неактивна опція live;
+  - текст токена, «Zkopírovat», «Hotovo», рядок списку, `REVOKE_CONFIRM`;
+  - сторінка лише для owner.
+- **Свій тест коміту 1** `s8-api-sales` змінено в одному рядку: `receiptUrl` тепер `/u/{id}?k=…` (наслідок розд. 4).
+- **Разом:** web 1011, fiscal-core 105, cz 29, typecheck 0.
+
+### 4. Самостійні рішення
+
+1. **Т-рішення «OpenAPI»:** нативний `z.toJSONSchema` у zod 4.6 замість `@asteasolutions/zod-to-openapi`.
+   - Він видає JSON Schema draft 2020-12 — саме цей діалект використовує OpenAPI 3.1. Обгортку OpenAPI (paths, components, security) збираємо самі (~150 рядків).
+   - Без нової залежності: менше поверхні постачання (R3.13), без конфлікту версій zod.
+   - Довгі regex для uuid/date-time прибрано, лишено `format`.
+2. **Референція — власний серверний рендер, а не Redoc/Scalar.**
+   - Вони навіть self-hosted — це великий клієнтський бандл стороннього коду. Для строгої CSP і інваріанту 6 серверний HTML з `<details>` чистіший.
+   - «Спробувати запит» з браузера немає. Якщо контролер хоче саме Scalar, його можна підключити пізніше як статичний бандл.
+3. **Ключ у `receiptUrl` для тржб API** і зміна `/u/[id]` (передає `k`). Доклади каси не змінились.
+4. **`receipt.seller.dic` лише для платника DPH** — щоб API не видавало rodné číslo фізособи (узгоджено з маскуванням EIČ у 3.1).
+5. **Сторінка «Integrace» — окремий маршрут `/pokladna/integrace`**, а не секція в `SetupApp`, щоб не змінювати екрани PWA до рецензії S8. Наслідки:
+   - посилання з налаштувань каси немає (посилання з `/api-docs` є);
+   - тржби з API в наявних přehledech і в карантині не підписані назвою інтеграції;
+   - у листі про карантин стоїть `registerId` інтеграції (`API-ALISIO`), що впізнається.
+
+   Це дві невеликі правки в `components/setup/*` — зроблю після рецензії, якщо контролер дозволить.
+6. **Ціник — у коміті 3** (див. п. 2).
+7. **У формі за замовчуванням** відмічені «Odesílat tržby», «Číst stav tržeb», «Číst jednotky». Якщо одиниця одна — вона теж.
+
+### 5. Що не вдалося і чому / що потрібно
+
+- **Приймання проти FS Playground не доведено.** Playground з контейнера досяжний (`https://pg.trzbyeet.gov.cz/…` → HTTP 500 на порожній GET), але для POK потрібен справжній тестовий сертифікат FS для Playground. Його в репозиторії немає і бути не може (приватні ключі не кладемо).
+  - Прогін `api-smoke.ts` проти локального інстансу без сертифіката (лог без токена):
+    ```
+    [2026-10-30T00:28:29.154Z] base: http://localhost:3999/api
+    [2026-10-30T00:28:29.155Z] token: ezk_test_Ola…
+    ✓ GET /v1/account → test, certifikát missing
+    ✗ jednotka připravená k evidenci
+    ```
+  - **Від власника або контролера:** на сервері з тестовим сертифікатом Playground завантажити його в акаунт, створити інтеграцію «Testovací (Playground)» і запустити
+    `EZ_API_BASE=https://evidujzdarma.cz/api EZ_TOKEN=ezk_test_… EZ_UNIT_ID=<uuid> pnpm --filter @ez/web api-smoke` (після коміту 3 — ще й з `EZ_WEBHOOK_URL`). Або передати мені тестовий .p12 і пароль поза репозиторієм.
+- **Приклади curl на `/api-docs`** проти Playground не виконувались з тієї ж причини. Їх синтаксис перевірено проти локального інстансу (`GET /v1/account` → 200).
+- **Міграція 0040** прогнана на локальному PostgreSQL 16 (повний ланцюжок 0000–0040, `migrations applied`) і на PGlite зі станом 0039 + дані (гейт). Копії продової бази в мене немає.
