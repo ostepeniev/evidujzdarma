@@ -73,6 +73,25 @@ curl -X POST ${BASE}/v1/sales/<id původní tržby>/refund \\
 # částečná vratka – jen položky z původní tržby, kladné množství
   -d '{ "id": "<nové uuid>", "lines": [{ "name": "Minibar", "qty": 1, "unitPrice": 5000, "vatRate": 21 }] }'`;
 
+const WEBHOOK_VERIFY_JS = `import { createHmac, timingSafeEqual } from "node:crypto";
+
+export function verifyWebhookSignature(rawBody, header, secret, toleranceSeconds = 300) {
+  const t = /(?:^|,)t=(\\d+)/.exec(header)?.[1];
+  const v1 = /(?:^|,)v1=([0-9a-f]{64})/.exec(header)?.[1];
+  if (!t || !v1) return false;
+  if (Math.abs(Date.now() / 1000 - Number(t)) > toleranceSeconds) return false;
+  const expected = createHmac("sha256", secret).update(\`\${t}.\${rawBody}\`).digest();
+  const given = Buffer.from(v1, "hex");
+  return given.length === expected.length && timingSafeEqual(given, expected);
+}`;
+
+const WEBHOOK_VERIFY_PHP = `function ez_verify(string $rawBody, string $header, string $secret): bool {
+  if (!preg_match('/t=(\\d+)/', $header, $t) || !preg_match('/v1=([0-9a-f]{64})/', $header, $v)) return false;
+  if (abs(time() - (int) $t[1]) > 300) return false;
+  $expected = hash_hmac('sha256', $t[1] . '.' . $rawBody, $secret);
+  return hash_equals($expected, $v[1]);
+}`;
+
 const SECTIONS = [
   ["zaciname", "Začínáme"],
   ["autentizace", "Autentizace"],
@@ -206,8 +225,34 @@ export default function ApiDocsPage() {
               Webhooky
             </h2>
             <p className="mt-3">
-              Webhooky (oznámení o POK, odmítnutí a blížící se lhůtě 48 hodin) připravujeme. Do té doby zjistíte stav dotazem <code>GET /v1/sales?ids=…</code>.
+              Endpoint zaregistrujete přes <code>POST /v1/webhooks</code> (oprávnění <code>webhooks:manage</code>) – adresa jen https, ne privátní ani interní (ověřujeme po DNS
+              a přesměrování nesledujeme). Tajemství pro podpis dostanete jen v odpovědi na registraci. Události:
             </p>
+            <ul className="mt-2 list-disc space-y-1 pl-5">
+              <li>
+                <code>sale.confirmed</code> – přišel POK; <code>sale.rejected</code> – FS tržbu definitivně odmítla nebo skončila v karanténě vlastníka;
+              </li>
+              <li>
+                <code>sale.deadline_soon</code> – tržba stále nemá POK a do lhůty 48 hodin zbývá nejvýš 24 hodin (jednou na tržbu);
+              </li>
+              <li>
+                <code>certificate.expiring</code> (31, 14 a 3 dny před koncem platnosti), <code>certificate.expired</code>;
+              </li>
+              <li>
+                <code>integration.revoked</code> – vlastník integraci odpojil; <code>webhook.test</code> z <code>POST /v1/webhooks/&#123;id&#125;/test</code>.
+              </li>
+            </ul>
+            <p className="mt-3">
+              Tělo: <code>{`{ "id", "type", "createdAt", "data" }`}</code>, u tržeb je <code>data</code> stejný objekt jako v odpovědi API. Pořadí událostí nezaručujeme a jednu
+              událost můžete dostat víckrát – deduplikujte podle id. Odpovězte 2xx do 5 sekund; jinak zkusíme znovu po 1 min, 5 min, 30 min, 2 h, 6 h a 24 h. Když endpoint
+              nefunguje 3 dny v kuse, vypneme ho a napíšeme vlastníkovi účtu; tržby se evidují dál.
+            </p>
+            <p className="mt-3">
+              Každý požadavek nese hlavičku <code>EZ-Signature: t=&lt;unix čas&gt;,v1=&lt;hex HMAC-SHA256(tajemství, t + &quot;.&quot; + tělo)&gt;</code>. Počítejte z
+              nezměněného těla a odmítněte podpis starší než 5 minut:
+            </p>
+            <Code label="Node.js">{WEBHOOK_VERIFY_JS}</Code>
+            <Code label="PHP">{WEBHOOK_VERIFY_PHP}</Code>
           </section>
 
           <section id="chyby" aria-labelledby="chyby-h">
@@ -326,7 +371,7 @@ export default function ApiDocsPage() {
             </h2>
             <ul className="mt-3 list-disc space-y-1 pl-5">
               <li>
-                <strong>v1 (30. 10. 2026)</strong> – první verze: tržby, stav, vratky, jednotky, denní přehledy, Playground.
+                <strong>v1 (30. 10. 2026)</strong> – první verze: tržby, stav, vratky, jednotky, denní přehledy, webhooky, Playground.
               </li>
             </ul>
           </section>

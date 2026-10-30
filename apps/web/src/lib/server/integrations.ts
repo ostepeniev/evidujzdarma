@@ -118,6 +118,9 @@ export async function revokeIntegration(accountId: string, integrationId: string
     .returning();
   if (!row) return false;
   await db.update(schema.devices).set({ revokedAt: now }).where(eq(schema.devices.id, row.deviceId));
+  // integration.revoked na všechny endpointy integrace (S8, rozd. 8)
+  const { emitIntegrationRevoked } = await import("./webhooks");
+  await emitIntegrationRevoked(row).catch(() => undefined);
   return true;
 }
 
@@ -215,5 +218,12 @@ export async function integrationDetail(accountId: string, integrationId: string
     .where(eq(schema.apiRequests.integrationId, integrationId))
     .orderBy(desc(schema.apiRequests.at))
     .limit(50);
-  return { integration: integrationDto(row), requests: requests.map((r) => ({ ...r, at: r.at.toISOString() })) };
+  const { listEndpoints, recentDeliveries } = await import("./webhooks");
+  const deliveries = await recentDeliveries(integrationId);
+  return {
+    integration: integrationDto(row),
+    requests: requests.map((r) => ({ ...r, at: r.at.toISOString() })),
+    webhooks: await listEndpoints(integrationId),
+    deliveries: deliveries.map((d) => ({ ...d, createdAt: d.createdAt.toISOString() })),
+  };
 }

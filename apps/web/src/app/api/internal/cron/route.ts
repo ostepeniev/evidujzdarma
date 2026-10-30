@@ -31,6 +31,11 @@ export async function POST(req: Request) {
     // doby uložení ze zásad ochrany osobních údajů (R2.5)
     out.retention = await runRetention().catch((e: unknown) => ({ error: e instanceof Error ? e.name : String(e) }));
   }
+  // EET API (S8): plánované události a doručení webhooků – výpadek webhooků neshodí tržby ani e-maily
+  out.webhooks = await (async () => {
+    const { deliverWebhooks, scanWebhookEvents } = await import("@/lib/server/webhooks");
+    return { scan: await scanWebhookEvents(), deliver: await deliverWebhooks() };
+  })().catch((e: unknown) => ({ error: e instanceof Error ? e.name : String(e) }));
   out.emails = await processOutbox(50);
   return Response.json(out);
 }

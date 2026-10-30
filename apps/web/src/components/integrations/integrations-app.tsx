@@ -72,10 +72,83 @@ export function TokenOnce({ token, onDone }: { token: string; onDone: () => void
   );
 }
 
+type WebhookDto = { id: string; url: string; events: string[]; active: boolean; failingSince: string | null };
+type DeliveryDto = { id: string; endpointId: string; event: string; status: string; attempts: number; lastHttpStatus: number | null; createdAt: string };
+
+const DELIVERY_STATUS: Record<string, string> = { pending: "čeká", delivered: "doručeno", failed: "nedoručeno" };
+
+/** Webhooky integrace v detailu: URL, události, testovací událost a stav posledních doručení (bez těl). */
+export function WebhookList({ integrationId, webhooks, deliveries }: { integrationId: string; webhooks: WebhookDto[]; deliveries: DeliveryDto[] }) {
+  const [sentTo, setSentTo] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  async function test(id: string) {
+    setError(null);
+    try {
+      await call(`/api/ucet/integrace/${integrationId}/webhooky/${id}`, { method: "POST" });
+      setSentTo(id);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Nepodařilo se odeslat.");
+    }
+  }
+  return (
+    <div className="mt-4">
+      <h3 className="font-semibold">Webhooky</h3>
+      {webhooks.length === 0 ? (
+        <p className="text-sm text-muted">Systém si zatím žádný webhook nezaregistroval.</p>
+      ) : (
+        <ul className="mt-2 space-y-2">
+          {webhooks.map((w) => (
+            <li key={w.id} className="rounded-xl bg-surface p-3 text-sm">
+              <p className="break-all font-mono">{w.url}</p>
+              <p className="mt-1 text-ink-soft">
+                {w.events.length ? w.events.join(", ") : "všechny události"}
+                {!w.active && <span className="ml-2 font-medium text-danger-600">vypnuto</span>}
+              </p>
+              <button type="button" className="btn-secondary mt-2 py-1 text-sm" onClick={() => void test(w.id)}>
+                Poslat testovací událost
+              </button>
+              {sentTo === w.id && <span className="ml-2 text-sm text-ink-soft">Odesláno do fronty.</span>}
+            </li>
+          ))}
+        </ul>
+      )}
+      {error && (
+        <p role="alert" className="mt-2 text-sm text-danger-600">
+          {error}
+        </p>
+      )}
+      {deliveries.length > 0 && (
+        <table className="mt-3 w-full text-left text-sm">
+          <thead>
+            <tr className="text-muted">
+              <th className="py-1 pr-3 font-medium">Čas</th>
+              <th className="py-1 pr-3 font-medium">Událost</th>
+              <th className="py-1 font-medium">Doručení</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-line">
+            {deliveries.map((d) => (
+              <tr key={d.id}>
+                <td className="py-1 pr-3 whitespace-nowrap">{dateTime(d.createdAt)}</td>
+                <td className="py-1 pr-3 font-mono">{d.event}</td>
+                <td className="py-1">
+                  {DELIVERY_STATUS[d.status] ?? d.status}
+                  {d.attempts > 1 ? ` (${d.attempts}×)` : ""}
+                  {d.lastHttpStatus ? `, HTTP ${d.lastHttpStatus}` : ""}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
+
 export function IntegrationRow({ item, units, onChanged }: { item: IntegrationItem; units: IntegrationsState["units"]; onChanged: () => void }) {
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(false);
-  const [detail, setDetail] = useState<{ requests: { at: string; method: string; route: string; status: number; errorCode: string | null }[] } | null>(null);
+  const [detail, setDetail] = useState<{ requests: { at: string; method: string; route: string; status: number; errorCode: string | null }[]; webhooks: WebhookDto[]; deliveries: DeliveryDto[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const unitNames = item.unitIds.map((id) => units.find((u) => u.id === id)?.label ?? "—").join(", ") || "žádná";
   async function revoke() {
@@ -163,6 +236,7 @@ export function IntegrationRow({ item, units, onChanged }: { item: IntegrationIt
           ) : (
             <p className="text-sm text-muted">Zatím žádné požadavky.</p>
           )}
+          <WebhookList integrationId={item.id} webhooks={detail.webhooks ?? []} deliveries={detail.deliveries ?? []} />
         </div>
       )}
     </li>

@@ -424,6 +424,11 @@ export async function processSale(saleId: string, account?: AccountRow): Promise
   const now = new Date();
   const applied = await applyOutcome(claimed, token, outcome, now);
   await recordAttempt(claimed, outcome, startedAt, applied, firstAttempt, inFlightId);
+  // EET API (S8): tržba integrace → událost webhooku do outboxu (žádné HTTP tady); chyba outboxu tržbu neovlivní
+  if (applied && claimed.integrationId && (outcome.result === "confirmed" || outcome.result === "rejected")) {
+    const { onSaleOutcome } = await import("./webhooks");
+    await onSaleOutcome(claimed, outcome.result).catch((e: unknown) => console.error("[fiscal] webhook outbox", safeError(e).name));
+  }
   if (applied && outcome.result === "invalid") {
     await checkInvalidStreak(claimed);
     await maybeTripBreaker(claimed.mode);

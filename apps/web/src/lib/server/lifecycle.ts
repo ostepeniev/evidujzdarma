@@ -461,6 +461,8 @@ export async function runRetention(now = new Date()): Promise<Record<string, num
   // EET API (S8): deník požadavků 30 dní, minutová okna limitu hodinu
   const { cleanupApiLogs } = await import("./api/http");
   Object.assign(out, await cleanupApiLogs(now));
+  const { cleanupWebhookDeliveries } = await import("./webhooks");
+  out.webhookDeliveries = await cleanupWebhookDeliveries(now);
   return out;
 }
 

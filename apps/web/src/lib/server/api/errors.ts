@@ -13,6 +13,7 @@ export const ERROR_CATALOG = {
   unit_not_found: { http: 404, when: "The unit does not exist, belongs to another account or is outside the token's units." },
   sale_not_found: { http: 404, when: "The sale does not exist or was not created by this integration." },
   original_not_found: { http: 404, when: "Refund: the original sale does not exist or was not created by this integration." },
+  webhook_not_found: { http: 404, when: "The webhook does not exist or belongs to another integration." },
   idempotency_conflict: { http: 409, when: "A sale with this id exists with a different body." },
   external_ref_conflict: { http: 409, when: "The externalRef is already used by another sale of this integration." },
   payload_too_large: { http: 413, when: "The body is larger than 1 MB." },

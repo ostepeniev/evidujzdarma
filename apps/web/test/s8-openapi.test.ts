@@ -80,6 +80,7 @@ describe("S8 – OpenAPI 3.1", () => {
       unit_not_found: 404,
       sale_not_found: 404,
       original_not_found: 404,
+      webhook_not_found: 404,
       idempotency_conflict: 409,
       external_ref_conflict: 409,
       payload_too_large: 413,
@@ -118,6 +119,9 @@ describe("S8 – /api-docs", () => {
     // reference z OpenAPI: všechny cesty
     for (const p of ["/v1/account", "/v1/units", "/v1/sales", "/v1/sales/{id}", "/v1/sales/{id}/refund", "/v1/closings"]) expect(text, p).toContain(p);
     expect(text).toMatch(/končí na „ff“|končí na ff|na „ff“/);
+    // webhooky (rozd. 8): podpis, ověření s tolerancí 5 min a příkladem, opakování, deduplikace podle id
+    for (const s of ["EZ-Signature", "t=", "v1=", "5 minut", "1 min, 5 min, 30 min, 2 h, 6 h a 24 h", "sale.confirmed", "sale.rejected", "sale.deadline_soon", "certificate.expiring", "certificate.expired", "integration.revoked", "deduplikujte podle id", "createHmac"]) expect(text, s).toContain(s);
+    expect(text).not.toContain("Webhooky (oznámení o POK, odmítnutí a blížící se lhůtě 48 hodin) připravujeme");
     expect(html).not.toMatch(/<script[^>]+src=/);
     expect(html).not.toMatch(/cdn\.|unpkg|jsdelivr/);
   });

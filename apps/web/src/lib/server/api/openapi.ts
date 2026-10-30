@@ -5,6 +5,7 @@ import { absoluteUrl } from "@/lib/site";
 import { ERROR_CATALOG } from "./errors";
 import { API_LIMITS } from "./http";
 import { RefundV1Schema, SaleV1Schema } from "./v1";
+import { WEBHOOK_EVENTS } from "../webhooks";
 
 /**
  * OpenAPI 3.1 EET API v1 (S8, rozd. 5.1). Těla požadavků jsou přímo zod schémata, kterými API validuje (SaleV1Schema,
@@ -94,6 +95,19 @@ const ClosingsSchema = z.object({
   ),
 });
 
+const WebhookCreateSchema = z.object({
+  url: z.string().url().describe("https only; private, loopback and link-local addresses are refused"),
+  events: z.array(z.enum(WEBHOOK_EVENTS)).optional().describe("Omitted or empty = all events"),
+});
+const WebhookSchema = z.object({ id: z.string().uuid(), url: z.string(), events: z.array(z.string()), active: z.boolean(), failingSince: z.string().nullable(), createdAt: z.string() });
+const WebhookCreatedSchema = WebhookSchema.extend({ secret: z.string().describe("Signing secret, returned only once") });
+const WebhookEventSchema = z.object({
+  id: z.string().uuid().describe("Event id – deduplicate by it; order is not guaranteed"),
+  type: z.enum([...WEBHOOK_EVENTS, "webhook.test"]),
+  createdAt: z.string(),
+  data: z.union([SaleStatusV1Schema, z.record(z.string(), z.unknown())]).describe("SaleStatusV1 for sale.* events; certificate or integration info otherwise"),
+});
+
 const SalesRequestSchema = z.object({ sales: z.array(SaleV1Schema).min(1).max(API_LIMITS.salesPerBatch) });
 const SalesResultSchema = z.object({ results: z.array(SaleStatusV1Schema) });
 const SalesListSchema = z.object({ sales: z.array(SaleStatusV1Schema), nextCursor: z.string().nullable() });
@@ -148,6 +162,10 @@ export function openApiDocument() {
         Units: js(UnitsSchema, "output"),
         Closings: js(ClosingsSchema, "output"),
         Error: js(ErrorSchema, "output"),
+        WebhookCreate: js(WebhookCreateSchema, "input"),
+        Webhook: js(WebhookSchema, "output"),
+        WebhookCreated: js(WebhookCreatedSchema, "output"),
+        WebhookEvent: js(WebhookEventSchema, "output"),
       },
     },
     paths: {
@@ -205,6 +223,21 @@ export function openApiDocument() {
             ...COMMON,
           },
         },
+      },
+      "/v1/webhooks": {
+        post: {
+          operationId: "createWebhook",
+          summary: "Register a webhook endpoint (webhooks:manage). Deliveries are signed: EZ-Signature: t=<unix>,v1=<hex hmac_sha256(secret, t + \".\" + rawBody)>; retries after 1 min, 5 min, 30 min, 2 h, 6 h, 24 h.",
+          requestBody: { required: true, content: json("WebhookCreate") },
+          responses: { "201": { description: "Created – the secret is returned only here", content: json("WebhookCreated") }, "400": err("invalid_request"), ...COMMON },
+        },
+        get: { operationId: "listWebhooks", summary: "Webhook endpoints of this integration (webhooks:manage).", responses: { "200": { description: "OK", content: { "application/json": { schema: { type: "object", properties: { webhooks: { type: "array", items: ref("Webhook") } } } } } }, ...COMMON } },
+      },
+      "/v1/webhooks/{id}": {
+        delete: { operationId: "deleteWebhook", summary: "Delete a webhook endpoint (webhooks:manage).", parameters: [idParam("Webhook id")], responses: { "200": { description: "Deleted" }, "404": err("webhook_not_found"), ...COMMON } },
+      },
+      "/v1/webhooks/{id}/test": {
+        post: { operationId: "testWebhook", summary: "Queue a webhook.test event (webhooks:manage).", parameters: [idParam("Webhook id")], responses: { "202": { description: "Queued" }, "404": err("webhook_not_found"), ...COMMON } },
       },
       "/v1/closings": {
         get: {

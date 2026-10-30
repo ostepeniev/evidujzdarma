@@ -221,6 +221,17 @@ function quarantinedStatus(id: string, externalRef: string | null, error: SaleEr
   return { id, externalRef, status: "quarantined", pok: null, evidencedAmount: null, notEvidencedAmount: null, sentAt: null, deadlineAt: null, attempts: 0, warnings: [], error, receipt: null, receiptUrl: null };
 }
 
+/** Stav tržby pro payload webhooku (S8, rozd. 8) – stejný SaleStatusV1 jako v odpovědi API. */
+export async function statusForWebhook(saleId: string): Promise<SaleStatusV1 | null> {
+  const db = getDb();
+  const row = await db.query.sales.findFirst({ where: eq(schema.sales.id, saleId) });
+  if (!row) return null;
+  const account = await db.query.accounts.findFirst({ where: eq(schema.accounts.id, row.accountId) });
+  if (!account) return null;
+  const units = row.unitId ? await db.select().from(schema.evidenceUnits).where(eq(schema.evidenceUnits.id, row.unitId)) : [];
+  return statusOfRow(row, { account, units: new Map(units.map((u) => [u.id, u])) });
+}
+
 /** Stav tržeb integrace podle id (v pořadí `ids`): evidované z sales, ostatní z karantény jejího zařízení. */
 export async function statusesFor(ctx: ApiCtx, ids: string[]): Promise<Map<string, SaleStatusV1>> {
   const out = new Map<string, SaleStatusV1>();
@@ -437,14 +448,22 @@ export async function submitSales(ctx: ApiCtx): Promise<{ results: SaleStatusV1[
   const statuses = await statusesFor(ctx, results.filter((r) => r.ok).map((r) => r.id));
   const byResult = new Map(results.map((r) => [r.id, r]));
   const refOf = new Map(valid.map((v) => [v.sale.id, v.sale.externalRef ?? null]));
-  return {
-    results: ids.map((id) => {
-      if (invalidStatus.has(id)) return invalidStatus.get(id)!;
-      const r = byResult.get(id)!;
-      if (r.ok) return statuses.get(id)!;
-      return quarantinedStatus(id, refOf.get(id) ?? null, quarantineError(r.code, r.error));
-    }),
-  };
+  const out = ids.map((id) => {
+    if (invalidStatus.has(id)) return invalidStatus.get(id)!;
+    const r = byResult.get(id)!;
+    if (r.ok) return statuses.get(id)!;
+    return quarantinedStatus(id, refOf.get(id) ?? null, quarantineError(r.code, r.error));
+  });
+  await emitQuarantined(ctx, out);
+  return { results: out };
+}
+
+/** Karanténa tržby z API → webhook sale.rejected (jednou na tržbu). */
+async function emitQuarantined(ctx: ApiCtx, statuses: SaleStatusV1[]) {
+  const q = statuses.filter((s) => s.status === "quarantined");
+  if (!q.length) return;
+  const { onSaleQuarantined } = await import("../webhooks");
+  for (const s of q) await onSaleQuarantined(ctx.integration.id, s).catch(() => undefined);
 }
 
 async function recordUsage(ctx: ApiCtx, accepted: number) {
@@ -620,7 +639,11 @@ export async function refundSale(ctx: ApiCtx, originalId: string): Promise<SaleS
     { id: body.id, sequence: key.sequence, soldAt, unitId: original.unitId, staffId: null, lines, payments, refundOf: original.id, approval: null, mode: original.mode as DeviceSale["mode"] },
   ]);
   ensureAccepted([result!]);
-  if (!result!.ok) return quarantinedStatus(body.id, body.externalRef ?? null, quarantineError(result!.code, result!.error));
+  if (!result!.ok) {
+    const st = quarantinedStatus(body.id, body.externalRef ?? null, quarantineError(result!.code, result!.error));
+    await emitQuarantined(ctx, [st]);
+    return st;
+  }
   if (result!.inserted) {
     await sendWithinBudget(ctx, [body.id], startedAt);
     await recordUsage(ctx, 1);

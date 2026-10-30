@@ -139,3 +139,26 @@ describe("S8 – the Integrace screen (verbatim texts)", () => {
     expect(src).toMatch(/role === "owner"/);
   });
 });
+
+describe("S8 – webhooks in the integration detail (7, 8)", () => {
+  it("gate: the detail lists webhooks and deliveries (no bodies); Poslat testovací událost queues webhook.test", async () => {
+    const { __setWebhookNetForTests } = await import("@/lib/server/webhooks");
+    __setWebhookNetForTests({ resolve: async () => ["203.0.113.10"], send: async () => ({ status: 200 }) });
+    const s = await seedAccount({ mode: "playground" });
+    await login(s.user.id);
+    const { token, integration } = (await (await createPOST(req("POST", "/api/ucet/integrace", { name: "ALiSiO", environment: "test", unitIds: [s.unit.id], scopes: ["webhooks:manage"] }), { params: Promise.resolve({}) })).json()) as { token: string; integration: { id: string } };
+    const { POST: hooksPOST } = await import("@/app/api/v1/webhooks/route");
+    const hook = (await (await hooksPOST(new Request("http://localhost/api/v1/webhooks", { method: "POST", headers: { authorization: `Bearer ${token}`, "content-type": "application/json" }, body: JSON.stringify({ url: "https://hooks.alisio.example/eet", events: ["sale.confirmed"] }) }))).json()) as { id: string };
+    const { POST: testPOST } = await import("@/app/api/ucet/integrace/[id]/webhooky/[wid]/route");
+    expect((await testPOST(req("POST", `/api/ucet/integrace/${integration.id}/webhooky/${hook.id}`), { params: Promise.resolve({ id: integration.id, wid: hook.id }) })).status).toBe(200);
+    const detail = await (await detailGET(req("GET", `/api/ucet/integrace/${integration.id}`), { params: Promise.resolve({ id: integration.id }) })).json();
+    expect(detail.webhooks[0]).toMatchObject({ id: hook.id, url: "https://hooks.alisio.example/eet", events: ["sale.confirmed"], active: true });
+    expect(detail.deliveries[0]).toMatchObject({ event: "webhook.test", status: "pending", attempts: 0 });
+    expect(JSON.stringify(detail)).not.toMatch(/payload|whsec_|secret/);
+    __setWebhookNetForTests(null);
+    // komponenta: URL, události, tlačítko a stav doručení
+    const { WebhookList } = await import("@/components/integrations/integrations-app");
+    const html = renderToStaticMarkup(createElement(WebhookList, { integrationId: integration.id, webhooks: detail.webhooks, deliveries: detail.deliveries })).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+    for (const t of ["Webhooky", "https://hooks.alisio.example/eet", "sale.confirmed", "Poslat testovací událost", "webhook.test"]) expect(html, t).toContain(t);
+  });
+});
