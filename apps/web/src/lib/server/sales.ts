@@ -4,12 +4,30 @@ import { z } from "zod";
 import { getDb, schema } from "@ez/db";
 import { MAX_EET_AMOUNT, PAYMENT_METHODS, SaleValidationError, buildSale, deadlineFor, evidencedAmounts, type Sale } from "@ez/fiscal-core";
 import type { DeviceContext } from "./auth";
+
+type Integration = typeof schema.integrations.$inferSelect;
 import { accountMode, productionAcceptsFrom, type EetMode } from "./fiscal";
 import { canSendInMode, ingestedFromQuarantine, markIngested, notifyClosedUnsent, quarantineSale } from "./quarantine";
 import { safeError } from "./log";
 import { verifyApproval } from "./staff-pin";
 import { refundCapacityIssue } from "@/lib/pos/refund";
 import { modeIn } from "@/lib/modes";
+
+/** Položka tržby (haléře) – společná pro pokladnu a EET API (S8); API mění jen hodnoty `kind`. */
+export const SaleLineSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  qty: z.number().finite().refine((v) => v !== 0 && Math.abs(v) <= 10_000),
+  unitPrice: z.number().int().min(-100_000_000_00).max(100_000_000_00),
+  vatRate: z.number().int().min(0).max(30),
+  kind: z.enum(["goods", "prepayment"]).optional(),
+});
+export const SalePaymentsSchema = z
+  .array(z.object({ method: z.enum(PAYMENT_METHODS), amount: z.number().int() }))
+  .min(1)
+  .max(5);
+export const SALE_LINES_MAX = 300;
+export const SaleDiscountSchema = z.number().int().min(0).optional();
+export const SaleTipSchema = z.number().int().min(0).optional();
 
 /** Tržba tak, jak ji posílá pokladna (částky v haléřích). */
 export const DeviceSaleSchema = z.object({
@@ -18,24 +36,10 @@ export const DeviceSaleSchema = z.object({
   soldAt: z.string().datetime({ offset: true }),
   unitId: z.string().uuid(),
   staffId: z.string().uuid().nullable().optional(),
-  lines: z
-    .array(
-      z.object({
-        name: z.string().trim().min(1).max(120),
-        qty: z.number().finite().refine((v) => v !== 0 && Math.abs(v) <= 10_000),
-        unitPrice: z.number().int().min(-100_000_000_00).max(100_000_000_00),
-        vatRate: z.number().int().min(0).max(30),
-        kind: z.enum(["goods", "prepayment"]).optional(),
-      }),
-    )
-    .min(1)
-    .max(300),
-  payments: z
-    .array(z.object({ method: z.enum(PAYMENT_METHODS), amount: z.number().int() }))
-    .min(1)
-    .max(5),
-  discount: z.number().int().min(0).optional(),
-  tip: z.number().int().min(0).optional(),
+  lines: z.array(SaleLineSchema).min(1).max(SALE_LINES_MAX),
+  payments: SalePaymentsSchema,
+  discount: SaleDiscountSchema,
+  tip: SaleTipSchema,
   refundOf: z.string().uuid().nullable().optional(),
   /** schválení vratky vlastníkem, které vydal server po ověření jeho PINu (R3.10) */
   approval: z.string().max(1000).nullable().optional(),
@@ -88,7 +92,13 @@ function stable(v: unknown): string {
  * Pokladní a vratka musí patřit k účtu; vratku dělá vlastník nebo ji vlastník schválí PINem.
  * Vratka nesmí přesáhnout původní tržbu; součet částečných vratek hlídá refundCapacity (S3-POKLADNA, dřív R1.7 „nejvýš jedna“).
  */
-async function checkStaffAndRefund(accountId: string, deviceId: string, input: DeviceSale, sale: Sale): Promise<{ approvedBy: string; approvalJti: string } | null> {
+async function checkStaffAndRefund(
+  accountId: string,
+  deviceId: string,
+  input: DeviceSale,
+  sale: Sale,
+  integration: Integration | null,
+): Promise<{ approvedBy: string | null; approvalJti: string | null } | null> {
   const total = sale.total;
   const db = getDb();
   const staffRow = (id: string) => db.query.staff.findFirst({ where: and(eq(schema.staff.id, id), eq(schema.staff.accountId, accountId)) });
@@ -101,6 +111,15 @@ async function checkStaffAndRefund(accountId: string, deviceId: string, input: D
     return null;
   }
 
+  // EET API (S8, rozd. 3.5): PIN vlastníka nahrazuje oprávnění refunds:write, které vlastník integraci vědomě dal.
+  // Vratka smí jen k tržbě téže integrace; ostatní kontroly (částka, režim, součet vratek) jsou stejné jako u pokladny.
+  if (integration) {
+    if (!integration.scopes.includes("refunds:write") || integration.revokedAt) throw new IngestRejection("REFUND_NOT_AUTHORIZED", "Integrace nemá oprávnění vracet tržby", 403);
+    const original = await db.query.sales.findFirst({ where: and(eq(schema.sales.id, input.refundOf), eq(schema.sales.accountId, accountId), eq(schema.sales.integrationId, integration.id)) });
+    if (!original) throw new IngestRejection("REFUND_UNKNOWN_ORIGINAL", "Původní tržba k vratce není na serveru");
+    checkRefundAgainst(original, input, sale);
+    return { approvedBy: null, approvalJti: null };
+  }
   // Zařízení samo nemůže tvrdit, že prodává vlastník: vratka potřebuje schválení podepsané serverem (R3.10),
   // vázané na tuto tržbu a částku a použitelné jednou (R5.5)
   const approval = verifyApproval(input.approval, { accountId, deviceId, soldAt: input.soldAt, refundOf: input.refundOf, amount: -total });
@@ -111,6 +130,15 @@ async function checkStaffAndRefund(accountId: string, deviceId: string, input: D
   if (total >= 0) throw new IngestRejection("INVALID_SALE", "Vratka musí mít zápornou částku");
   const original = await db.query.sales.findFirst({ where: and(eq(schema.sales.id, input.refundOf), eq(schema.sales.accountId, accountId)) });
   if (!original) throw new IngestRejection("REFUND_UNKNOWN_ORIGINAL", "Původní tržba k vratce není na serveru");
+  checkRefundAgainst(original, input, sale);
+  // součet s dřívějšími (částečnými) vratkami hlídá refundCapacity pod zámkem řádku originálu (S3-POKLADNA)
+  return { approvedBy: approver.id, approvalJti: approval!.jti };
+}
+
+/** Vratka proti původní tržbě: režim, vratka vratky, částky (pokladna i EET API). */
+function checkRefundAgainst(original: typeof schema.sales.$inferSelect, input: DeviceSale, sale: Sale): void {
+  const total = sale.total;
+  if (total >= 0) throw new IngestRejection("INVALID_SALE", "Vratka musí mít zápornou částku");
   // vratka patří do režimu původní tržby (Р3): ostrá vratka k tržbě z Playgroundu by do FS poslala zápornou tržbu
   // k něčemu, co ostré prostředí nikdy nedostalo – rozhodne vlastník (R7.13)
   if (original.mode !== input.mode) {
@@ -126,8 +154,6 @@ async function checkStaffAndRefund(accountId: string, deviceId: string, input: D
   const amounts = evidencedAmounts(sale);
   if (-amounts.total > original.evidencedTotal) throw new IngestRejection("REFUND_EXCEEDS", "Evidovaná částka vratky je vyšší než evidovaná částka původní tržby");
   if (-amounts.redeemed > original.redeemedAmount) throw new IngestRejection("REFUND_EXCEEDS", "Čerpání ve vratce je vyšší než čerpání u původní tržby");
-  // součet s dřívějšími (částečnými) vratkami hlídá refundCapacity pod zámkem řádku originálu (S3-POKLADNA)
-  return { approvedBy: approver.id, approvalJti: approval!.jti };
 }
 
 type Tx = Parameters<Parameters<ReturnType<typeof getDb>["transaction"]>[0]>[0];
@@ -169,6 +195,18 @@ const CLOCK_TOLERANCE_MS = 30_000;
 export async function ingestSales(ctx: DeviceContext, inputs: DeviceSale[]): Promise<IngestResult[]> {
   const db = getDb();
   const { device, account } = ctx;
+  // EET API (S8): tržby integrace – stejná evidence; režim určuje token (ne konfigurace zařízení), jednotky oprávnění
+  const integration = device.kind === "integration" ? ((await db.query.integrations.findFirst({ where: eq(schema.integrations.deviceId, device.id) })) ?? null) : null;
+  const refs = integration && inputs.length
+    ? new Map(
+        (
+          await db
+            .select({ id: schema.apiSaleKeys.saleId, ref: schema.apiSaleKeys.externalRef })
+            .from(schema.apiSaleKeys)
+            .where(and(eq(schema.apiSaleKeys.integrationId, integration.id), inArray(schema.apiSaleKeys.saleId, inputs.map((i) => i.id))))
+        ).map((r) => [r.id, r.ref]),
+      )
+    : new Map<string, string | null>();
   const unitIds = [...new Set(inputs.map((i) => i.unitId))];
   const units = unitIds.length
     ? await db
@@ -200,8 +238,9 @@ export async function ingestSales(ctx: DeviceContext, inputs: DeviceSale[]): Pro
       // Hodiny pokladny pozadu o méně než CLOCK_TOLERANCE_MS pokladna sama neopraví (correctedNow): po přepnutí nahoru
       // (např. ukázkový → ostrý) by se skutečná tržba připsala starému režimu – i v tomto okně rozhodne vlastník (Д-8).
       // Po přepnutí dolů tržba zůstává ve svém vyšším režimu, tam se nic neztrácí.
+      // Integrace (S8) zastaralou konfiguraci nemá: režim jejích tržeb je dán prostředím tokenu (test → Playground, live → ostrý).
       const lag = mode !== accountMode(account) && canSendInMode(mode, accountMode(account)) ? CLOCK_TOLERANCE_MS : 0;
-      if (mode !== accountMode(account) && soldAtMs >= account.eetModeChangedAt.getTime() - lag) {
+      if (!integration && mode !== accountMode(account) && soldAtMs >= account.eetModeChangedAt.getTime() - lag) {
         const known = await db.query.sales.findFirst({ where: and(eq(schema.sales.id, input.id), eq(schema.sales.accountId, account.id)), columns: { id: true } });
         if (!known) {
           throw new IngestRejection(
@@ -214,7 +253,7 @@ export async function ingestSales(ctx: DeviceContext, inputs: DeviceSale[]): Pro
         throw new IngestRejection("PRODUCTION_NOT_OPEN", "Ostré prostředí Finanční správy přijímá tržby až od 1. 11. 2026 (přechodný režim).");
       }
       const unit = unitById.get(input.unitId);
-      if (!unit) throw new IngestRejection("UNKNOWN_UNIT", "Neznámá evidenční jednotka");
+      if (!unit || (integration && !integration.unitIds.includes(unit.id))) throw new IngestRejection("UNKNOWN_UNIT", "Neznámá evidenční jednotka");
       if (mode !== "mock" && !unit.fsUnitId) throw new IngestRejection("UNIT_WITHOUT_FS_ID", "Evidenční jednotka nemá číslo přidělené Finanční správou");
 
       let sale;
@@ -248,7 +287,7 @@ export async function ingestSales(ctx: DeviceContext, inputs: DeviceSale[]): Pro
         results.push({ id: sale.id, ok: true, inserted: false });
         continue;
       }
-      const approved = await checkStaffAndRefund(account.id, device.id, input, sale);
+      const approved = await checkStaffAndRefund(account.id, device.id, input, sale, integration);
       const amounts = evidencedAmounts(sale);
       // i dílčí částky zprávy (urceno_cerp_zuct, cerp_zuct) musí projít XSD – jinak by tržba visela jako MESSAGE_INVALID (A Дрібне 6)
       if ([amounts.total, amounts.prepayment, amounts.redeemed].some((a) => Math.abs(a) > MAX_EET_AMOUNT)) {
@@ -285,6 +324,8 @@ export async function ingestSales(ctx: DeviceContext, inputs: DeviceSale[]): Pro
               status: amounts.total === 0 ? "not_required" : "queued",
               mode,
               deadlineAt: deadlineFor(sale.soldAt),
+              integrationId: integration?.id ?? null,
+              externalRef: refs.get(sale.id) ?? null,
             })
             .onConflictDoNothing({ target: schema.sales.id })
             .returning({ id: schema.sales.id });

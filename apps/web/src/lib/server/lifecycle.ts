@@ -458,6 +458,9 @@ export async function runRetention(now = new Date()): Promise<Record<string, num
   );
   // Mezipaměť ARES: 24 hodin
   await count("aresCache", db.delete(schema.aresCache).where(lt(schema.aresCache.fetchedAt, ago(now, RETENTION.aresCacheHours * 3_600_000))).returning({ key: schema.aresCache.key }));
+  // EET API (S8): deník požadavků 30 dní, minutová okna limitu hodinu
+  const { cleanupApiLogs } = await import("./api/http");
+  Object.assign(out, await cleanupApiLogs(now));
   return out;
 }
 

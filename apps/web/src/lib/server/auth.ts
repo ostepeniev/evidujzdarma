@@ -160,7 +160,8 @@ export async function authenticateDevice(req: Request, opts: { allowClosed?: boo
   if (token.length < 30) throw new HttpError(401, "Chybí token zařízení");
   const db = getDb();
   const device = await db.query.devices.findFirst({ where: eq(schema.devices.tokenHash, sha256(token)) });
-  if (!device) throw new HttpError(401, "Zařízení není registrované nebo bylo odpojeno");
+  // token integrace EET API (S8) není token pokladny – na /api/pokladna/* neplatí
+  if (!device || device.kind !== "pos") throw new HttpError(401, "Zařízení není registrované nebo bylo odpojeno");
   const account = await db.query.accounts.findFirst({ where: eq(schema.accounts.id, device.accountId) });
   // odpojené zařízení zrušeného účtu (retention po 30 dnech) se dozví proč – ne „zaregistrujte znovu“ (R7.15 N9)
   if (device.revokedAt) throw new HttpError(401, account?.closedAt ? CLOSED_DEVICE_TEXT : "Zařízení není registrované nebo bylo odpojeno");

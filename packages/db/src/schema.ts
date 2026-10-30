@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  type AnyPgColumn,
   bigint,
   boolean,
   customType,
@@ -294,6 +295,9 @@ export const evidenceUnits = pgTable(
   (t) => [index("units_account_idx").on(t.accountId)],
 );
 
+/** pos = pokladna (PWA) | integration = cizí systém přes EET API (S8); unitId má jen pokladna, jednotky integrace jsou v integrations */
+export const deviceKind = pgEnum("device_kind", ["pos", "integration"]);
+
 export const devices = pgTable(
   "devices",
   {
@@ -308,6 +312,7 @@ export const devices = pgTable(
     /** prefix pořadových čísel tohoto zařízení, např. "P1-" */
     sequencePrefix: varchar("sequence_prefix", { length: 12 }).notNull().default(""),
     tokenHash: varchar("token_hash", { length: 64 }).notNull(),
+    kind: deviceKind("kind").notNull().default("pos"),
     lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
     revokedAt: timestamp("revoked_at", { withTimezone: true }),
     createdAt: createdAt(),
@@ -437,10 +442,15 @@ export const sales = pgTable(
     eetData: jsonb("eet_data"),
     /** vlastník zrušeného účtu označil neodeslanou ostrou tržbu „Evidováno jinak“ (R6.4, Б7) – účet ji už nedrží */
     settledElsewhereAt: timestamp("settled_elsewhere_at", { withTimezone: true }),
+    /** S8: tržba přišla přes EET API od této integrace; externalRef = číslo platby v cizím systému */
+    integrationId: uuid("integration_id").references((): AnyPgColumn => integrations.id),
+    externalRef: varchar("external_ref", { length: 64 }),
     createdAt: createdAt(),
   },
   (t) => [
     uniqueIndex("sales_device_seq_uq").on(t.deviceId, t.sequence),
+    uniqueIndex("sales_integration_ref_uq").on(t.integrationId, t.externalRef).where(sql`${t.externalRef} is not null`),
+    index("sales_integration_sold_idx").on(t.integrationId, t.soldAt).where(sql`${t.integrationId} is not null`),
     index("sales_account_sold_idx").on(t.accountId, t.soldAt),
     index("sales_pending_idx").on(t.status, t.nextAttemptAt),
     /**
@@ -790,3 +800,197 @@ export const adminAudit = pgTable(
   },
   (t) => [index("admin_audit_created").on(t.createdAt)],
 );
+
+/* ────────────────────────────── EET API pro partnery (S8) ────────────────────────────── */
+
+export const integrationEnvironment = pgEnum("integration_environment", ["test", "live"]);
+/** Oprávnění tokenu integrace (S8, rozd. 1). */
+export const API_SCOPES = ["sales:write", "sales:read", "refunds:write", "units:read", "closings:read", "webhooks:manage"] as const;
+export type ApiScope = (typeof API_SCOPES)[number];
+
+/** Partnerská aplikace pro připojení jedním klikem (OAuth, S8 rozd. 6) – zakládá jen admin. */
+export const partnerApps = pgTable(
+  "partner_apps",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    clientId: varchar("client_id", { length: 64 }).notNull(),
+    clientSecretHash: varchar("client_secret_hash", { length: 64 }).notNull(),
+    redirectUris: text("redirect_uris").array().notNull().default(sql`'{}'::text[]`),
+    logoUrl: text("logo_url"),
+    active: boolean("active").notNull().default(true),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("partner_apps_client_uq").on(t.clientId)],
+);
+
+/**
+ * Integrace = řádek devices (kind = integration) + oprávnění. Tržby z API tak mají vlastní id_pokl (registerId)
+ * a prefix pořadových čísel jako pokladna; evidence, fronta a podpis jsou společné (S8, rozd. 1).
+ */
+export const integrations = pgTable(
+  "integrations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    deviceId: uuid("device_id")
+      .notNull()
+      .references(() => devices.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    partnerAppId: uuid("partner_app_id").references(() => partnerApps.id, { onDelete: "set null" }),
+    environment: integrationEnvironment("environment").notNull(),
+    scopes: text("scopes").array().$type<ApiScope[]>().notNull().default(sql`'{}'::text[]`),
+    /** prázdné = žádná jednotka, ne „všechny“ */
+    unitIds: uuid("unit_ids").array().notNull().default(sql`'{}'::uuid[]`),
+    nextSequence: bigint("next_sequence", { mode: "number" }).notNull().default(1),
+    /** prvních 12 znaků tokenu – jen pro rozpoznání v UI */
+    tokenPrefix: varchar("token_prefix", { length: 16 }).notNull(),
+    createdBy: uuid("created_by").references(() => users.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+  },
+  (t) => [uniqueIndex("integrations_device_uq").on(t.deviceId), index("integrations_account_idx").on(t.accountId)],
+);
+
+/**
+ * Klíč idempotence tržby z API (S8, rozd. 3.3): id tržby → hash těla, přidělené pořadové číslo a externalRef.
+ * Vzniká dřív než tržba (i tržba v karanténě má své číslo), takže souběžné požadavky se stejným id dostanou totéž
+ * číslo a jiné tělo se pozná jako konflikt. Pořadové číslo se přidělí jen jednou na id – bez mezer.
+ */
+export const apiSaleKeys = pgTable(
+  "api_sale_keys",
+  {
+    saleId: uuid("sale_id").primaryKey(),
+    integrationId: uuid("integration_id")
+      .notNull()
+      .references(() => integrations.id, { onDelete: "cascade" }),
+    bodyHash: varchar("body_hash", { length: 64 }).notNull(),
+    sequence: varchar("sequence", { length: 25 }).notNull(),
+    externalRef: varchar("external_ref", { length: 64 }),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("api_sale_keys_ref_uq").on(t.integrationId, t.externalRef).where(sql`${t.externalRef} is not null`)],
+);
+
+/** Deník požadavků API – bez těl, tokenů a dat tržeb (R3.6); uchovává se 30 dní. */
+export const apiRequests = pgTable(
+  "api_requests",
+  {
+    id: bigint("id", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
+    integrationId: uuid("integration_id").references(() => integrations.id, { onDelete: "cascade" }),
+    at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
+    method: varchar("method", { length: 8 }).notNull(),
+    /** šablona cesty (/v1/sales/{id}), nikdy skutečná URL */
+    route: varchar("route", { length: 64 }).notNull(),
+    status: smallint("status").notNull(),
+    durationMs: integer("duration_ms").notNull(),
+    errorCode: varchar("error_code", { length: 40 }),
+    requestId: uuid("request_id").notNull(),
+  },
+  (t) => [index("api_requests_integration_at").on(t.integrationId, t.at), index("api_requests_at").on(t.at)],
+);
+
+/** Využití API po dnech – jen evidence, ne účtování. */
+export const apiUsageDaily = pgTable(
+  "api_usage_daily",
+  {
+    integrationId: uuid("integration_id")
+      .notNull()
+      .references(() => integrations.id, { onDelete: "cascade" }),
+    date: date("date", { mode: "string" }).notNull(),
+    requests: integer("requests").notNull().default(0),
+    salesAccepted: integer("sales_accepted").notNull().default(0),
+    activeUnits: integer("active_units").notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.integrationId, t.date] })],
+);
+
+/** Počítadlo požadavků tokenu v minutovém okně (limit 120/min; Redis nemáme). Starší okna maže runRetention. */
+export const apiRateWindows = pgTable(
+  "api_rate_windows",
+  {
+    integrationId: uuid("integration_id")
+      .notNull()
+      .references(() => integrations.id, { onDelete: "cascade" }),
+    windowStart: timestamp("window_start", { withTimezone: true }).notNull(),
+    count: integer("count").notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.integrationId, t.windowStart] })],
+);
+
+export const webhookEndpoints = pgTable(
+  "webhook_endpoints",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    integrationId: uuid("integration_id")
+      .notNull()
+      .references(() => integrations.id, { onDelete: "cascade" }),
+    url: text("url").notNull(),
+    /** podpisové tajemství, šifrované envelope (jako klíče certifikátů) */
+    secretEnc: bytea("secret_enc").notNull(),
+    secretDek: bytea("secret_dek").notNull(),
+    secretKeyVersion: varchar("secret_key_version", { length: 32 }).notNull(),
+    events: text("events").array().notNull().default(sql`'{}'::text[]`),
+    active: boolean("active").notNull().default(true),
+    failingSince: timestamp("failing_since", { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [index("webhook_endpoints_integration").on(t.integrationId)],
+);
+
+export const webhookDeliveryStatus = pgEnum("webhook_delivery_status", ["pending", "delivered", "failed"]);
+
+/** Odchozí webhooky (outbox): události vznikají v DB, HTTP posílá cron mimo transakci. Uchovávají se 30 dní. */
+export const webhookDeliveries = pgTable(
+  "webhook_deliveries",
+  {
+    /** = id události */
+    id: uuid("id").primaryKey().defaultRandom(),
+    endpointId: uuid("endpoint_id")
+      .notNull()
+      .references(() => webhookEndpoints.id, { onDelete: "cascade" }),
+    event: varchar("event", { length: 40 }).notNull(),
+    payload: jsonb("payload").notNull(),
+    status: webhookDeliveryStatus("status").notNull().default("pending"),
+    attempts: integer("attempts").notNull().default(0),
+    nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }).notNull().defaultNow(),
+    /** jednorázovost události (např. deadline_soon jednou na tržbu) */
+    dedupeKey: varchar("dedupe_key", { length: 120 }),
+    lastHttpStatus: smallint("last_http_status"),
+    /** max. 200 znaků, bez těla odpovědi */
+    lastError: varchar("last_error", { length: 200 }),
+    createdAt: createdAt(),
+    deliveredAt: timestamp("delivered_at", { withTimezone: true }),
+  },
+  (t) => [
+    index("webhook_deliveries_due").on(t.status, t.nextAttemptAt),
+    uniqueIndex("webhook_deliveries_dedupe_uq").on(t.endpointId, t.dedupeKey).where(sql`${t.dedupeKey} is not null`),
+  ],
+);
+
+/** Jednorázový autorizační kód OAuth (10 min, uložen jen hash). */
+export const oauthCodes = pgTable("oauth_codes", {
+  codeHash: varchar("code_hash", { length: 64 }).primaryKey(),
+  partnerAppId: uuid("partner_app_id")
+    .notNull()
+    .references(() => partnerApps.id, { onDelete: "cascade" }),
+  accountId: uuid("account_id")
+    .notNull()
+    .references(() => accounts.id, { onDelete: "cascade" }),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  scopes: text("scopes").array().notNull(),
+  unitIds: uuid("unit_ids").array().notNull(),
+  environment: integrationEnvironment("environment").notNull(),
+  redirectUri: text("redirect_uri").notNull(),
+  codeChallenge: varchar("code_challenge", { length: 128 }).notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  usedAt: timestamp("used_at", { withTimezone: true }),
+  /** integrace vydaná tímto kódem – při opakovaném použití kódu se odvolá */
+  integrationId: uuid("integration_id").references(() => integrations.id, { onDelete: "set null" }),
+  createdAt: createdAt(),
+});

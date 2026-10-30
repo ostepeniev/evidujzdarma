@@ -281,6 +281,13 @@
       "when": 1792249884505,
       "tag": "0039_s3_pos_refunds_catalog",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1793317299965,
+      "tag": "0040_s8_partner_api",
+      "breakpoints": true
     }
   ]
 }

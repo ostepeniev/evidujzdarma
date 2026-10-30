@@ -39,7 +39,8 @@ export async function accountState(user: CurrentUser) {
         revokedAt: schema.devices.revokedAt,
       })
       .from(schema.devices)
-      .where(eq(schema.devices.accountId, account.id))
+      // integrace EET API (S8) mají vlastní seznam (Integrace), mezi pokladnami nejsou
+      .where(and(eq(schema.devices.accountId, account.id), eq(schema.devices.kind, "pos")))
       .orderBy(desc(schema.devices.createdAt)),
     db
       .select({
@@ -269,7 +270,7 @@ export async function registerDevice(accountId: string, input: { name: string; r
   const active = await db
     .select({ n: sql<number>`count(*)::int` })
     .from(schema.devices)
-    .where(and(eq(schema.devices.accountId, accountId), isNull(schema.devices.revokedAt)));
+    .where(and(eq(schema.devices.accountId, accountId), eq(schema.devices.kind, "pos"), isNull(schema.devices.revokedAt)));
   if ((active[0]?.n ?? 0) >= limitsFor(account.plan).devices) throw new HttpError(400, "Dosáhli jste limitu zařízení.");
   if (!/^[0-9a-zA-Z.,:;/#\-_ ]{1,20}$/.test(input.registerId)) throw new HttpError(400, "Označení pokladny: max. 20 znaků (písmena, číslice, - _ / .)");
   if (input.unitId) {
@@ -278,7 +279,8 @@ export async function registerDevice(accountId: string, input: { name: string; r
   }
   const token = randomToken(32);
   const existing = await db.query.devices.findFirst({ where: and(eq(schema.devices.accountId, accountId), eq(schema.devices.registerId, input.registerId)) });
-  if (existing && !existing.revokedAt) throw new HttpError(409, "Pokladna s tímto označením už existuje. Zvolte jiné označení.");
+  // označení patří i odpojené integraci EET API (S8) – pokladna ho nepřevezme
+  if (existing && (!existing.revokedAt || existing.kind !== "pos")) throw new HttpError(409, "Pokladna s tímto označením už existuje. Zvolte jiné označení.");
   // Prefix pořadových čísel je pro každou registraci jiný — po přeinstalaci zařízení
   // (nový čítač od 1) se pořadová čísla nikdy nezopakují.
   const prefix = `${input.registerId.replace(/[^0-9A-Za-z]/g, "").slice(0, 6) || "P"}-${randomToken(3).replace(/[^0-9A-Za-z]/g, "x").slice(0, 4).toUpperCase()}-`;
