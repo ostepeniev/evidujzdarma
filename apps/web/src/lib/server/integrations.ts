@@ -164,3 +164,56 @@ export async function listIntegrations(accountId: string) {
     .where(eq(schema.integrations.accountId, accountId))
     .orderBy(sql`${schema.integrations.revokedAt} is not null`, desc(schema.integrations.createdAt));
 }
+
+/* ───────────── UI vlastníka (S8, rozd. 7) ───────────── */
+
+export interface IntegrationDto {
+  id: string;
+  name: string;
+  environment: IntegrationEnvironment;
+  unitIds: string[];
+  scopes: string[];
+  tokenPrefix: string;
+  lastUsedAt: string | null;
+  revokedAt: string | null;
+  createdAt: string;
+}
+
+export function integrationDto(i: Integration): IntegrationDto {
+  return {
+    id: i.id,
+    name: i.name,
+    environment: i.environment,
+    unitIds: i.unitIds,
+    scopes: i.scopes,
+    tokenPrefix: i.tokenPrefix,
+    lastUsedAt: i.lastUsedAt?.toISOString() ?? null,
+    revokedAt: i.revokedAt?.toISOString() ?? null,
+    createdAt: i.createdAt.toISOString(),
+  };
+}
+
+/** Stav obrazovky Integrace: integrace, jednotky k výběru a zda jde zapnout ostré prostředí. */
+export async function integrationsState(accountId: string) {
+  const db = getDb();
+  const [rows, units, live] = await Promise.all([
+    listIntegrations(accountId),
+    db.select({ id: schema.evidenceUnits.id, label: schema.evidenceUnits.label }).from(schema.evidenceUnits).where(eq(schema.evidenceUnits.accountId, accountId)),
+    liveRefusal(accountId),
+  ]);
+  return { integrations: rows.map(integrationDto), units, liveAllowed: live === null, liveHint: live };
+}
+
+/** Detail: poslední požadavky (čas, routa, stav, kód chyby – bez dat tržeb) a webhooky. */
+export async function integrationDetail(accountId: string, integrationId: string) {
+  const db = getDb();
+  const row = await db.query.integrations.findFirst({ where: and(eq(schema.integrations.id, integrationId), eq(schema.integrations.accountId, accountId)) });
+  if (!row) throw new HttpError(404, "Integrace neexistuje.");
+  const requests = await db
+    .select({ at: schema.apiRequests.at, method: schema.apiRequests.method, route: schema.apiRequests.route, status: schema.apiRequests.status, errorCode: schema.apiRequests.errorCode })
+    .from(schema.apiRequests)
+    .where(eq(schema.apiRequests.integrationId, integrationId))
+    .orderBy(desc(schema.apiRequests.at))
+    .limit(50);
+  return { integration: integrationDto(row), requests: requests.map((r) => ({ ...r, at: r.at.toISOString() })) };
+}

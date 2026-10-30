@@ -38,7 +38,7 @@ describe("S8 – POST /v1/sales", () => {
     const first = r.json.results[0];
     expect(first).toMatchObject({ status: "confirmed", externalRef: batch[0]!.externalRef, evidencedAmount: 320000, notEvidencedAmount: 0, attempts: 1, error: null });
     expect(first.pok).toMatch(/ff$/);
-    expect(first.receiptUrl).toMatch(new RegExp(`/u/${batch[0]!.id}$`));
+    expect(first.receiptUrl).toMatch(new RegExp(`/u/${batch[0]!.id}\\?k=[A-Za-z0-9_-]+$`));
     expect(Date.parse(first.deadlineAt) - Date.parse(batch[0]!.soldAt)).toBe(48 * 3_600_000);
   }, 60_000);
 

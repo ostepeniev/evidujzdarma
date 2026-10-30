@@ -4,7 +4,7 @@ import { and, desc, eq, gte, inArray, isNull, lt, ne, or, sql } from "drizzle-or
 import { z } from "zod";
 import { getDb, schema } from "@ez/db";
 import { evidencedAmounts, formatSequence, type Payment, type SaleLine } from "@ez/fiscal-core";
-import { absoluteUrl } from "@/lib/site";
+import { receiptDataFrom, receiptUrl } from "../receipts";
 import { linesTotal, refundCapacityIssue, refundLinesFor, refundPayments, refundableLines, fullSelection, lineKey } from "@/lib/pos/refund";
 import { processSale } from "../fiscal";
 import { modeOf } from "../integrations";
@@ -64,7 +64,56 @@ export interface SaleStatusV1 {
   attempts: number;
   warnings: { code: number; text: string }[];
   error: SaleErrorV1 | null;
+  receipt: ReceiptFiscalV1 | null;
   receiptUrl: string | null;
+}
+
+/** Vše, co cizí systém tiskne na svůj doklad (S8, rozd. 4) – ze stejných dat jako online účtenka (receiptDataFrom). */
+export interface ReceiptFiscalV1 {
+  seller: { name: string; ico: string | null; dic: string | null; address: string | null };
+  unit: { fsUnitId: number; label: string };
+  registerId: string;
+  sequence: string;
+  soldAt: string;
+  total: number;
+  evidencedAmount: number;
+  vatBreakdown: Record<string, { base: number; vat: number }> | null;
+  pok: string | null;
+  mode: "production" | "playground";
+  /** true = POK v okamžiku odpovědi ještě není */
+  offline: boolean;
+  note?: string;
+}
+
+/** Text na doklad, když POK ještě není (S8, rozd. 4; doslovně). */
+export const OFFLINE_NOTE = "Tržba bude odeslána nejpozději do 48 hodin.";
+
+type ReceiptCtx = { account: typeof schema.accounts.$inferSelect; units: Map<string, typeof schema.evidenceUnits.$inferSelect> };
+
+function receiptOf(row: typeof schema.sales.$inferSelect, rc: ReceiptCtx): ReceiptFiscalV1 {
+  const d = receiptDataFrom(row, rc.account, row.unitId ? rc.units.get(row.unitId) : undefined);
+  const offline = row.status !== "confirmed" && row.status !== "not_required";
+  return {
+    // DIČ jen u plátce DPH (údaj daňového dokladu); u fyzické osoby je v něm rodné číslo – jinak ho API nevydává
+    seller: { name: d.merchant.name, ico: d.merchant.ico, dic: rc.account.vatPayer ? d.merchant.dic : null, address: d.merchant.address },
+    unit: { fsUnitId: Number(d.sale.unitId), label: d.merchant.unitLabel },
+    registerId: d.sale.registerId,
+    sequence: d.sale.sequence,
+    soldAt: d.sale.soldAt,
+    total: d.sale.total,
+    evidencedAmount: row.evidencedTotal,
+    vatBreakdown: d.sale.vat,
+    pok: row.status === "confirmed" ? d.fiscal.confirmationCode : null,
+    mode: row.mode === "production" ? "production" : "playground",
+    offline,
+    ...(offline ? { note: OFFLINE_NOTE } : {}),
+  };
+}
+
+async function receiptCtx(ctx: ApiCtx, rows: { unitId: string | null }[]): Promise<ReceiptCtx> {
+  const ids = [...new Set(rows.flatMap((r) => (r.unitId ? [r.unitId] : [])))];
+  const units = ids.length ? await getDb().select().from(schema.evidenceUnits).where(and(eq(schema.evidenceUnits.accountId, ctx.account.id), inArray(schema.evidenceUnits.id, ids))) : [];
+  return { account: ctx.account, units: new Map(units.map((u) => [u.id, u])) };
 }
 
 /* ───────────── pomocné ───────────── */
@@ -118,7 +167,7 @@ function saleError(row: typeof schema.sales.$inferSelect): SaleErrorV1 | null {
   return null;
 }
 
-export function statusOfRow(row: typeof schema.sales.$inferSelect): SaleStatusV1 {
+export function statusOfRow(row: typeof schema.sales.$inferSelect, rc: ReceiptCtx): SaleStatusV1 {
   const status: SaleStatus =
     row.status === "confirmed" ? "confirmed" : row.status === "not_required" ? "not_evidenced" : row.status === "sending" ? "sending" : row.status === "rejected" || row.status === "failed" ? "rejected" : "queued";
   return {
@@ -133,7 +182,8 @@ export function statusOfRow(row: typeof schema.sales.$inferSelect): SaleStatusV1
     attempts: row.attempts,
     warnings: row.warnings ?? [],
     error: saleError(row),
-    receiptUrl: absoluteUrl(`/u/${row.id}`),
+    receipt: receiptOf(row, rc),
+    receiptUrl: receiptUrl(row),
   };
 }
 
@@ -168,7 +218,7 @@ function quarantineError(code: string, reason: string, field?: string): SaleErro
 }
 
 function quarantinedStatus(id: string, externalRef: string | null, error: SaleErrorV1): SaleStatusV1 {
-  return { id, externalRef, status: "quarantined", pok: null, evidencedAmount: null, notEvidencedAmount: null, sentAt: null, deadlineAt: null, attempts: 0, warnings: [], error, receiptUrl: null };
+  return { id, externalRef, status: "quarantined", pok: null, evidencedAmount: null, notEvidencedAmount: null, sentAt: null, deadlineAt: null, attempts: 0, warnings: [], error, receipt: null, receiptUrl: null };
 }
 
 /** Stav tržeb integrace podle id (v pořadí `ids`): evidované z sales, ostatní z karantény jejího zařízení. */
@@ -180,7 +230,8 @@ export async function statusesFor(ctx: ApiCtx, ids: string[]): Promise<Map<strin
     .select()
     .from(schema.sales)
     .where(and(eq(schema.sales.accountId, ctx.account.id), eq(schema.sales.integrationId, ctx.integration.id), inArray(schema.sales.id, ids)));
-  for (const r of rows) out.set(r.id, statusOfRow(r));
+  const rc = await receiptCtx(ctx, rows);
+  for (const r of rows) out.set(r.id, statusOfRow(r, rc));
   const missing = ids.filter((id) => !out.has(id));
   if (missing.length) {
     const q = await db
@@ -493,7 +544,8 @@ export async function listSales(ctx: ApiCtx): Promise<{ sales: SaleStatusV1[]; n
     .orderBy(desc(schema.sales.soldAt), desc(schema.sales.id))
     .limit(limit + 1);
   const page = rows.slice(0, limit);
-  return { sales: page.map(statusOfRow), nextCursor: rows.length > limit ? encodeCursor(page[page.length - 1]!) : null };
+  const rc = await receiptCtx(ctx, page);
+  return { sales: page.map((r) => statusOfRow(r, rc)), nextCursor: rows.length > limit ? encodeCursor(page[page.length - 1]!) : null };
 }
 
 export async function getSale(ctx: ApiCtx, id: string): Promise<SaleStatusV1> {

@@ -67,6 +67,8 @@ const json = (status: number, error: string) => Response.json({ error }, { statu
 /** null = požadavek smí dál; jinak hotová chybová odpověď. */
 export function guardApiRequest(req: Request, pathname: string): Response | null {
   if (READ_ONLY.has(req.method.toUpperCase())) return null;
+  // EET API (S8): limit 1 MB hlídá obal /api/v1 sám a odpoví ve formátu API (payload_too_large); session cookie tu neplatí
+  if (pathname.startsWith("/api/v1/")) return null;
   const length = Number(req.headers.get("content-length") ?? "0");
   if (length > API_BODY_LIMIT) return json(413, "Požadavek je příliš velký.");
   if (!COOKIE_API.test(pathname)) return null;

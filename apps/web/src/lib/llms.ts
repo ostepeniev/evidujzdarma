@@ -105,6 +105,7 @@ export function llmsTxt(): string {
     "",
     `- [Co se o EET 2.0 píše špatně](${absoluteUrl("/co-se-o-eet-pise-spatne")}): tvrzení, která neodpovídají schválenému zákonu (výjimka 50 000 Kč, evidence až od února, sleva 5 000 Kč pro každého), se zdroji a datem stavu.`,
     `- [Je EET dole? Stav systému evidence tržeb](${absoluteUrl("/stav-eet")}): nezávislé měření dostupnosti rozhraní EET každých 5 minut, historie výpadků; strojově na ${absoluteUrl("/api/stav-eet")}.`,
+    `- [EET API pro vývojáře](${absoluteUrl("/api-docs")}): REST API pro odesílání tržeb do EET 2.0 z rezervačního systému, hotelového PMS nebo fakturace (tržby, stav a POK, vratky, denní přehledy, Playground Finanční správy). Token od podnikatele, specifikace OpenAPI 3.1 na ${absoluteUrl("/api/v1/openapi.json")}.`,
     `- [MCP server pro AI asistenty](${absoluteUrl("/mcp")}): veřejný MCP server (Streamable HTTP, bez přihlášení) na ${absoluteUrl("/api/mcp")} – nástroje eet_check_ico, eet_calculate_eet_off, eet_classify_payment, eet_get_facts, eet_list_misconceptions, eet_search_guides, eet_get_guide, eet_get_fs_status.`,
     `- [Srovnání s MOJE eet](${absoluteUrl("/srovnani/moje-eet")})`,
     `- [Přechod z jiné pokladny](${absoluteUrl("/prechod-z-jine-pokladny")}): ceny základních tarifů pokladen s evidencí tržeb podle ceníků výrobců (s datem a zdroji), kalkulačka ročních nákladů a postup přechodu včetně importu zboží z CSV.`,

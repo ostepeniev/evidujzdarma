@@ -16,9 +16,11 @@ const STATUS_TEXT: Record<string, string> = {
   rejected: "Tržba zatím není potvrzená Finanční správou – obchodník ji řeší.",
 };
 
-export default async function ReceiptPage({ params }: PageProps<"/u/[id]">) {
+export default async function ReceiptPage({ params, searchParams }: PageProps<"/u/[id]">) {
   const { id } = await params;
-  const r = hasDatabase() ? await loadReceipt(id) : null;
+  // účtenka tržby z EET API je chráněná klíčem v odkazu (S8, rozd. 4)
+  const { k } = await searchParams;
+  const r = hasDatabase() ? await loadReceipt(id, typeof k === "string" ? k : undefined) : null;
   if (!r) notFound();
   const { merchant: m, sale: s, fiscal } = r;
 
