@@ -285,7 +285,7 @@ describe("R14.8 – „EET“ queries in the titles of two guides", () => {
   it("gate: title and h1 verbatim, slugs unchanged", async () => {
     const { getGuide } = await import("@/content/guides");
     expect(getGuide("koho-se-eet-tyka")).toMatchObject({
-      title: "Kdo musí mít EET 2.0 od roku 2027 a kdo má výjimku",
+      title: "Koho se týká EET 2.0: kdo musí evidovat a kdo ne",
       h1: "Kdo musí mít EET 2.0 a kdo má výjimku",
     });
     expect(getGuide("eet-2-0-kompletni-pruvodce")).toMatchObject({

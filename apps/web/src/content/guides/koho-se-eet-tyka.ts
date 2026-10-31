@@ -5,7 +5,7 @@ import { REVIEWER } from "@/lib/site";
 export const kohoSeEetTyka: Guide = {
   slug: "koho-se-eet-tyka",
   category: "povinnosti",
-  title: "Kdo musí mít EET 2.0 od roku 2027 a kdo má výjimku",
+  title: "Koho se týká EET 2.0: kdo musí evidovat a kdo ne",
   h1: "Kdo musí mít EET 2.0 a kdo má výjimku",
   description:
     "Kadeřnice, taxikář, veterinář i stánek na trhu: od 1. 1. 2027 eviduje každý, komu se platí osobně hotově, kartou nebo QR. Kdo má výjimku a co je EET OFF.",
