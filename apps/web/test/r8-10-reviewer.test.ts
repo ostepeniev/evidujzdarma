@@ -19,7 +19,8 @@ const CHANGELOG = { date: "2026-10-07", text: "Návod prošel odbornou revizí (
 /** návody po R8.10 (C1, gastro, S1) – všechny revidované 17. 10. 2026 (gate v c1-draft-guides.test.ts); revize R8.10 se týkala 16 návodů před nimi */
 const C1_DRAFTS = new Set(["pokladna-v-mobilu-zdarma", "eet-trhy-stanky", "eet-eshop-dobirka", "eet-gastronomie", "sleva-na-dani-za-eet", "storno-a-vraceni-eet"]);
 /** S5-SLUŽBY (26. 10. 2026): nové koncepty – čekají na revizi (s5-services.test.ts) */
-const S5_DRAFTS = new Set(["eet-on-nebo-off-modelove-situace", "kdo-pomuze-s-eet"]);
+/** К13 (31. 10. 2026): koncept pokladna-z-eet-1-0 – čeká na revizi (k13-services.test.ts) */
+const S5_DRAFTS = new Set(["eet-on-nebo-off-modelove-situace", "kdo-pomuze-s-eet", "pokladna-z-eet-1-0"]);
 // S7-VIZ (28. 10. 2026): návody z oficiálních příkladů (basis "official", Ф15) čekají na revizi zvlášť
 const REVIEWED = GUIDES.filter((g) => !C1_DRAFTS.has(g.slug) && !S5_DRAFTS.has(g.slug) && g.basis !== "official");
 const REVIEWED_1017 = GUIDES.filter((g) => C1_DRAFTS.has(g.slug));

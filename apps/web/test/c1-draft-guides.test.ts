@@ -16,7 +16,8 @@ const S1_DRAFTS = ["sleva-na-dani-za-eet", "storno-a-vraceni-eet"] as const;
 /** 17. 10. 2026: Helena Jeřábková potvrdila C1 + gastro + S1 koncepty (zpráva Olegovi) – návody jdou do indexu (Ф9). */
 const REVIEWED_1017 = [...DRAFTS, "eet-gastronomie", ...S1_DRAFTS] as const;
 /** Koncepty, které na revizi ještě čekají – noindex, mimo sitemap, llms.txt i MCP. 17.–25. 10. 2026 žádné; S5 (26. 10.) přidal dva. */
-const STILL_DRAFTS: readonly string[] = ["eet-on-nebo-off-modelove-situace", "kdo-pomuze-s-eet"];
+/** К13 (31. 10. 2026) přidal koncept pokladna-z-eet-1-0. */
+const STILL_DRAFTS: readonly string[] = ["eet-on-nebo-off-modelove-situace", "kdo-pomuze-s-eet", "pokladna-z-eet-1-0"];
 const ALL_SOURCES = new Set<string>(Object.values(SOURCES).map((s) => s.url));
 const plain = (s: string) => s.replace(/\*\*/g, "").replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");
 /** Věty: konec věty je .!? a za ním velké písmeno (ne „1. 1. 2027“). */
@@ -68,7 +69,7 @@ describe("C1 – three guides (drafts until 17. 10. 2026, then reviewed)", () =>
     }
   });
 
-  it("gate: only the S5 drafts (26. 10. 2026) wait for the review – every other guide is indexable", () => {
+  it("gate: only the S5 drafts (26. 10. 2026) and the К13 draft (31. 10. 2026) wait for the review – every other guide is indexable", () => {
     expect(GUIDES.filter((g) => !isIndexable(g)).map((g) => g.slug)).toEqual([...STILL_DRAFTS]);
   });
 

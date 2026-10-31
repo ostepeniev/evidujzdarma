@@ -66,6 +66,7 @@ export function AddonCard({ addon }: { addon: Addon }) {
         <span className="text-3xl font-extrabold tracking-tight text-ink">{addon.priceLabel}</span>
         {addon.period && <span className="text-base text-muted">{addon.period}</span>}
       </p>
+      {addon.alt && <p className="mt-1 text-[15px] text-ink-soft">{addon.alt}</p>}
       <p className="mt-3 text-[15px] leading-relaxed text-ink-soft">{addon.text}</p>
       {addon.bullets && (
         <ul className="mt-4 flex-1 space-y-2 text-[15px] text-ink">

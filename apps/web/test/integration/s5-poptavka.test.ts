@@ -33,8 +33,30 @@ describe("S5 – /api/poptavka", () => {
     expect(rows[0]!.template).toBe("notice");
     const p = rows[0]!.payload as { subject: string; text: string };
     expect(p.subject).toBe("Poptávka: Nastavení EET na klíč – kadernice@example.cz");
-    for (const s of ["kadernice@example.cz", "IČO: 12345679", "Počet provozoven: 2", "DIS+ zatím ne."]) expect(p.text).toContain(s);
+    for (const s of ["kadernice@example.cz", "IČO: 12345679", "Počet provozoven: 2", "DIS+ zatím ne.", "Služba: Nastavení EET na klíč (990 Kč bez DPH", "Současná pokladna: —"]) expect(p.text).toContain(s);
     expect(rows.some((r) => r.to.toLowerCase() === "kadernice@example.cz")).toBe(false);
+  });
+
+  // К13 (31. 10. 2026): balíček „Připojení stávající pokladny“ a popis současné pokladny jdou do e-mailu provozovateli
+  it("gate: the package 'pripojeni' and the current cash register end up in the operator's e-mail", async () => {
+    const res = await post({ package: "pripojeni", email: "obchod@example.cz", currentPos: "Pokladna z EET 1.0, tiskárna" });
+    expect(res.status).toBe(200);
+    const rows = await outbox();
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.to).toBe(SITE.email);
+    const p = rows[0]!.payload as { subject: string; text: string };
+    expect(p.subject).toBe("Poptávka: Připojení stávající pokladny – obchod@example.cz");
+    for (const s of ["Služba: Připojení stávající pokladny (cenu potvrdíme předem podle systému, bez DPH)", "Současná pokladna: Pokladna z EET 1.0, tiskárna"]) expect(p.text).toContain(s);
+  });
+
+  it("gate: an unknown package and an over-long cash register description are refused", async () => {
+    const r1 = await post({ package: "jine", email: "a@example.cz" });
+    expect(r1.status).toBe(400);
+    expect((await r1.json()).field).toBe("package");
+    const r2 = await post({ email: "a@example.cz", currentPos: "x".repeat(201) });
+    expect(r2.status).toBe(400);
+    expect((await r2.json()).field).toBe("currentPos");
+    expect(await outbox()).toHaveLength(0);
   });
 
   it("gate: validation – bad e-mail and bad IČO are refused with the field name", async () => {

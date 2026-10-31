@@ -5,9 +5,10 @@
  * a web je tak i označuje. Jádro pokladny je zdarma navždy — to se nemění.
  * Placené funkce spouštíme později než bezplatnou pokladnu.
  */
+import { EXISTING_POS_SERVICE, SETUP_SERVICE } from "./services";
 import { WHY_FREE_FAQ } from "./why-free";
 
-export const PRICING_UPDATED = "2026-10-26";
+export const PRICING_UPDATED = "2026-10-31";
 
 /** Zobrazí se v FAQ (prostý text – FAQ a JSON-LD odkazy nevykreslují). */
 export const PRICING_NOTICE_TEXT =
@@ -96,9 +97,14 @@ export const PLANS: readonly Plan[] = [
 export interface Addon {
   id: string;
   name: string;
-  price: number;
+  /** cena v Kč pro JSON-LD; null = cena podle individuální nabídky (Offer bez ceny se do JSON-LD nedává) */
+  price: number | null;
+  /** cena s DPH, pokud `price` je bez DPH (služby provozovatele – plátce DPH, DECISIONS К13) */
+  priceInclVat?: number;
   priceLabel: string;
   period?: string;
+  /** řádek pod cenovkou, např. cena s DPH */
+  alt?: string;
   from?: boolean;
   monthly?: boolean;
   text: string;
@@ -122,15 +128,33 @@ export const ADDONS: readonly Addon[] = [
   },
   {
     id: "nastaveni",
-    // S5-SLUŽBY (26. 10. 2026, rozhodnutí majitele): písemně bez telefonu, 990 Kč – content/services.ts
+    // S5-SLUŽBY (26. 10. 2026) a К13 (31. 10. 2026): písemně bez telefonu, cena bez DPH i s DPH – content/services.ts
     name: "Nastavení na klíč",
-    price: 990,
-    priceLabel: "990 Kč",
+    price: SETUP_SERVICE.price,
+    priceInclVat: SETUP_SERVICE.priceInclVat,
+    priceLabel: SETUP_SERVICE.priceExVatLabel,
     period: "jednorázově",
-    text: "Písemně, bez telefonování: postup na míru pro DIS+ a pokladní certifikát, kontrola a příprava nastavení pokladny. Platíte až po dokončení.",
-    bullets: ["Přihlášení k evidenci a evidenční jednotky v DIS+", "Pokladní certifikát krok za krokem", "Nastavení pokladny a první zkušební tržba"],
+    alt: SETUP_SERVICE.priceInclVatLabel,
+    text: "Písemně, bez telefonování: postup na míru pro DIS+, připojení certifikátu a kontrola nastavení pokladny. Platíte až po dokončení.",
+    bullets: [
+      "DIS+ a EET: přihlášení k evidenci, oznámení evidenčních jednotek",
+      "Připojení certifikátu (klíče) a zkušební spuštění",
+      "Kontrola nastavení pokladny",
+    ],
     status: "order",
     cta: { href: "/nastaveni-na-klic", label: "Poptat nastavení" },
+  },
+  {
+    id: EXISTING_POS_SERVICE.id,
+    // К13 (31. 10. 2026): pokladna z první EET nebo jiný systém – cena individuálně, bez pevné částky
+    name: EXISTING_POS_SERVICE.name,
+    price: null,
+    priceLabel: EXISTING_POS_SERVICE.priceLabel,
+    alt: EXISTING_POS_SERVICE.priceNote,
+    text: "Pro pokladny z první EET (2016–2020) a jiné pokladní systémy: připojení EET klíče přes servisní firmu, vzdáleně s námi, nebo sami podle písemného návodu.",
+    bullets: ["Poradíme, kterou cestou pokladnu připojit", "Vzdálené připojení podle systému", "Písemný návod pro samostatné připojení"],
+    status: "order",
+    cta: { href: "/nastaveni-na-klic#stavajici-pokladna", label: "Poptat připojení" },
   },
   {
     id: "api",

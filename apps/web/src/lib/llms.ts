@@ -6,7 +6,7 @@ import { MYTHS, MYTHS_UPDATED } from "@/content/myths";
 import type { Block, Guide } from "@/content/guides/types";
 import { OPERATOR, SITE, absoluteUrl, REVIEWER } from "./site";
 import { STATIC_PAGES } from "./static-pages";
-import { SETUP_SERVICE } from "@/content/services";
+import { EXISTING_POS_SERVICE, SETUP_SERVICE } from "@/content/services";
 import { OBOR_LANDINGS, landingPath } from "@/content/obor-landings";
 import { reviewedMoneyPaths } from "./money-review";
 
@@ -119,7 +119,9 @@ export function llmsTxt(): string {
     `- [O nás a odborná revize](${absoluteUrl("/o-nas")}): kdo web provozuje, jak ověřujeme fakta a kdo návody reviduje.`,
     `- [Ceník](${absoluteUrl("/cenik")}): evidence tržeb zdarma navždy; Premium 149 Kč/měsíc.`,
     // S5-SLUŽBY
-    `- [Nastavení EET na klíč](${absoluteUrl("/nastaveni-na-klic")}): placená technická pomoc (${SETUP_SERVICE.priceLabel}, platí se po dokončení) – postup na míru pro DIS+ a pokladní certifikát, kontrola a nastavení pokladny; písemně e-mailem. Daňové poradenství (EET ON/OFF) neposkytujeme.`,
+    `- [Nastavení EET na klíč](${absoluteUrl("/nastaveni-na-klic")}): placená technická pomoc (${SETUP_SERVICE.priceLabel}, platí se po dokončení) ve třech krocích – DIS+ a EET (přihlášení k evidenci, evidenční jednotky), připojení certifikátu se zkušebním spuštěním a kontrola nastavení pokladny; písemně e-mailem. Daňové poradenství (EET ON/OFF) neposkytujeme.`,
+    // К13 (31. 10. 2026)
+    `- [${EXISTING_POS_SERVICE.name}](${absoluteUrl("/nastaveni-na-klic#stavajici-pokladna")}): pro pokladny z první EET (2016–2020) a jiné systémy – připojení přes servisní firmu, vzdáleně, nebo podle písemného návodu; ${EXISTING_POS_SERVICE.priceNote}.`,
     `- [Pro účetní](${absoluteUrl("/ucetni")})`,
     `- [Kompletní text návodů pro AI](${absoluteUrl("/llms-full.txt")})`,
     "",

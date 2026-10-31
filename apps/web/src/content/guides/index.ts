@@ -20,6 +20,7 @@ import { kohoSeEetTyka } from "./koho-se-eet-tyka";
 import { kontaktniPlatba } from "./kontaktni-platba";
 import { musimVydavatUctenku } from "./musim-vydavat-uctenku";
 import { pokladnaVMobiluZdarma } from "./pokladna-v-mobilu-zdarma";
+import { pokladnaZEet10 } from "./pokladna-z-eet-1-0";
 import { pokutyEet } from "./pokuty-eet";
 import { prvniTydenSEet } from "./prvni-tyden-s-eet";
 import { slevaNaDaniZaEet } from "./sleva-na-dani-za-eet";
@@ -46,6 +47,8 @@ export const GUIDES: readonly Guide[] = [
   evidencniJednotka,
   jakAktivovatDisACertifikat,
   kdoPomuzeSEet,
+  // К13 (31. 10. 2026): koncept do revize
+  pokladnaZEet10,
   eetBezInternetu,
   pokladnaVMobiluZdarma,
   pokutyEet,

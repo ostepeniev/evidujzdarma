@@ -29,12 +29,13 @@ const words = (s: string) => plain(s).split(/\s+/).filter(Boolean).length;
 const PHONE = /\+?420[\s\d]{9,}|tel:/;
 
 describe("S5 – the service and its price", () => {
-  it("gate: owner's decision – 990 Kč, written, payment after completion; the pricing add-on agrees", () => {
+  // К13 (31. 10. 2026): cena 990 Kč je bez DPH, k ní 1 197,90 Kč s DPH (provozovatel je plátce DPH)
+  it("gate: owner's decision – 990 Kč bez DPH, written, payment after completion; the pricing add-on agrees", () => {
     expect(SETUP_SERVICE.price).toBe(990);
-    expect(SETUP_SERVICE.priceLabel).toBe("990 Kč");
+    expect(SETUP_SERVICE.priceLabel.replace(/\u00a0/g, " ")).toBe("990 Kč bez DPH (1 197,90 Kč s DPH)");
     expect(SETUP_SERVICE.payment).toContain("až po dokončení");
     const a = ADDONS.find((x) => x.id === "nastaveni")!;
-    expect(a).toMatchObject({ price: 990, priceLabel: "990 Kč", status: "order", cta: { href: "/nastaveni-na-klic" } });
+    expect(a).toMatchObject({ price: 990, priceInclVat: 1197.9, priceLabel: "990 Kč bez DPH", status: "order", cta: { href: "/nastaveni-na-klic" } });
     expect(a.text).toContain("bez telefonování");
     expect(STATUS_LABEL.order).toBe("Lze objednat");
   });
@@ -68,19 +69,20 @@ describe("S5 – the page /nastaveni-na-klic", () => {
     const { default: Page } = await import("@/app/(site)/nastaveni-na-klic/page");
     const html = renderToStaticMarkup(createElement(Page as FC));
     const t = pageText(Page as FC);
-    for (const s of ["990 Kč", "Jak to probíhá", "Termíny, které hlídáme", "11. 1. 2027", "1. 11. 2026", TAX_PARTNER.notice, "Poptat nastavení na klíč", SITE.email]) {
+    for (const s of ["990 Kč bez DPH", "1 197,90 Kč s DPH", "Jak to probíhá", "Termíny, které hlídáme", "11. 1. 2027", "1. 11. 2026", TAX_PARTNER.notice, "Poptat nastavení nebo připojení pokladny", SITE.email]) {
       expect(t, s).toContain(s);
     }
     expect(html).toContain('data-service-order="form"');
     expect(html).toContain('href="/kalkulacka-eet-off"');
     expect(html).toContain(`mailto:${SITE.email}`);
     expect(html).toContain('"@type":"Service"');
-    expect(html).toContain('"price":"990"');
+    expect(html).toContain('"price":"1197.90"');
+    expect(html).toContain('"valueAddedTaxIncluded":true');
     expect(html).not.toMatch(PHONE);
   });
 
   it("gate: the page is in STATIC_PAGES, the sitemap and llms.txt", async () => {
-    expect(STATIC_PAGES.find((p) => p.path === "/nastaveni-na-klic")).toMatchObject({ modified: "2026-10-26" });
+    expect(STATIC_PAGES.find((p) => p.path === "/nastaveni-na-klic")).toMatchObject({ modified: "2026-10-31" });
     const { default: sitemap } = await import("@/app/sitemap");
     expect(sitemap().map((e) => e.url)).toContain(absoluteUrl("/nastaveni-na-klic"));
     const { llmsTxt } = await import("@/lib/llms");

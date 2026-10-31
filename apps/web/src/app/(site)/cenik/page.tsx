@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/page-header";
 import { AddonCard, FeatureMatrix, PlanCard } from "@/components/pricing/plan-card";
 import { ToolCta } from "@/components/tool-cta";
 import { RichText } from "@/components/rich-text";
-import { ADDONS, PARTNER_PLAN, PLANS, PRICING_FAQ, PRICING_NOTICE, PRICING_UPDATED } from "@/content/pricing";
+import { ADDONS, PARTNER_PLAN, PLANS, PRICING_FAQ, PRICING_NOTICE, PRICING_UPDATED, type Addon } from "@/content/pricing";
 import { JsonLd, PRODUCT_IMAGES, faqLd, offerAvailability } from "@/lib/jsonld";
 import { SITE_URL, absoluteUrl } from "@/lib/site";
 import { canonicalMeta } from "@/lib/metadata";
@@ -39,6 +39,23 @@ function offerLd(o: { name: string; price: number; monthly?: boolean; from?: boo
   };
 }
 
+/**
+ * К13 (31. 10. 2026): služby provozovatele (plátce DPH) mají cenu bez DPH – Offer.price je cena s DPH a priceSpecification
+ * uvádí obě ceny s valueAddedTaxIncluded.
+ */
+function addonOfferLd(a: Addon & { price: number }) {
+  const offer = offerLd({ name: a.name, price: a.price, monthly: a.monthly, from: a.from, description: a.text });
+  if (a.priceInclVat === undefined || a.monthly) return offer;
+  return {
+    ...offer,
+    price: a.priceInclVat.toFixed(2),
+    priceSpecification: [
+      { "@type": "PriceSpecification", price: a.priceInclVat, priceCurrency: "CZK", valueAddedTaxIncluded: true },
+      { "@type": "PriceSpecification", price: a.price, priceCurrency: "CZK", valueAddedTaxIncluded: false },
+    ],
+  };
+}
+
 function productLd() {
   return {
     "@context": "https://schema.org",
@@ -66,7 +83,8 @@ function productLd() {
           referenceQuantity: { "@type": "QuantitativeValue", value: 1, unitCode: "ANN" },
         },
       },
-      ...ADDONS.map((a) => offerLd({ name: a.name, price: a.price, monthly: a.monthly, from: a.from, description: a.text })),
+      // doplněk s cenou podle individuální nabídky (price null) nemá Offer – Offer bez ceny Google hlásí jako chybu
+      ...ADDONS.flatMap((a) => (a.price === null ? [] : [addonOfferLd({ ...a, price: a.price })])),
     ],
     seller: { "@id": `${SITE_URL}/#organization` },
   };

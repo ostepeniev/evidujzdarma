@@ -3,6 +3,7 @@ import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { ToolCta } from "@/components/tool-cta";
 import { FACTS, FACTS_UPDATED, SOURCES } from "@/content/facts";
+import { SERVICE_PARTNER_LINE } from "@/content/services";
 import { JsonLd } from "@/lib/jsonld";
 import { OPERATOR, REVIEWER, REVIEWER_PROFILE, REVIEWER_QUOTE, REVIEWER_TITLE, SITE, SITE_URL, absoluteUrl } from "@/lib/site";
 import { ExternalLink } from "@/components/external-link";
@@ -142,6 +143,21 @@ export default function AboutPage() {
                 — {REVIEWER.name}, {REVIEWER_TITLE}
               </figcaption>
             </figure>
+          </section>
+
+          {/* К13 (31. 10. 2026): partnerská účetní kancelář pro složitější nastavení pokladen – ne daňové poradenství (TAX_PARTNER vypnutý) */}
+          <section id="partneri" aria-labelledby="partneri-h" className="scroll-mt-24">
+            <h2 id="partneri-h" className="text-2xl font-bold tracking-tight sm:text-3xl">
+              Partneři
+            </h2>
+            <p className="mt-4 text-[17px] leading-relaxed text-ink-soft">{SERVICE_PARTNER_LINE}</p>
+            <p className="mt-2 text-[15px] text-muted">
+              Spolupracujeme na službě{" "}
+              <Link href="/nastaveni-na-klic" className="font-medium text-brand-700 underline underline-offset-4">
+                Nastavení EET na klíč
+              </Link>
+              ; daňové poradenství v jejím rámci neposkytujeme.
+            </p>
           </section>
 
           <section aria-labelledby="zmeny">
