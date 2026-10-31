@@ -5,10 +5,10 @@ import { REVIEWER } from "@/lib/site";
 export const eetRemeslnici: Guide = {
   slug: "eet-remeslnici",
   category: "obory",
-  title: "EET 2.0 pro řemeslníky a služby mimo provozovnu",
+  title: "EET pro řemeslníky 2027: faktura, hotovost a záloha",
   h1: "EET pro řemeslníky a služby mimo provozovnu",
   description:
-    "Instalatér, elektrikář, malíř, masér nebo lektor u klienta: kdy od 1. 1. 2027 evidovat tržbu v EET 2.0, kdy stačí faktura a co se zálohou na materiál.",
+    "Instalatér, elektrikář, masér u klienta: hotovost a karta na místě se od 1. 1. 2027 evidují, faktura převodem ne. Co se zálohou na materiál a bez signálu.",
   lead:
     "Řemeslník eviduje od **1. 1. 2027** jen to, co mu zákazník zaplatí na místě – hotově, kartou do mobilního terminálu nebo QR kódem z jeho telefonu. Faktura uhrazená převodem se neeviduje. Kdo nemá provozovnu, uvede v DIS+ jako evidenční jednotku sám sebe. Bez signálu má na odeslání **48 hodin**.",
   summary: [
@@ -70,6 +70,8 @@ export const eetRemeslnici: Guide = {
               ["Zákazník vám při prohlídce dá 5 000 Kč hotově na materiál", "Tržba 5 000 Kč"],
               ["Po dokončení vyúčtujete 12 000 Kč, zákazník doplatí 7 000 Kč hotově", "Tržba 7 000 Kč"],
               ["Záloha 5 000 Kč přišla převodem na účet", "Neevidujete; evidujete jen doplatek zaplacený na místě"],
+              ["Faktura na 12 000 Kč: zákazník dá na místě 2 000 Kč kartou, zbytek pošle druhý den převodem", "Tržba 2 000 Kč; převod se neeviduje"],
+              ["Doplatek 7 000 Kč zaplatí zákazník 5 000 Kč hotově a 2 000 Kč kartou", "Jedna tržba 7 000 Kč (jedna platba dvěma způsoby)"],
             ],
             caption: "Ilustrační příklad. Záloha a doplatek jsou dvě samostatné běžné platby, v datové zprávě se nijak nepropojují.",
           },
@@ -145,8 +147,9 @@ export const eetRemeslnici: Guide = {
   sources: [SOURCES.mfPredstavuje, SOURCES.kdoMusi, SOURCES.danovkyKontaktni, SOURCES.jakZacit, SOURCES.prakticke, SOURCES.eetOff, SOURCES.mojeEet, SOURCES.seminarVyvojari],
   related: ["kontaktni-platba", "eet-bez-internetu", "evidencni-jednotka"],
   published: "2026-10-01",
-  updated: "2026-10-03",
+  updated: "2026-10-31",
   changelog: [
+    { date: "2026-10-31", text: "Do příkladu se zálohou doplněna faktura zaplacená zčásti na místě a doplatek zaplacený kombinací hotovosti a karty (podle prezentace Ministerstva financí a Finanční správy)." },
     { date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
     { date: "2026-10-03", text: "Opraveno podle semináře Finanční správy pro vývojáře: záloha a doplatek jsou dvě běžné platby, dárkový poukaz se eviduje jen při prodeji (jeho uplatnění není platbou) a částku určenou k čerpání a čerpání uvádí pokladna jen u kreditu." },
     {

@@ -5,10 +5,10 @@ import { REVIEWER } from "@/lib/site";
 export const trzbaZaJineho: Guide = {
   slug: "trzba-za-jineho",
   category: "povinnosti",
-  title: "Tržba za jiného v EET 2.0: pověření v praxi",
+  title: "Tržba za jiného v EET 2.0: pověření a komisní prodej",
   h1: "Tržba za jiného (pověření): masér v hotelu, prodej v cizím obchodě",
   description:
-    "Hotel vybírá za maséra, obchod prodává zboží výrobce, stánek sdílí dva podnikatelé. Jak v EET 2.0 od 1. 1. 2027 funguje evidence tržby za jiného (pověření).",
+    "Masáž placená na recepci hotelu, med včelaře v cizím obchodě, sdílený stánek: kdo od 1. 1. 2027 eviduje tržbu za jiného a jak funguje pověření v EET 2.0.",
   lead:
     "EET 2.0 umožňuje, aby tržbu evidoval jiný podnikatel než ten, komu patří – na základě **pověření**. Typicky hotel, který na recepci inkasuje za externího maséra. Pověřený pak eviduje a datová zpráva od **1. 1. 2027** nese identifikaci obou podnikatelů. Často je ale jednodušší jiné uspořádání: každý eviduje sám, nebo hotel službu přeprodá.",
   summary: [

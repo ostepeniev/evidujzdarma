@@ -86,7 +86,8 @@ describe("S3-OPEN 1a – guides sleva-na-dani-za-eet and storno-a-vraceni-eet re
     const pillar = getGuide("eet-2-0-kompletni-pruvodce")!;
     const text = JSON.stringify(pillar.sections);
     for (const slug of SLUGS) expect(text, slug).toContain(`](/navody/${slug})`);
-    expect(pillar.changelog?.[0]).toEqual({ date: "2026-10-17", text: "Doplněny odkazy na návody o slevě na dani a o stornu." });
+    // obsahová úprava 31. 10. 2026 (vzor účtenky) přidává vlastní záznam nahoru – snímek k 17. 10. filtrem jako v gate výše
+    expect(pillar.changelog?.filter((c) => c.date <= "2026-10-17")[0]).toEqual({ date: "2026-10-17", text: "Doplněny odkazy na návody o slevě na dani a o stornu." });
     for (const g of GUIDES) for (const r of g.related) expect(isIndexable(getGuide(r)!), `${g.slug} → ${r}`).toBe(true);
     expect(getGuide("eet-off")!.related).toContain("sleva-na-dani-za-eet");
     expect(getGuide("eet-a-pausalni-dan")!.related).toContain("sleva-na-dani-za-eet");

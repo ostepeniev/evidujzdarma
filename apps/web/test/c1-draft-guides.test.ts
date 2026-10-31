@@ -54,7 +54,8 @@ describe("C1 – three guides (drafts until 17. 10. 2026, then reviewed)", () =>
     // S3-OPEN: pilíř odkazuje na slevu a storno a má o tom záznam v historii změn
     const p = getGuide("eet-2-0-kompletni-pruvodce")!;
     expect(p.changelog).toContainEqual({ date: "2026-10-17", text: "Doplněny odkazy na návody o slevě na dani a o stornu." });
-    expect(p.changelog?.[0]?.date).toBe("2026-10-17");
+    // obsahová úprava 31. 10. 2026 (vzor účtenky) přidává vlastní záznam nahoru – snímek k 17. 10. se kontroluje filtrem jako výše
+    expect(p.changelog?.filter((c) => c.date <= "2026-10-17")[0]?.date).toBe("2026-10-17");
   });
 
   it("gate: S1 guides (sleva, storno) – related guides exist and are indexable; other guides link back", () => {

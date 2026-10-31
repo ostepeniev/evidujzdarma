@@ -10,7 +10,7 @@ export const eet20KompletniPruvodce: Guide = {
   title: "Co je EET 2.0: kompletní průvodce na rok 2027",
   h1: "Co je EET 2.0 a co udělat do 1. 1. 2027",
   description:
-    "Vše o EET 2.0 na jednom místě: od kdy platí, koho se týká, co se eviduje, EET OFF, DIS+ a certifikát, pokuty, účtenky a výběr pokladny. Stav k 1. 10. 2026.",
+    "Od 1. 1. 2027 se eviduje hotovost, karta i QR na místě. Kdo musí, co udělat v DIS+ od 1. 11., kdy se vyplatí EET OFF a proč účtenka není povinná.",
   lead: `EET 2.0 je nová elektronická evidence tržeb. Zákon platí od **1. 1. 2027** a evidovat se musí od prvního dne – „pilotní“ leden není zákonná výjimka. Týká se OSVČ i firem, které přijímají platby osobně – hotově, kartou nebo QR kódem. Účtenka povinná není, pokuta může dosáhnout ${formatKc(FACTS.penalties.max)}. Paušalisté v 1. pásmu se mohou vyvázat přes EET OFF.`,
   summary: [
     "Účinnost i povinnost evidovat od 1. 1. 2027. Zákon žádnou výjimku pro leden nestanoví.",
@@ -35,7 +35,7 @@ export const eet20KompletniPruvodce: Guide = {
         },
         { h3: "Proč stát evidenci vrací" },
         {
-          p: "Podle Finanční správy má EET 2.0 přinést férovější trh a jednodušší správu daní. Cílem je, aby podnikatelé, kteří tržby přiznávají poctivě, nesoutěžili s těmi, kdo část příjmů zamlčí. Oproti první EET stát zdůrazňuje nižší zátěž: žádné povinné účtenky, méně údajů, bezplatnou aplikaci a možnost se z evidence vyvázat přes EET OFF. Pro podnikatele je podstatné, že zákon je schválený a od roku 2027 platí.",
+          p: "Podle Finanční správy má EET 2.0 přinést férovější trh a jednodušší správu daní. Cílem je, aby podnikatelé, kteří tržby přiznávají poctivě, nesoutěžili s těmi, kdo část příjmů zamlčí. Oproti první EET stát zdůrazňuje nižší zátěž: žádné povinné účtenky, méně údajů, bezplatnou aplikaci a možnost se z evidence vyvázat přes EET OFF. Na povinnosti evidovat to nic nemění: zákon je schválený a od 1. 1. 2027 platí.",
         },
         {
           note: "EvidujZdarma.cz je nezávislý web a pokladní aplikace, nikoli státní služba. Oficiální informace najdete na [eet.gov.cz](https://eet.gov.cz) a na webu Finanční správy. Každé tvrzení v tomto průvodci odkazuje na zdroj; kde Finanční správa zatím nic nezveřejnila, píšeme to otevřeně.",
@@ -57,7 +57,7 @@ export const eet20KompletniPruvodce: Guide = {
           },
         },
         {
-          p: "Pro podnikatele je nejdůležitější období **listopad a prosinec 2026**. V listopadu se otevírají funkce v DIS+, v prosinci státní aplikace MOJE eet. Prosinec je poslední příležitost vyzkoušet si pokladnu v testovacím režimu – od 1. 1. 2027 se eviduje naostro. Do 11. ledna se pak rozhoduje o EET OFF.",
+          p: "Nejvíc práce vás čeká v **listopadu a prosinci 2026**. V listopadu se otevírají funkce v DIS+, v prosinci státní aplikace MOJE eet. Prosinec je poslední příležitost vyzkoušet si pokladnu v testovacím režimu – od 1. 1. 2027 se eviduje naostro. Do 11. ledna se pak rozhoduje o EET OFF.",
         },
         {
           note: FACTS.pilot.summary,
@@ -95,7 +95,7 @@ export const eet20KompletniPruvodce: Guide = {
           ],
         },
         {
-          p: "Klíčový pojem nového zákona je **kontaktní platba** – platba přijatá při osobním kontaktu se zákazníkem nebo v souvislosti s objednáním či převzetím zboží a služby v provozovně. Rozhoduje okolnost platby, ne platební prostředek.",
+          p: "Nový zákon stojí na pojmu **kontaktní platba**. Je to platba přijatá při osobním kontaktu se zákazníkem nebo v souvislosti s objednáním či převzetím zboží a služby v provozovně. Rozhoduje okolnost platby, ne platební prostředek.",
         },
         { p: FACTS.evidenced.summary },
         { p: FACTS.evidenced.notEvidenced },
@@ -287,7 +287,7 @@ export const eet20KompletniPruvodce: Guide = {
       blocks: [
         { h3: "Ubytování" },
         {
-          p: "Evidují se platby na recepci, neevidují se zálohy převodem ani platby přes platformy online. Otevřené otázky kolem kaucí a místního poplatku z pobytu rozebírá návod [EET u ubytování](/navody/eet-ubytovani).",
+          p: "Evidují se platby na recepci, neevidují se zálohy převodem ani platby přes platformy online. Kauce a místní poplatek z pobytu rozebírá návod [EET u ubytování](/navody/eet-ubytovani).",
         },
         { h3: "Řemeslníci a služby u klienta" },
         {
@@ -303,7 +303,7 @@ export const eet20KompletniPruvodce: Guide = {
         },
         { h3: "Stánky, trhy a jarmarky" },
         {
-          p: "Stánek je mobilní provozovna. Na trzích bývá slabý signál, proto je důležitá pokladna s offline režimem – nebo, u malých paušalistů, EET OFF. Podrobně v návodu [EET 2.0 na trzích a ve stáncích](/navody/eet-trhy-stanky).",
+          p: "Stánek je mobilní provozovna. Na trzích bývá slabý signál, takže se hodí pokladna, která prodává i offline. Malí paušalisté mohou zvolit EET OFF. Podrobně v návodu [EET 2.0 na trzích a ve stáncích](/navody/eet-trhy-stanky).",
         },
         { h3: "E-shopy" },
         {
@@ -426,6 +426,10 @@ export const eet20KompletniPruvodce: Guide = {
       a: "Ne. EET 2.0 účtenku nepřikazuje. Na žádost zákazníka ale musíte vydat doklad podle § 16 zákona o ochraně spotřebitele.",
     },
     {
+      q: "Jak má vypadat účtenka v EET 2.0? Existuje vzor?",
+      a: `Zákon o evidenci tržeb vzor účtenky nestanoví, protože účtenku nepřikazuje. ${FACTS.receipt.summary} ${FACTS.confirmation.onReceipt} Plátci DPH se dál řídí pravidly zákona o DPH pro daňové doklady. Doklad s potřebnými údaji vytvoříte v [generátoru dokladu o prodeji](/doklad-o-prodeji).`,
+    },
+    {
       q: "Kolik stojí EET OFF a kdo ho může využít?",
       a: `Přirážka ${formatKc(surcharge)} měsíčně k paušální záloze, tedy ${formatKc(FACTS.eetOff.surchargeYearly)} ročně. Jen pro fyzické osoby v 1. pásmu paušálního režimu s příjmy ze samostatné činnosti do 1 mil. Kč; pro rok 2027 je lhůta ${FACTS.eetOff.deadline}. ${FACTS.eetOff.binding}`,
     },
@@ -493,8 +497,9 @@ export const eet20KompletniPruvodce: Guide = {
   ],
   related: ["koho-se-eet-tyka", "kontaktni-platba", "jak-aktivovat-dis-a-certifikat"],
   published: "2026-10-01",
-  updated: "2026-10-03",
+  updated: "2026-10-31",
   changelog: [
+    { date: "2026-10-31", text: "Doplněna otázka, co musí obsahovat doklad pro zákazníka (vzor účtenky), a upřesněn odkaz na kauce u ubytování." },
     { date: "2026-10-17", text: "Doplněny odkazy na návody o slevě na dani a o stornu." },
     { date: "2026-10-17", text: "Doplněny odkazy na nové návody (gastronomie, trhy a stánky, e-shop, pokladna v mobilu), na generátor dokladu o prodeji a na checklist EET 2.0." },
     { date: "2026-10-15", text: "Doplněno číslo zákona ve Sbírce zákonů (zákon č. 180/2026 Sb.) a paragrafy ověřené podle vyhlášeného znění." },

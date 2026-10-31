@@ -8,7 +8,7 @@ export const kohoSeEetTyka: Guide = {
   title: "Kdo musí mít EET 2.0 od roku 2027 a kdo má výjimku",
   h1: "Kdo musí mít EET 2.0 a kdo má výjimku",
   description:
-    "EET 2.0 se od 1. 1. 2027 týká OSVČ i firem, které berou hotovost, karty nebo QR platby osobně. Kdo evidovat nemusí, jaké činnosti jsou vyjmuté a co je EET OFF.",
+    "Kadeřnice, taxikář, veterinář i stánek na trhu: od 1. 1. 2027 eviduje každý, komu se platí osobně hotově, kartou nebo QR. Kdo má výjimku a co je EET OFF.",
   lead:
     "Od **1. 1. 2027** musí tržby evidovat každý poplatník daně z příjmů – OSVČ i firma –, který přijímá platby při osobním kontaktu: hotově, kartou nebo QR kódem. Obor ani plátcovství DPH nerozhodují. Výjimku mají vyjmuté činnosti a paušalisté v 1. pásmu s příjmy do 1 mil. Kč, kteří zvolí EET OFF.",
   summary: [
@@ -34,7 +34,26 @@ export const kohoSeEetTyka: Guide = {
         },
         { p: FACTS.whoMust.summary },
         {
-          p: "Na oboru nezáleží. Kadeřnice, řemeslník, penzion, kavárna, stánek na trhu i lektor, kterému klienti platí na místě kartou – ti všichni spadají do EET 2.0 stejně. Nerozhoduje ani to, zda jste plátce DPH, ani výše obratu: zákon nestanoví obecnou hranici, pod kterou by evidence odpadla. Jedinou výjimkou navázanou na výši příjmů je dobrovolný režim [EET OFF](/navody/eet-off).",
+          p: "Na oboru nezáleží. Kadeřnice, řemeslník, penzion, kavárna, stánek na trhu i lektor, kterému klienti platí na místě kartou, spadají do EET 2.0 stejně. Nerozhoduje ani plátcovství DPH nebo výše obratu, protože zákon obecnou hranici, pod kterou by evidence odpadla, nestanoví. Jedinou výjimkou navázanou na výši příjmů je dobrovolný režim [EET OFF](/navody/eet-off).",
+        },
+        {
+          table: {
+            head: ["Kdo", "Eviduje?", "Proč"],
+            rows: [
+              ["Kadeřnice se salonem, klientky platí kartou i hotově", "**Ano**", "Kontaktní platby v provozovně."],
+              [
+                "Taxikář, cestující platí ve voze hotově nebo kartou",
+                "**Ano**",
+                "Výjimky v dopravě (vlak, letadlo, pravidelná hromadná přeprava osob) se taxislužby netýkají. Vůz je evidenční jednotka (dopravní prostředek).",
+              ],
+              ["Veterinář, majitel zvířete platí v ordinaci", "**Ano**", "Obor nerozhoduje a veterinární péče mezi vyjmutými činnostmi (§ 11–13) není."],
+              ["Prodejce medu na farmářském trhu", "**Ano**", "Stánek je mobilní provozovna, i když prodáváte jen o víkendech."],
+              ["Grafička, klienti platí převodem na fakturu", "Ne", "Vzdálená platba se neeviduje."],
+              ["Pronajímatel bytu, nájemné chodí na účet", "Ne", "Příjem z nájmu pod EET nespadá."],
+              ["Dopravní podnik, jízdenka koupená u řidiče autobusu MHD", "Ne", "Vyjmuto (§ 12 odst. 1)."],
+            ],
+            caption: "Ilustrační příklady. Kdo vedle toho přijímá i jiné platby osobně, eviduje je.",
+          },
         },
         {
           note: "Rozhoduje způsob platby, ne obor. Pokud vám všichni zákazníci platí převodem na fakturu nebo přes platební bránu e-shopu, evidovat nemusíte nic. Podrobně v návodu [Kontaktní platba: co se eviduje a co ne](/navody/kontaktni-platba).",
@@ -163,6 +182,14 @@ export const kohoSeEetTyka: Guide = {
       a: "Příjmy z nájmu pod EET nespadají. Jiná situace je krátkodobé ubytování provozované jako živnost (penzion, apartmány se službami) – tam se platby přijaté na místě evidují.",
     },
     {
+      q: "Jsem taxikář. Musím evidovat?",
+      a: "Ano, pokud vám cestující platí ve voze hotově, kartou nebo QR kódem. Zákon v dopravě vyjímá železniční a leteckou přepravu a platby ve vozidlech pravidelné hromadné přepravy osob, taxislužbu ne. Evidenční jednotkou je vůz jako dopravní prostředek – viz [Evidenční jednotka](/navody/evidencni-jednotka). Jízdu zaplacenou předem online přes platební bránu neevidujete.",
+    },
+    {
+      q: "Jsem veterinář. Týká se mě EET 2.0?",
+      a: "Ano. Obor nerozhoduje a veterinární péče mezi vyjmutými činnostmi není. Evidujete platby, které majitelé zvířat zaplatí v ordinaci nebo při vaší návštěvě hotově, kartou či QR kódem. Faktura uhrazená převodem se neeviduje.",
+    },
+    {
       q: "Náš spolek pořádá ples a prodává občerstvení. Musíme evidovat?",
       a: "Podle Finanční správy zůstávají akce, které jsou součástí hlavní činnosti spolku (plesy, slavnosti), mimo EET a pro drobnou vedlejší podnikatelskou činnost je připravena výjimka. Konkrétní limity zatím nebyly zveřejněny – ověřte je na eet.gov.cz.",
     },
@@ -181,8 +208,12 @@ export const kohoSeEetTyka: Guide = {
   ],
   related: ["kontaktni-platba", "eet-off", "eet-2-0-kompletni-pruvodce"],
   published: "2026-10-01",
-  updated: "2026-10-28",
+  updated: "2026-10-31",
   changelog: [
+    {
+      date: "2026-10-31",
+      text: "Doplněna tabulka příkladů podle profese (kadeřnice, taxikář, veterinář, farmářský trh, pronájem bytu, MHD) a otázky k taxislužbě a veterinářům.",
+    },
     {
       date: "2026-10-28",
       text: "Doplněny výjimky podle zákona č. 180/2026 Sb.: nevidomí a hluchoslepí podnikatelé, pracovněprávní vztahy a školní stravování, nová právnická osoba do přidělení DIČ a platby přes mobilní síť.",

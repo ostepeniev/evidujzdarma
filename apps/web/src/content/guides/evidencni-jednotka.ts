@@ -8,7 +8,7 @@ export const evidencniJednotka: Guide = {
   title: "Evidenční jednotka v EET 2.0: co to je a jak ji oznámit",
   h1: "Evidenční jednotka: co to je a jak ji oznámit",
   description:
-    "Evidenční jednotka je provozovna, stánek, web, vozidlo nebo vy sami. Jak ji od 1. 11. 2026 oznámit v DIS+, kolik jich potřebujete a do kdy hlásit změny.",
+    "Salon, stánek, taxi, web, nebo vy sami: co je evidenční jednotka v EET 2.0, kolik jich mít, jak je od 1. 11. 2026 oznámit v DIS+ a do kdy hlásit změny.",
   lead:
     "Evidenční jednotka je místo nebo kanál, kde přijímáte tržby: provozovna, stánek, automat, web či aplikace, vozidlo – nebo vy sami, pokud provozovnu nemáte. Oznamuje se v DIS+ od **1. 11. 2026**, systém jí přidělí ID, které posíláte s každou tržbou. Změny hlásíte nejpozději do **15 dnů**.",
   summary: [
@@ -162,6 +162,10 @@ export const evidencniJednotka: Guide = {
       a: "Ne. Jde o jednu evidenční jednotku; pokladny se rozliší označením pokladního zařízení, které si nastavíte v pokladně.",
     },
     {
+      q: "Jezdím taxi. Co je moje evidenční jednotka?",
+      a: "Vůz, který oznámíte v DIS+ jako dopravní prostředek. Taxikář s jedním autem má jednu jednotku. Taxislužba z evidence vyjmutá není, výjimka v dopravě se týká jen vlaků, letadel a pravidelné hromadné přepravy osob.",
+    },
+    {
       q: "Do kdy musím nahlásit změnu?",
       a: "Před první evidovanou tržbou po změně, nejpozději do 15 dnů ode dne, kdy změna nastala.",
     },
@@ -169,8 +173,9 @@ export const evidencniJednotka: Guide = {
   sources: [SOURCES.jakZacit, SOURCES.harmonogram, SOURCES.prakticke, SOURCES.vyvojari, SOURCES.finmagNavod, SOURCES.mojeEet],
   related: ["jak-aktivovat-dis-a-certifikat", "koho-se-eet-tyka", "eet-2-0-kompletni-pruvodce"],
   published: "2026-10-01",
-  updated: "2026-10-01",
+  updated: "2026-10-31",
   changelog: [
+    { date: "2026-10-31", text: "Doplněna otázka, co je evidenční jednotkou u taxislužby." },
     { date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
     {
       date: "2026-10-01",

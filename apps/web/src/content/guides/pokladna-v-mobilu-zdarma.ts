@@ -12,7 +12,7 @@ export const pokladnaVMobiluZdarma: Guide = {
   title: "Pokladna v mobilu zdarma pro EET 2.0: co musí umět",
   h1: "Pokladna v mobilu zdarma pro EET 2.0: co musí umět a jak začít",
   description:
-    "Co musí od 1. 1. 2027 umět pokladna v mobilu pro EET 2.0, co nabízí státní aplikace MOJE eet, na co se ptát u jiných pokladen a jak začít krok za krokem.",
+    "Stačí mobil a aplikace: co musí od 1. 1. 2027 umět pokladna pro EET 2.0, kdy se hodí MOJE eet, jestli potřebujete tiskárnu účtenek a jak začít.",
   lead:
     "Od **1. 1. 2027** vám pro EET 2.0 stačí mobil, tablet nebo počítač s pokladní aplikací – i státní MOJE eet je webová aplikace. Pokladna musí o každé kontaktní platbě odeslat Finanční správě datovou zprávu podepsanou vaším pokladním certifikátem a při výpadku signálu ji doposlat nejpozději do 48 hodin.",
   summary: [
@@ -71,6 +71,23 @@ export const pokladnaVMobiluZdarma: Guide = {
       ],
     },
     {
+      id: "tiskarna",
+      heading: "Tiskárna na účtenky: kdy ji potřebujete",
+      blocks: [
+        {
+          p: `Kvůli EET 2.0 tiskárnu kupovat nemusíte. Účtenka povinná není, a když o doklad zákazník požádá, můžete ho podle běžného výkladu vydat i elektronicky, třeba e-mailem nebo jako QR kód na displeji. ${FACTS.confirmation.onReceipt}`,
+        },
+        {
+          p: "Tiskárna se vyplatí tam, kde lidé papír chtějí často: u pultu kavárny, ve stánku s občerstvením nebo v malém obchodě. K mobilu nebo tabletu se dá připojit malá termotiskárna přes Bluetooth. Než ji koupíte, ověřte si, že s ní vaše pokladna umí tisknout.",
+        },
+        {
+          note: isClosed("/pokladna")
+            ? "Pokladna EvidujZdarma bude po spuštění 2. 11. 2026 tisknout na termotiskárny ESC/POS přes Bluetooth LE (typicky v Chromu na Androidu) a účtenku umí poslat i e-mailem nebo ukázat jako QR kód."
+            : "Pokladna EvidujZdarma tiskne na termotiskárny ESC/POS přes Bluetooth LE (typicky v Chromu na Androidu). Účtenku můžete poslat i e-mailem nebo ukázat jako QR kód.",
+        },
+      ],
+    },
+    {
       id: "checklist",
       heading: "Checklist: na co se zeptat před výběrem",
       blocks: [
@@ -110,6 +127,10 @@ export const pokladnaVMobiluZdarma: Guide = {
   faq: [
     { q: "Je státní aplikace MOJE eet opravdu zdarma?", a: FACTS.mojeEet.summary },
     { q: "Potřebuji k pokladně v mobilu tiskárnu?", a: `Ne. ${FACTS.receipt.summary}` },
+    {
+      q: "Jakou tiskárnu na účtenky k mobilu vybrat?",
+      a: `Pokud zákazníci papír chtějí, stačí malá termotiskárna připojená k mobilu nebo tabletu přes Bluetooth. Před koupí si ověřte, že ji vaše pokladna podporuje; EvidujZdarma ${isClosed("/pokladna") ? "bude tisknout" : "tiskne"} na termotiskárny ESC/POS přes Bluetooth LE.`,
+    },
     { q: "Můžu mít stejný certifikát v mobilu i v tabletu?", a: FACTS.certificate.summary },
     {
       q: "Funguje pokladna v mobilu bez internetu?",
@@ -146,8 +167,9 @@ export const pokladnaVMobiluZdarma: Guide = {
   ],
   related: ["jak-aktivovat-dis-a-certifikat", "eet-bez-internetu", "musim-vydavat-uctenku"],
   published: "2026-10-07",
-  updated: "2026-10-17",
+  updated: "2026-10-31",
   changelog: [
+    { date: "2026-10-31", text: "Doplněna část o tiskárně na účtenky: kdy ji potřebujete, připojení termotiskárny přes Bluetooth a elektronický doklad místo papíru." },
     { date: "2026-10-17", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
     { date: "2026-10-07", text: "Koncept návodu – před odbornou revizí." },
   ],

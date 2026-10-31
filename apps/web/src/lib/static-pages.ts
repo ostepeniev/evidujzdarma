@@ -9,7 +9,7 @@ export const STATIC_PAGES: readonly { path: string; title: string; priority: num
   { path: "/", title: "EvidujZdarma – evidence tržeb EET 2.0 zdarma", priority: 1, changeFrequency: "daily", modified: "2026-10-09" },
   { path: "/kontrola-ico", title: "EET kontrola podle IČO", priority: 0.9, changeFrequency: "weekly", modified: "2026-10-09" },
   { path: "/musim-evidovat", title: "Kvíz: Musím evidovat tržby?", priority: 0.8, changeFrequency: "weekly", modified: "2026-10-02" },
-  { path: "/kalkulacka-eet-off", title: "EET kalkulačka: evidovat, nebo EET OFF?", priority: 0.9, changeFrequency: "weekly", modified: "2026-10-26" },
+  { path: "/kalkulacka-eet-off", title: "EET kalkulačka: evidovat, nebo EET OFF?", priority: 0.9, changeFrequency: "weekly", modified: "2026-10-31" },
   { path: "/evidencni-jednotky", title: "Průvodce evidenčními jednotkami", priority: 0.8, changeFrequency: "weekly", modified: "2026-10-02" },
   { path: "/qr-platba", title: "Generátor QR platby", priority: 0.7, changeFrequency: "monthly", modified: "2026-10-02" },
   { path: "/doklad-o-prodeji", title: "Doklad o prodeji: generátor zdarma", priority: 0.7, changeFrequency: "monthly", modified: "2026-10-17" },

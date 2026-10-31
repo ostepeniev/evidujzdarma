@@ -22,7 +22,8 @@ export const metadata: Metadata = {
   // S4 (23. 10. 2026): hledá se „eet kalkulačka“ / „kalkulačka eet“ (~100 zobrazení za 28 dní, 0 kliků) – přesná fráze na začátek
   title: "EET kalkulačka 2027: evidovat, nebo EET OFF?",
   description:
-    "Za minutu a zdarma spočítáte, zda vás vyjde levněji evidovat tržby, nebo platit EET OFF 1 400 Kč měsíčně. Pro paušalisty v 1. pásmu. Oznámení do 11. 1. 2027.",
+    // 31. 10. 2026: CTR ~1 % u „eet kalkulačka“ – popis říká, co zadáte a co uvidíte
+    "EET kalkulačka zdarma: zadáte příjmy a minuty denně a uvidíte, zda je levnější evidovat, nebo platit EET OFF 1 400 Kč měsíčně. Oznámení do 11. 1. 2027.",
   ...canonicalMeta("/kalkulacka-eet-off"),
 };
 
@@ -34,7 +35,7 @@ const FAQ = [
     a: `V 1. pásmu paušálního režimu je oznámená záloha pro rok 2027 ${formatKc(FACTS.pausal[2027].band1)} měsíčně (předběžně). S přirážkou EET OFF ${formatKc(FACTS.eetOff.surchargeMonthly)} to dělá ${formatKc(FACTS.pausal[2027].band1 + FACTS.eetOff.surchargeMonthly)} měsíčně, tedy o ${formatKc(FACTS.eetOff.surchargeMonthly * 12)} ročně víc.`,
   },
   {
-    q: "Jak kalkulačka počítá náklady evidence?",
+    q: "Jak EET kalkulačka počítá náklady evidence?",
     a: "Sečte čas, který evidenci věnujete (minuty denně × pracovní dny × cena vaší hodiny), měsíční cenu pokladny a pořízení zařízení rozpočítané na 3 roky. Výsledek porovná s ročním součtem přirážky. Pokladna EvidujZdarma je zdarma, takže u nás rozhoduje hlavně čas.",
   },
   {
@@ -66,7 +67,7 @@ export default function EetOffPage() {
     <>
       <JsonLd data={faqLd(FAQ)} />
       <PageHeader
-        title="EET kalkulačka: evidovat, nebo EET OFF?"
+        title="EET kalkulačka: vyplatí se vám EET OFF?"
         crumbs={[
           { name: "Nástroje", path: "/nastroje" },
           { name: "Kalkulačka EET OFF", path: "/kalkulacka-eet-off" },
@@ -74,13 +75,28 @@ export default function EetOffPage() {
         lead={
           <>
             EET OFF znamená přirážku <strong>{formatKc(FACTS.eetOff.surchargeMonthly)} měsíčně</strong> k paušální dani místo evidence tržeb. Smí ho zvolit jen
-            fyzická osoba v 1. pásmu paušálního režimu s příjmy do 1 mil. Kč. Přihlásit se je nutné do <strong>{FACTS.eetOff.deadline}</strong>. Spočítejte si, co
-            vás vyjde levněji – i když začínáte podnikat v průběhu roku.
+            fyzická osoba v 1. pásmu paušálního režimu s příjmy do 1 mil. Kč a přihlásit se musí do <strong>{FACTS.eetOff.deadline}</strong>. EET kalkulačka
+            porovná přirážku s tím, kolik vás evidence stojí času a peněz. Počítá i s tím, že začínáte podnikat v průběhu roku.
           </>
         }
       />
       <div className="container-page py-10">
         <EetOffCalculator />
+        {r0.eligible && y0 && (
+          <section className="mx-auto mt-14 max-w-3xl" aria-labelledby="priklad-h">
+            <h2 id="priklad-h" className="mb-4 text-2xl font-bold">
+              Příklad: EET kalkulačka s výchozími čísly
+            </h2>
+            <p className="text-[15px] text-ink-soft">
+              Kadeřnice v 1. pásmu paušálu má roční příjmy {formatKc(DEFAULT_INPUT.income)}, hodinu své práce počítá za {formatKc(DEFAULT_INPUT.hourlyRate)} a pracuje{" "}
+              {DEFAULT_INPUT.workDaysPerMonth} dní v měsíci. Zápis tržeb do pokladny v mobilu jí zabere asi {DEFAULT_INPUT.minutesPerDay} minut denně. Za rok to
+              je {r0.timeHoursYearly.toLocaleString("cs-CZ")} hodin, tedy {formatKc(r0.evidenceYearly)}. Přirážka EET OFF by ji stála {formatKc(r0.surchargeYearly)}.
+              {y0.breakEvenMinutesPerDay !== null &&
+                ` Evidence by vyšla dráž, teprve kdyby jí zabrala víc než ${y0.breakEvenMinutesPerDay.toLocaleString("cs-CZ")} min denně.`}{" "}
+              Vaše čísla budou jiná, proto je zadejte do kalkulačky výše.
+            </p>
+          </section>
+        )}
         <section className="mx-auto mt-14 max-w-3xl">
           <h2 className="mb-6 text-2xl font-bold">Časté otázky k EET OFF</h2>
           <Faq items={FAQ} />

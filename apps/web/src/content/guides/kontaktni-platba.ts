@@ -5,10 +5,10 @@ import { REVIEWER } from "@/lib/site";
 export const kontaktniPlatba: Guide = {
   slug: "kontaktni-platba",
   category: "povinnosti",
-  title: "Kontaktní platba v EET 2.0: co se eviduje a co ne",
+  title: "Kontaktní platba v EET 2.0: karta, QR, stravenka, záloha",
   h1: "Kontaktní platba: co se v EET 2.0 eviduje a co ne",
   description:
-    "Hotovost, karta, QR kód, převod, záloha, poukaz: které platby se od 1. 1. 2027 evidují v EET 2.0 a které ne. Přehledná tabulka a hraniční případy.",
+    "Karta na místě ano, faktura převodem ne, QR podle toho, kde zákazník stojí. 20 situací od zálohy po kauci: co od 1. 1. 2027 v EET 2.0 evidovat.",
   lead:
     "V EET 2.0 se od **1. 1. 2027** eviduje každá **kontaktní platba** – peníze přijaté při osobním kontaktu se zákazníkem nebo v provozovně: hotovost, karta, QR kód, poukázka, šek i kryptoměny. Neeviduje se platba přes bránu e-shopu ani převod na fakturu. Záloha a doplatek jsou dvě běžné platby, dárkový poukaz se eviduje jen při prodeji.",
   summary: [
@@ -23,7 +23,7 @@ export const kontaktniPlatba: Guide = {
       heading: "Co je kontaktní platba",
       blocks: [
         {
-          p: "Stará EET (2016–2020) se po zásahu Ústavního soudu v roce 2018 týkala jen hotovosti a podobných prostředků, platby kartou z ní vypadly. EET 2.0 stojí na novém pojmu **kontaktní platba**: je to platba uskutečněná při osobním kontaktu s podnikatelem, nebo v souvislosti s objednáním či převzetím zboží a služby v jeho provozovně. Platební prostředek sám o sobě nerozhoduje – podstatné je, **kde a za jakých okolností** zákazník platí.",
+          p: "Stará EET (2016–2020) se po zásahu Ústavního soudu v roce 2018 týkala jen hotovosti a podobných prostředků, platby kartou z ní vypadly. EET 2.0 stojí na novém pojmu **kontaktní platba**: je to platba uskutečněná při osobním kontaktu s podnikatelem, nebo v souvislosti s objednáním či převzetím zboží a služby v jeho provozovně. Samotný platební prostředek nerozhoduje. Rozhoduje, **kde a za jakých okolností** zákazník platí.",
         },
         { p: FACTS.evidenced.summary },
         { p: FACTS.evidenced.notEvidenced },
@@ -145,7 +145,7 @@ export const kontaktniPlatba: Guide = {
     },
     {
       q: "Evidují se stravenky?",
-      a: "Stravenka je poukázka, a platba poukázkou při osobním kontaktu se podle ministerstva financí eviduje. Jak přesně rozlišit papírové a elektronické stravenky, Finanční správa zatím podrobně nevysvětlila.",
+      a: "Ano. Platba stravenkou nebo poukázkou vydanou jinou firmou je podle semináře Finanční správy pro vývojáře běžná evidovaná platba. Když host zaplatí oběd za 180 Kč stravenkou za 150 Kč a zbytek kartou, jde o jednu tržbu 180 Kč.",
     },
   ],
   sources: [
@@ -162,8 +162,9 @@ export const kontaktniPlatba: Guide = {
   ],
   related: ["koho-se-eet-tyka", "eet-ubytovani", "eet-remeslnici", "eet-eshop-dobirka"],
   published: "2026-10-01",
-  updated: "2026-10-28",
+  updated: "2026-10-31",
   changelog: [
+    { date: "2026-10-31", text: "Upřesněna odpověď o stravenkách podle semináře Finanční správy (stravenka jiné firmy je běžná evidovaná platba) a doplněn příklad platby stravenkou s doplatkem kartou." },
     {
       date: "2026-10-28",
       text: "Doplněno podle prezentace Ministerstva financí a Finanční správy: kauce, platba kombinací stravenky a karty a faktura zaplacená zčásti na místě.",

@@ -5,10 +5,10 @@ import { REVIEWER } from "@/lib/site";
 export const jakAktivovatDisACertifikat: Guide = {
   slug: "jak-aktivovat-dis-a-certifikat",
   category: "prakticke",
-  title: "Jak aktivovat DIS+ a stáhnout certifikát EET 2.0",
+  title: "Jak aktivovat DIS+ a certifikát EET 2.0: postup od 1. 11.",
   h1: "Jak aktivovat DIS+ a stáhnout certifikát EET",
   description:
-    "Krok za krokem: přihlášení k evidenci tržeb v DIS+ od 1. 11. 2026, založení evidenčních jednotek a vygenerování pokladního certifikátu (.p12) zdarma.",
+    "DIS+ se pro EET 2.0 otevírá 1. 11. 2026. Co si připravit, jak se přihlásit k evidenci, založit jednotky a zdarma vygenerovat certifikát platný 366 dní.",
   lead:
     "Od **1. 11. 2026** se k EET 2.0 přihlásíte v Daňové informační schránce (DIS+) na portálu MOJE daně. Tam založíte evidenční jednotky a v aplikaci Správa pokladních certifikátů EET si zdarma vygenerujete pokladní certifikát – soubor .p12 chráněný heslem, platný **366 dní**.",
   summary: [
@@ -24,7 +24,7 @@ export const jakAktivovatDisACertifikat: Guide = {
       blocks: [
         {
           ul: [
-            "**Přístup do portálu MOJE daně** – nejčastěji přes Identitu občana (bankovní identita, eObčanka, mobilní klíč eGovernmentu) nebo přihlašovací údaje k datové schránce. Pokud ho ještě nemáte, zařiďte si ho v říjnu, ať se 1. 11. nezdržíte.",
+            "**Přístup do portálu MOJE daně** – nejčastěji přes Identitu občana (bankovní identita, eObčanka, mobilní klíč eGovernmentu) nebo přihlašovací údaje k datové schránce. Pokud ho ještě nemáte, zařiďte si ho co nejdřív, ať se v listopadu nezdržíte.",
             "**Seznam evidenčních jednotek** – provozovny, stánky, vozidla, web, nebo vy sami, pokud provozovnu nemáte. Pomůže vám [průvodce evidenčními jednotkami](/evidencni-jednotky).",
             "**Pokladnu**, do které certifikát nahrajete – státní MOJE eet, komerční pokladnu, nebo [pokladnu EvidujZdarma](/#registrace).",
             "**Silné heslo** k soukromému klíči certifikátu, které si bezpečně uložíte.",

@@ -52,6 +52,14 @@ export const eetTrhyStanky: Guide = {
           ],
         },
         {
+          timeline: [
+            { date: "Sobota 8:00", title: "Trh začíná, signál žádný", text: "První zákazník platí 120 Kč hotově. Prodáváte dál, pokladna tržbu uloží." },
+            { date: "Sobota 14:00", title: "Balíte stánek", text: "Ve frontě čekají všechny tržby z celého dne." },
+            { date: "Sobota 16:00", title: "Doma na Wi-Fi", text: "Otevřete pokladnu a ta frontu odešle. Jakmile máte spojení, posílejte hned." },
+            { date: "Pondělí 8:00", title: "Konec lhůty pro první tržbu", text: "48 hodin se počítá od přijetí každé platby, ne od konce trhu." },
+          ],
+        },
+        {
           ul: [
             "Po trhu otevřete pokladnu na místě se signálem, aby frontu odeslala – lhůta běží od přijetí platby, ne od konce trhu.",
             "Nemažte data aplikace ani ji neodinstalujte, dokud fronta neodeslaných tržeb není prázdná.",
@@ -162,8 +170,9 @@ export const eetTrhyStanky: Guide = {
   ],
   related: ["eet-bez-internetu", "evidencni-jednotka", "eet-off", "trzba-za-jineho"],
   published: "2026-10-07",
-  updated: "2026-10-17",
+  updated: "2026-10-31",
   changelog: [
+    { date: "2026-10-31", text: "Doplněna časová osa trhu bez signálu: od první tržby po konec lhůty 48 hodin." },
     { date: "2026-10-17", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
     { date: "2026-10-07", text: "Koncept návodu – před odbornou revizí." },
   ],

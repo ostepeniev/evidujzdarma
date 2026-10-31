@@ -5,10 +5,10 @@ import { REVIEWER } from "@/lib/site";
 export const eetKadernictviKosmetika: Guide = {
   slug: "eet-kadernictvi-kosmetika",
   category: "obory",
-  title: "EET 2.0 pro kadeřnictví, kosmetiku a barbershopy",
+  title: "EET pro kadeřnictví a kosmetiku 2027: co evidovat",
   h1: "EET pro kadeřnictví, kosmetiku a barbershopy",
   description:
-    "Salon, pronájem křesla, mobilní kadeřnice, dárkové poukazy, spropitné: co od 1. 1. 2027 evidovat v EET 2.0 v kadeřnictví, kosmetice a barbershopu.",
+    "Střih za 650 Kč kartou, poukaz, pronajaté křeslo, záloha z rezervačního systému: co od 1. 1. 2027 evidují kadeřnictví, kosmetické salony a barbershopy.",
   lead:
     "Kadeřnictví, kosmetika, nehtová studia a barbershopy evidují od **1. 1. 2027** každou platbu klienta na místě – hotovost, kartu i QR kód. Dárkový poukaz se eviduje jen při prodeji, jeho uplatnění ne. Kdo si v salonu pronajímá křeslo, eviduje své tržby sám. Malé paušalistky mohou zvolit EET OFF za **1 400 Kč** měsíčně.",
   summary: [
@@ -41,6 +41,26 @@ export const eetKadernictviKosmetika: Guide = {
           },
         },
         { cta: "kviz" },
+      ],
+    },
+    {
+      id: "den-v-salonu",
+      heading: "Jeden den v salonu: co odejde do evidence",
+      blocks: [
+        {
+          p: "Ilustrační úterý v malém salonu s majitelkou a jednou kolegyní na pronajatém křesle. Částky jsou smyšlené, pravidla skutečná.",
+        },
+        {
+          story: [
+            { time: "9:00", title: "Střih a foukaná za 650 Kč kartou", text: "Evidujete 650 Kč. Způsob platby se do datové zprávy nepíše, karta se eviduje stejně jako hotovost." },
+            { time: "10:30", title: "Šampon za 320 Kč hotově", text: "Evidujete 320 Kč. Prodej kosmetiky na místě je tržba stejně jako služba." },
+            { time: "12:00", title: "Poukaz na ošetření pleti za 1 500 Kč", text: "Zákazník ho kupuje jako dárek a platí kartou. Evidujete 1 500 Kč." },
+            { time: "14:00", title: "Ošetření za 1 800 Kč na starší poukaz", text: "Klientka uplatní poukaz za 1 500 Kč, který dostala k narozeninám, a 300 Kč doplatí QR kódem. Evidujete jen 300 Kč." },
+            { time: "15:30", title: "Záloha 500 Kč na zítřek", text: "Klientka ji zaplatila online v rezervačním systému. Neevidujete, je to vzdálená platba. Doplatek zítra v salonu evidovat budete." },
+            { time: "17:00", title: "Kolegyně ostříhá pána za 450 Kč", text: "Tuto tržbu eviduje kolegyně ve své pokladně. Vy jen tehdy, když jste se dohodly na pověření." },
+          ],
+        },
+        { p: "Za celý den tak z vaší pokladny odejdou čtyři tržby v součtu 2 770 Kč." },
       ],
     },
     {
@@ -137,12 +157,17 @@ export const eetKadernictviKosmetika: Guide = {
       q: "Musím klientce dávat účtenku?",
       a: "Ne automaticky. EET 2.0 účtenku nepřikazuje; na žádost klientky ale musíte vydat doklad podle zákona o ochraně spotřebitele. Více v návodu [Musím vydávat účtenku?](/navody/musim-vydavat-uctenku)",
     },
+    {
+      q: "Platí to stejně pro kosmetický salon a nehtové studio?",
+      a: "Ano. Kosmetika, nehtová studia, barbershopy i kadeřnictví se řídí stejným pravidlem: evidujete platby přijaté na místě hotově, kartou nebo QR kódem, za služby i za kosmetiku, kterou u vás klientky koupí. Poukazy, zálohy a pronájem místa se posuzují stejně jako v kadeřnictví.",
+    },
   ],
   sources: [SOURCES.mfPredstavuje, SOURCES.kdoMusi, SOURCES.jakZacit, SOURCES.eetOff, SOURCES.mojeEet, SOURCES.podnikatelDetail, SOURCES.seminarVyvojari],
   related: ["trzba-za-jineho", "eet-off", "musim-vydavat-uctenku"],
   published: "2026-10-01",
-  updated: "2026-10-28",
+  updated: "2026-10-31",
   changelog: [
+    { date: "2026-10-31", text: "Doplněn modelový den v salonu s částkami (karta, prodej kosmetiky, poukaz, online záloha, pronajaté křeslo) a otázka ke kosmetickým salonům a nehtovým studiím." },
     { date: "2026-10-28", text: "Spropitné doplněno podle prezentace Ministerstva financí a Finanční správy: eviduje se, když je příjmem salonu nebo OSVČ." },
     { date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
     { date: "2026-10-03", text: "Opraveno podle semináře Finanční správy pro vývojáře: záloha a doplatek jsou dvě běžné platby, dárkový poukaz se eviduje jen při prodeji (jeho uplatnění není platbou) a částku určenou k čerpání a čerpání uvádí pokladna jen u kreditu." },{ date: "2026-10-01", text: "Opraveno podle schváleného znění zákona: evidovat se musí od 1. 1. 2027, ne od 1. 2. 2027." }],

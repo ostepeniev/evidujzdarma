@@ -18,13 +18,20 @@ const CHANGED = [
   "kontaktni-platba",
   "koho-se-eet-tyka",
 ] as const;
+/** Pozdější obsahové úpravy (31. 10. 2026: příklady, FAQ ke stravenkám, taxi a veterinářům) – záznam nad 28. 10., datum změny posunuté. */
+const LATER_MODIFIED: Partial<Record<(typeof CHANGED)[number], string>> = {
+  "eet-kadernictvi-kosmetika": "2026-10-31",
+  "kontaktni-platba": "2026-10-31",
+  "koho-se-eet-tyka": "2026-10-31",
+};
 
 describe("S6-FS – facts from the MF/FS presentation", () => {
   it("gate: every changed guide has a 28. 10. changelog entry on top, updated 2026-10-28 and a public source", () => {
     for (const slug of CHANGED) {
       const g = getGuide(slug)!;
-      expect(g.updated, slug).toBe("2026-10-28");
-      expect(g.changelog?.[0]?.date, slug).toBe("2026-10-28");
+      expect(g.updated, slug).toBe(LATER_MODIFIED[slug] ?? "2026-10-28");
+      expect(g.changelog?.[0]?.date, slug).toBe(LATER_MODIFIED[slug] ?? "2026-10-28");
+      expect(g.changelog?.filter((c) => c.date <= "2026-10-28")[0]?.date, slug).toBe("2026-10-28");
       const urls = g.sources.map((s) => s.url);
       expect(urls.includes(SOURCES.seminarVyvojari.url) || urls.includes(SOURCES.zakonUplne.url), slug).toBe(true);
     }

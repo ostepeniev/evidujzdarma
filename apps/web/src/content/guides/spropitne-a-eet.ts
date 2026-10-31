@@ -27,7 +27,7 @@ export const spropitneAEet: Guide = {
       heading: "Eviduje se dýško?",
       blocks: [
         {
-          p: "Ministerstvo financí a Finanční správa v prezentaci k EET 2.0 vysvětlují, že pro evidenci je klíčové, zda je spropitné **příjmem z podnikání**. Nezáleží na tom, jestli ho host nechá v hotovosti, nebo připíše ke kartě.",
+          p: "Ministerstvo financí a Finanční správa v prezentaci k EET 2.0 vysvětlují, že pro evidenci rozhoduje, zda je spropitné **příjmem z podnikání**. Nezáleží na tom, jestli ho host nechá v hotovosti, nebo připíše ke kartě.",
         },
         {
           table: {
