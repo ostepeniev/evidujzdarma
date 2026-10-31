@@ -81,7 +81,7 @@ export const pokladnaVMobiluZdarma: Guide = {
           p: "Tiskárna se vyplatí tam, kde lidé papír chtějí často: u pultu kavárny, ve stánku s občerstvením nebo v malém obchodě. K mobilu nebo tabletu se dá připojit malá termotiskárna přes Bluetooth. Než ji koupíte, ověřte si, že s ní vaše pokladna umí tisknout.",
         },
         {
-          note: isClosed("/pokladna")
+          p: isClosed("/pokladna")
             ? "Pokladna EvidujZdarma bude po spuštění 2. 11. 2026 tisknout na termotiskárny ESC/POS přes Bluetooth LE (typicky v Chromu na Androidu) a účtenku umí poslat i e-mailem nebo ukázat jako QR kód."
             : "Pokladna EvidujZdarma tiskne na termotiskárny ESC/POS přes Bluetooth LE (typicky v Chromu na Androidu). Účtenku můžete poslat i e-mailem nebo ukázat jako QR kód.",
         },
