@@ -234,6 +234,15 @@ export const BLOCK_TEXT: Record<string, string> = {
   SALE_INVALID: "Uloženou tržbu teď nejde zpracovat (chyba na naší straně) – je uložená, řešíme to a odešle se sama.",
 };
 
+/**
+ * Sdílené testovací certifikáty FS pro Playground (archiv CAEET_Playground_2026_v1.zip, Popis 3.1.4).
+ * Nesou EIČ testovacích poplatníků, ne EIČ účtu; na Playgroundu se tržba podepisuje a posílá s EIČ certifikátu.
+ */
+export const FS_PLAYGROUND_TEST_EICS = ["CZ8551015704", "CZ00000019", "CZ683555118"] as const;
+export function isFsPlaygroundTestEic(eic: string | null | undefined): boolean {
+  return !!eic && (FS_PLAYGROUND_TEST_EICS as readonly string[]).includes(eic);
+}
+
 type Outcome = { result: "confirmed" | "rejected" | "retry" | "blocked" | "invalid"; send?: SendResult; code?: string; message?: string; retryInMs?: number };
 
 /**
@@ -472,7 +481,8 @@ async function attempt(
   // Snímek dat zprávy vzniká jednou, před prvním odesláním; opakování ho jen převezmou (Р4).
   let snapshot = (row.eetData as EetData | null) ?? undefined;
   if (!snapshot) {
-    const eic = acc.eic ?? acc.dic;
+    // Playground se sdíleným testovacím certifikátem FS: EIČ musí být z certifikátu, jinak by FS zprávu odmítla.
+    const eic = mode === "playground" && isFsPlaygroundTestEic(certEic) ? certEic : (acc.eic ?? acc.dic);
     if (!eic) {
       if (mode !== "mock") return { result: "blocked", code: "EIC_MISSING" };
     } else if (mode !== "mock" && certEic && eic !== certEic) {
@@ -778,8 +788,8 @@ export async function rebuildSnapshots(accountId: string, ids: string[]): Promis
       skipped.push({ id, reason: refusal });
       continue;
     }
-    const eic = acc.eic ?? acc.dic;
     const cert = row.mode === "mock" ? null : await activeCertificate(accountId, row.mode);
+    const eic = row.mode === "playground" && isFsPlaygroundTestEic(cert?.eic) ? cert!.eic : (acc.eic ?? acc.dic);
     if (!eic || (cert && cert.eic !== eic)) {
       skipped.push({ id, reason: BLOCK_TEXT.EIC_CERT_MISMATCH! });
       continue;

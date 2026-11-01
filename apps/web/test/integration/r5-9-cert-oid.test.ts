@@ -83,3 +83,28 @@ describe("R5.9 – production accepts sales from 1. 11. 2026", () => {
     expect(await status(importCertificate(s.account.id, { file: testCert({ eic: "CZ99999999", policyOid: PG_OID }).p12, password: "x" }))).toBe(400);
   });
 });
+
+describe("R5.9b – FS shared Playground test certificate on a real account (1. 11. 2026)", () => {
+  it("Playground sale is sent with the certificate EIČ (not blocked EIC_CERT_MISMATCH); account settings still save", async () => {
+    const { fakeTransports } = await import("../helpers/fake-transport");
+    const { __setTransportFactoryForTests, processSale } = await import("@/lib/server/fiscal");
+    const { AccountInput, upsertAccount } = await import("@/lib/server/account");
+    const s = await seedAccount({ mode: "playground", eic: "CZ12345679" });
+    await importCertificate(s.account.id, { file: testCert({ eic: "CZ00000019", issuer: "playground EETv2 NCA SubCA RSA 05/2026", policyOid: "1.2.203.19122063.10.2.102.0.1" }).p12, password: "x" });
+    const fake = fakeTransports();
+    __setTransportFactoryForTests(fake.factory);
+    try {
+      const sale = deviceSale(s.unit.id, { mode: "playground" });
+      await ingestSales(await deviceContext(s.device.id), [sale as never]);
+      await processSale(sale.id);
+      const row = await getDb().query.sales.findFirst({ where: eq(schema.sales.id, sale.id) });
+      expect(row).toMatchObject({ status: "confirmed", blockedReason: null });
+      expect((row!.eetData as { eic_popl: string }).eic_popl).toBe("CZ00000019");
+      expect(fake.calls[0]!.ctx.eic).toBe("CZ00000019");
+    } finally {
+      __setTransportFactoryForTests(null);
+    }
+    const user = { id: s.user.id, email: s.user.email, name: null, memberships: [{ accountId: s.account.id, role: "owner" as const, accountName: "x", accountKind: "business" }] } as never;
+    await expect(upsertAccount(user, AccountInput.parse({ name: "Firma Test", ico: "12345679", dic: "CZ12345679" }))).resolves.toBeTruthy();
+  });
+});

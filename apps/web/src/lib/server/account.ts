@@ -5,7 +5,7 @@ import { isValidIco, normalizeIco, toIban } from "@ez/cz";
 import { getDb, schema } from "@ez/db";
 import { HttpError, type CurrentUser } from "./auth";
 import { RETENTION, TERMS_VERSION } from "@/lib/legal";
-import { ACCOUNT_BLOCKS, productionAcceptsFrom, requeueBlocked } from "./fiscal";
+import { ACCOUNT_BLOCKS, productionAcceptsFrom, requeueBlocked, isFsPlaygroundTestEic } from "./fiscal";
 import { closedDeleteBy, linkedAccountants, unsentProductionOf, unsentView } from "./lifecycle";
 import { randomToken, sha256 } from "./tokens";
 
@@ -185,7 +185,8 @@ export async function upsertAccount(user: CurrentUser, input: z.infer<typeof Acc
       .select({ eic: schema.certificates.eic, environment: schema.certificates.environment })
       .from(schema.certificates)
       .where(and(eq(schema.certificates.accountId, owner.accountId), isNull(schema.certificates.revokedAt)));
-    const clash = certs.find((c) => c.eic && c.eic !== values.eic);
+    // sdílený testovací certifikát FS pro Playground nese cizí EIČ záměrně – EIČ účtu neomezuje
+    const clash = certs.find((c) => c.eic && c.eic !== values.eic && !(c.environment === "playground" && isFsPlaygroundTestEic(c.eic)));
     if (clash) {
       throw new HttpError(
         400,

@@ -7,7 +7,7 @@ import { CertificateError, caEetIssuer, parseP12Safe } from "@ez/fiscal-core/ser
 import { HttpError } from "./auth";
 import { notifyOwners } from "./account";
 import { rateLimit } from "./rate-limit";
-import { accountMode, requeueBlocked, storeCertificate, transportFor, type EetMode } from "./fiscal";
+import { FS_PLAYGROUND_TEST_EICS, accountMode, isFsPlaygroundTestEic, requeueBlocked, storeCertificate, transportFor, type EetMode } from "./fiscal";
 
 export type CertEnvironment = "playground" | "production";
 
@@ -29,7 +29,7 @@ export const CA_EET_FORGED_MESSAGE =
  * s Policy OID Playground – ten jen pro ověření (R13.1).
  */
 /** EIČ sdílených testovacích certifikátů Playgroundu FS (fyzická osoba, právnická osoba, plátce s VČP). */
-export const FS_PLAYGROUND_TEST_EICS = ["CZ8551015704", "CZ00000019", "CZ683555118"] as const;
+export { FS_PLAYGROUND_TEST_EICS };
 
 export async function importCertificate(accountId: string, input: { file: Buffer; password: string; expected?: CertEnvironment }) {
   let cert;
@@ -117,8 +117,7 @@ export async function verifyEnvironment(accountId: string, unitId: string, reque
   if (!unit) throw new HttpError(404, "Jednotka nenalezena");
   const mode = requested ?? (await defaultEnvironment(accountId, accountMode(account)));
   if (mode !== "mock" && !unit.fsUnitId) throw new HttpError(400, "Jednotka nemá číslo přidělené Finanční správou.");
-  const eic = account.eic ?? account.dic;
-  if (!eic) throw new HttpError(400, "Vyplňte EIČ (DIČ).");
+  const accountEic = account.eic ?? account.dic;
   const cert =
     mode === "mock"
       ? undefined
@@ -127,6 +126,9 @@ export async function verifyEnvironment(accountId: string, unitId: string, reque
           orderBy: desc(schema.certificates.createdAt),
         });
   if (mode !== "mock" && !cert) throw new HttpError(400, mode === "production" ? "Nahrajte ostrý pokladní certifikát z DIS+." : "Nahrajte testovací certifikát pro Playground.");
+  // sdílený testovací certifikát FS: na Playgroundu se posílá s jeho EIČ, ne s EIČ účtu
+  const eic = mode === "playground" && isFsPlaygroundTestEic(cert?.eic) ? cert!.eic : accountEic;
+  if (!eic) throw new HttpError(400, "Vyplňte EIČ (DIČ).");
 
   const now = new Date();
   const sale = buildSale({
