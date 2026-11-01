@@ -18,8 +18,8 @@ const current = readFileSync(CONF_PATH, "utf8");
 /** Cesty, které musí být za heslem. */
 const CLOSED_PATHS = [
   ...[...CLOSED_SECTIONS, ...CLOSED_API].flatMap((p) => [p, `${p}/`, `${p}/x`]),
-  "/api/ucet/certifikat",
-  "/u/00000000-0000-4000-8000-000000000000",
+  // certifikát a účtenky jsou za heslem, jen dokud je zavřená pokladna (otevření 1. 11. 2026 večer, П6)
+  ...((CLOSED_SECTIONS as readonly string[]).includes("/pokladna") ? ["/api/ucet/certifikat", "/u/00000000-0000-4000-8000-000000000000"] : []),
 ];
 
 /** S3: katalog je veřejný – žádná z těchto cest nesmí být za heslem (a má mikrocache, kromě živého náhledu z ARES). */
@@ -86,7 +86,7 @@ describe("R7.2 – nginx keeps the closed sections closed", () => {
     expect(cacheConf).toMatch(/^map "\$http_rsc\$http_next_router_prefetch\$http_next_router_state_tree" \$ez_cache_rsc \{/m);
   });
 
-  it("gate: the opening-day plan from open-site.md (1aec031) is caught – exact /api/ucet/certifikat would be public", () => {
+  it.runIf((CLOSED_SECTIONS as readonly string[]).includes("/pokladna"))("gate: the opening-day plan from open-site.md (1aec031) is caught – exact /api/ucet/certifikat would be public", () => {
     expect(planFromOpenSite).not.toBe(fromReview);
     const v = violations(planFromOpenSite);
     expect(v.some((x) => x.startsWith("/api/ucet/certifikat:"))).toBe(true);

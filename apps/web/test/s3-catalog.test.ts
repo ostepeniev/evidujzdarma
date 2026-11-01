@@ -454,7 +454,10 @@ describe("S3 – performance", () => {
     const idx = (await t.pg.query<{ indexname: string; indexdef: string }>("select indexname, indexdef from pg_indexes where tablename = 'firms'")).rows;
     expect(idx.find((i) => i.indexname === "firms_listable_legal_region_name")?.indexdef).toMatch(/\(region_code, name\) WHERE .*is_natural_person = false/);
     expect(idx.find((i) => i.indexname === "firms_listable_legal_city_name")?.indexdef).toMatch(/\(city_code, name\) WHERE .*is_natural_person = false/);
-    expect(read("../../infra/nginx/evidujzdarma.conf")).toContain("location ~ ^/(pokladna|prihlaseni|kabinet|pozvanka|u)(/|$) {");
+    // od otevření pokladny (1. 11. 2026) blok uzavřených sekcí v nginx není; zavřený stav ho musí mít
+    const { CLOSED_SECTIONS } = await import("@/lib/launch");
+    if ((CLOSED_SECTIONS as readonly string[]).includes("/pokladna")) expect(read("../../infra/nginx/evidujzdarma.conf")).toContain("location ~ ^/(pokladna|prihlaseni|kabinet|pozvanka|u)(/|$) {");
+    else expect(read("../../infra/nginx/evidujzdarma.conf")).not.toMatch(/auth_basic "EvidujZdarma"/);
   });
 
   it("gate: the load test script needs no dependencies and reports p50/p95", () => {

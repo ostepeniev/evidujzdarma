@@ -153,6 +153,21 @@ export function SetupApp({ initial }: { initial: State }) {
           <CatalogSection state={state} reload={reload} />
           <ExportSection salesCount={state.salesCount ?? 0} />
           <ClosingsSection />
+          {/* R-S8.2 (po otevření pokladny): vstup do EET API pro rezervační a jiné systémy */}
+          <section id="integrace" className="card space-y-2">
+            <h2 className="text-xl font-bold">Napojení na váš systém (EET API)</h2>
+            <p className="text-sm text-muted">
+              Máte rezervační systém, e-shop nebo vlastní software? Tržby z něj můžete evidovat přes naše API – bez druhé pokladny.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Link href="/pokladna/integrace" className="btn btn-primary">
+                Integrace
+              </Link>
+              <Link href="/api-docs" className="btn">
+                Dokumentace API
+              </Link>
+            </div>
+          </section>
           <ProblemSalesSection />
           <FailedSalesSection />
           <AccountantsSection state={state} reload={reload} />

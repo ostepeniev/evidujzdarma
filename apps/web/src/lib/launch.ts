@@ -6,10 +6,10 @@
  * infra/nginx/evidujzdarma.conf – měňte obě místa); web na ně neodkazuje, robots.txt je zakazuje a sitemapy je
  * neobsahují. Otevření sekce = odebrat ji odsud.
  */
-export const CLOSED_SECTIONS = ["/pokladna", "/prihlaseni", "/kabinet", "/pozvanka", "/u"] as const;
+export const CLOSED_SECTIONS = [] as const;
 
 /** API uzavřených sekcí (session cookie) – pro nginx; /api/pokladna/* zůstává otevřené (token zařízení). */
-export const CLOSED_API = ["/api/ucet", "/api/auth", "/api/kabinet", "/api/pozvanka"] as const;
+export const CLOSED_API = [] as const;
 
 /** Patří cesta do uzavřené sekce? Porovnává celé segmenty („/u“ neschová „/ucetni“). */
 export function isClosed(path: string): boolean {
