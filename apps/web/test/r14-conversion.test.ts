@@ -41,8 +41,9 @@ const WHY = {
       title: "Vydělávat chceme na doplňcích",
       text: "Kdo bude chtít víc, si připlatí: Premium za 149 Kč měsíčně (účtenky SMS, exporty), platební terminál nebo nastavení na klíč. Doplňky připravujeme a nikdo je nemusí.",
     },
-    // S4b: v produkci je Microsoft Clarity (jen analytické, se souhlasem) – věta R15.3 platí jen bez značek (s4-cookies)
-    { title: "Nežijeme z reklamy ani z vašich dat", text: "Na webu nemáme reklamu, měřicí cookies spouštíme jen s vaším souhlasem a vaše údaje nikomu neprodáváme." },
+    // S4b: v produkci je Microsoft Clarity (jen analytické, se souhlasem) – věta R15.3 platí jen bez značek (s4-cookies);
+    // S10: přibyly GA4 a Meta Pixel (marketingové) → měřicí a reklamní cookies
+    { title: "Nežijeme z reklamy ani z vašich dat", text: "Na webu nemáme reklamu, měřicí a reklamní cookies spouštíme jen s vaším souhlasem a vaše údaje nikomu neprodáváme." },
   ],
   guarantee: "Bez závazku a bez platební karty.",
 };
@@ -276,7 +277,10 @@ describe("R14.7 – sitemap lastmod and the home page address", () => {
     const statics = (await import("@/lib/static-pages")).STATIC_PAGES.map((p) => map.get(p.path === "/" ? "/" : p.path));
     expect(statics.every((d) => /^\d{4}-\d{2}-\d{2}$/.test(d ?? ""))).toBe(true);
     expect(new Set(statics).size).toBeGreaterThan(3);
-    const today = new Date().toISOString().slice(0, 10);
+    // S10: zásady s GA4 a Meta Pixelem platí ode dne spuštění (RETENTION.launch, 2. 11. 2026) a připravují se den předem –
+    // datum spuštění proto nesmí shodit bránu ani před ním; jiné budoucí datum ano
+    const { RETENTION } = await import("@/lib/legal");
+    const today = [new Date().toISOString().slice(0, 10), RETENTION.launch].sort().at(-1)!;
     expect(statics.every((d) => d! <= today)).toBe(true);
   });
 });

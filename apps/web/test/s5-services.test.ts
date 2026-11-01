@@ -111,14 +111,15 @@ describe("S5 – the funnel leads to the page", () => {
 });
 
 describe("S5 – privacy policy", () => {
-  it("gate: a purpose row for the order, PRIVACY_VERSION 2026-10-26-s5", async () => {
+  it("gate: a purpose row for the order, PRIVACY_VERSION raised (S5, then S10)", async () => {
     const { default: Privacy } = await import("@/app/(site)/ochrana-osobnich-udaju/page");
     const t = pageText(Privacy as FC);
     expect(t).toContain("Poptávka služby Nastavení EET na klíč");
     expect(t).toContain("zvláštní databázi poptávek nevedeme");
     const { PRIVACY_VERSION, PRIVACY_DATE_ISO } = await import("@/lib/legal");
-    expect(PRIVACY_VERSION).toBe("2026-10-26-s5");
-    expect(PRIVACY_DATE_ISO).toBe("2026-10-26");
+    // S10 (2. 11. 2026, GA4 a Meta Pixel) posunul verzi dál
+    expect(PRIVACY_VERSION).toBe("2026-11-02-s10");
+    expect(PRIVACY_DATE_ISO).toBe("2026-11-02");
   });
 });
 

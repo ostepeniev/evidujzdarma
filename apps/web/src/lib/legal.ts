@@ -9,13 +9,13 @@ export const REFERRAL_RULES_VERSION_LABEL = "7. 10. 2026";
 /**
  * Verze zásad ochrany osobních údajů (R8.2: odhlášení z novinek ≠ zrušení předregistrace; R15.3: měření návštěvnosti; R17.4: UTM;
  * S3: zveřejněný katalog firem – informace podle čl. 14 GDPR; S4: souhlas s cookies a značky třetích stran po souhlasu;
- * S4b: Microsoft Clarity; S5: poptávka služby Nastavení EET na klíč).
+ * S4b: Microsoft Clarity; S5: poptávka služby Nastavení EET na klíč; S10: Google Analytics 4 a Meta Pixel po souhlasu).
  * Datum = den nasazení; posune-li se, upravte ho. Při zapnutí nové značky v lib/tracking-config.ts verzi zvyšte.
  */
-export const PRIVACY_VERSION = "2026-10-26-s5";
-export const PRIVACY_VERSION_LABEL = "26. 10. 2026";
+export const PRIVACY_VERSION = "2026-11-02-s10";
+export const PRIVACY_VERSION_LABEL = "2. 11. 2026";
 /** Datum platnosti zásad pro <time dateTime> (R8.5, Д-9). */
-export const PRIVACY_DATE_ISO = "2026-10-26";
+export const PRIVACY_DATE_ISO = "2026-11-02";
 /**
  * Verze textu marketingového souhlasu v předregistraci (prereg-form.tsx). Ukládá se jako doklad souhlasu
  * (preregistrations.consent_evidence = "souhlas:<verze>"); při změně textu zvýšit.

@@ -10,7 +10,9 @@
 // s cookies – první vrstva lišty bez „Odmítnout“ je rozhodnutí majitele (DECISIONS К10, ÚOOÚ/EDPB to vidí jako riziko);
 // po zapnutí značek ověřit u Meta Pixelu společné správcovství (čl. 26 GDPR, dodatek Meta pro správce) a doby cookies;
 // (8) S4b (23. 10. 2026): zapnutý Microsoft Clarity (záznamy průchodu, teplotní mapy) – ověřit roli Microsoftu (podle FAQ
-// Clarity „data controller“, smluvní strana v EU Microsoft Ireland Operations Ltd.) a podmínky Clarity (Clarity Terms of Use).
+// Clarity „data controller“, smluvní strana v EU Microsoft Ireland Operations Ltd.) a podmínky Clarity (Clarity Terms of Use);
+// (9) S10 (2. 11. 2026): zapnuté Google Analytics 4 (G-2CQPPQZT4Q) a Meta Pixel (1466571932079707) – ověřit u Meta dodatek
+// pro společné správce (Controller Addendum) a vypnuté automatické rozšířené párování, u GA4 dobu uchování v nastavení služby.
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -43,10 +45,10 @@ const TRACKING_VENDORS: readonly { on: boolean; tool: string; category: string; 
     on: !!TRACKING_ON.ga4,
     tool: "Google Analytics 4",
     category: "Analytické",
-    purpose: "Statistiky návštěvnosti a používání stránek a nástrojů.",
+    purpose: "Statistiky návštěvnosti a používání stránek a nástrojů. Google Analytics 4 IP adresy neukládá.",
     cookies: "_ga a _ga_<ID> (2 roky).",
     controller:
-      "Google Ireland Limited; údaje mohou být předány společnosti Google LLC do USA na základě rámce EU-U.S. Data Privacy Framework.",
+      "Google Ireland Limited; údaje mohou být předány společnosti Google LLC do USA na základě rámce EU-U.S. Data Privacy Framework. Údaje o návštěvách se v Google Analytics uchovávají nejvýš 14 měsíců.",
   },
   {
     on: !!TRACKING_ON.clarity,
@@ -71,10 +73,11 @@ const TRACKING_VENDORS: readonly { on: boolean; tool: string; category: string; 
     on: !!TRACKING_ON.metaPixel,
     tool: "Meta Pixel",
     category: "Marketingové",
-    purpose: "Měření výsledků reklamy na Facebooku a Instagramu a zobrazování reklamy lidem, kteří náš web navštívili.",
+    purpose:
+      "Měření výsledků reklamy na Facebooku a Instagramu a zobrazování reklamy lidem, kteří náš web navštívili. Meta se při tom dozví adresu navštívené stránky, vaši IP adresu a údaje o prohlížeči.",
     cookies: "_fbp a _fbc (90 dní); na doméně facebook.com například fr (90 dní).",
     controller:
-      "Meta Platforms Ireland Limited; při shromáždění a předání údajů jsme s ní společnými správci. Údaje mohou být předány společnosti Meta Platforms, Inc. do USA na základě rámce EU-U.S. Data Privacy Framework.",
+      "Meta Platforms Ireland Limited; při shromáždění a předání údajů jsme s ní společnými správci. Údaje mohou být předány společnosti Meta Platforms, Inc. do USA na základě rámce EU-U.S. Data Privacy Framework. Jak dlouho údaje uchovává, určují zásady ochrany osobních údajů společnosti Meta.",
   },
   {
     on: !!TRACKING_ON.sklik,

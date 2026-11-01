@@ -13,8 +13,10 @@ export const FIRST_LAYER_REJECT = false;
 /**
  * Zvyšte při změně kategorií nebo značek – lišta se pak zobrazí znovu všem. S4b (Clarity) verzi nezvýšila: do 23. 10. 2026
  * se lišta ukazovala jen v náhledu, který nic neukládá, takže žádný uložený souhlas verze 1 neexistuje.
+ * S10 (2. 11. 2026): verze 2 – přibyly Google Analytics 4 a Meta Pixel (marketingová kategorie), souhlas verze 1 (jen
+ * Clarity) se proto nepoužije a lišta se ukáže znovu.
  */
-export const CONSENT_VERSION = 1;
+export const CONSENT_VERSION = 2;
 export const CONSENT_COOKIE = "ez_consent";
 /** 6 měsíců – pak se zeptáme znovu (obvyklá praxe; ÚOOÚ doporučuje souhlas po čase obnovit). */
 export const CONSENT_MAX_AGE_DAYS = 182;
@@ -180,6 +182,13 @@ export function consentCategories(cfg: TrackingConfig = TRACKING, preview = fals
     });
   }
   if (t.marketing || preview) {
+    // S10: text jmenuje jen sítě, kde reklamu opravdu měříme (teď jen Meta → Facebook a Instagram)
+    const where = [
+      ...(t.googleAds || preview ? ["Googlu"] : []),
+      ...(t.metaPixel || preview ? ["Facebooku", "Instagramu"] : []),
+      ...(t.sklik || preview ? ["Seznamu"] : []),
+    ];
+    const whereText = where.length > 1 ? `${where.slice(0, -1).join(", ")} a ${where[where.length - 1]}` : where.join("");
     const vendors = [
       ...(t.googleAds || preview ? ["Google Ads (Google Ireland Ltd.)"] : []),
       ...(t.metaPixel || preview ? ["Meta Pixel (Meta Platforms Ireland Ltd.)"] : []),
@@ -188,7 +197,7 @@ export function consentCategories(cfg: TrackingConfig = TRACKING, preview = fals
     cats.push({
       id: "marketing",
       title: "Marketingové",
-      text: "Umožní nám měřit, zda naše reklama na Googlu, Facebooku, Instagramu a Seznamu funguje, a ukazovat ji lidem, kteří už naše stránky znají.",
+      text: `Umožní nám měřit, zda naše reklama na ${whereText} funguje, a ukazovat ji lidem, kteří už naše stránky znají.`,
       vendors,
     });
   }

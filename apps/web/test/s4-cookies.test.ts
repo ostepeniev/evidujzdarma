@@ -6,6 +6,8 @@
  *  - přepínače v nastavení vypnuté, před souhlasem žádný cizí skript, po souhlasu Consent Mode „granted“.
  * S4b (23. 10. 2026): v produkci zapnutý Microsoft Clarity (jen analytické) – lišta se ukazuje, CSP má domény Clarity,
  * zásady a karta „Proč je to zdarma“ to říkají; stav „bez značek“ se dál testuje se simulovanou prázdnou konfigurací.
+ * S10 (2. 11. 2026): v produkci přibyly Google Analytics 4 a Meta Pixel. Brány S4b (jen Clarity) teď testují výslovnou
+ * konfigurací PROD_S4B; skutečnou produkci (TRACKING, CSP, verze) hlídá blok „S10“.
  */
 import { readFileSync } from "node:fs";
 import { createElement, type FC } from "react";
@@ -44,8 +46,10 @@ const FULL: TrackingConfig = {
   SKLIK_RTG_ID: "123456",
   CLARITY_ID: "abcd1234xy",
 };
-/** S4b: produkce – jen Microsoft Clarity (projekt EvidujZdarma) */
-const PROD: TrackingConfig = { ...EMPTY, CLARITY_ID: "z292l24goy" };
+/** S4b (23. 10. – 1. 11. 2026): produkce – jen Microsoft Clarity (projekt EvidujZdarma) */
+const PROD_S4B: TrackingConfig = { ...EMPTY, CLARITY_ID: "z292l24goy" };
+/** S10 (2. 11. 2026): produkce – Google Analytics 4 + Meta Pixel + Microsoft Clarity */
+const PROD_S10: TrackingConfig = { ...EMPTY, GA4_ID: "G-2CQPPQZT4Q", META_PIXEL_ID: "1466571932079707", CLARITY_ID: "z292l24goy" };
 const OLD_CSP =
   "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'";
 const CLARITY = "https://*.clarity.ms https://c.bing.com";
@@ -118,37 +122,29 @@ describe("S4-COOKIES – without any tag ID nothing changes (simulated empty con
   });
 });
 
-describe("S4b – Microsoft Clarity is on in production (analytics only)", () => {
-  it("gate: production config = only Clarity z292l24goy → analytics yes, marketing no, banner shown", () => {
-    expect(TRACKING).toEqual(PROD);
-    const t = configuredTracking();
+describe("S4b – Microsoft Clarity only, analytics only (the S4b production config, explicit since S10)", () => {
+  it("gate: Clarity-only config z292l24goy → analytics yes, marketing no, banner shown", () => {
+    const t = configuredTracking(PROD_S4B);
     expect(t).toMatchObject({ clarity: "z292l24goy", ga4: "", googleAds: "", metaPixel: "", sklik: "", analytics: true, marketing: false, any: true });
-    expect(bannerMode("", "")).toEqual({ show: true, preview: false });
-    expect(bannerMode("", `${CONSENT_COOKIE}=${CONSENT_VERSION}.a1.m0.20261023`)).toEqual({ show: false });
+    expect(bannerMode("", "", PROD_S4B)).toEqual({ show: true, preview: false });
+    expect(bannerMode("", `${CONSENT_COOKIE}=${CONSENT_VERSION}.a1.m0.20261023`, PROD_S4B)).toEqual({ show: false });
   });
 
-  it("gate: CSP adds exactly the Clarity domains (Microsoft „Clarity CSP“) and next.config sends it", async () => {
-    expect(siteCsp()).toBe(CLARITY_CSP);
-    expect(siteCsp()).not.toMatch(/frame-src/);
-    vi.stubEnv("NODE_ENV", "production");
-    vi.resetModules();
-    const { default: nextConfig } = await import("../next.config");
-    const rules = await nextConfig.headers!();
-    vi.unstubAllEnvs();
-    const csp = rules.flatMap((r) => r.headers).find((h) => h.key === "Content-Security-Policy");
-    expect(csp?.value).toBe(CLARITY_CSP);
+  it("gate: CSP adds exactly the Clarity domains (Microsoft „Clarity CSP“)", () => {
+    expect(siteCsp(PROD_S4B)).toBe(CLARITY_CSP);
+    expect(siteCsp(PROD_S4B)).not.toMatch(/frame-src/);
   });
 
   it("gate: Clarity loads only with analytics consent; ad_Storage is never granted", () => {
-    expect(allowedTags(null)).toEqual([]);
-    expect(allowedTags(rejectAll(day))).toEqual([]);
-    expect(allowedTags(acceptAll(day))).toEqual(["clarity"]);
-    expect(acceptAll(day)).toMatchObject({ analytics: true, marketing: false });
-    expect(allowedTags(makeConsent(false, true, day))).toEqual([]);
+    expect(allowedTags(null, PROD_S4B)).toEqual([]);
+    expect(allowedTags(rejectAll(day, PROD_S4B), PROD_S4B)).toEqual([]);
+    expect(allowedTags(acceptAll(day, PROD_S4B), PROD_S4B)).toEqual(["clarity"]);
+    expect(acceptAll(day, PROD_S4B)).toMatchObject({ analytics: true, marketing: false });
+    expect(allowedTags(makeConsent(false, true, day, PROD_S4B), PROD_S4B)).toEqual([]);
     expect(clarityConsent(acceptAll(day))).toEqual({ ad_Storage: "denied", analytics_Storage: "granted" });
     expect(clarityConsent({ analytics: false })).toEqual({ ad_Storage: "denied", analytics_Storage: "denied" });
     expect(clarityConsent(null)).toEqual({ ad_Storage: "denied", analytics_Storage: "denied" });
-    expect(TAG_SCRIPT_SRC.clarity(TRACKING)).toBe("https://www.clarity.ms/tag/z292l24goy");
+    expect(TAG_SCRIPT_SRC.clarity(PROD_S4B)).toBe("https://www.clarity.ms/tag/z292l24goy");
     expect(THIRD_PARTY_COOKIE_PREFIXES).toEqual(expect.arrayContaining(["_clck", "_clsk"]));
   });
 
@@ -187,18 +183,19 @@ describe("S4b – Microsoft Clarity is on in production (analytics only)", () =>
     expect(renderToStaticMarkup(createElement(CookieBannerView, { firstLayerReject: false, marketing: true }))).toContain(BANNER_TEXT);
     expect(renderToStaticMarkup(createElement(CookieBannerView, { firstLayerReject: false, marketing: false, preview: true }))).toContain(BANNER_TEXT);
     expect(src("components/consent/consent-manager.tsx")).toContain("marketing={configuredTracking(cfg).marketing}");
-    expect(configuredTracking().marketing).toBe(false);
+    expect(configuredTracking(PROD_S4B).marketing).toBe(false);
   });
 
   it("gate: settings show Analytické with Microsoft Clarity only; the footer button is visible", () => {
-    const cats = consentCategories();
+    const cats = consentCategories(PROD_S4B);
     expect(cats.map((c) => c.id)).toEqual(["necessary", "analytics"]);
     expect(cats[1]!.vendors).toEqual(["Microsoft Clarity (Microsoft Ireland Operations Ltd.)"]);
     expect(cats[1]!.text).toContain("ale ne to, co napíšete do formulářů");
-    expect(renderToStaticMarkup(createElement(CookieSettingsButton))).toContain("Nastavení cookies");
+    expect(renderToStaticMarkup(createElement(CookieSettingsButton, { config: PROD_S4B }))).toContain("Nastavení cookies");
   });
 
-  it("gate: privacy policy lists Microsoft Clarity, says no ad cookies; PRIVACY_VERSION (S4b, posunuta v S5)", async () => {
+  it("gate: privacy policy lists Microsoft Clarity, says no ad cookies", async () => {
+    mockTracking(PROD_S4B);
     const { default: Privacy } = await import("@/app/(site)/ochrana-osobnich-udaju/page");
     const t = text(renderToStaticMarkup(createElement(Privacy as FC)));
     expect(t).toContain("Analytické cookies používáme jen s vaším souhlasem – podrobnosti níže. Reklamní cookies nepoužíváme.");
@@ -206,13 +203,10 @@ describe("S4b – Microsoft Clarity is on in production (analytics only)", () =>
       expect(t).toContain(x);
     }
     for (const x of ["Google Analytics 4", "Google Ads", "Meta Pixel", "Sklik", "Teď žádný takový nástroj nepoužíváme"]) expect(t).not.toContain(x);
-    const { PRIVACY_VERSION, PRIVACY_DATE_ISO } = await import("@/lib/legal");
-    // S5-SLUŽBY (26. 10. 2026) posunul verzi dál
-    expect(PRIVACY_VERSION).toBe("2026-10-26-s5");
-    expect(PRIVACY_DATE_ISO).toBe("2026-10-26");
   });
 
   it("gate: why-free card 3 – no ads, analytics cookies only with consent", async () => {
+    mockTracking(PROD_S4B);
     const { WHY_FREE } = await import("@/content/why-free");
     expect(WHY_FREE.cards[2]!.text).toBe("Na webu nemáme reklamu, měřicí cookies spouštíme jen s vaším souhlasem a vaše údaje nikomu neprodáváme.");
   });
@@ -222,6 +216,116 @@ describe("S4b – Microsoft Clarity is on in production (analytics only)", () =>
     const k11 = d.split("\n").find((l) => l.startsWith("- К11 "));
     expect(k11).toBeDefined();
     for (const x of ["Clarity", "z292l24goy", "ad_Storage", "data-clarity-mask"]) expect(k11).toContain(x);
+  });
+});
+
+describe("S10 – GA4 and Meta Pixel in production (2. 11. 2026)", () => {
+  const GA4_CSP = ["https://www.googletagmanager.com", "https://*.google-analytics.com", "https://*.analytics.google.com"];
+  const META = ["https://connect.facebook.net", "https://www.facebook.com"];
+  const S10_CSP = OLD_CSP.replace(
+    "script-src 'self' 'unsafe-inline'",
+    `script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://connect.facebook.net ${CLARITY}`,
+  )
+    .replace("img-src 'self' data: blob:", `img-src 'self' data: blob: https://www.googletagmanager.com https://*.google-analytics.com https://www.facebook.com ${CLARITY}`)
+    .replace("connect-src 'self'", `connect-src 'self' ${GA4_CSP.join(" ")} ${META[1]} ${META[0]} ${CLARITY}`)
+    .replace("worker-src 'self'", "frame-src https://www.facebook.com; worker-src 'self'");
+
+  it("gate: production config = GA4 G-2CQPPQZT4Q + Meta Pixel 1466571932079707 + Clarity z292l24goy; no Google Ads, no Sklik", () => {
+    expect(TRACKING).toEqual(PROD_S10);
+    expect(configuredTracking()).toEqual({
+      ga4: "G-2CQPPQZT4Q",
+      googleAds: "",
+      metaPixel: "1466571932079707",
+      sklik: "",
+      clarity: "z292l24goy",
+      analytics: true,
+      marketing: true,
+      any: true,
+    });
+    expect(bannerMode("", "")).toEqual({ show: true, preview: false });
+    expect(bannerMode("", `${CONSENT_COOKIE}=${CONSENT_VERSION}.a1.m1.20261102`)).toEqual({ show: false });
+  });
+
+  it("gate: CSP contains exactly the GA4 + Meta + Clarity sources (nothing for Google Ads or Seznam) and next.config sends it", async () => {
+    expect(trackingCspSources()).toEqual({
+      script: ["https://www.googletagmanager.com", "https://connect.facebook.net", "https://*.clarity.ms", "https://c.bing.com"],
+      connect: [...GA4_CSP, "https://www.facebook.com", "https://connect.facebook.net", "https://*.clarity.ms", "https://c.bing.com"],
+      img: ["https://www.googletagmanager.com", "https://*.google-analytics.com", "https://www.facebook.com", "https://*.clarity.ms", "https://c.bing.com"],
+      frame: ["https://www.facebook.com"],
+    });
+    expect(siteCsp()).toBe(S10_CSP);
+    for (const x of ["doubleclick", "googleadservices", "www.google.com", "seznam"]) expect(siteCsp()).not.toContain(x);
+    vi.stubEnv("NODE_ENV", "production");
+    vi.resetModules();
+    const { default: nextConfig } = await import("../next.config");
+    const rules = await nextConfig.headers!();
+    vi.unstubAllEnvs();
+    const csp = rules.flatMap((r) => r.headers).find((h) => h.key === "Content-Security-Policy");
+    expect(csp?.value).toBe(S10_CSP);
+  });
+
+  it("gate: nothing before consent; accept all → gtag, meta, clarity; analytics only → no Meta; marketing only → only Meta", () => {
+    expect(allowedTags(null)).toEqual([]);
+    expect(allowedTags(rejectAll(day))).toEqual([]);
+    expect(acceptAll(day)).toMatchObject({ v: CONSENT_VERSION, analytics: true, marketing: true });
+    expect(allowedTags(acceptAll(day))).toEqual(["gtag", "meta", "clarity"]);
+    expect(allowedTags(makeConsent(true, false, day))).toEqual(["gtag", "clarity"]);
+    expect(allowedTags(makeConsent(false, true, day))).toEqual(["meta"]);
+    expect(TAG_SCRIPT_SRC.gtag(TRACKING)).toBe("https://www.googletagmanager.com/gtag/js?id=G-2CQPPQZT4Q");
+    expect(TAG_SCRIPT_SRC.meta(TRACKING)).toBe("https://connect.facebook.net/en_US/fbevents.js");
+    // Consent Mode: bez Google Ads zůstává reklamní úložiště zamítnuté i po souhlasu jen s analytickými
+    expect(gtagConsentUpdate(makeConsent(true, false, day))).toEqual({ ad_storage: "denied", ad_user_data: "denied", ad_personalization: "denied", analytics_storage: "granted" });
+    expect(THIRD_PARTY_COOKIE_PREFIXES).toEqual(expect.arrayContaining(["_ga", "_fbp", "_fbc"]));
+    // Meta: souhlas („grant“) před init, odvolání „revoke“
+    const m = src("components/consent/consent-manager.tsx");
+    const init = m.slice(m.indexOf("function initMeta"), m.indexOf("function initClarity"));
+    expect(init.indexOf('window.fbq("consent", "grant")')).toBeGreaterThan(-1);
+    expect(init.indexOf('window.fbq("consent", "grant")')).toBeLessThan(init.indexOf('window.fbq("init"'));
+    expect(m).toMatch(/window\.fbq\?\.\("consent", "revoke"\)/);
+  });
+
+  it("gate: the banner promises measuring advertising; settings show Analytické (GA + Clarity) and Marketingové (Meta)", () => {
+    expect(configuredTracking().marketing).toBe(true);
+    const cats = consentCategories();
+    expect(cats.map((c) => c.id)).toEqual(["necessary", "analytics", "marketing"]);
+    expect(cats[1]!.vendors).toEqual(["Google Analytics (Google Ireland Ltd.)", "Microsoft Clarity (Microsoft Ireland Operations Ltd.)"]);
+    expect(cats[2]!.vendors).toEqual(["Meta Pixel (Meta Platforms Ireland Ltd.)"]);
+    expect(cats[2]!.text).toBe("Umožní nám měřit, zda naše reklama na Facebooku a Instagramu funguje, a ukazovat ji lidem, kteří už naše stránky znají.");
+    // náhled a plná konfigurace jmenují všechny sítě
+    expect(consentCategories(FULL)[2]!.text).toContain("na Googlu, Facebooku, Instagramu a Seznamu funguje");
+  });
+
+  it("gate: privacy policy lists Google Analytics 4 and Meta Pixel with provider, purpose and retention; why-free card 3", async () => {
+    const { default: Privacy } = await import("@/app/(site)/ochrana-osobnich-udaju/page");
+    const t = text(renderToStaticMarkup(createElement(Privacy as FC)));
+    expect(t).toContain("Analytické a reklamní cookies používáme jen s vaším souhlasem – podrobnosti níže.");
+    for (const x of [
+      "Google Analytics 4",
+      "Google Ireland Limited",
+      "_ga a _ga_",
+      "(2 roky)",
+      "uchovávají nejvýš 14 měsíců",
+      "Meta Pixel",
+      "Meta Platforms Ireland Limited",
+      "společnými správci",
+      "_fbp a _fbc (90 dní)",
+      "Microsoft Clarity",
+    ]) {
+      expect(t).toContain(x);
+    }
+    for (const x of ["Google Ads", "Sklik", "Reklamní cookies nepoužíváme", "Teď žádný takový nástroj nepoužíváme"]) expect(t).not.toContain(x);
+    const { WHY_FREE } = await import("@/content/why-free");
+    expect(WHY_FREE.cards[2]!.text).toBe("Na webu nemáme reklamu, měřicí a reklamní cookies spouštíme jen s vaším souhlasem a vaše údaje nikomu neprodáváme.");
+  });
+
+  it("gate: versions bumped – PRIVACY_VERSION 2026-11-02-s10, CONSENT_VERSION 2 (stored version-1 consent asks again)", async () => {
+    const { PRIVACY_VERSION, PRIVACY_VERSION_LABEL, PRIVACY_DATE_ISO } = await import("@/lib/legal");
+    expect(PRIVACY_VERSION).toBe("2026-11-02-s10");
+    expect(PRIVACY_VERSION_LABEL).toBe("2. 11. 2026");
+    expect(PRIVACY_DATE_ISO).toBe("2026-11-02");
+    expect(CONSENT_VERSION).toBe(2);
+    expect(parseConsent("1.a1.m0.20261030")).toBeNull();
+    expect(bannerMode("", `${CONSENT_COOKIE}=1.a1.m0.20261030`)).toEqual({ show: true, preview: false });
   });
 });
 
@@ -305,7 +409,7 @@ describe("S4-COOKIES – stored decision and tags", () => {
   it("gate: first-party cookie for 6 months, Path=/, SameSite=Lax, Secure on https", () => {
     const c = acceptAll(day, FULL);
     expect(CONSENT_MAX_AGE_DAYS).toBe(182);
-    expect(consentCookieString(c, true)).toBe(`${CONSENT_COOKIE}=1.a1.m1.20261023; Max-Age=${182 * 86_400}; Path=/; SameSite=Lax; Secure`);
+    expect(consentCookieString(c, true)).toBe(`${CONSENT_COOKIE}=${CONSENT_VERSION}.a1.m1.20261023; Max-Age=${182 * 86_400}; Path=/; SameSite=Lax; Secure`);
     expect(consentCookieString(c, false)).not.toContain("Secure");
     expect(consentCookieString(c, true)).not.toMatch(/Domain=/);
   });

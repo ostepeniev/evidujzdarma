@@ -13,9 +13,11 @@
  * PRIVACY_VERSION v lib/legal.ts a CONSENT_VERSION v lib/consent.ts (nový souhlas pro nové značky).
  */
 export const TRACKING = {
-  GA4_ID: "",
+  /** S10 (2. 11. 2026): Google Analytics 4 – kategorie „Analytické“, načte se až po souhlasu. */
+  GA4_ID: "G-2CQPPQZT4Q",
   GOOGLE_ADS_ID: "",
-  META_PIXEL_ID: "",
+  /** S10 (2. 11. 2026): Meta Pixel – kategorie „Marketingové“, načte se až po souhlasu. */
+  META_PIXEL_ID: "1466571932079707",
   SKLIK_RTG_ID: "",
   /** S4b (23. 10. 2026): Microsoft Clarity – záznamy průchodu a teplotní mapy, kategorie „Analytické“ (projekt EvidujZdarma). */
   CLARITY_ID: "z292l24goy",

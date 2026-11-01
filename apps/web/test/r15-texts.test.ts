@@ -13,8 +13,9 @@ vi.mock("next/navigation", () => ({ usePathname: () => "/", useRouter: () => ({ 
 
 const MEASURING =
   "Měření návštěvnosti. Abychom věděli, které stránky lidem pomáhají, počítáme návštěvy webu vlastním nástrojem na našem serveru. Nepoužíváme cookies ani jiné ukládání do vašeho zařízení a vaši IP adresu neukládáme: z IP adresy a typu prohlížeče se po dobu jednoho dne vypočítá anonymní otisk, který se o půlnoci zahodí. Uchováváme jen souhrnná čísla za den (počet zobrazení stránek, počet návštěvníků, odkud přišli a z jakého typu zařízení) po dobu 25 měsíců. Pokud máte v prohlížeči zapnutý signál Do Not Track nebo Global Privacy Control, nepočítáme vás vůbec. Právním základem je náš oprávněný zájem na zlepšování webu.";
-// S4b: v produkci je Microsoft Clarity (jen analytické, se souhlasem); doslovná věta R15.3 bez značek – viz s4-cookies
-const CARD3 = "Na webu nemáme reklamu, měřicí cookies spouštíme jen s vaším souhlasem a vaše údaje nikomu neprodáváme.";
+// S4b: v produkci je Microsoft Clarity (jen analytické, se souhlasem); doslovná věta R15.3 bez značek – viz s4-cookies.
+// S10: přibyly GA4 a Meta Pixel (marketingové) → věta o měřicích a reklamních cookies; varianta jen s Clarity – viz s4-cookies.
+const CARD3 = "Na webu nemáme reklamu, měřicí a reklamní cookies spouštíme jen s vaším souhlasem a vaše údaje nikomu neprodáváme.";
 const text = (h: string) => h.replace(/<[^>]+>/g, "").replace(/&#x27;|&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, "&").replace(/\s+/g, " ");
 const src = (p: string) => readFileSync(new URL(`../src/${p}`, import.meta.url), "utf8");
 
@@ -25,7 +26,7 @@ describe("R15.3 – texts", () => {
     expect(text(html)).toContain(MEASURING);
     expect(html).toContain("<strong>Měření návštěvnosti.</strong>");
     const { PRIVACY_VERSION, RETENTION } = await import("@/lib/legal");
-    expect(PRIVACY_VERSION).toBe("2026-10-26-s5"); // R17.4 (UTM), S3 (zveřejněný katalog), S4 (souhlas s cookies) S4b (Clarity) a S5 (poptávka služby) posunuly verzi dál
+    expect(PRIVACY_VERSION).toBe("2026-11-02-s10"); // R17.4 (UTM), S3 (zveřejněný katalog), S4 (souhlas s cookies) S4b (Clarity), S5 (poptávka služby) a S10 (GA4, Meta Pixel) posunuly verzi dál
     expect(RETENTION.analyticsMonths).toBe(25);
   });
 
