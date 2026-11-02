@@ -4,6 +4,7 @@ import { isValidIco, normalizeIco } from "@ez/cz";
 import { getDb, schema } from "@ez/db";
 import { HttpError, errorResponse, getCurrentUser } from "@/lib/server/auth";
 import { accountantMembership, cabinetClients, createAccountantAccount } from "@/lib/server/cabinet";
+import { ensurePartnerCode, referredOrders } from "@/lib/server/service-orders";
 import { parseJson, requireSameOrigin } from "@/lib/server/route-helpers";
 import { SITE_URL } from "@/lib/site";
 
@@ -12,9 +13,16 @@ export async function GET() {
     const user = await getCurrentUser();
     if (!user) throw new HttpError(401, "Nejste přihlášeni");
     const m = accountantMembership(user);
-    if (!m) return Response.json({ user: { email: user.email }, account: null, clients: [] });
+    if (!m) return Response.json({ user: { email: user.email }, account: null, clients: [], partnerCode: null, referred: { orders: [], rewardTotal: 0 } });
     const account = await getDb().query.accounts.findFirst({ where: eq(schema.accounts.id, m.accountId) });
-    return Response.json({ user: { email: user.email }, account: { id: account!.id, name: account!.name, ico: account!.ico }, clients: await cabinetClients(m.accountId, SITE_URL) });
+    return Response.json({
+      user: { email: user.email },
+      account: { id: account!.id, name: account!.name, ico: account!.ico },
+      clients: await cabinetClients(m.accountId, SITE_URL),
+      // S11: kód kanceláře pro osobní odkaz a doporučená nastavení
+      partnerCode: await ensurePartnerCode(m.accountId),
+      referred: await referredOrders(m.accountId),
+    });
   } catch (e) {
     return errorResponse(e);
   }

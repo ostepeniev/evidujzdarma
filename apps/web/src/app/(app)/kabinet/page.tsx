@@ -5,6 +5,7 @@ import { getDb, hasDatabase, schema } from "@ez/db";
 import { CabinetApp, type CabinetState } from "@/components/cabinet/cabinet-app";
 import { getCurrentUser } from "@/lib/server/auth";
 import { accountantMembership, cabinetClients } from "@/lib/server/cabinet";
+import { ensurePartnerCode, referredOrders } from "@/lib/server/service-orders";
 import { SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = { title: "Účetní kabinet" };
@@ -20,6 +21,8 @@ export default async function CabinetPage() {
     user: { email: user.email },
     account: account ? { id: account.id, name: account.name, ico: account.ico } : null,
     clients: m ? await cabinetClients(m.accountId, SITE_URL) : [],
+    partnerCode: m ? await ensurePartnerCode(m.accountId) : null,
+    referred: m ? await referredOrders(m.accountId) : { orders: [], rewardTotal: 0 },
   };
   return (
     <div className="min-h-dvh bg-surface">

@@ -179,9 +179,11 @@ export const PARTNER_PLAN = {
   text: "Pro účetní a daňové kanceláře: bezplatný Účetní kabinet pro všechny klienty a podíl z jejich plateb.",
   bullets: [
     "Účetní kabinet zdarma: hromadná kontrola IČO a stav připravenosti klientů",
-    "Export tržeb klientů – CSV zdarma, Pohoda / Money S3 / ABRA připravujeme v partnerském tarifu",
+    // S11 (3. 11. 2026): Pohoda XML (beta), odměna za nastavení na klíč, bez webinářů
+    "Export tržeb klientů – CSV a Pohoda XML (beta); Money S3 a ABRA připravujeme",
+    "200 Kč za každé dokončené Nastavení na klíč klienta, kterého doporučíte",
     "20 % z plateb vašich klientů za placené tarify po celou dobu, kdy je platí – nebo místo toho sleva pro klienty",
-    "Šablony dopisů klientům a webináře EET 2.0 pro účetní",
+    "Šablony dopisů a přehled EET 2.0 pro klienty",
   ],
   cta: { href: "/ucetni", label: "Program pro účetní" },
 } as const;

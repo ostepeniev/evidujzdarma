@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
-import { REFERRAL_RULES_VERSION_LABEL } from "@/lib/legal";
+import { ACCOUNTANT_REWARD_DISCLOSURE, SETUP_SERVICE } from "@/content/services";
+import { ACCOUNTANT_REWARD_RULES_VERSION_LABEL, REFERRAL_RULES_VERSION_LABEL } from "@/lib/legal";
+import { SETUP_REF_MAX_AGE_DAYS } from "@/lib/setup-ref";
 import { SITE, operatorLine } from "@/lib/site";
 import { canonicalMeta } from "@/lib/metadata";
 
 export const metadata: Metadata = {
   title: "Pravidla akce Doporučte kolegu",
-  description: "Pravidla akce Doporučte kolegu: kdo se může zapojit, kdy získáte Premium na 3 měsíce zdarma a jak dlouho akce trvá.",
+  description: "Pravidla akce Doporučte kolegu (Premium na 3 měsíce zdarma) a odměny pro účetní kanceláře za Nastavení EET na klíč doporučených klientů.",
   ...canonicalMeta("/pravidla-doporuceni"),
 };
 
@@ -62,6 +64,36 @@ export default function ReferralRulesPage() {
             <strong>8. Kontakt.</strong> Dotazy pište na <a href={`mailto:${SITE.email}`}>{SITE.email}</a>.
           </p>
           <p>Platí od {REFERRAL_RULES_VERSION_LABEL}.</p>
+
+          {/* S11 (3. 11. 2026): odměna účetním kancelářím za Nastavení na klíč doporučených klientů */}
+          <h2 id="ucetni" className="scroll-mt-24">
+            Odměna pro účetní kanceláře za Nastavení na klíč
+          </h2>
+          <p>
+            <strong>1. Kdo.</strong> Účetní kancelář, která má v EvidujZdarma Účetní kabinet (zdarma). V kabinetu najde osobní odkaz
+            na stránku {SETUP_SERVICE.name} s kódem kanceláře a odznak pro svůj web.
+          </p>
+          <p>
+            <strong>2. Odměna.</strong> {ACCOUNTANT_REWARD_DISCLOSURE}
+          </p>
+          <p>
+            <strong>3. Kdy se nastavení připíše.</strong> Klient přijde přes odkaz kanceláře a do {SETUP_REF_MAX_AGE_DAYS} dnů z téhož
+            prohlížeče pošle poptávku {SETUP_SERVICE.name}. Dokončené je nastavení, které jsme pro klienta provedli; v kabinetu
+            má stav „hotovo“. Klient na stránce poptávky vidí, že přišel přes odkaz kanceláře.
+          </p>
+          <p>
+            <strong>4. Výplata.</strong> Přehled poptávek, jejich stav a součet odměn kancelář vidí v kabinetu v části „Doporučená
+            nastavení“. Odměnu vyplácíme ručně převodem na účet kanceláře; podrobnosti domluvíme e-mailem.
+          </p>
+          <p>
+            <strong>5. Zneužití.</strong> Poptávka vlastní firmy kanceláře, vymyšlené nebo cizí IČO ani jiné obcházení pravidel se
+            nezapočítávají.
+          </p>
+          <p>
+            <strong>6. Změny.</strong> Pravidla můžeme změnit nebo odměnu ukončit; změna platí jen pro poptávky po jejím zveřejnění.
+            Dotazy pište na <a href={`mailto:${SITE.email}`}>{SITE.email}</a>.
+          </p>
+          <p>Platí od {ACCOUNTANT_REWARD_RULES_VERSION_LABEL}.</p>
         </div>
       </div>
     </>

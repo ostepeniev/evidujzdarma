@@ -87,8 +87,8 @@ describe("R7.4 – webinar interest is separate from the cash-register pre-regis
     const src = (p: string) => readFileSync(new URL(`../../src/${p}`, import.meta.url), "utf8");
     const form = src("components/accountant/webinar-form.tsx");
     // text R8.3 (рецензія №5) – platí pro webinář i kabinet
-    // text nahradila R9.12
-    expect(form).toContain("E-mail a IČO použijeme k vyřízení vaší žádosti (webinář nebo zpráva o spuštění Účetního kabinetu); novinky vám pošleme, jen pokud zaškrtnete souhlas výše. Podrobnosti najdete v");
+    // text nahradila R9.12; S11 (3. 11. 2026) odstranil webinář
+    expect(form).toContain("E-mail a IČO použijeme k vyřízení vaší žádosti (zpráva o spuštění Účetního kabinetu); novinky vám pošleme, jen pokud zaškrtnete souhlas výše. Podrobnosti najdete v");
     expect(form).toContain("zásadách ochrany osobních údajů");
     expect(form).not.toMatch(/duplicate/);
     expect(form).not.toMatch(/souhlasíte se zpracováním/);
@@ -96,7 +96,9 @@ describe("R7.4 – webinar interest is separate from the cash-register pre-regis
     const html = renderToStaticMarkup(createElement(Ucetni));
     expect(html).not.toMatch(/"@type":"Event"/);
     expect(html).not.toMatch(/5\. 11\. 2026|3\. 12\. 2026/);
-    expect(html).toContain("Pro účetní chystáme krátké webináře o EET 2.0. Zanechte e-mail a termín i odkaz vám pošleme, jakmile ho vypíšeme.");
+    // S11 (3. 11. 2026, rozhodnutí majitele): webinář nenabízíme – místo něj „Balíček pro klienty“
+    expect(html).not.toMatch(/webinář/i);
+    expect(html).toContain("Balíček pro klienty");
     expect(src("app/(site)/ochrana-osobnich-udaju/page.tsx")).toContain("zdroj návštěvy (UTM), u webinářů a Účetního kabinetu, o co máte zájem.");
   });
 

@@ -278,9 +278,11 @@ describe("R14.7 – sitemap lastmod and the home page address", () => {
     expect(statics.every((d) => /^\d{4}-\d{2}-\d{2}$/.test(d ?? ""))).toBe(true);
     expect(new Set(statics).size).toBeGreaterThan(3);
     // S10: zásady s GA4 a Meta Pixelem platí ode dne spuštění (RETENTION.launch, 2. 11. 2026) a připravují se den předem –
-    // datum spuštění proto nesmí shodit bránu ani před ním; jiné budoucí datum ano
+    // datum spuštění proto nesmí shodit bránu ani před ním; jiné budoucí datum ano.
+    // S11: zásady a stránky pro účetní (3. 11. 2026) se připravují večer předem – zítřejší datum projde, pozdější ne
     const { RETENTION } = await import("@/lib/legal");
-    const today = [new Date().toISOString().slice(0, 10), RETENTION.launch].sort().at(-1)!;
+    const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
+    const today = [tomorrow, RETENTION.launch].sort().at(-1)!;
     expect(statics.every((d) => d! <= today)).toBe(true);
   });
 });

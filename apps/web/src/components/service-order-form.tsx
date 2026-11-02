@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { SERVICE_PACKAGES, SETUP_SERVICE, type ServicePackageId } from "@/content/services";
+import { ACCOUNTANT_SETUP_REWARD, SERVICE_PACKAGES, SETUP_SERVICE, type ServicePackageId } from "@/content/services";
 import { clarityEvent } from "@/lib/clarity-event";
+import { isPartnerCode, setupRefCookie, setupRefFromCookie } from "@/lib/setup-ref";
 import { SITE } from "@/lib/site";
 
 type State = { kind: "idle" } | { kind: "sending" } | { kind: "error"; message: string; field?: string } | { kind: "done" };
@@ -11,15 +12,26 @@ type State = { kind: "idle" } | { kind: "sending" } | { kind: "error"; message: 
  * S5-SLUŽBY: poptávka „Nastavení EET na klíč“ – bez telefonu, odpověď e-mailem (rozhodnutí majitele 26. 10. 2026).
  * К13 (31. 10. 2026): volba balíčku (Nastavení na klíč / Připojení stávající pokladny) a nepovinný popis současné pokladny.
  * Odkaz „?balicek=pripojeni#poptavka“ předvybere připojení.
+ * S11: odkaz účetní „?ref=<kód kanceláře>“ – kód se uloží do funkční cookie (lib/setup-ref.ts, 90 dní, jen tato stránka)
+ * a odejde s poptávkou jako `ref`.
  */
 export function ServiceOrderForm() {
   const [state, setState] = useState<State>({ kind: "idle" });
   const [pkg, setPkg] = useState<ServicePackageId>(SETUP_SERVICE.id);
+  const [ref, setRef] = useState<string | null>(null);
 
   useEffect(() => {
-    const wanted = new URLSearchParams(window.location.search).get("balicek");
-    const match = SERVICE_PACKAGES.find((p) => p.id === wanted);
+    const q = new URLSearchParams(window.location.search);
+    const match = SERVICE_PACKAGES.find((p) => p.id === q.get("balicek"));
     if (match) setPkg(match.id);
+    // kód kanceláře: z odkazu (a zapamatovat), jinak z dřívější návštěvy přes odkaz
+    const fromUrl = q.get("ref");
+    if (isPartnerCode(fromUrl)) {
+      document.cookie = setupRefCookie(fromUrl, window.location.protocol === "https:");
+      setRef(fromUrl);
+    } else {
+      setRef(setupRefFromCookie(document.cookie));
+    }
   }, []);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -38,6 +50,7 @@ export function ServiceOrderForm() {
           currentPos: fd.get("currentPos") || undefined,
           message: fd.get("message") || undefined,
           website: fd.get("website") ?? "",
+          ...(ref ? { ref } : {}),
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -47,6 +60,7 @@ export function ServiceOrderForm() {
       }
       setState({ kind: "done" });
       clarityEvent("service_order");
+      if (ref) clarityEvent("setup_order_ref");
     } catch {
       setState({ kind: "error", message: `Nepodařilo se odeslat. Zkuste to znovu, nebo napište na ${SITE.email}.` });
     }
@@ -146,6 +160,13 @@ export function ServiceOrderForm() {
           <input name="website" tabIndex={-1} autoComplete="off" />
         </label>
       </div>
+
+      {ref && (
+        <p className="rounded-xl bg-surface px-4 py-3 text-sm text-ink-soft" data-setup-ref="on">
+          Přišli jste přes odkaz účetní kanceláře. Za dokončené nastavení od nás kancelář dostane {ACCOUNTANT_SETUP_REWARD} Kč; cena pro vás
+          je stejná.
+        </p>
+      )}
 
       {err && (
         <p role="alert" className="rounded-xl bg-danger-50 px-4 py-3 text-[15px] text-danger-600">

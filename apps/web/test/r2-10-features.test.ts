@@ -31,9 +31,11 @@ describe("R2.10 – not-yet-existing features are labelled 'připravujeme'", () 
     expect(PLANS.find((p) => p.id === "premium")!.status).not.toBe("prereg");
   });
 
-  it("export hints say Pohoda/Money are being prepared", () => {
+  // S11 (3. 11. 2026): Pohoda XML (beta) existuje – „připravujeme“ zůstává jen u Money S3 / ABRA
+  it("export hints say Money / ABRA are being prepared; Pohoda is labelled beta", () => {
     for (const f of ["src/components/setup/setup-app.tsx", "src/components/cabinet/cabinet-app.tsx", "src/app/(site)/ucetni/page.tsx"]) {
-      for (const line of read(f).split("\n").filter((l) => /Pohod|Money/.test(l))) expect(line, f).toMatch(/připravujeme/i);
+      for (const line of read(f).split("\n").filter((l) => /Money|ABRA/.test(l) && !/^\s*(\/\/|\*)/.test(l))) expect(line, f).toMatch(/připravujeme/i);
+      for (const line of read(f).split("\n").filter((l) => /Pohod/.test(l) && !/^\s*(\/\/|\*|\{\/\*)/.test(l) && !/api\/|href|Pohodě|Pohoda soubor|Stáhnout/.test(l))) expect(line, f).toMatch(/beta/i);
     }
   });
 });

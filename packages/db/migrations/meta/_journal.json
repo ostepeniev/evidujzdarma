@@ -288,6 +288,13 @@
       "when": 1793317299965,
       "tag": "0040_s8_partner_api",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1793657017231,
+      "tag": "0041_s11_service_orders",
+      "breakpoints": true
     }
   ]
 }

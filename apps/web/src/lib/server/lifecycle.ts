@@ -428,6 +428,14 @@ export async function runRetention(now = new Date()): Promise<Record<string, num
       )
       .returning({ id: schema.preregistrations.id }),
   );
+  // S11: poptávky služeb – 12 měsíců od poslední změny (stavu); fakturu vede účetnictví provozovatele zvlášť
+  await count(
+    "serviceOrders",
+    db
+      .delete(schema.serviceOrders)
+      .where(lt(schema.serviceOrders.updatedAt, addMonths(now, -RETENTION.serviceOrderMonths)))
+      .returning({ id: schema.serviceOrders.id }),
+  );
   // Záznamy odeslaných e-mailů (obsahují adresy a obsah): 90 dnů
   await count(
     "emails",

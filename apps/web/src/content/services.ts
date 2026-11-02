@@ -197,3 +197,13 @@ export const SERVICE_CTA_GUIDES: readonly string[] = [
   "kdo-pomuze-s-eet",
   "pokladna-z-eet-1-0",
 ];
+
+/**
+ * S11 (rozhodnutí majitele 2. 11. 2026): odměna účetní kanceláři za každé dokončené „Nastavení na klíč“ klienta, který přišel
+ * přes její osobní odkaz /nastaveni-na-klic?ref=<kód kanceláře>. Cena pro klienta se nemění. Výplata ručně (součet v kabinetu).
+ */
+export const ACCOUNTANT_SETUP_REWARD = 200;
+/** Doslovná věta o odměně (S11) – na /ucetni, v kabinetu a v pravidlech. */
+export const ACCOUNTANT_REWARD_DISCLOSURE = `Za každé dokončené nastavení klienta, kterého doporučíte, dostanete ${formatKc(ACCOUNTANT_SETUP_REWARD)}. Cena pro klienta se tím nezvyšuje.`;
+/** Osobní odkaz účetní na poptávku nastavení (kód kanceláře z kabinetu). */
+export const setupReferralPath = (code: string) => `/nastaveni-na-klic?ref=${encodeURIComponent(code)}`;

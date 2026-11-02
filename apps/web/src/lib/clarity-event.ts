@@ -3,7 +3,15 @@
  * prereg_done). Clarity běží jen se souhlasem s analytickými cookies (components/consent/consent-manager.tsx); bez souhlasu
  * window.clarity neexistuje a volání nic neudělá. Posílá jen název události, žádné údaje z formuláře.
  */
-export type ClarityEventName = "quiz_done" | "calculator_used" | "prereg_done" | "service_order";
+export type ClarityEventName =
+  | "quiz_done"
+  | "calculator_used"
+  | "prereg_done"
+  | "service_order"
+  // S11: stránka pro účetní, kopie osobního odkazu v kabinetu, poptávka nastavení přes odkaz účetní
+  | "acc_lp_view"
+  | "acc_ref_link_copy"
+  | "setup_order_ref";
 
 export function clarityEvent(name: ClarityEventName): void {
   if (typeof window === "undefined") return;

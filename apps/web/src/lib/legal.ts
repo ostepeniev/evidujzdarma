@@ -6,16 +6,19 @@ export const TERMS_VERSION_LABEL = "3. 10. 2026";
 export const TERMS_DATE_ISO = "2026-10-03";
 /** Pravidla akce Doporučte kolegu (Ц3, R7.10) – datum zveřejnění nastaví kontrolor v den otevření webu. */
 export const REFERRAL_RULES_VERSION_LABEL = "7. 10. 2026";
+/** S11: pravidla odměny účetním za Nastavení na klíč (/pravidla-doporuceni#ucetni). */
+export const ACCOUNTANT_REWARD_RULES_VERSION_LABEL = "3. 11. 2026";
 /**
  * Verze zásad ochrany osobních údajů (R8.2: odhlášení z novinek ≠ zrušení předregistrace; R15.3: měření návštěvnosti; R17.4: UTM;
  * S3: zveřejněný katalog firem – informace podle čl. 14 GDPR; S4: souhlas s cookies a značky třetích stran po souhlasu;
- * S4b: Microsoft Clarity; S5: poptávka služby Nastavení EET na klíč; S10: Google Analytics 4 a Meta Pixel po souhlasu).
+ * S4b: Microsoft Clarity; S5: poptávka služby Nastavení EET na klíč; S10: Google Analytics 4 a Meta Pixel po souhlasu; S11: uložené poptávky služeb, kód účetní
+ * kanceláře v odkazu na nastavení a funkční cookie ez_ucetni_ref).
  * Datum = den nasazení; posune-li se, upravte ho. Při zapnutí nové značky v lib/tracking-config.ts verzi zvyšte.
  */
-export const PRIVACY_VERSION = "2026-11-02-s10";
-export const PRIVACY_VERSION_LABEL = "2. 11. 2026";
+export const PRIVACY_VERSION = "2026-11-03-s11";
+export const PRIVACY_VERSION_LABEL = "3. 11. 2026";
 /** Datum platnosti zásad pro <time dateTime> (R8.5, Д-9). */
-export const PRIVACY_DATE_ISO = "2026-11-02";
+export const PRIVACY_DATE_ISO = "2026-11-03";
 /**
  * Verze textu marketingového souhlasu v předregistraci (prereg-form.tsx). Ukládá se jako doklad souhlasu
  * (preregistrations.consent_evidence = "souhlas:<verze>"); při změně textu zvýšit.
@@ -45,4 +48,6 @@ export const RETENTION = {
   /** záznamy o zobrazení osobních údajů v adminském kabinetu (R16.3) */
   adminAuditMonths: 24,
   aresCacheHours: 24,
+  /** S11: uložené poptávky služeb (service_orders) – od poslední změny; faktura se řídí účetními předpisy jinde */
+  serviceOrderMonths: 12,
 } as const;

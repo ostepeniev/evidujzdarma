@@ -318,11 +318,12 @@ describe("S10 – GA4 and Meta Pixel in production (2. 11. 2026)", () => {
     expect(WHY_FREE.cards[2]!.text).toBe("Na webu nemáme reklamu, měřicí a reklamní cookies spouštíme jen s vaším souhlasem a vaše údaje nikomu neprodáváme.");
   });
 
-  it("gate: versions bumped – PRIVACY_VERSION 2026-11-02-s10, CONSENT_VERSION 2 (stored version-1 consent asks again)", async () => {
+  it("gate: versions bumped – PRIVACY_VERSION 2026-11-02-s10 (S11: 2026-11-03-s11), CONSENT_VERSION 2 (stored version-1 consent asks again)", async () => {
     const { PRIVACY_VERSION, PRIVACY_VERSION_LABEL, PRIVACY_DATE_ISO } = await import("@/lib/legal");
-    expect(PRIVACY_VERSION).toBe("2026-11-02-s10");
-    expect(PRIVACY_VERSION_LABEL).toBe("2. 11. 2026");
-    expect(PRIVACY_DATE_ISO).toBe("2026-11-02");
+    // S11 (3. 11. 2026): uložené poptávky a funkční cookie ez_ucetni_ref posunuly verzi zásad; CONSENT_VERSION beze změny (žádná nová značka)
+    expect(PRIVACY_VERSION).toBe("2026-11-03-s11");
+    expect(PRIVACY_VERSION_LABEL).toBe("3. 11. 2026");
+    expect(PRIVACY_DATE_ISO).toBe("2026-11-03");
     expect(CONSENT_VERSION).toBe(2);
     expect(parseConsent("1.a1.m0.20261030")).toBeNull();
     expect(bannerMode("", `${CONSENT_COOKIE}=1.a1.m0.20261030`)).toEqual({ show: true, preview: false });

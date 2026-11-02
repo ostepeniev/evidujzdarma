@@ -1,4 +1,8 @@
-/** Formulář pro účetní (/ucetni): webináře EET 2.0 a zpráva o spuštění Účetního kabinetu – zájem z lib/interests (R7.4). */
+/**
+ * Formulář pro účetní (/ucetni): zpráva o spuštění Účetního kabinetu – zájem z lib/interests (R7.4).
+ * S11 (3. 11. 2026): webinář nenabízíme (rozhodnutí majitele); zájem „webinar“ zůstává v lib/interests kvůli starším záznamům.
+ * Formulář se ukazuje jen tehdy, když je kabinet za heslem (isClosed("/kabinet")).
+ */
 import type { Interest } from "@/lib/interests";
 
 export interface WebinarOption {
@@ -8,8 +12,4 @@ export interface WebinarOption {
   hint: string;
 }
 
-// Konkrétní termíny a JSON-LD Event až s rozesíláním odkazů (R7.4); do té doby jen zájem
-export const WEBINAR_OPTIONS: readonly WebinarOption[] = [
-  { value: "webinar", label: "Webinář EET 2.0 pro účetní", hint: "Termín i odkaz pošleme, jakmile ho vypíšeme" },
-  { value: "kabinet", label: "Jen mi dejte vědět o spuštění Účetního kabinetu", hint: "Bez webináře" },
-];
+export const WEBINAR_OPTIONS: readonly WebinarOption[] = [{ value: "kabinet", label: "Dejte mi vědět o spuštění Účetního kabinetu", hint: "Jeden e-mail, až kabinet spustíme" }];

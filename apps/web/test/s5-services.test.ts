@@ -111,15 +111,16 @@ describe("S5 – the funnel leads to the page", () => {
 });
 
 describe("S5 – privacy policy", () => {
-  it("gate: a purpose row for the order, PRIVACY_VERSION raised (S5, then S10)", async () => {
+  it("gate: a purpose row for the order, PRIVACY_VERSION raised (S5, then S10, S11)", async () => {
     const { default: Privacy } = await import("@/app/(site)/ochrana-osobnich-udaju/page");
     const t = pageText(Privacy as FC);
     expect(t).toContain("Poptávka služby Nastavení EET na klíč");
-    expect(t).toContain("zvláštní databázi poptávek nevedeme");
+    // S11: poptávka se ukládá (service_orders) – věta „zvláštní databázi poptávek nevedeme“ už neplatí
+    expect(t).toContain("záznam poptávky (e-mail, IČO, název firmy, počet provozoven, stav vyřízení) ukládáme");
     const { PRIVACY_VERSION, PRIVACY_DATE_ISO } = await import("@/lib/legal");
-    // S10 (2. 11. 2026, GA4 a Meta Pixel) posunul verzi dál
-    expect(PRIVACY_VERSION).toBe("2026-11-02-s10");
-    expect(PRIVACY_DATE_ISO).toBe("2026-11-02");
+    // S10 (2. 11. 2026, GA4 a Meta Pixel) a S11 (3. 11. 2026, uložené poptávky, cookie ez_ucetni_ref) posunuly verzi dál
+    expect(PRIVACY_VERSION).toBe("2026-11-03-s11");
+    expect(PRIVACY_DATE_ISO).toBe("2026-11-03");
   });
 });
 

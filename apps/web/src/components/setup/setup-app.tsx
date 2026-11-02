@@ -1014,8 +1014,9 @@ function ExportSection({ salesCount }: { salesCount: number }) {
   const monthStart = `${today.slice(0, 8)}01`;
   const [from, setFrom] = useState(monthStart);
   const [to, setTo] = useState(today);
+  const [cashAccount, setCashAccount] = useState("HP");
   return (
-    <Section id="export" step={9} title="Export pro účetní" lead={`CSV pro Excel i účetní software (zatím ${salesCount} tržeb). Export do Pohody / Money připravujeme (Premium).`}>
+    <Section id="export" step={9} title="Export pro účetní" lead={`CSV pro Excel i účetní software (zatím ${salesCount} tržeb) a Pohoda XML (beta). Export do Money připravujeme (Premium).`}>
       <div className="flex flex-wrap items-end gap-3">
         <div>
           <label htmlFor="ex-od" className="label">
@@ -1031,6 +1032,25 @@ function ExportSection({ salesCount }: { salesCount: number }) {
         </div>
         <a href={`/api/ucet/export?od=${from}&do=${to}`} className="btn-secondary">
           Stáhnout CSV
+        </a>
+      </div>
+      {/* S11: Pohoda XML (beta) – denní souhrny, jen ostrý provoz (lib/pohoda-xml.ts) */}
+      <div className="mt-5 flex flex-wrap items-end gap-3 border-t border-line pt-5" data-export="pohoda">
+        <div className="mr-auto max-w-md">
+          <p className="font-semibold">Pohoda XML (beta)</p>
+          <p className="text-sm text-muted">
+            Denní souhrny za evidenční jednotku: hotovost jako příjmový pokladní doklad, ostatní platby jako interní doklad, s rozpisem DPH. Vratky se
+            odečtou. Jen ostrý provoz.
+          </p>
+        </div>
+        <div>
+          <label htmlFor="ex-pokladna" className="label">
+            Pokladna v Pohodě
+          </label>
+          <input id="ex-pokladna" className="input w-24" maxLength={19} value={cashAccount} onChange={(e) => setCashAccount(e.target.value)} />
+        </div>
+        <a href={`/api/ucet/export/pohoda?od=${from}&do=${to}&pokladna=${encodeURIComponent(cashAccount)}`} className="btn-secondary">
+          Stáhnout Pohoda XML
         </a>
       </div>
     </Section>

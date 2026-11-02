@@ -175,6 +175,11 @@ export const accounts = pgTable(
     eetModeChangedAt: timestamp("eet_mode_changed_at", { withTimezone: true }).notNull().defaultNow(),
     referredByAccountantId: uuid("referred_by_accountant_id"),
     /**
+     * S11: stálý kód účetní kanceláře (jen kind = accountant) pro osobní odkaz /nastaveni-na-klic?ref=<kód>;
+     * vzniká při založení kabinetu nebo při prvním otevření kabinetu.
+     */
+    partnerCode: varchar("partner_code", { length: 12 }),
+    /**
      * Odkud účet přišel (R17.4, K9): jednou při založení z předregistrace se stejným e-mailem, dál se nemění;
      * bez předregistrace null.
      */
@@ -190,7 +195,7 @@ export const accounts = pgTable(
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
-  (t) => [index("accounts_ico_idx").on(t.ico)],
+  (t) => [index("accounts_ico_idx").on(t.ico), uniqueIndex("accounts_partner_code_uq").on(t.partnerCode).where(sql`${t.partnerCode} is not null`)],
 );
 
 export const memberships = pgTable(
@@ -678,6 +683,36 @@ export const accountantClients = pgTable(
     createdAt: createdAt(),
   },
   (t) => [uniqueIndex("acc_clients_uq").on(t.accountantAccountId, t.ico)],
+);
+
+/**
+ * S11: poptávky služeb (/nastaveni-na-klic → POST /api/poptavka). Dřív jen e-mail provozovateli (S5); od S11 se ukládá
+ * i řádek, aby účetní, která klienta doporučila (ref = kód kanceláře), viděla stav a odměnu 200 Kč za dokončené nastavení.
+ * Stav mění jen správce v /admin/nastaveni. Uchování: RETENTION.serviceOrderMonths od poslední změny (lib/legal.ts).
+ */
+export const SERVICE_ORDER_STATUSES = ["zadano", "v_reseni", "hotovo", "zruseno"] as const;
+export type ServiceOrderStatus = (typeof SERVICE_ORDER_STATUSES)[number];
+
+export const serviceOrders = pgTable(
+  "service_orders",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    /** nastaveni | pripojeni (content/services.ts) */
+    package: varchar("package", { length: 16 }).notNull(),
+    email: varchar("email", { length: 254 }).notNull(),
+    ico: varchar("ico", { length: 8 }),
+    /** název firmy z ARES podle IČO (nepovinné) */
+    companyName: text("company_name"),
+    establishments: smallint("establishments"),
+    /** účetní kancelář, jejíž kód byl v odkazu (ref); kód se ukládá, jak přišel, jen když patří existující kanceláři */
+    referrerAccountId: uuid("referrer_account_id").references(() => accounts.id, { onDelete: "set null" }),
+    refCode: varchar("ref_code", { length: 12 }),
+    status: varchar("status", { length: 16 }).$type<ServiceOrderStatus>().notNull().default("zadano"),
+    statusChangedAt: timestamp("status_changed_at", { withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("service_orders_referrer_idx").on(t.referrerAccountId, t.createdAt), index("service_orders_created_idx").on(t.createdAt)],
 );
 
 /* ────────────────────────────── Hotovost: pohyby a uzávěrky ────────────────────────────── */

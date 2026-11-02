@@ -14,8 +14,9 @@ type State =
   | { kind: "done"; campaign: Campaign };
 
 /**
- * Přihláška na webinář „EET 2.0 pro účetní“ / zájem o Účetní kabinet. Používá POST /api/preregistrace s polem
+ * Zájem o Účetní kabinet (dřív i přihláška na webinář – S11 ho odstranil). Používá POST /api/preregistrace s polem
  * interest (R7.4): nová adresa potvrdí e-mail, známá adresa dostane vlastní potvrzení zájmu. Odpověď je pro všechny stejná.
+ * Souhlas s novinkami je samostatné, nezaškrtnuté pole: bez něj žádost projde, ale marketingový souhlas se neuloží (S11, test).
  */
 export function WebinarForm() {
   const [state, setState] = useState<State>({ kind: "idle" });
@@ -23,7 +24,7 @@ export function WebinarForm() {
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    const campaign = (fd.get("campaign") as Campaign | null) ?? "webinar";
+    const campaign = (fd.get("campaign") as Campaign | null) ?? "kabinet";
     setState({ kind: "sending" });
     try {
       const res = await fetch("/api/preregistrace", {
@@ -66,8 +67,11 @@ export function WebinarForm() {
   const err = state.kind === "error" ? state : null;
   return (
     <form onSubmit={onSubmit} className="space-y-5" noValidate>
-      <fieldset className="space-y-2">
-        <legend className="label">Na co se chcete přihlásit?</legend>
+      {WEBINAR_OPTIONS.length === 1 ? (
+        <input type="hidden" name="campaign" value={WEBINAR_OPTIONS[0]!.value} />
+      ) : (
+        <fieldset className="space-y-2">
+          <legend className="label">Na co se chcete přihlásit?</legend>
         {WEBINAR_OPTIONS.map((o, i) => (
           <label
             key={o.value}
@@ -80,7 +84,8 @@ export function WebinarForm() {
             </span>
           </label>
         ))}
-      </fieldset>
+        </fieldset>
+      )}
 
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
@@ -129,10 +134,10 @@ export function WebinarForm() {
       )}
 
       <button type="submit" disabled={state.kind === "sending"} className="btn-primary w-full">
-        {state.kind === "sending" ? "Odesílám…" : "Přihlásit se zdarma"}
+        {state.kind === "sending" ? "Odesílám…" : "Dát mi vědět"}
       </button>
       <p className="text-xs leading-relaxed text-muted">
-        E-mail a IČO použijeme k vyřízení vaší žádosti (webinář nebo zpráva o spuštění Účetního kabinetu); novinky vám pošleme, jen pokud zaškrtnete souhlas výše. Podrobnosti najdete v{" "}
+        E-mail a IČO použijeme k vyřízení vaší žádosti (zpráva o spuštění Účetního kabinetu); novinky vám pošleme, jen pokud zaškrtnete souhlas výše. Podrobnosti najdete v{" "}
         <a href="/ochrana-osobnich-udaju" className="underline">
           zásadách ochrany osobních údajů
         </a>

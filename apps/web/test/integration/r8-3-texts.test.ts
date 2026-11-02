@@ -107,8 +107,8 @@ describe("R8.3 – Czech texts (verbatim from the review)", () => {
     expect(status).toContain("}. {INTEREST_NEXT[i]}");
     const webinar = src("components/accountant/webinar-form.tsx");
     expect(webinar.replace(/\s+/g, " ")).toContain(
-      // text nahradila R9.12
-      'E-mail a IČO použijeme k vyřízení vaší žádosti (webinář nebo zpráva o spuštění Účetního kabinetu); novinky vám pošleme, jen pokud zaškrtnete souhlas výše. Podrobnosti najdete v{" "} <a href="/ochrana-osobnich-udaju" className="underline"> zásadách ochrany osobních údajů </a> .',
+      // text nahradila R9.12, webinář odstranil S11
+      'E-mail a IČO použijeme k vyřízení vaší žádosti (zpráva o spuštění Účetního kabinetu); novinky vám pošleme, jen pokud zaškrtnete souhlas výše. Podrobnosti najdete v{" "} <a href="/ochrana-osobnich-udaju" className="underline"> zásadách ochrany osobních údajů </a> .',
     );
     expect(webinar).toContain("Poslali jsme vám e-mail s dalším krokem.");
     expect(src("components/prereg-form.tsx")).toContain("e-mail s dalším krokem.");

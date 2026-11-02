@@ -169,7 +169,7 @@ describe("R8.2 – unsubscribing from news is not cancelling the pre-registratio
     expect(rules).toContain("d) předregistraci mezitím nezruší.");
     const { PRIVACY_VERSION, REFERRAL_RULES_VERSION_LABEL } = await import("@/lib/legal");
     // R15.3 (měření návštěvnosti) verzi posunul dál
-    expect(PRIVACY_VERSION).toBe("2026-11-02-s10"); // R17.4 (UTM), S3 (zveřejněný katalog), S4 (souhlas s cookies) S4b (Clarity), S5 (poptávka služby) a S10 (GA4, Meta Pixel) posunuly verzi dál
+    expect(PRIVACY_VERSION).toBe("2026-11-03-s11"); // R17.4 (UTM), S3 (zveřejněný katalog), S4 (souhlas s cookies) S4b (Clarity), S5 (poptávka služby) a S10 (GA4, Meta Pixel) a S11 (poptávky, cookie ez_ucetni_ref) posunuly verzi dál
     expect(REFERRAL_RULES_VERSION_LABEL).toBe("7. 10. 2026");
   });
 

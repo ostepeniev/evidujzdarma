@@ -13,6 +13,9 @@
 // Clarity „data controller“, smluvní strana v EU Microsoft Ireland Operations Ltd.) a podmínky Clarity (Clarity Terms of Use);
 // (9) S10 (2. 11. 2026): zapnuté Google Analytics 4 (G-2CQPPQZT4Q) a Meta Pixel (1466571932079707) – ověřit u Meta dodatek
 // pro společné správce (Controller Addendum) a vypnuté automatické rozšířené párování, u GA4 dobu uchování v nastavení služby.
+// (10) S11 (3. 11. 2026): funkční cookie ez_ucetni_ref (kód účetní kanceláře, 90 dní, jen /nastaveni-na-klic, bez souhlasu
+// jako nezbytná pro vyžádanou službu – ověřit, zda ji právník nevidí jako marketingovou) a zobrazení názvu/IČO a stavu poptávky
+// klienta doporučující účetní (oprávněný zájem na výplatě odměny) – doplnit do LIA nebo do pravidel odměny.
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -114,7 +117,7 @@ const PURPOSES: readonly { purpose: string; data: string; basis: string; retenti
   },
   {
     purpose: "Účetní kabinet",
-    data: "U účetní: e-mail, název a IČO kanceláře, seznam IČO a popisků klientů. U klienta, který pozvánku přijme: stav připravenosti na EET a export tržeb, které účetní uvidí.",
+    data: "U účetní: e-mail, název a IČO kanceláře, seznam IČO a popisků klientů, kód kanceláře pro odkaz na nastavení na klíč. U klienta, který pozvánku přijme: stav připravenosti na EET a export tržeb, které účetní uvidí. U klienta, který poptá nastavení přes odkaz účetní: název firmy, IČO, datum a stav poptávky, které účetní uvidí kvůli odměně (e-mail klienta ne).",
     basis:
       "Plnění smlouvy s účetní – čl. 6 odst. 1 písm. b) GDPR. Seznam IČO klientů je oprávněný zájem účetní na správě klientů – písm. f). Sdílení dat z pokladny jen po přijetí pozvánky klientem.",
     retention: "Po dobu trvání účtu účetní. Propojení s klientem trvá, dokud ho klient nebo účetní nezruší (klient ho zruší v nastavení pokladny).",
@@ -134,12 +137,13 @@ const PURPOSES: readonly { purpose: string; data: string; basis: string; retenti
     retention: "3 roky od vyřízení.",
   },
   {
-    // S5-SLUŽBY (26. 10. 2026): poptávka z /nastaveni-na-klic – jde e-mailem provozovateli (outbox), vlastní tabulka není
+    // S5-SLUŽBY (26. 10. 2026): poptávka z /nastaveni-na-klic – e-mailem provozovateli (outbox);
+    // S11 (3. 11. 2026): navíc záznam poptávky (service_orders) se stavem a kódem doporučující účetní kanceláře
     purpose: "Poptávka služby Nastavení EET na klíč",
-    data: "E-mail, nepovinně IČO, počet provozoven a vaše zpráva. Poptávka nám přijde e-mailem, zvláštní databázi poptávek nevedeme.",
+    data: "E-mail, nepovinně IČO (a podle něj název firmy z ARES), počet provozoven a vaše zpráva. Zprávu dostaneme e-mailem; záznam poptávky (e-mail, IČO, název firmy, počet provozoven, stav vyřízení) ukládáme. Pokud jste přišli přes odkaz účetní kanceláře, uložíme i její kód a kancelář v kabinetu uvidí název firmy, IČO, datum a stav poptávky – kvůli odměně, kterou jí za dokončené nastavení vyplácíme.",
     basis:
-      "Provedení opatření před uzavřením smlouvy na vaši žádost a plnění smlouvy – čl. 6 odst. 1 písm. b) GDPR; vystavení a uchování faktury je právní povinnost – písm. c).",
-    retention: `Záznam o odeslání e-mailu na našem serveru ${RETENTION.emailLogDays} dní. Korespondenci k poptávce, ze které nebyla objednávka, smažeme nejpozději do 12 měsíců. Fakturu uchováváme po dobu stanovenou účetními a daňovými předpisy.`,
+      "Provedení opatření před uzavřením smlouvy na vaši žádost a plnění smlouvy – čl. 6 odst. 1 písm. b) GDPR; vystavení a uchování faktury je právní povinnost – písm. c). Připsání poptávky doporučující účetní kanceláři a výplata její odměny je náš oprávněný zájem – písm. f).",
+    retention: `Záznam poptávky ${RETENTION.serviceOrderMonths} měsíců od poslední změny jejího stavu. Záznam o odeslání e-mailu na našem serveru ${RETENTION.emailLogDays} dní. Korespondenci k poptávce, ze které nebyla objednávka, smažeme nejpozději do 12 měsíců. Fakturu uchováváme po dobu stanovenou účetními a daňovými předpisy.`,
   },
   {
     purpose: "Měření návštěvnosti webu",
@@ -337,7 +341,10 @@ const SECTIONS: readonly { id: string; title: string; body: ReactNode }[] = [
       <>
         <p>
           Používáme jen nezbytné cookies pro přihlášení do účtu. Pokud přijdete přes odkaz s doporučením, kód doporučení
-          odešleme jen spolu s formulářem předregistrace; do prohlížeče ho neukládáme. Když hlasujete v anketě, uložíme
+          odešleme jen spolu s formulářem předregistrace; do prohlížeče ho neukládáme. Výjimkou je odkaz účetní kanceláře na
+          stránku Nastavení EET na klíč (<code>/nastaveni-na-klic?ref=…</code>): kód kanceláře uložíme do funkční cookie{" "}
+          <code>ez_ucetni_ref</code> na 90 dní, platné jen pro tuto stránku, a odešleme ho jen spolu s poptávkou, aby se kanceláři
+          připsala odměna. Nic jiného v ní není a k měření ani reklamě ji nepoužíváme. Když hlasujete v anketě, uložíme
           náhodný identifikátor do cookie <code>ez_voter</code> (platnost 1 rok), aby z jednoho prohlížeče šel jen jeden hlas;
           u hlasu ukládáme jen jeho otisk, ne IP adresu ani jméno (oprávněný zájem na férovém výsledku ankety, čl. 6 odst. 1
           písm. f) GDPR).{" "}

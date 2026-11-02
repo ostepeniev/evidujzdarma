@@ -2,12 +2,15 @@ import { after } from "next/server";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { isValidIco, normalizeIco } from "@ez/cz";
-import { hasDatabase } from "@ez/db";
+import { eq } from "drizzle-orm";
+import { getDb, hasDatabase, schema } from "@ez/db";
 import { enqueueEmail, processOutbox } from "@/lib/server/mail";
 import { clientIp, rateLimit } from "@/lib/server/rate-limit";
 import { isJsonRequest } from "@/lib/server/request-guard";
 import { EXISTING_POS_SERVICE, SETUP_SERVICE } from "@/content/services";
 import { SITE } from "@/lib/site";
+import { lookupCompany } from "@/lib/server/ares";
+import { createServiceOrder, referrerByCode } from "@/lib/server/service-orders";
 
 /**
  * S5-SLUŽBY: poptávka „Nastavení EET na klíč“ (/nastaveni-na-klic). Poptávka se neukládá do vlastní tabulky – odejde
@@ -15,6 +18,9 @@ import { SITE } from "@/lib/site";
  * k rozesílání e-mailů na cizí adresy; odpovídá člověk z ahoj@.
  * К13 (31. 10. 2026): balíček „nastaveni“ (výchozí) nebo „pripojeni“ (Připojení stávající pokladny) a nepovinný popis
  * současné pokladny (značka, systém).
+ * S11 (3. 11. 2026): poptávka se navíc ukládá (service_orders) se stavem a s kódem účetní kanceláře z odkazu
+ * /nastaveni-na-klic?ref=<kód> (pole `ref`) – kancelář pak v kabinetu vidí název/IČO klienta, stav a odměnu. Neznámý kód
+ * se tiše ignoruje. Zákazníkovi dál nic neposíláme.
  */
 const PACKAGES = {
   [SETUP_SERVICE.id]: { name: SETUP_SERVICE.name, price: SETUP_SERVICE.priceLabel },
@@ -34,6 +40,11 @@ const Body = z.object({
   /** současná pokladna – značka nebo systém (nepovinné) */
   currentPos: z.string().trim().max(200).optional(),
   message: z.string().trim().max(2000).optional(),
+  /** S11: kód účetní kanceláře z odkazu (cookie ez_ucetni_ref) – neplatný tvar se zahodí, ne odmítne */
+  ref: z
+    .unknown()
+    .optional()
+    .transform((v) => (typeof v === "string" && /^[a-z0-9]{4,12}$/.test(v) ? v : undefined)),
   /** honeypot – vyplní jen bot */
   website: z.string().max(200).optional(),
 });
@@ -71,12 +82,15 @@ export async function POST(req: Request) {
 
   const day = new Date().toISOString().slice(0, 10);
   const pkg = PACKAGES[body.package];
+  const referrer = await referrerByCode(body.ref);
+  const referrerName = referrer ? ((await getDb().query.accounts.findFirst({ where: eq(schema.accounts.id, referrer.accountId), columns: { name: true } }))?.name ?? "") : null;
   const lines = [
     `Služba: ${pkg.name} (${pkg.price})`,
     `E-mail zákazníka: ${body.email}`,
     `IČO: ${body.ico ?? "—"}`,
     `Počet provozoven: ${body.establishments ? (body.establishments === "4" ? "4 a více" : body.establishments) : "—"}`,
     `Současná pokladna: ${body.currentPos || "—"}`,
+    `Doporučila účetní kancelář: ${referrer ? `${referrerName} (kód ${referrer.code})` : "—"}`,
     "",
     "Zpráva:",
     body.message || "—",
@@ -89,7 +103,7 @@ export async function POST(req: Request) {
     .update(`${body.package}|${body.email}|${body.ico ?? ""}|${body.currentPos ?? ""}|${body.message ?? ""}`)
     .digest("hex")
     .slice(0, 16);
-  await enqueueEmail({
+  const queued = await enqueueEmail({
     to: SITE.email,
     template: "notice",
     dedupeKey: `poptavka:${day}:${hash}`,
@@ -98,6 +112,25 @@ export async function POST(req: Request) {
       text: lines.join("\n"),
     },
   });
+  // stejná poptávka v týž den (dedupeKey) se neukládá podruhé
+  if (queued) {
+    let companyName: string | null = null;
+    if (body.ico) {
+      try {
+        companyName = (await lookupCompany(body.ico))?.subject.name ?? null;
+      } catch {
+        companyName = null; // ARES nesmí zablokovat poptávku
+      }
+    }
+    await createServiceOrder({
+      package: body.package,
+      email: body.email,
+      ico: body.ico,
+      companyName,
+      establishments: body.establishments ? Number(body.establishments) : null,
+      referrer,
+    });
+  }
   after(() => processOutbox(5));
   return Response.json({ ok: true });
 }
