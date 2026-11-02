@@ -16,7 +16,7 @@ import { canonicalMeta } from "@/lib/metadata";
 export const metadata: Metadata = {
   title: "EET 2.0 pro účetní – kabinet zdarma a nastavení za klienty",
   description:
-    "Pro účetní kanceláře: Účetní kabinet zdarma bez limitu klientů, tržby klientů s rozpisem DPH, export CSV a Pohoda XML (beta), hromadná kontrola IČO. Nastavení DIS+ a certifikátu za klienty uděláme my.",
+    "Pro účetní kanceláře: Účetní kabinet zdarma bez limitu klientů, tržby klientů s rozpisem DPH, export CSV a Pohoda XML (beta), hromadná kontrola IČO. S nastavením DIS+ a certifikátu vašim klientům pomůžeme my.",
   ...canonicalMeta("/ucetni"),
 };
 
@@ -149,7 +149,7 @@ export default function AccountantsPage() {
       <PageHeader
         title="EET 2.0 pro vaše klienty. Pokladna zdarma, nastavení za nás."
         crumbs={[{ name: "Pro účetní", path: "/ucetni" }]}
-        lead="Účetní kabinet zdarma a bez limitu klientů. Nastavení DIS+ a pokladního certifikátu za vaše klienty uděláme my."
+        lead="Účetní kabinet zdarma a bez limitu klientů. S nastavením DIS+ a pokladního certifikátu vašim klientům pomůžeme my – vy se tím nemusíte zabývat."
       >
         <div className="mt-6 flex flex-wrap gap-3">
           {KABINET_OPEN ? (

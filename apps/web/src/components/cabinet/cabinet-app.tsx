@@ -371,7 +371,7 @@ function Referrals({ code, referred }: { code: string; referred: CabinetState["r
           Nastavení na klíč pro vaše klienty
         </h2>
         <p className="mt-1 text-[15px] text-ink-soft">
-          Pošlete klientovi svůj odkaz. Nastavení DIS+, evidenčních jednotek a pokladního certifikátu s ním uděláme my. {ACCOUNTANT_REWARD_DISCLOSURE}
+          Pošlete klientovi svůj odkaz. S nastavením DIS+, evidenčních jednotek a pokladního certifikátu mu pomůžeme my. {ACCOUNTANT_REWARD_DISCLOSURE}
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-3">

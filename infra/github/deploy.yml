@@ -1,0 +1,26 @@
+# Автодеплой EvidujZdarma (рішення власника 1. 11. 2026, картка eet-autodeploy).
+# Push у робочу гілку → GitHub запускає на сервері лише одну дію: бекап + /root/ez-deploy.sh.
+# Ключ DEPLOY_SSH_KEY на сервері має forced command (authorized_keys: command="/root/ez-autodeploy.sh",no-pty,...),
+# тож з ним не можна виконати нічого іншого. Секрет додає власник у Settings → Secrets → Actions.
+name: deploy
+on:
+  push:
+    branches: [claude/pensive-mayer-wcam12]
+  workflow_dispatch: {}
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger deploy on server
+        env:
+          KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${KEY}" ]; then echo "DEPLOY_SSH_KEY není nastaven – přeskočeno"; exit 0; fi
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/deploy && chmod 600 ~/.ssh/deploy
+          ssh -i ~/.ssh/deploy -o StrictHostKeyChecking=accept-new -o BatchMode=yes root@46.225.132.220 "$GITHUB_SHA"

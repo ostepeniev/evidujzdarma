@@ -27,7 +27,7 @@ describe("S11 – /ucetni", () => {
     const html = renderToStaticMarkup(createElement(Ucetni));
     const text = pageText(Ucetni);
     expect(text).toContain("EET 2.0 pro vaše klienty. Pokladna zdarma, nastavení za nás.");
-    expect(text).toContain("Účetní kabinet zdarma a bez limitu klientů. Nastavení DIS+ a pokladního certifikátu za vaše klienty uděláme my.");
+    expect(text).toContain("Účetní kabinet zdarma a bez limitu klientů. S nastavením DIS+ a pokladního certifikátu vašim klientům pomůžeme my – vy se tím nemusíte zabývat.");
     expect(html).toMatch(/<a class="btn-primary" href="\/kabinet">Založit kabinet zdarma<\/a>/);
     expect(html).toContain('href="#nastaveni-na-klic">Poslat klientovi odkaz na nastavení</a>');
     expect(text).toContain("Co vám ušetříme");
