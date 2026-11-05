@@ -117,7 +117,7 @@ export function llmsTxt(): string {
       : `- [Nápověda k pokladně](${absoluteUrl("/napoveda")}): jak v pokladně EvidujZdarma nastavit firmu, certifikát a jednotky, prodávat, vydat účtenku, udělat vratku a uzávěrku a stáhnout export pro účetní.`,
     `- [Všechny návody](${absoluteUrl("/navody")}) a [všechny nástroje](${absoluteUrl("/nastroje")})`,
     `- [O nás a odborná revize](${absoluteUrl("/o-nas")}): kdo web provozuje, jak ověřujeme fakta a kdo návody reviduje.`,
-    `- [Ceník](${absoluteUrl("/cenik")}): evidence tržeb zdarma navždy; Premium 149 Kč/měsíc.`,
+    `- [Ceník](${absoluteUrl("/cenik")}): evidence tržeb zdarma navždy; Premium 99 Kč/měsíc, Firma 249 Kč/měsíc.`,
     // S5-SLUŽBY
     `- [Nastavení EET na klíč](${absoluteUrl("/nastaveni-na-klic")}): placená technická pomoc (${SETUP_SERVICE.priceLabel}, platí se po dokončení) ve třech krocích – DIS+ a EET (přihlášení k evidenci, evidenční jednotky), připojení certifikátu se zkušebním spuštěním a kontrola nastavení pokladny; písemně e-mailem. Daňové poradenství (EET ON/OFF) neposkytujeme.`,
     // К13 (31. 10. 2026)

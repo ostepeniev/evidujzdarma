@@ -13,7 +13,7 @@ import { canonicalMeta } from "@/lib/metadata";
 export const metadata: Metadata = {
   title: "Ceník – pokladna EET 2.0 zdarma navždy",
   description:
-    "Pokladna pro EET 2.0 zdarma navždy: offline režim, 5 uživatelů, 3 evidenční jednotky, doklad e-mailem i CSV. Premium za 149 Kč/měsíc (připravujeme) přidá SMS účtenky a exporty",
+    "Pokladna pro EET 2.0 zdarma navždy: offline režim, 5 uživatelů, 3 evidenční jednotky, doklad e-mailem i CSV. Premium za 99 Kč/měsíc (připravujeme) přidá SMS účtenky a exporty",
   ...canonicalMeta("/cenik"),
 };
 
@@ -72,14 +72,14 @@ function productLd() {
       {
         "@type": "Offer",
         name: "Premium – roční platba",
-        price: "1490",
+        price: "990",
         priceCurrency: "CZK",
         url: absoluteUrl("/cenik"),
         availability: offerAvailability(false),
         priceSpecification: {
           "@type": "UnitPriceSpecification",
           priceCurrency: "CZK",
-          price: 1490,
+          price: 990,
           referenceQuantity: { "@type": "QuantitativeValue", value: 1, unitCode: "ANN" },
         },
       },

@@ -27,7 +27,7 @@ export const WHY_FREE = {
     },
     {
       title: "Vydělávat chceme na doplňcích",
-      text: "Kdo bude chtít víc, si připlatí: [Premium](/cenik) za 149 Kč měsíčně (účtenky SMS, exporty), platební terminál nebo nastavení na klíč. Doplňky připravujeme a nikdo je nemusí.",
+      text: "Kdo bude chtít víc, si připlatí: [Premium](/cenik) za 99 Kč měsíčně (účtenky SMS, exporty), platební terminál nebo nastavení na klíč. Doplňky připravujeme a nikdo je nemusí.",
     },
     {
       title: "Nežijeme z reklamy ani z vašich dat",

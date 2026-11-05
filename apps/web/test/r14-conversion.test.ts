@@ -39,7 +39,7 @@ const WHY = {
     },
     {
       title: "Vydělávat chceme na doplňcích",
-      text: "Kdo bude chtít víc, si připlatí: Premium za 149 Kč měsíčně (účtenky SMS, exporty), platební terminál nebo nastavení na klíč. Doplňky připravujeme a nikdo je nemusí.",
+      text: "Kdo bude chtít víc, si připlatí: Premium za 99 Kč měsíčně (účtenky SMS, exporty), platební terminál nebo nastavení na klíč. Doplňky připravujeme a nikdo je nemusí.",
     },
     // S4b: v produkci je Microsoft Clarity (jen analytické, se souhlasem) – věta R15.3 platí jen bez značek (s4-cookies);
     // S10: přibyly GA4 a Meta Pixel (marketingové) → měřicí a reklamní cookies

@@ -66,7 +66,7 @@ export const POS_PRICES: readonly PosPrice[] = [
     priceText: "0 Kč navždy",
     yearText: "0 Kč",
     includes: `Evidence tržeb, práce bez signálu, až 5 uživatelů a 3 evidenční jednotky, doklad e-mailem a QR, export CSV.${isClosed("/pokladna") ? " Spouštíme 2. 11. 2026." : ""}`,
-    note: "Premium (bez limitu jednotek a uživatelů, SMS účtenky, export pro Pohodu a Money) spustíme později za 149 Kč měsíčně.",
+    note: "Premium (SMS účtenky, export pro Money S3 a ABRA) spustíme později za 99 Kč měsíčně, tarif Firma bez limitu jednotek a uživatelů za 249 Kč měsíčně.",
     sources: [],
     kind: "ours",
   },
