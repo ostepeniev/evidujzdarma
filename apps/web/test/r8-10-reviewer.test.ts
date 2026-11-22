@@ -22,7 +22,9 @@ const C1_DRAFTS = new Set(["pokladna-v-mobilu-zdarma", "eet-trhy-stanky", "eet-e
 /** К13 (31. 10. 2026): koncept pokladna-z-eet-1-0 – čeká na revizi (k13-services.test.ts) */
 const S5_DRAFTS = new Set(["eet-on-nebo-off-modelove-situace", "kdo-pomuze-s-eet", "pokladna-z-eet-1-0"]);
 // S7-VIZ (28. 10. 2026): návody z oficiálních příkladů (basis "official", Ф15) čekají na revizi zvlášť
-const REVIEWED = GUIDES.filter((g) => !C1_DRAFTS.has(g.slug) && !S5_DRAFTS.has(g.slug) && g.basis !== "official");
+/** S12 (22. 11. 2026): tři nové koncepty – čekají na revizi (c1-draft-guides.test.ts, s12-dis-units-content.test.ts) */
+const S12_DRAFTS = new Set(["nezobrazuje-se-aktivovat-eet", "poukazy-a-vouchery-eet", "doplnkovy-prodej-eet"]);
+const REVIEWED = GUIDES.filter((g) => !C1_DRAFTS.has(g.slug) && !S5_DRAFTS.has(g.slug) && !S12_DRAFTS.has(g.slug) && g.basis !== "official");
 const REVIEWED_1017 = GUIDES.filter((g) => C1_DRAFTS.has(g.slug));
 const CHANGELOG_1017 = { date: "2026-10-17", text: "Návod prošel odbornou revizí (Helena Jeřábková)." };
 

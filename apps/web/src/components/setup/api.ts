@@ -45,7 +45,21 @@ export interface AccountStateDto {
     closedAt: string | null;
   };
   limits?: { staff: number; units: number; devices: number };
-  units?: { id: string; type: string; label: string; fsUnitId: number | null; address: string | null; active: boolean }[];
+  units?: {
+    id: string;
+    type: string;
+    label: string;
+    fsUnitId: number | null;
+    address: string | null;
+    active: boolean;
+    /** S12: údaje pro hromadný import do DIS+ */
+    czNace?: string | null;
+    ruianCode?: string | null;
+    locationText?: string | null;
+    vehicleType?: string | null;
+    vehicleNote?: string | null;
+    indirectRepresentation?: boolean;
+  }[];
   staff?: { id: string; name: string; role: string; active: boolean; hasPin: boolean }[];
   catalog?: { id: string; name: string; price: number; vatRate: number; color: string | null; active: boolean; category?: string | null; ean?: string | null }[];
   devices?: { id: string; name: string; registerId: string; unitId: string | null; lastSeenAt: string | null }[];

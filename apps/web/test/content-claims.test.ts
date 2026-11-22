@@ -4,7 +4,7 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { COMPARISON_ROWS } from "@/content/comparison";
+import { COMPARISON_AS_OF, COMPARISON_ROWS } from "@/content/comparison";
 import { FACTS, SOURCES, timelineAt } from "@/content/facts";
 import { GUIDES } from "@/content/guides";
 
@@ -47,6 +47,8 @@ describe("R2.3 – comparison with MOJE eet (Р7)", () => {
   });
 
   it("the comparison note carries the date and a contact for corrections", () => {
-    expect(read("src/components/comparison-table.tsx")).toContain("Stav k 2. 10. 2026");
+    // S12 (22. 11. 2026): datum ověření je v COMPARISON_AS_OF
+    expect(read("src/components/comparison-table.tsx")).toContain("Stav k {COMPARISON_AS_OF}");
+    expect(COMPARISON_AS_OF).toBe("22. 11. 2026");
   });
 });

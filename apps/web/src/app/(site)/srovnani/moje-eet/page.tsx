@@ -4,15 +4,17 @@ import { ComparisonTable } from "@/components/comparison-table";
 import { Faq, type FaqItem } from "@/components/faq";
 import { PageHeader } from "@/components/page-header";
 import { ToolCta } from "@/components/tool-cta";
+import { COMPARISON_AS_OF } from "@/content/comparison";
 import { FACTS, FACTS_UPDATED, SOURCES } from "@/content/facts";
 import { JsonLd, articleLd, faqLd } from "@/lib/jsonld";
 import { ExternalLink } from "@/components/external-link";
 import { canonicalMeta } from "@/lib/metadata";
 import { SERVICE_COPY } from "@/lib/site";
 
-const TITLE = "EvidujZdarma vs. MOJE eet: férové srovnání";
+// S12 (22. 11. 2026): title a description míří na hledání „MOJE eet“; údaje podle dotazů veřejnosti FS z 18. 11. 2026
+const TITLE = "MOJE eet, nebo EvidujZdarma? Srovnání pokladen";
 const DESCRIPTION =
-  "Státní MOJE eet, nebo nezávislá pokladna EvidujZdarma? Obě jsou zdarma. Srovnání offline režimu, počtu uživatelů a jednotek, tiskáren a exportu pro účetní.";
+  "MOJE eet od 1. 12. 2026: nejvýš 2 evidenční jednotky, 4 účty, katalog 42 položek, bez rozpisu DPH. Srovnání s pokladnou EvidujZdarma podle údajů Finanční správy.";
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -21,20 +23,23 @@ export const metadata: Metadata = {
 };
 
 const PUBLISHED = "2026-10-01";
+const MODIFIED = "2026-11-22";
 
 const CHOOSE_STATE = [
-  "Máte jednu nebo dvě provozovny a nejvýš dva zaměstnance u pokladny.",
+  "Máte jednu malou provozovnu (nejvýš dvě) a málo prodejů za den.",
   "Prodáváte tam, kde je vždy spolehlivý internet (kamenná prodejna s Wi-Fi, kancelář).",
-  "Stačí vám PDF doklad a nepotřebujete tiskárnu účtenek.",
+  "Nejste plátce DPH a vystačíte si s katalogem do 42 položek.",
+  "Stačí vám PDF doklad a nepotřebujete tiskárnu účtenek ani napojení na jiný systém.",
   "Chcete aplikaci přímo od Finanční správy a nevadí vám dvoufázové ověření při každém přihlášení.",
 ];
 
 const CHOOSE_US = [
   "Prodáváte na trzích, festivalech, ve vozidle, na chatě nebo ve sklepě – tam, kde signál vypadává.",
-  "Potřebujete tisknout účtenky na Bluetooth nebo USB tiskárně, případně používat čtečku čárových kódů.",
-  "Chcete zákazníkům posílat doklad e-mailem nebo ukázat QR kód místo papíru.",
-  "U pokladny se střídá víc lidí (až 5 uživatelů zdarma, každý s vlastním PINem) nebo máte 3 evidenční jednotky.",
-  "Vaše účetní chce data – export CSV je zdarma, napojení na Pohodu či Money připravujeme v Premium.",
+  "Máte 3 evidenční jednotky, nebo víc (tarif Firma bez limitu spustíme později), či víc lidí u pokladny – až 5 zdarma, každý s vlastním PINem.",
+  "Jste plátce DPH nebo máte širší sortiment než 42 položek.",
+  "Vaše účetní chce data – export CSV je zdarma, Pohoda XML (beta) taky; Money a ABRA připravujeme v Premium. Účetní má vlastní Účetní kabinet.",
+  "Potřebujete napojit e-shop, rezervační nebo hotelový systém – přes EET API.",
+  "Chcete tisknout účtenky na Bluetooth tiskárně nebo zákazníkům posílat doklad e-mailem či ukázat QR kód.",
 ];
 
 const FAQ: FaqItem[] = [
@@ -52,7 +57,19 @@ const FAQ: FaqItem[] = [
   },
   {
     q: "Kolik evidenčních jednotek a uživatelů mají obě aplikace?",
-    a: "MOJE eet podle zveřejněných informací umožní až 2 evidenční jednotky a přístup pro 2 zaměstnance. EvidujZdarma nabízí zdarma až 3 evidenční jednotky a až 5 uživatelů; tarif Premium, který spustíme později, bude bez limitu.",
+    a: "Podle Finanční správy (dotaz veřejnosti z 18. 11. 2026) eviduje MOJE eet nejvýš za 2 evidenční jednotky a poplatník může využívat až 4 zaměstnanecké účty. EvidujZdarma nabízí zdarma až 3 evidenční jednotky a až 5 uživatelů; tarif Firma bez limitu jednotek a uživatelů spustíme později.",
+  },
+  {
+    q: "Hodí se MOJE eet pro plátce DPH?",
+    a: "Podle Finanční správy MOJE eet neumožňuje evidovat ani uvádět rozpis sazeb a částek DPH, a proto nebude vhodná pro všechny situace – například pro plátce DPH. V pokladně EvidujZdarma má každá položka svou sazbu DPH a export pro účetní obsahuje rozpad DPH.",
+  },
+  {
+    q: "Má MOJE eet export pro účetní?",
+    a: "Podle Finanční správy exportuje MOJE eet vystavené doklady v PDF (za zvolené období, případně roční archiv). Soubor tržeb v CSV za evidenční jednotku a období se vytváří v DIS+, ne v MOJE eet. Pokladna EvidujZdarma exportuje tržby do CSV zdarma a do Pohody (XML, beta) přímo z pokladny i z Účetního kabinetu.",
+  },
+  {
+    q: "Funguje MOJE eet s e-shopem nebo rezervačním systémem?",
+    a: "Napojení jiných systémů (API) Finanční správa u MOJE eet nezveřejnila. EvidujZdarma nabízí placené EET API, přes které tržby odesílá e-shop, rezervační systém nebo hotelový systém.",
   },
   {
     q: "Mohu začít s MOJE eet a později přejít jinam (nebo naopak)?",
@@ -60,7 +77,7 @@ const FAQ: FaqItem[] = [
   },
   {
     q: "Kdy bude MOJE eet k dispozici?",
-    a: "Podle harmonogramu Finanční správy od 1. 12. 2026 na eet.gov.cz. Ještě předtím, od 1. 11. 2026, se v DIS+ přihlašuje k evidenci, oznamují se evidenční jednotky a vydávají pokladní certifikáty – to platí bez ohledu na to, kterou aplikaci zvolíte.",
+    a: "Spuštění se podle Finanční správy předpokládá od 1. 12. 2026 na eet.gov.cz. Už od 1. 11. 2026 se v DIS+ přihlašuje k evidenci, oznamují se evidenční jednotky a vydávají pokladní certifikáty – to platí bez ohledu na to, kterou aplikaci zvolíte.",
   },
   {
     q: "Potřebuji aplikaci, když zvolím EET OFF?",
@@ -73,7 +90,7 @@ export default function CompareMojeEetPage() {
     <>
       <JsonLd
         data={[
-          articleLd({ title: TITLE, description: DESCRIPTION, path: "/srovnani/moje-eet", published: PUBLISHED, modified: FACTS_UPDATED }),
+          articleLd({ title: TITLE, description: DESCRIPTION, path: "/srovnani/moje-eet", published: PUBLISHED, modified: MODIFIED > FACTS_UPDATED ? MODIFIED : FACTS_UPDATED }),
           faqLd(FAQ),
         ]}
       />
@@ -82,16 +99,15 @@ export default function CompareMojeEetPage() {
         crumbs={[{ name: "Srovnání s MOJE eet", path: "/srovnani/moje-eet" }]}
         lead={
           <p>
-            <strong className="text-ink">Krátká odpověď:</strong> Státní MOJE eet (od 1. 12. 2026) je bezplatná webová aplikace
-            vhodná pro nejmenší podnikatele s trvalým internetem – až 2 evidenční jednotky a 2 zaměstnanci. EvidujZdarma je
-            nezávislá pokladna, rovněž zdarma, která navíc funguje bez signálu, tiskne účtenky, posílá doklad e-mailem a zvládne
-            5 uživatelů a 3 jednotky.
+            <strong className="text-ink">Krátká odpověď:</strong> Státní MOJE eet (spuštění se předpokládá od 1. 12. 2026) je
+            bezplatná webová aplikace pro nejmenší podnikatele se stabilním internetem – nejvýš 2 evidenční jednotky, až 4
+            zaměstnanecké účty a katalog do 42 položek, bez rozpisu DPH. EvidujZdarma je nezávislá pokladna, rovněž zdarma: prodá
+            i bez signálu, zvládne 3 jednotky a 5 uživatelů zdarma, exportuje pro účetní a má API i Účetní kabinet.
           </p>
         }
       >
         <p className="mt-4 text-sm text-muted">
-          Aktualizováno {new Date(FACTS_UPDATED).toLocaleDateString("cs-CZ")} · Údaje o MOJE eet podle zveřejněných informací
-          Finanční správy a odborného tisku
+          Stav k {COMPARISON_AS_OF} · Údaje o MOJE eet podle dotazů veřejnosti Finanční správy, eet.gov.cz a odborného tisku
         </p>
       </PageHeader>
 
@@ -99,9 +115,9 @@ export default function CompareMojeEetPage() {
         <div className="mx-auto max-w-3xl">
           <p role="note" className="rounded-2xl border border-line bg-surface p-5 text-[15px] leading-relaxed text-ink">
             <strong>Píšeme o konkurenci, proto férově:</strong> EvidujZdarma provozuje soukromá firma Swipe Scape s.r.o., nikoli
-            stát. Státní aplikaci zatím nikdo nemohl vyzkoušet – vycházíme ze zveřejněných informací a ke každému údaji uvádíme
-            zdroj. <strong>V den spuštění MOJE eet (1. 12. 2026) doplníme recenzi se snímky obrazovky</strong> a tabulku podle
-            skutečnosti opravíme.
+            stát. Státní aplikaci zatím nikdo nemohl vyzkoušet – vycházíme z odpovědí Finanční správy a ke každému údaji uvádíme
+            zdroj. <strong>Po spuštění MOJE eet doplníme recenzi se snímky obrazovky</strong> a tabulku podle skutečnosti
+            opravíme.
           </p>
         </div>
 
@@ -144,8 +160,8 @@ export default function CompareMojeEetPage() {
             Srovnání funkcí bod po bodu
           </h2>
           <p className="mt-2 max-w-3xl text-lg text-ink-soft">
-            Zvýraznili jsme řádky, ve kterých se aplikace liší nejvíc. Funkce označené jako placené (terminál, SMS účtenky, export
-            do Pohody a Money) spouštíme později – podrobnosti v{" "}
+            Zvýraznili jsme řádky, ve kterých se aplikace liší nejvíc. Funkce označené jako placené nebo „připravujeme“ (terminál,
+            tarif Firma, export do Money a ABRA) spouštíme později – podrobnosti v{" "}
             <Link href="/cenik" className="font-medium text-brand-700 underline underline-offset-4">
               ceníku
             </Link>
@@ -167,16 +183,17 @@ export default function CompareMojeEetPage() {
           <h2>Co víme o státní aplikaci MOJE eet</h2>
           <p>{FACTS.mojeEet.summary}</p>
           <p>
-            Aplikace má být dostupná od <strong>1. 12. 2026</strong> na{" "}
+            Spuštění se předpokládá od <strong>1. 12. 2026</strong> na{" "}
             <ExternalLink href={SOURCES.eetGov.url}>
               eet.gov.cz
             </ExternalLink>
-            . Podrobnosti o tom, jak bude fungovat při výpadku připojení, Finanční správa zatím nezveřejnila – podle dostupných
-            informací vyžaduje pro provoz internet.
+            . Podle Finanční správy mohou MOJE eet využít i právnické osoby, například jako doplňkovou pokladnu pro prodej
+            v terénu; nebude ale vhodná pro všechny situace, například pro plátce DPH. Doklad vytvoří jako PDF, který můžete
+            vytisknout, poslat e-mailem nebo sdílet – zákazníkovi ho aplikace sama neposílá.
           </p>
           <p>
             Za klíčovou výhodu MOJE eet považujeme, že je přímo od Finanční správy a je zdarma bez jakýchkoli doplňků. Pro
-            kadeřnici s jedním salonem a stabilní Wi-Fi to může být nejjednodušší cesta.
+            kadeřnici s jedním salonem, malým sortimentem a stabilní Wi-Fi to může být nejjednodušší cesta.
           </p>
 
           <h2>V čem se EvidujZdarma liší</h2>
@@ -192,14 +209,22 @@ export default function CompareMojeEetPage() {
           </p>
           <h3>Více lidí a provozoven</h3>
           <p>
-            Zdarma až 5 uživatelů s vlastním PINem a až 3 evidenční jednotky. Kolik jednotek potřebujete, zjistíte v{" "}
-            <Link href="/evidencni-jednotky">průvodci evidenčními jednotkami</Link>.
+            Zdarma až 5 uživatelů s vlastním PINem a až 3 evidenční jednotky; tarif Firma bez limitu spustíme později. Kolik
+            jednotek potřebujete, zjistíte v <Link href="/evidencni-jednotky">průvodci evidenčními jednotkami</Link>.
+          </p>
+          <h3>DPH a větší sortiment</h3>
+          <p>
+            Každá položka v katalogu má svou sazbu DPH a katalog naimportujete z tabulky. Export pro účetní obsahuje rozpad DPH.
           </p>
           <h3>Nástroje pro účetní</h3>
           <p>
-            Export tržeb do CSV je zdarma. Účetní mohou zkontrolovat všechny klienty najednou v{" "}
-            <Link href="/ucetni/hromadna-kontrola">hromadné kontrole IČO</Link> a připravujeme pro ně{" "}
-            <Link href="/ucetni">Účetní kabinet</Link>.
+            Export tržeb do CSV je zdarma, Pohoda XML (beta) taky. Účetní mají <Link href="/ucetni">Účetní kabinet</Link> s
+            přehledem připravenosti klientů, exporty a souborem CSV pro hromadný import evidenčních jednotek do DIS+. Všechny
+            klienty zkontrolují najednou v <Link href="/ucetni/hromadna-kontrola">hromadné kontrole IČO</Link>.
+          </p>
+          <h3>Napojení jiných systémů</h3>
+          <p>
+            E-shop, rezervační nebo hotelový systém může tržby odesílat přes <Link href="/eet-api">EET API</Link> (placené).
           </p>
 
           <h2>Co platí pro obě aplikace</h2>
@@ -208,7 +233,8 @@ export default function CompareMojeEetPage() {
             <li>
               Než začnete evidovat, musíte se od 1. 11. 2026 přihlásit k evidenci v DIS+ (MOJE daně) a oznámit evidenční
               jednotky. Návod najdete v článku{" "}
-              <Link href="/navody/jak-aktivovat-dis-a-certifikat">jak aktivovat DIS+ a certifikát</Link>.
+              <Link href="/navody/jak-aktivovat-dis-a-certifikat">jak aktivovat DIS+ a certifikát</Link>.{" "}
+              {FACTS.registrations.activation}
             </li>
             <li>
               {FACTS.confirmation.summary} {FACTS.confirmation.onReceipt}
@@ -221,7 +247,7 @@ export default function CompareMojeEetPage() {
 
           <p className="text-base text-muted">
             Zdroje:{" "}
-            {[SOURCES.mojeEet, SOURCES.mojeEet2fa, SOURCES.harmonogram, SOURCES.prakticke].map((s, i) => (
+            {[SOURCES.fsDotazMojeEet, SOURCES.fsDotazMojeEetExport, SOURCES.prakticke, SOURCES.fsTzPrihlasit, SOURCES.podnikatelRegistrace, SOURCES.mojeEet, SOURCES.mojeEet2fa, SOURCES.harmonogram].map((s, i) => (
               <span key={s.url}>
                 {i > 0 && " · "}
                 <ExternalLink href={s.url}>

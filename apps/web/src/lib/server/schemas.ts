@@ -3,6 +3,16 @@ import { IMPORT_LIMITS } from "@/lib/pos/import-products";
 
 export const UNIT_TYPES = ["stala_provozovna", "mobilni_provozovna", "automat", "internetova_stranka", "dopravni_prostredek", "osoba"] as const;
 
+/** Prázdný text = null (S12, údaje jednotky pro DIS+). */
+function unitText(max: number, message = `Nejvýš ${max} znaků`) {
+  return z
+    .string()
+    .trim()
+    .max(max, message)
+    .transform((v) => v || null)
+    .nullable();
+}
+
 export const UnitInput = z.object({
   type: z.enum(UNIT_TYPES),
   label: z.string().trim().min(1, "Zadejte název jednotky").max(120, "Název jednotky má víc než 120 znaků"),
@@ -15,6 +25,19 @@ export const UnitInput = z.object({
     .transform((v) => v || null)
     .nullable()
     .optional(),
+  // S12 (22. 11. 2026): nepovinné údaje pro hromadný import jednotek do DIS+ (lib/dis-units-csv.ts)
+  czNace: unitText(8)
+    .transform((v) => (v ? v.replace(/[.\s]/g, "") : null))
+    .refine((v) => v === null || /^\d{1,6}$/.test(v), "Kód CZ-NACE: jen číslice (tečky vynecháme), nejvýš 6.")
+    .optional(),
+  ruianCode: unitText(12)
+    .transform((v) => (v ? v.replace(/\s/g, "") : null))
+    .refine((v) => v === null || /^\d{1,9}$/.test(v), "Kód adresního místa RÚIAN: jen číslice, nejvýš 9.")
+    .optional(),
+  locationText: unitText(255, "Lokalizace má víc než 255 znaků").optional(),
+  vehicleType: z.enum(["A", "N", "B", "M", "V", "T", "P", "L", "J"]).nullable().optional(),
+  vehicleNote: unitText(150, "Upřesnění dopravního prostředku má víc než 150 znaků").optional(),
+  indirectRepresentation: z.boolean().optional(),
 });
 export const UnitPatch = UnitInput.partial().extend({ active: z.boolean().optional() });
 

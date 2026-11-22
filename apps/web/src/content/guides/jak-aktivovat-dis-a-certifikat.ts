@@ -48,6 +48,10 @@ export const jakAktivovatDisACertifikat: Guide = {
         {
           p: "V prostředí DIS+ se tlačítkem přihlaste k elektronické evidenci tržeb. Tím se vám zpřístupní další funkce – evidenční jednotky a správa certifikátů.",
         },
+        {
+          note: `${FACTS.registrations.activation} Nevidíte tlačítko vůbec? ${FACTS.disPermissions.summary} Podrobně v návodu [Nezobrazuje se tlačítko AKTIVOVAT EET](/navody/nezobrazuje-se-aktivovat-eet).`,
+          tone: "info",
+        },
         { h3: "3. Založení evidenčních jednotek" },
         {
           p: `V části Evidence tržeb → Evidenční jednotky založte každou jednotku: druh (stálá či mobilní provozovna, automat, internetová stránka, dopravní prostředek, nebo vy sami), identifikaci, převažující činnost. ${FACTS.units.allUnits} Systém každé jednotce přidělí **ID jednotky** – to budete potřebovat v pokladně. Podrobnosti v návodu [Evidenční jednotka](/navody/evidencni-jednotka).`,
@@ -170,11 +174,12 @@ export const jakAktivovatDisACertifikat: Guide = {
       a: "Pokladna s ním přestane úspěšně odesílat tržby. Proto ho obnovte před koncem platnosti (366 dní) – automaticky, pokud to pokladna umí, nebo ručně vydáním nového certifikátu v DIS+.",
     },
   ],
-  sources: [SOURCES.jakZacit, SOURCES.harmonogram, SOURCES.caeetPostupy, SOURCES.caeetNapoveda, SOURCES.mojeDane, SOURCES.vyvojari, SOURCES.fsPlayground, SOURCES.psp],
+  sources: [SOURCES.fsTzPrihlasit, SOURCES.fsDotazOpravneni, SOURCES.podnikatelRegistrace, SOURCES.jakZacit, SOURCES.harmonogram, SOURCES.caeetPostupy, SOURCES.caeetNapoveda, SOURCES.mojeDane, SOURCES.vyvojari, SOURCES.fsPlayground, SOURCES.psp],
   related: ["evidencni-jednotka", "eet-2-0-kompletni-pruvodce", "eet-bez-internetu", "pokladna-v-mobilu-zdarma"],
   published: "2026-10-01",
   updated: "2026-10-01",
   changelog: [
+    { date: "2026-11-22", text: "Leden 2027 podle tiskové zprávy GFŘ z 2. 11. 2026: pilotní režim, evidovat se musí od 1. 1., plnění povinností Finanční správa v lednu vymáhat nebude. Doplněna aktivace do 48 hodin a oprávnění v DIS+ (dotaz veřejnosti FS z 5. 11. 2026)." },
     { date: "2026-10-15", text: "Opraveny odkazy na příručky Certifikační autority EET (Finanční správa je přesunula)." },
     { date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
     { date: "2026-10-01", text: "První verze návodu. Snímky obrazovek doplníme po spuštění funkcí v DIS+ 1. 11. 2026." },

@@ -143,10 +143,20 @@ export const ZACINAME: readonly HelpArticle[] = [
           { p: "Jednotku, kde už neprodáváte, odeberete tlačítkem **Odebrat** – viz [Změny v provozovně](/napoveda/zmeny-v-provozovne)." },
         ],
       },
+      {
+        // S12 (22. 11. 2026): CSV pro hromadný import do DIS+ (formát GFŘ z 3. 11. 2026)
+        id: "import-do-dis",
+        heading: "Hromadný import do DIS+",
+        blocks: [
+          {
+            p: "Jednotky bez čísla z DIS+ stáhnete tlačítkem **Stáhnout CSV pro import do DIS+** jako soubor ve formátu Finanční správy. Předtím u každé jednotky v **Upravit** doplňte kód CZ-NACE a kód adresního místa RÚIAN, u mobilní provozovny, webu a vozidla lokalizaci.",
+          },
+        ],
+      },
     ],
     related: ["zmeny-v-provozovne", "rezim-evidence", "zarizeni-jako-pokladna"],
     guides: ["evidencni-jednotka", "jak-aktivovat-dis-a-certifikat"],
-    updated: "2026-10-17",
+    updated: "2026-11-22",
   },
   {
     slug: "pokladni-certifikat",

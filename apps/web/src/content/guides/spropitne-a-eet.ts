@@ -43,6 +43,19 @@ export const spropitneAEet: Guide = {
         {
           p: "Když host připíše dýško k platbě kartou a pokladna ho eviduje spolu s platbou, je to v pořádku v obou případech: u podniku a OSVČ je to povinné, u zaměstnanců dobrovolné. Dobrovolná evidence může posloužit i jako podklad pro osvobození na straně zaměstnance.",
         },
+        {
+          p: "Finanční správa to 19. 10. 2026 potvrdila i v dotazech veřejnosti: zda se spropitné eviduje, záleží na tom, jak si podnik nastaví vnitřní pravidla. Když spropitné zaeviduje spolu s tržbou z technických důvodů, i když patří zaměstnancům, takový postup podle ní zpochybňován nebude. Doporučuje mít přehled o výši spropitného – i kvůli podmínkám osvobození u zaměstnanců. Ukazuje to na dvou příkladech:",
+        },
+        {
+          table: {
+            head: ["Příklad Finanční správy", "Co se eviduje"],
+            rows: [
+              ["Účet 322 Kč, host zaplatí 350 Kč; spropitné je v restauraci příjmem podniku", "**350 Kč** – celá platba"],
+              ["Účet 278 Kč, host zaplatí 300 Kč; spropitné dostávají přímo zaměstnanci", "**278 Kč** povinně; 22 Kč spropitného evidovat lze, ale nemusíte"],
+            ],
+            caption: "Podle dotazu veřejnosti Finanční správy z 19. 10. 2026. Stav k 22. 11. 2026.",
+          },
+        },
       ],
     },
     {
@@ -100,11 +113,14 @@ export const spropitneAEet: Guide = {
       { name: "Proberte daně s účetní", text: "Osvobození do 7 % platí jen pro zaměstnance a jen u jídla na místě; zbytek se zdaní běžně." },
     ],
   },
-  sources: [SOURCES.seminarVyvojari, SOURCES.zakonUplne, SOURCES.sbirka, SOURCES.zdp],
+  sources: [SOURCES.seminarVyvojari, SOURCES.fsDotazSpropitne, SOURCES.zakonUplne, SOURCES.sbirka, SOURCES.zdp],
   related: ["eet-gastronomie", "eet-kadernictvi-kosmetika", "kontaktni-platba", "eet-2-0-v-prikladech"],
   published: "2026-10-28",
   updated: "2026-10-28",
-  changelog: [{ date: "2026-10-28", text: "Nový návod podle prezentace Ministerstva financí a Finanční správy." }],
+  changelog: [
+    { date: "2026-11-22", text: "Doplněna odpověď Finanční správy v dotazech veřejnosti (19. 10. 2026) se dvěma příklady." },
+    { date: "2026-10-28", text: "Nový návod podle prezentace Ministerstva financí a Finanční správy." },
+  ],
   reviewedBy: null,
   basis: "official",
 };

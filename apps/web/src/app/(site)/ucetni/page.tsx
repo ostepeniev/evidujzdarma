@@ -5,7 +5,7 @@ import { WebinarForm } from "@/components/accountant/webinar-form";
 import { ClarityOnView } from "@/components/clarity-on-view";
 import { Faq, type FaqItem } from "@/components/faq";
 import { PageHeader } from "@/components/page-header";
-import { DIS_OPENS, FACTS, TIMELINE, timelineAt } from "@/content/facts";
+import { DIS_OPENS, FACTS, SOURCES, TIMELINE, timelineAt } from "@/content/facts";
 import { PARTNER_PLAN } from "@/content/pricing";
 import { ACCOUNTANT_REWARD_DISCLOSURE, ACCOUNTANT_SETUP_REWARD, SETUP_SERVICE, setupReferralPath } from "@/content/services";
 import { JsonLd, faqLd } from "@/lib/jsonld";
@@ -259,6 +259,43 @@ export default function AccountantsPage() {
               </li>
             ))}
           </ul>
+        </section>
+
+        {/* S12 (22. 11. 2026): oprávnění v DIS+ a hromadný import evidenčních jednotek (CSV podle GFŘ z 3. 11. 2026) */}
+        <section id="import-jednotek" aria-labelledby="import-jednotek-h" className="mt-16 scroll-mt-24 grid gap-5 lg:grid-cols-2">
+          <h2 id="import-jednotek-h" className="text-2xl font-bold tracking-tight sm:text-3xl lg:col-span-2">
+            DIS+ za klienty: oprávnění a hromadný import jednotek
+          </h2>
+          <div className="card">
+            <h3 className="text-lg font-semibold">Nevidíte u klienta tlačítko AKTIVOVAT EET?</h3>
+            <p className="mt-2 text-[15px] leading-relaxed text-ink-soft">{FACTS.disPermissions.summary}</p>
+            <p className="mt-2 text-[15px] leading-relaxed text-ink-soft">
+              {FACTS.disPermissions.whoSets} {FACTS.registrations.activation}
+            </p>
+            <Link href="/navody/nezobrazuje-se-aktivovat-eet" className="mt-4 inline-block text-[15px] font-semibold text-brand-700 underline underline-offset-4">
+              Jaká oprávnění si od klienta vyžádat →
+            </Link>
+          </div>
+          <div className="card">
+            <h3 className="text-lg font-semibold">Jednotky do DIS+ jedním souborem</h3>
+            <p className="mt-2 text-[15px] leading-relaxed text-ink-soft">
+              Finanční správa zveřejnila 3. 11. 2026 formát CSV pro hromadný import evidenčních jednotek do DIS+ (nejvýš 500 jednotek
+              v souboru, s kódem CZ-NACE a nejlépe s kódem adresního místa RÚIAN). Účetní kabinet vám soubor připraví z jednotek,
+              které má klient v pokladně – u každého propojeného klienta tlačítkem <strong>Stáhnout CSV pro import do DIS+</strong>.
+              Chybí-li údaje, kabinet ukáže, co u které jednotky doplnit.
+            </p>
+            <p className="mt-2 text-sm text-muted">
+              Zdroj:{" "}
+              <ExternalLink href={SOURCES.fsImportJednotekCsv.url} className="underline underline-offset-2">
+                GFŘ: popis struktury CSV pro import evidenčních jednotek
+              </ExternalLink>
+              {" · "}
+              <ExternalLink href={SOURCES.fsDotazOpravneni.url} className="underline underline-offset-2">
+                Finanční správa: oprávnění pro aktivaci EET v DIS+
+              </ExternalLink>
+              .
+            </p>
+          </div>
         </section>
 
         {/* Termíny */}

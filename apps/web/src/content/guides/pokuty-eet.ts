@@ -14,7 +14,7 @@ export const pokutyEet: Guide = {
     `Maximální pokuta za neodeslání tržby nebo závažné maření evidence: ${formatKc(FACTS.penalties.max)}.`,
     "Uzavření provozovny ani pozastavení činnosti jako sankce v EET 2.0 není.",
     "Pokuta za „nevydání účtenky“ podle zákona o evidenci tržeb nehrozí – účtenka povinná není.",
-    "Povinnost evidovat i pokuta platí od 1. 1. 2027. Zda bude Finanční správa v lednu pokutovat, oficiálně stanoveno není.",
+    "Povinnost evidovat i pokuta platí od 1. 1. 2027. V pilotním lednu ale Finanční správa plnění povinností vymáhat nebude, od února počítá s ostrým provozem.",
     "Výše pokuty je horní hranice – konkrétní částku určuje úřad podle závažnosti.",
   ],
   sections: [
@@ -138,14 +138,15 @@ export const pokutyEet: Guide = {
     },
     {
       q: "Dostanu pokutu v lednu 2027?",
-      a: `Může. Zákon je účinný od 1. 1. 2027 a výjimku pro leden nestanoví, pokuta až ${formatKc(FACTS.penalties.max)} tedy platí od prvního dne. Finanční správa v lednu počítá s pilotním režimem a chce se zaměřit na metodickou podporu; jak bude postupovat při kontrolách, oficiálně stanoveno není. Evidujte od 1. 1. 2027 a pokladnu si odlaďte už v prosinci.`,
+      a: `Zákon je účinný od 1. 1. 2027 a výjimku pro leden nestanoví – pokuta až ${formatKc(FACTS.penalties.max)} je v zákoně od prvního dne. Finanční správa ale v tiskové zprávě z 2. 11. 2026 uvedla, že leden je určen pro pilotní režim projektu a plnění povinností v lednu vymáhat nebude; od února počítá s ostrým provozem. Evidujte od 1. 1. 2027 a pokladnu si odlaďte už v prosinci.`,
     },
   ],
-  sources: [SOURCES.zakonUplne, SOURCES.pokuty, SOURCES.psp, SOURCES.podnikatelPrehled, SOURCES.harmonogram, SOURCES.prakticke, SOURCES.fsPlayground, SOURCES.srovnani],
+  sources: [SOURCES.fsTzPrihlasit, SOURCES.zakonUplne, SOURCES.pokuty, SOURCES.psp, SOURCES.podnikatelPrehled, SOURCES.harmonogram, SOURCES.prakticke, SOURCES.fsPlayground, SOURCES.srovnani],
   related: ["eet-bez-internetu", "musim-vydavat-uctenku", "eet-2-0-vs-eet-1-0"],
   published: "2026-10-01",
   updated: "2026-10-01",
   changelog: [
+    { date: "2026-11-22", text: "Leden 2027 podle tiskové zprávy GFŘ z 2. 11. 2026: pilotní režim, evidovat se musí od 1. 1., plnění povinností Finanční správa v lednu vymáhat nebude." },
     { date: "2026-10-15", text: "Doplněno číslo zákona ve Sbírce zákonů (zákon č. 180/2026 Sb.) a paragrafy ověřené podle vyhlášeného znění." },
     { date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
     {

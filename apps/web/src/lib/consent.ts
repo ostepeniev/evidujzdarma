@@ -147,6 +147,18 @@ export function clarityConsent(c: Pick<Consent, "analytics"> | null): { ad_Stora
 /** Cookies, které značky třetích stran zakládají na naší doméně – po odvolání souhlasu je zkusíme smazat. */
 export const THIRD_PARTY_COOKIE_PREFIXES = ["_ga", "_gid", "_gat", "_gcl_", "_fbp", "_fbc", "_clck", "_clsk"] as const;
 
+/** S12 (22. 11. 2026): cookies podle kategorie – analytické (GA4, Clarity) a marketingové (Google Ads, Meta Pixel). */
+export const ANALYTICS_COOKIE_PREFIXES = ["_ga", "_gid", "_gat", "_clck", "_clsk"] as const;
+export const MARKETING_COOKIE_PREFIXES = ["_gcl_", "_fbp", "_fbc"] as const;
+
+/**
+ * Které cookies smazat po změně souhlasu: jen ty z kategorií, ke kterým souhlas skončil. Dřív se po odvolání marketingu
+ * mazaly i _ga a _clck/_clsk, přestože souhlas s analytikou trval – GA4 a Clarity pak návštěvníka počítaly jako nového.
+ */
+export function cookiePrefixesToDelete(prev: Pick<Consent, "analytics" | "marketing"> | null, next: Pick<Consent, "analytics" | "marketing">): string[] {
+  return [...(prev?.analytics && !next.analytics ? ANALYTICS_COOKIE_PREFIXES : []), ...(prev?.marketing && !next.marketing ? MARKETING_COOKIE_PREFIXES : [])];
+}
+
 /** Kategorie v Nastavení – jen ty se zapnutou značkou (v náhledu všechny, ať je majitel vidí). */
 export interface ConsentCategory {
   id: "necessary" | "analytics" | "marketing";

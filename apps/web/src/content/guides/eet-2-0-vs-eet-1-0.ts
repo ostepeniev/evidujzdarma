@@ -162,6 +162,7 @@ export const eet20VsEet10: Guide = {
     },
   ],
   sources: [
+    SOURCES.fsTzPrihlasit,
     SOURCES.seminarVyvojari,
     SOURCES.prezident,
     SOURCES.mfPredstavuje,
@@ -179,6 +180,7 @@ export const eet20VsEet10: Guide = {
   published: "2026-10-01",
   updated: "2026-10-03",
   changelog: [
+    { date: "2026-11-22", text: "Leden 2027 podle tiskové zprávy GFŘ z 2. 11. 2026: pilotní režim, evidovat se musí od 1. 1., plnění povinností Finanční správa v lednu vymáhat nebude." },
     { date: "2026-10-15", text: "Doplněno číslo zákona ve Sbírce zákonů (zákon č. 180/2026 Sb.) a paragrafy ověřené podle vyhlášeného znění." },
     { date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
     { date: "2026-10-03", text: "Opraveno podle semináře Finanční správy pro vývojáře: záloha a doplatek jsou dvě běžné platby, dárkový poukaz se eviduje jen při prodeji (jeho uplatnění není platbou) a částku určenou k čerpání a čerpání uvádí pokladna jen u kreditu." },

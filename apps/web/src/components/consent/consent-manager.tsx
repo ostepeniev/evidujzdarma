@@ -7,7 +7,7 @@ import {
   GTAG_CONSENT_DEFAULT,
   OPEN_SETTINGS_EVENT,
   TAG_SCRIPT_SRC,
-  THIRD_PARTY_COOKIE_PREFIXES,
+  cookiePrefixesToDelete,
   acceptAll,
   allowedTags,
   clarityConsent,
@@ -130,13 +130,14 @@ function sklikHit(): void {
   window.rc?.retargetingHit?.({ rtgId: id, consent: 1 });
 }
 
-/** Po odvolání souhlasu smažeme cookies značek, které jsou na naší doméně (cizí domény smazat nejde). */
-function deleteThirdPartyCookies(): void {
+/** Po odvolání souhlasu smažeme cookies značek odvolané kategorie, které jsou na naší doméně (cizí domény smazat nejde). */
+function deleteThirdPartyCookies(prefixes: readonly string[]): void {
+  if (!prefixes.length) return;
   const host = window.location.hostname;
   const domains = ["", host, `.${host.replace(/^www\./, "")}`];
   for (const part of document.cookie.split(";")) {
     const name = part.split("=")[0]!.trim();
-    if (!THIRD_PARTY_COOKIE_PREFIXES.some((p) => name.startsWith(p))) continue;
+    if (!prefixes.some((p) => name.startsWith(p))) continue;
     for (const d of domains) document.cookie = `${name}=; Max-Age=0; Path=/${d ? `; Domain=${d}` : ""}`;
   }
 }
@@ -212,7 +213,7 @@ export function ConsentManager() {
       } else if (!allow.includes("clarity")) {
         stopClarity(true);
       }
-      if ((prev?.analytics && !c.analytics) || (prev?.marketing && !c.marketing)) deleteThirdPartyCookies();
+      deleteThirdPartyCookies(cookiePrefixesToDelete(prev, c));
       // úvodní page_view jen pro nově spuštěné značky
       if (fresh.size) pageView(fresh);
     },

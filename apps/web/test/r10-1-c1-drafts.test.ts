@@ -22,7 +22,8 @@ describe("R10.1 – pokladna-v-mobilu-zdarma", () => {
     expect(g().lead).toBe(
       "Od **1. 1. 2027** vám pro EET 2.0 stačí mobil, tablet nebo počítač s pokladní aplikací – i státní MOJE eet je webová aplikace. Pokladna musí o každé kontaktní platbě odeslat Finanční správě datovou zprávu podepsanou vaším pokladním certifikátem a při výpadku signálu ji doposlat nejpozději do 48 hodin.",
     );
-    expect(g().summary).toContain("Státní MOJE eet bude od 1. 12. 2026 zdarma – pro nejvýše 2 evidenční jednotky a 2 zaměstnance.");
+    // S12 (22. 11. 2026): počet účtů podle dotazu veřejnosti FS z 18. 11. 2026 (č. 5756)
+    expect(g().summary).toContain("Státní MOJE eet bude podle Finanční správy od 1. 12. 2026 zdarma – pro nejvýše 2 evidenční jednotky a až 4 zaměstnanecké účty.");
   });
 
   it("gate: the law requires sending afterwards, not selling offline; MOJE eet export is 'nezveřejnila' (verbatim)", () => {
@@ -30,7 +31,8 @@ describe("R10.1 – pokladna-v-mobilu-zdarma", () => {
     expect(list.ul).toContain(`**Doposlat tržbu po výpadku spojení.** ${FACTS.offline.summary} Zda pokladna umí prodávat i bez signálu, se liší podle aplikace – viz checklist níže.`);
     expect(list.ul.join("\n")).not.toContain("Fungovat bez signálu");
     expect(blocksText("pokladna-v-mobilu-zdarma")).toContain(
-      "Pokud potřebujete víc evidenčních jednotek nebo pokladních, případně jistotu prodeje bez signálu a exportu pro účetní (u MOJE eet je Finanční správa zatím nezveřejnila), porovnejte ji s nezávislými pokladnami – například v našem [srovnání EvidujZdarma a MOJE eet](/srovnani/moje-eet), které uvádí jen zveřejněné údaje.",
+      // S12 (22. 11. 2026): export v MOJE eet už FS popsala (dotaz č. 5734) – offline dál „nezveřejnila“
+      "Pokud potřebujete víc evidenčních jednotek nebo pokladních, případně jistotu prodeje bez signálu a export tržeb pro účetní přímo z pokladny (MOJE eet podle Finanční správy exportuje vystavené doklady v PDF, soubor tržeb v CSV nabízí až DIS+; režim bez připojení Finanční správa nezveřejnila), porovnejte ji s nezávislými pokladnami – například v našem [srovnání EvidujZdarma a MOJE eet](/srovnani/moje-eet), které uvádí jen zveřejněné údaje.",
     );
     // R17.1: datum spuštění je pevné (2. 11. 2026), text doslovně z рецензії – hlídá r17-1-launch.test.ts
     expect(json("pokladna-v-mobilu-zdarma")).toContain("Spouštíme ji 2. 11. 2026");

@@ -1,5 +1,5 @@
 import { SITE } from "@/lib/site";
-import { COMPARISON_ROWS, COMPARISON_SOURCES } from "@/content/comparison";
+import { COMPARISON_AS_OF, COMPARISON_ROWS, COMPARISON_SOURCES } from "@/content/comparison";
 import { ExternalLink } from "@/components/external-link";
 
 export function ComparisonTable() {
@@ -44,11 +44,11 @@ export function ComparisonTable() {
             </ExternalLink>
           </span>
         ))}
-        . Státní aplikace má být dostupná od 1. 12. 2026 na{" "}
+        . Státní aplikace se má podle Finanční správy spustit od 1. 12. 2026 na{" "}
         <ExternalLink href="https://eet.gov.cz" className="underline underline-offset-2">
           eet.gov.cz
         </ExternalLink>
-        . Stav k 2. 10. 2026. MOJE eet zatím není spuštěná – údaje upřesníme podle oficiálního popisu Finanční správy. Pokud najdete nepřesnost, napište nám na{" "}
+        . Stav k {COMPARISON_AS_OF}. MOJE eet zatím není spuštěná – po spuštění údaje ověříme v aplikaci. Pokud najdete nepřesnost, napište nám na{" "}
         <a href={`mailto:${SITE.email}`} className="underline underline-offset-2">
           {SITE.email}
         </a>

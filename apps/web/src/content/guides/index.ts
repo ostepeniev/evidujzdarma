@@ -27,6 +27,10 @@ import { slevaNaDaniZaEet } from "./sleva-na-dani-za-eet";
 import { spropitneAEet } from "./spropitne-a-eet";
 import { stornoAVraceniEet } from "./storno-a-vraceni-eet";
 import { trzbaZaJineho } from "./trzba-za-jineho";
+// S12 (22. 11. 2026): koncepty do revize
+import { doplnkovyProdejEet } from "./doplnkovy-prodej-eet";
+import { nezobrazujeSeAktivovatEet } from "./nezobrazuje-se-aktivovat-eet";
+import { poukazyAVoucheryEet } from "./poukazy-a-vouchery-eet";
 
 /**
  * Registr návodů. Nový návod: vytvořte soubor `<slug>.ts` exportující `Guide`
@@ -64,6 +68,10 @@ export const GUIDES: readonly Guide[] = [
   slevaNaDaniZaEet,
   eet20VsEet10,
   glosarEet,
+  // S12 (22. 11. 2026): koncepty do revize
+  nezobrazujeSeAktivovatEet,
+  poukazyAVoucheryEet,
+  doplnkovyProdejEet,
 ];
 
 const BY_SLUG = new Map(GUIDES.map((g) => [g.slug, g]));

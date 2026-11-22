@@ -12,13 +12,14 @@ export const ACCOUNTANT_REWARD_RULES_VERSION_LABEL = "3. 11. 2026";
  * Verze zásad ochrany osobních údajů (R8.2: odhlášení z novinek ≠ zrušení předregistrace; R15.3: měření návštěvnosti; R17.4: UTM;
  * S3: zveřejněný katalog firem – informace podle čl. 14 GDPR; S4: souhlas s cookies a značky třetích stran po souhlasu;
  * S4b: Microsoft Clarity; S5: poptávka služby Nastavení EET na klíč; S10: Google Analytics 4 a Meta Pixel po souhlasu; S11: uložené poptávky služeb, kód účetní
- * kanceláře v odkazu na nastavení a funkční cookie ez_ucetni_ref).
+ * kanceláře v odkazu na nastavení a funkční cookie ez_ucetni_ref; S12: účetní vidí u propojeného klienta údaje evidenčních jednotek
+ * pro hromadný import do DIS+).
  * Datum = den nasazení; posune-li se, upravte ho. Při zapnutí nové značky v lib/tracking-config.ts verzi zvyšte.
  */
-export const PRIVACY_VERSION = "2026-11-03-s11";
-export const PRIVACY_VERSION_LABEL = "3. 11. 2026";
+export const PRIVACY_VERSION = "2026-11-22-s12";
+export const PRIVACY_VERSION_LABEL = "22. 11. 2026";
 /** Datum platnosti zásad pro <time dateTime> (R8.5, Д-9). */
-export const PRIVACY_DATE_ISO = "2026-11-03";
+export const PRIVACY_DATE_ISO = "2026-11-22";
 /**
  * Verze textu marketingového souhlasu v předregistraci (prereg-form.tsx). Ukládá se jako doklad souhlasu
  * (preregistrations.consent_evidence = "souhlas:<verze>"); při změně textu zvýšit.

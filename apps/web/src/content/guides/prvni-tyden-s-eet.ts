@@ -104,11 +104,13 @@ export const prvniTydenSEet: Guide = {
       { name: "Proškolte obsluhu", text: "Co se eviduje (karta, hotovost, QR, stravenka) a co ne (převod na fakturu, uplatnění dárkového poukazu)." },
     ],
   },
-  sources: [SOURCES.seminarVyvojari, SOURCES.zakonUplne, SOURCES.harmonogram, SOURCES.prakticke],
+  sources: [SOURCES.fsTzPrihlasit, SOURCES.seminarVyvojari, SOURCES.zakonUplne, SOURCES.harmonogram, SOURCES.prakticke],
   related: ["eet-2-0-v-prikladech", "spropitne-a-eet", "eet-bez-internetu", "storno-a-vraceni-eet"],
   published: "2026-10-28",
   updated: "2026-10-28",
-  changelog: [{ date: "2026-10-28", text: "Nový návod: modelové příběhy podle příkladů Ministerstva financí a Finanční správy." }],
+  changelog: [
+    { date: "2026-11-22", text: "Leden 2027 podle tiskové zprávy GFŘ z 2. 11. 2026: pilotní režim, evidovat se musí od 1. 1., plnění povinností Finanční správa v lednu vymáhat nebude." },
+    { date: "2026-10-28", text: "Nový návod: modelové příběhy podle příkladů Ministerstva financí a Finanční správy." }],
   reviewedBy: null,
   basis: "official",
 };

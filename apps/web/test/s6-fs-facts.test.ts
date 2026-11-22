@@ -23,6 +23,8 @@ const LATER_MODIFIED: Partial<Record<(typeof CHANGED)[number], string>> = {
   "eet-kadernictvi-kosmetika": "2026-10-31",
   "kontaktni-platba": "2026-10-31",
   "koho-se-eet-tyka": "2026-10-31",
+  // S12 (22. 11. 2026): odpověď o MOJE eet bez připojení podle eet.gov.cz
+  "eet-bez-internetu": "2026-11-22",
 };
 
 describe("S6-FS – facts from the MF/FS presentation", () => {

@@ -1,5 +1,6 @@
 "use client";
 
+import { DisUnitsDownload } from "@/components/dis-units-download";
 import Link from "next/link";
 import { useState } from "react";
 import { PartnerBadge } from "@/components/accountant/partner-badge";
@@ -354,6 +355,20 @@ function ExportBox({ clients }: { clients: Client[] }) {
           <a href={`/api/kabinet/export/pohoda?klient=${ico}&od=${from}&do=${to}&pokladna=${encodeURIComponent(cashAccount)}`} className="btn-secondary">
             Stáhnout Pohoda XML
           </a>
+        </div>
+      )}
+      {/* S12 (22. 11. 2026): CSV pro hromadný import evidenčních jednotek klienta do DIS+ (formát GFŘ z 3. 11. 2026) */}
+      {clients.length > 0 && (
+        <div id="import-jednotek" className="scroll-mt-24 border-t border-line pt-4">
+          <h3 className="font-semibold">Hromadný import evidenčních jednotek do DIS+</h3>
+          <p className="max-w-2xl text-sm text-muted">
+            Jednotky vybraného klienta (výše v poli Klient), které ještě nemají číslo z DIS+, jako soubor CSV ve formátu Finanční
+            správy. Kód CZ-NACE a adresu (nejlépe kód adresního místa RÚIAN) doplňuje klient v nastavení pokladny. Soubor nahraje
+            v DIS+ klient, nebo vy, pokud vám udělil oprávnění „Prohlížení a odesílání všeho“ či plné pověření pro agendu EET.
+          </p>
+          <div className="mt-3">
+            <DisUnitsDownload key={ico} endpoint={`/api/kabinet/export/dis-jednotky?klient=${ico}`} />
+          </div>
         </div>
       )}
     </div>

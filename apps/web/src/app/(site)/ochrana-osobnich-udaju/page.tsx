@@ -117,7 +117,7 @@ const PURPOSES: readonly { purpose: string; data: string; basis: string; retenti
   },
   {
     purpose: "Účetní kabinet",
-    data: "U účetní: e-mail, název a IČO kanceláře, seznam IČO a popisků klientů, kód kanceláře pro odkaz na nastavení na klíč. U klienta, který pozvánku přijme: stav připravenosti na EET a export tržeb, které účetní uvidí. U klienta, který poptá nastavení přes odkaz účetní: název firmy, IČO, datum a stav poptávky, které účetní uvidí kvůli odměně (e-mail klienta ne).",
+    data: "U účetní: e-mail, název a IČO kanceláře, seznam IČO a popisků klientů, kód kanceláře pro odkaz na nastavení na klíč. U klienta, který pozvánku přijme: stav připravenosti na EET, export tržeb a údaje evidenčních jednotek pro hromadný import do DIS+ (název, druh, adresa nebo kód adresního místa, kód CZ-NACE, lokalizace a příznak nepřímého zastoupení), které účetní uvidí. U klienta, který poptá nastavení přes odkaz účetní: název firmy, IČO, datum a stav poptávky, které účetní uvidí kvůli odměně (e-mail klienta ne).",
     basis:
       "Plnění smlouvy s účetní – čl. 6 odst. 1 písm. b) GDPR. Seznam IČO klientů je oprávněný zájem účetní na správě klientů – písm. f). Sdílení dat z pokladny jen po přijetí pozvánky klientem.",
     retention: "Po dobu trvání účtu účetní. Propojení s klientem trvá, dokud ho klient nebo účetní nezruší (klient ho zruší v nastavení pokladny).",

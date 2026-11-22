@@ -66,6 +66,10 @@ export const UCETNI: readonly HelpArticle[] = [
           {
             p: "U propojeného klienta se stav **DIS+**, **Jednotky**, **Certifikát** a **1. tržba** zjišťuje z pokladny automaticky; u ostatních ho účetní odškrtává ručně. Export tržeb propojených klientů stáhne tlačítkem **Stáhnout CSV**. Do pokladny samotné účetní nevstupuje.",
           },
+          {
+            // S12 (22. 11. 2026)
+            p: "Jednotky klienta pro DIS+ stáhne účetní tlačítkem **Stáhnout CSV pro import do DIS+**. Aby je v DIS+ za klienta nahrála, potřebuje od něj oprávnění „Prohlížení a odesílání všeho“ nebo plné pověření pro agendu EET – viz [Pro účetní](/ucetni#import-jednotek).",
+          },
         ],
       },
       {
@@ -79,6 +83,6 @@ export const UCETNI: readonly HelpArticle[] = [
       },
     ],
     related: ["export-pro-ucetni", "firma-a-ares", "bezpecnost"],
-    updated: "2026-10-17",
+    updated: "2026-11-22",
   },
 ];

@@ -215,6 +215,7 @@ export const glosarEet: Guide = {
     },
   ],
   sources: [
+    SOURCES.fsTzPrihlasit,
     SOURCES.seminarVyvojari,
     SOURCES.harmonogram,
     SOURCES.jakZacit,
@@ -231,6 +232,7 @@ export const glosarEet: Guide = {
   published: "2026-10-01",
   updated: "2026-10-03",
   changelog: [
+    { date: "2026-11-22", text: "Leden 2027 podle tiskové zprávy GFŘ z 2. 11. 2026: pilotní režim, evidovat se musí od 1. 1., plnění povinností Finanční správa v lednu vymáhat nebude." },
     { date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
     { date: "2026-10-03", text: "Opraveno podle semináře Finanční správy pro vývojáře: záloha a doplatek jsou dvě běžné platby, dárkový poukaz se eviduje jen při prodeji (jeho uplatnění není platbou) a částku určenou k čerpání a čerpání uvádí pokladna jen u kreditu." },
     {

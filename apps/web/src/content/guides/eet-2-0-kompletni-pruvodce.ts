@@ -381,7 +381,7 @@ export const eet20KompletniPruvodce: Guide = {
         },
         {
           ul: [
-            "zda bude Finanční správa v lednu 2027 pokutovat – oficiálně to stanoveno není, evidovat se ale musí od 1. 1. 2027,",
+            "jak bude Finanční správa postupovat po pilotním lednu – v lednu podle tiskové zprávy GFŘ z 2. 11. 2026 plnění povinností vymáhat nebude, evidovat se ale musí od 1. 1. 2027,",
             "jak zacházet s místním poplatkem z pobytu, vratnými kaucemi a spropitným,",
             "převody provedené „u pokladny“ bez QR kódu a další hraniční případy kontaktní platby,",
             "konkrétní limity výjimky pro drobnou vedlejší činnost spolků,",
@@ -415,7 +415,7 @@ export const eet20KompletniPruvodce: Guide = {
     },
     {
       q: "Musím v lednu 2027 evidovat a hrozí už pokuta?",
-      a: `Ano, evidovat musíte. Zákon je účinný od 1. 1. 2027 (${FACTS.law.sections.effect}) a pokuta až ${formatKc(FACTS.penalties.max)} (${FACTS.law.sections.penalty}) platí od stejného dne. Finanční správa v lednu počítá s pilotním režimem s důrazem na metodickou podporu; jak bude postupovat při kontrolách, oficiálně stanoveno není. Test si udělejte v prosinci 2026.`,
+      a: `Ano, evidovat musíte. Zákon je účinný od 1. 1. 2027 (${FACTS.law.sections.effect}) a pokuta až ${formatKc(FACTS.penalties.max)} (${FACTS.law.sections.penalty}) platí od stejného dne. Leden je podle Finanční správy určen pro pilotní režim projektu a plnění povinností v něm vymáhat nebude (tisková zpráva GFŘ z 2. 11. 2026); od února počítá s ostrým provozem. Test si udělejte v prosinci 2026.`,
     },
     {
       q: "Musím evidovat platby kartou?",
@@ -471,6 +471,7 @@ export const eet20KompletniPruvodce: Guide = {
     },
   ],
   sources: [
+    SOURCES.fsTzPrihlasit,
     SOURCES.seminarVyvojari,
     SOURCES.sbirka,
     SOURCES.prezident,
@@ -499,6 +500,7 @@ export const eet20KompletniPruvodce: Guide = {
   published: "2026-10-01",
   updated: "2026-10-31",
   changelog: [
+    { date: "2026-11-22", text: "Leden 2027 podle tiskové zprávy GFŘ z 2. 11. 2026: pilotní režim, evidovat se musí od 1. 1., plnění povinností Finanční správa v lednu vymáhat nebude." },
     { date: "2026-10-31", text: "Doplněna otázka, co musí obsahovat doklad pro zákazníka (vzor účtenky), a upřesněn odkaz na kauce u ubytování." },
     { date: "2026-10-17", text: "Doplněny odkazy na návody o slevě na dani a o stornu." },
     { date: "2026-10-17", text: "Doplněny odkazy na nové návody (gastronomie, trhy a stánky, e-shop, pokladna v mobilu), na generátor dokladu o prodeji a na checklist EET 2.0." },

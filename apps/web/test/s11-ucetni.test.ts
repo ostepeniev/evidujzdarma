@@ -116,9 +116,10 @@ describe("S11 – privacy policy", () => {
     expect(text).toContain("Záznam poptávky 12 měsíců od poslední změny jejího stavu.");
     expect(text).not.toContain("zvláštní databázi poptávek nevedeme");
     const legal = await import("@/lib/legal");
-    expect(legal.PRIVACY_VERSION).toBe("2026-11-03-s11");
-    expect(legal.PRIVACY_VERSION_LABEL).toBe("3. 11. 2026");
-    expect(legal.PRIVACY_DATE_ISO).toBe("2026-11-03");
+    // S12 (22. 11. 2026) posunulo verzi zásad dál (údaje jednotek pro import do DIS+ v Účetním kabinetu)
+    expect(legal.PRIVACY_VERSION).toBe("2026-11-22-s12");
+    expect(legal.PRIVACY_VERSION_LABEL).toBe("22. 11. 2026");
+    expect(legal.PRIVACY_DATE_ISO).toBe("2026-11-22");
     expect(legal.RETENTION.serviceOrderMonths).toBe(12);
   });
 });

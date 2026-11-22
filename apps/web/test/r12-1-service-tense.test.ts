@@ -68,7 +68,8 @@ describe("R12.1 – the last present-tense texts about the register", () => {
     const { getGuide } = await import("@/content/guides");
     const log = getGuide("eet-bez-internetu")!.changelog ?? [];
     expect(log).toContainEqual({ date: "2026-10-07", text: "Návod prošel odbornou revizí (Helena Jeřábková)." });
-    expect(log.filter((c) => c.date > "2026-10-07").map((c) => c.date)).toEqual(["2026-10-28"]);
+    // S12 (22. 11. 2026) přidalo věcnou úpravu o MOJE eet bez připojení – opět vlastní záznam nahoru
+    expect(log.filter((c) => c.date > "2026-10-07").map((c) => c.date)).toEqual(["2026-11-22", "2026-10-28"]);
   });
 
   it("open (mock) – today's texts come back", async () => {

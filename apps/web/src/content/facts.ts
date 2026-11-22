@@ -7,7 +7,7 @@
  * definitivně publikované (např. paušální daň 2027) — web je tak i označuje.
  */
 
-export const FACTS_UPDATED = "2026-10-15";
+export const FACTS_UPDATED = "2026-11-22";
 
 export interface Source {
   label: string;
@@ -235,6 +235,58 @@ export const SOURCES = {
     label: "VZP: Plátce pojistného – zaměstnavatel (třetina pojistného hradí zaměstnanec)",
     url: "https://www.vzp.cz/platci/informace/povinnosti-platcu-metodika/2-4-platce-pojistneho-zamestnavatel",
   },
+  // --- S12 (22. 11. 2026): ověřeno na financnisprava.gov.cz, app.fs.gov.cz a eet.gov.cz ---
+  fsTzPrihlasit: {
+    label: "Finanční správa: EET 2.0 – podnikatelé se již mohou přihlásit (tisková zpráva GFŘ, 2. 11. 2026)",
+    url: "https://financnisprava.gov.cz/cs/financni-sprava/media-a-verejnost/tiskove-zpravy-gfr/tiskove-zpravy-2026/eet-2-0-podnikatele-se-jiz-mohou-prihlasit",
+  },
+  fsDotazOpravneni: {
+    label: "Finanční správa: Proč se mi v DIS+ nezobrazuje možnost aktivace EET (dotaz veřejnosti, 5. 11. 2026)",
+    url: "https://app.fs.gov.cz/dotazy-verejnosti/dotaz/proc-se-mi-v-dis-nezobrazuje-moznost-aktivace-eet-i-kdyz-mam-v-nastaveni-a-informace-o-subjektu-v-dis-pridelene-opravneni-„prohlizeni-vseho“-nebo-„prohlizeni-vseho-vcetne-prava-poverit-pristupem“-5652",
+  },
+  fsDotazPovereniDis: {
+    label: "Finanční správa: Mám pověření k přístupu do DIS+ a nemohu vstoupit do sekce EET (dotaz veřejnosti)",
+    url: "https://app.fs.gov.cz/dotazy-verejnosti/dotaz/mam-povereni-k-pristupu-do-dis-a-nemohu-vstoupit-do-sekce-eet-nebo-nemam-pristup-k-nekterym-zalozkam-co-mam-delat-4086",
+  },
+  fsDotazMojeEet: {
+    label: "Finanční správa: Komu je webová aplikace MOJE eet určena a jaká má omezení (dotaz veřejnosti, 18. 11. 2026)",
+    url: "https://app.fs.gov.cz/dotazy-verejnosti/dotaz/komu-je-webova-aplikace-moje-eet-urcena-a-jake-jsou-jeji-hlavni-moznosti-ci-omezeni-5756",
+  },
+  fsDotazMojeEetExport: {
+    label: "Finanční správa: Souhrn a export tržeb v MOJE eet (dotaz veřejnosti, 18. 11. 2026)",
+    url: "https://app.fs.gov.cz/dotazy-verejnosti/dotaz/obsahuje-webova-aplikace-moje-eet-souhrn-evidovanych-trzeb-a-moznost-exportu-trzeb-ci-vystavenych-dokladu-uctenek-za-zvolene-obdobi-napr-den-mesic-nebo-rok-5734",
+  },
+  fsDotazOnline: {
+    label: "Finanční správa: Existuje i jiný než online režim evidence tržeb? (dotaz veřejnosti, 22. 10. 2026)",
+    url: "https://app.fs.gov.cz/dotazy-verejnosti/dotaz/existuje-i-nejaky-jiny-nez-online-rezim-evidence-trzeb-5561",
+  },
+  fsDotazPoukazy: {
+    label: "Finanční správa: Podléhají kupony a poukázky (vouchery) evidenci tržeb? (dotaz veřejnosti, 22. 10. 2026)",
+    url: "https://app.fs.gov.cz/dotazy-verejnosti/dotaz/podlehaji-kupony-a-poukazky-vouchery-evidenci-trzeb-pokud-ano-kdy-vznika-povinnost-je-zaevidovat-5525",
+  },
+  fsDotazSpropitne: {
+    label: "Finanční správa: Jaká pravidla platí pro spropitné (dotaz veřejnosti, 19. 10. 2026)",
+    url: "https://app.fs.gov.cz/dotazy-verejnosti/dotaz/jaka-pravidla-plati-pro-spropitne-z-hlediska-evidence-trzeb-a-jeho-danoveho-posouzeni-5435",
+  },
+  fsDotazyEet: { label: "Finanční správa: Dotazy veřejnosti – EET 2.0", url: "https://app.fs.gov.cz/dotazy-verejnosti/dotaz/kategorie/EET" },
+  eetAutomaty: {
+    label: "eet.gov.cz: Provozuji prodejní automat (metodická informace k automatům a samoobslužným zařízením)",
+    url: "https://eet.gov.cz/cs/koho-se-eet-tyka/modelove-situace/provozuji-prodejni-automat",
+  },
+  fsImportJednotekCsv: {
+    label: "GFŘ: Import evidenčních jednotek EET – popis struktury CSV souboru (3. 11. 2026, PDF)",
+    url: "https://eet.gov.cz/assets/cs/cmsmedia/import_evidencnich_jednotek-popis_strukt.pdf",
+  },
+  podnikatelRegistrace: {
+    label: "Podnikatel.cz: K EET 2.0 se zatím přihlásilo 31 tisíc podnikatelů (18. 11. 2026)",
+    url: "https://www.podnikatel.cz/clanky/k-eet-2-0-se-zatim-prihlasilo-31-tisic-podnikatelu-celkem-jich-ma-byt-az-600-tisic/",
+  },
+  podnikatelOpravneni: {
+    label: "Podnikatel.cz: Nezobrazuje se vám aktivace EET 2.0? V DIS+ musíte nastavit správné oprávnění (10. 11. 2026)",
+    url: "https://www.podnikatel.cz/clanky/nezobrazuje-se-vam-aktivace-eet-2-0-musite-si-v-dis-nastavit-spravne-opravneni/",
+  },
+  ruianAdresniMista: { label: "ČÚZK: Veřejný dálkový přístup do RÚIAN – vyhledání adresního místa", url: "https://vdp.cuzk.gov.cz/vdp/ruian/adresnimista" },
+  czNace: { label: "ČSÚ: Klasifikace ekonomických činností (CZ-NACE) platná od 1. 1. 2025", url: "https://csu.gov.cz/klasifikace-ekonomickych-cinnosti-cz-nace-platna-od-1-1-2025" },
 } as const satisfies Record<string, Source>;
 
 export interface TimelineItem {
@@ -265,7 +317,7 @@ export const TIMELINE: readonly TimelineItem[] = [
     dateLabel: "1. 1. 2027",
     title: "Účinnost zákona – evidujte",
     action:
-      "Zákon nabývá účinnosti a evidovat se musí od prvního dne – žádnou výjimku pro leden nestanoví. Finanční správa v lednu počítá s pilotním režimem projektu a zaměří se na metodickou podporu podnikatelů.",
+      "Zákon nabývá účinnosti a evidovat se musí od prvního dne – žádnou výjimku pro leden nestanoví. Leden je podle Finanční správy určen pro pilotní režim projektu: tržby se evidují běžně, plnění povinností ale Finanční správa v lednu vymáhat nebude.",
     source: SOURCES.fsDotazPilot,
   },
   {
@@ -337,10 +389,11 @@ export const FACTS = {
   },
   /** Leden 2027 */
   pilot: {
+    // S12 (22. 11. 2026): tisková zpráva GFŘ z 2. 11. 2026 – „Leden je určen pro pilotní režim projektu“, FS „nebude plnění povinností vymáhat“
     summary:
-      "Zákon je účinný od 1. 1. 2027 a s žádným fázováním nepočítá. Finanční správa v lednu počítá s tzv. pilotním režimem projektu, kdy se zaměří na metodickou podporu – povinnost evidovat ale platí od prvního dne. Zda bude v lednu pokutovat, oficiálně stanoveno není. Evidujte proto od 1. 1. 2027.",
-    short: "Evidovat se musí od 1. 1. 2027 – „pilotní“ leden není zákonná výjimka.",
-    sources: [SOURCES.fsDotazPilot, SOURCES.harmonogram, SOURCES.psp],
+      "Zákon je účinný od 1. 1. 2027 a s žádným fázováním nepočítá. Leden je podle Finanční správy určen pro pilotní režim projektu: tržby se evidují běžně a Finanční správa v lednu plnění povinností vymáhat nebude (tisková zpráva GFŘ z 2. 11. 2026) – povinnost evidovat ale platí od prvního dne. Od února počítá s ostrým provozem. Evidujte proto od 1. 1. 2027.",
+    short: "Evidovat se musí od 1. 1. 2027 – „pilotní“ leden není zákonná výjimka, jen Finanční správa v lednu plnění povinností nebude vymáhat.",
+    sources: [SOURCES.fsTzPrihlasit, SOURCES.fsDotazPilot, SOURCES.harmonogram, SOURCES.psp],
   },
   /** Co se eviduje */
   evidenced: {
@@ -433,9 +486,28 @@ export const FACTS = {
     sources: [SOURCES.pokuty, SOURCES.zakonUplne],
   },
   mojeEet: {
+    // S12 (22. 11. 2026): podle dotazů veřejnosti FS z 18. 11. 2026 (č. 5756 a 5734) a stránky Praktické informace
     summary:
-      "MOJE eet je bezplatná webová aplikace Finanční správy (od 1. 12. 2026): až 2 evidenční jednotky a přístup pro 2 zaměstnance, katalog zboží, PDF doklady, dvoufázové ověření při přihlášení. Zda bude fungovat bez připojení k internetu, Finanční správa zatím nezveřejnila; podle dostupných informací připojení vyžaduje.",
-    sources: [SOURCES.mojeEet, SOURCES.mojeEet2fa],
+      "MOJE eet je bezplatná webová aplikace Finanční správy, jejíž spuštění se předpokládá od 1. 12. 2026. Je určena hlavně nejmenším podnikatelům: nejvýš 2 evidenční jednotky, až 4 zaměstnanecké účty, vlastní katalog nejvýš 42 položek, PDF doklady a dvoufázové ověření při přihlášení. Rozpis sazeb DPH neumožňuje, proto podle Finanční správy nebude vhodná například pro plátce DPH. Běží v prohlížeči na zařízení připojeném k internetu a datovou zprávu umí automaticky odeslat znovu; samostatný režim bez připojení Finanční správa nezveřejnila.",
+    sources: [SOURCES.fsDotazMojeEet, SOURCES.prakticke, SOURCES.mojeEet, SOURCES.mojeEet2fa],
+  },
+  /** S12 (22. 11. 2026): kolik podnikatelů se přihlásilo k EET v DIS+ (mluvčí GFŘ pro Podnikatel.cz). */
+  registrations: {
+    count: 30_895,
+    asOf: "15. 11. 2026",
+    estimate: 600_000,
+    summary:
+      "K 15. 11. 2026 se k evidenci tržeb v DIS+ přihlásilo 30 895 daňových subjektů (mluvčí Generálního finančního ředitelství pro Podnikatel.cz). Ministerstvo financí odhaduje, že se EET týká až 600 tisíc podnikatelů – samo ale píše, že jde o velmi hrubý odhad.",
+    activation:
+      "Po klepnutí na Aktivovat v DIS+ se funkce EET zpřístupní podle Podnikatel.cz nejpozději do 48 hodin – s aktivací proto nečekejte na poslední prosincové dny.",
+    sources: [SOURCES.podnikatelRegistrace],
+  },
+  /** S12 (22. 11. 2026): oprávnění v DIS+ pro aktivaci EET (dotaz veřejnosti FS ze 5. 11. 2026) */
+  disPermissions: {
+    summary:
+      "Oprávnění „Prohlížení všeho“ a „Prohlížení všeho včetně práva pověřit přístupem“ jsou jen pro čtení – k agendě EET ani k její aktivaci nestačí. Kdo EET v DIS+ aktivuje za podnikatele, potřebuje oprávnění „Prohlížení a odesílání všeho“, nebo plné pověření pro agendu EET. Nastavuje se v DIS+ v části Nastavení a informace o subjektu → Uživatelé a oprávnění.",
+    whoSets: "Přístupová práva nastavuje ten, kdo přístup do DIS+ přidělil – obvykle sám podnikatel. Kdo práva nemá, musí ho požádat o jejich rozšíření.",
+    sources: [SOURCES.fsDotazOpravneni, SOURCES.fsDotazPovereniDis, SOURCES.podnikatelOpravneni],
   },
 } as const;
 

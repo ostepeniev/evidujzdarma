@@ -20,7 +20,7 @@ export const pokladnaVMobiluZdarma: Guide = {
     "Pokladna odesílá datovou zprávu o každé kontaktní platbě a přijímá potvrzovací kód (POK).",
     "Pokladní certifikát je zdarma v DIS+, platí 366 dní a jeden certifikát lze použít pro více pokladen.",
     "Bez signálu se prodává dál; tržba se odešle nejpozději do 48 hodin.",
-    "Státní MOJE eet bude od 1. 12. 2026 zdarma – pro nejvýše 2 evidenční jednotky a 2 zaměstnance.",
+    "Státní MOJE eet bude podle Finanční správy od 1. 12. 2026 zdarma – pro nejvýše 2 evidenční jednotky a až 4 zaměstnanecké účty.",
   ],
   sections: [
     {
@@ -48,7 +48,7 @@ export const pokladnaVMobiluZdarma: Guide = {
       blocks: [
         { p: FACTS.mojeEet.summary },
         {
-          p: "Když vám tyto parametry stačí, je MOJE eet bezplatná volba přímo od státu. Pokud potřebujete víc evidenčních jednotek nebo pokladních, případně jistotu prodeje bez signálu a exportu pro účetní (u MOJE eet je Finanční správa zatím nezveřejnila), porovnejte ji s nezávislými pokladnami – například v našem [srovnání EvidujZdarma a MOJE eet](/srovnani/moje-eet), které uvádí jen zveřejněné údaje.",
+          p: "Když vám tyto parametry stačí, je MOJE eet bezplatná volba přímo od státu. Pokud potřebujete víc evidenčních jednotek nebo pokladních, případně jistotu prodeje bez signálu a export tržeb pro účetní přímo z pokladny (MOJE eet podle Finanční správy exportuje vystavené doklady v PDF, soubor tržeb v CSV nabízí až DIS+; režim bez připojení Finanční správa nezveřejnila), porovnejte ji s nezávislými pokladnami – například v našem [srovnání EvidujZdarma a MOJE eet](/srovnani/moje-eet), které uvádí jen zveřejněné údaje.",
         },
       ],
     },
@@ -134,7 +134,7 @@ export const pokladnaVMobiluZdarma: Guide = {
     { q: "Můžu mít stejný certifikát v mobilu i v tabletu?", a: FACTS.certificate.summary },
     {
       q: "Funguje pokladna v mobilu bez internetu?",
-      a: `Záleží na aplikaci. Zákon to umožňuje: ${FACTS.offline.summary} Zda bude bez připojení fungovat MOJE eet, Finanční správa zatím nezveřejnila.`,
+      a: `Záleží na aplikaci. Zákon to umožňuje: ${FACTS.offline.summary} Samostatný režim bez připojení u MOJE eet Finanční správa nezveřejnila – popisuje ji jako aplikaci pro zařízení připojená k internetu s automatickým opakovaným odesláním zprávy.`,
     },
     {
       q: "Musím mít pokladnu, když mi všichni platí převodem na fakturu?",
@@ -161,6 +161,8 @@ export const pokladnaVMobiluZdarma: Guide = {
     SOURCES.fsPlayground,
     SOURCES.mojeEet,
     SOURCES.mojeEet2fa,
+    SOURCES.fsDotazMojeEet,
+    SOURCES.fsDotazMojeEetExport,
     SOURCES.kdoMusi,
     SOURCES.prezident,
     SOURCES.zos,
@@ -169,6 +171,7 @@ export const pokladnaVMobiluZdarma: Guide = {
   published: "2026-10-07",
   updated: "2026-10-31",
   changelog: [
+    { date: "2026-11-22", text: "Údaje o MOJE eet podle dotazů veřejnosti Finanční správy z 18. 11. 2026: až 4 zaměstnanecké účty, export dokladů v PDF, CSV tržeb v DIS+." },
     { date: "2026-10-31", text: "Doplněna část o tiskárně na účtenky: kdy ji potřebujete, připojení termotiskárny přes Bluetooth a elektronický doklad místo papíru." },
     { date: "2026-10-17", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
     { date: "2026-10-07", text: "Koncept návodu – před odbornou revizí." },

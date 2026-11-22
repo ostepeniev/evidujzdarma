@@ -17,7 +17,21 @@ export const POST = ownerRoute(async ({ req, accountId }) => {
   if (n >= limit) throw new HttpError(400, `Zdarma můžete mít ${limit} evidenční jednotky. Více v Premium.`);
   const [unit] = await db
     .insert(schema.evidenceUnits)
-    .values({ accountId, type: input.type, label: input.label, fsUnitId: input.fsUnitId ?? null, address: input.address ?? null, changedAt: new Date() })
+    .values({
+      accountId,
+      type: input.type,
+      label: input.label,
+      fsUnitId: input.fsUnitId ?? null,
+      address: input.address ?? null,
+      // S12: údaje pro hromadný import do DIS+ (nepovinné)
+      czNace: input.czNace ?? null,
+      ruianCode: input.ruianCode ?? null,
+      locationText: input.locationText ?? null,
+      vehicleType: input.vehicleType ?? null,
+      vehicleNote: input.vehicleNote ?? null,
+      indirectRepresentation: input.indirectRepresentation ?? false,
+      changedAt: new Date(),
+    })
     .returning();
   return Response.json({ unit });
 });

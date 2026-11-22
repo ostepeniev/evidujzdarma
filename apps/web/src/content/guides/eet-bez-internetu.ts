@@ -86,14 +86,15 @@ export const eetBezInternetu: Guide = {
     },
     {
       q: "Funguje státní aplikace MOJE eet bez signálu?",
-      a: "Finanční správa zatím nezveřejnila, zda MOJE eet bude fungovat bez připojení; podle dostupných informací ([Podnikatel.cz](https://www.podnikatel.cz/clanky/jak-bude-fungovat-aplikace-zdarma-moje-eet-zjistili-jsme-detaily-od-financni-spravy/)) připojení vyžaduje. Pokladna EvidujZdarma tržby bez signálu ukládá a odešle je automaticky později.",
+      a: "Samostatný režim bez připojení Finanční správa u MOJE eet nezveřejnila. Na eet.gov.cz ji popisuje jako webovou aplikaci pro zařízení připojená k internetu, která umí datovou zprávu automaticky odeslat znovu; podle dostupných informací ([Podnikatel.cz](https://www.podnikatel.cz/clanky/jak-bude-fungovat-aplikace-zdarma-moje-eet-zjistili-jsme-detaily-od-financni-spravy/)) připojení vyžaduje. Pokladna EvidujZdarma tržby bez signálu ukládá a odešle je automaticky později.",
     },
   ],
-  sources: [SOURCES.prakticke, SOURCES.fsFaq, SOURCES.seminarVyvojari, SOURCES.prezident, SOURCES.pokuty, SOURCES.mojeEet],
+  sources: [SOURCES.prakticke, SOURCES.fsFaq, SOURCES.seminarVyvojari, SOURCES.prezident, SOURCES.pokuty, SOURCES.mojeEet, SOURCES.fsDotazOnline],
   related: ["eet-2-0-kompletni-pruvodce", "evidencni-jednotka", "pokuty-eet", "eet-trhy-stanky"],
   published: "2026-10-01",
-  updated: "2026-10-28",
+  updated: "2026-11-22",
   changelog: [
+    { date: "2026-11-22", text: "Odpověď o MOJE eet bez připojení podle stránky Praktické informace na eet.gov.cz." },
     {
       date: "2026-10-28",
       text: "Doplněno podle prezentace Ministerstva financí a Finanční správy: tržbu odeslat bezodkladně po výpadku, povinnost trvá i po 48 hodinách a co se při opakovaném odeslání mění.",

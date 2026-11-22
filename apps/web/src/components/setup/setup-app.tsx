@@ -11,6 +11,8 @@ import { pragueToday } from "@/lib/prague-time";
 import { ApiError, call, UNIT_TYPE_LABEL, type AccountStateDto } from "./api";
 import { AresCard, aresOutcome, isCompleteIco, type AresOutcome } from "./ares-card";
 import { CatalogImport } from "./catalog-import";
+import { UnitDisFields, unitDisDraft, unitDisPatch, type UnitDisDraft } from "./unit-dis-fields";
+import { DisUnitsDownload } from "@/components/dis-units-download";
 import { modeIn } from "@/lib/modes";
 
 const MODE_LABEL: Record<string, string> = { mock: "ukázkový", playground: "Playground", production: "ostrý provoz" };
@@ -399,6 +401,20 @@ function UnitsSection({ state, reload }: { state: State; reload: () => Promise<v
           ))}
         </ul>
       )}
+      {/* S12: CSV pro hromadný import jednotek do DIS+ (formát GFŘ z 3. 11. 2026) */}
+      {units.length > 0 && (
+        <div className="mb-5 rounded-2xl border border-line bg-surface p-4">
+          <p className="font-semibold">Hromadný import do DIS+</p>
+          <p className="mt-1 text-sm text-ink-soft">
+            Jednotky, které ještě nemají číslo z DIS+, stáhnete jako soubor CSV ve formátu Finanční správy a v DIS+ je oznámíte
+            najednou. Každé jednotce nejdřív doplňte v <strong>Upravit</strong> kód CZ-NACE a adresu (nejlépe kód adresního místa
+            RÚIAN).
+          </p>
+          <div className="mt-3">
+            <DisUnitsDownload endpoint="/api/ucet/export/dis-jednotky" />
+          </div>
+        </div>
+      )}
       <form
         className="grid gap-3 sm:grid-cols-2"
         onSubmit={(e) => {
@@ -436,7 +452,7 @@ function UnitsSection({ state, reload }: { state: State; reload: () => Promise<v
 
 function UnitRow({ unit, reload }: { unit: NonNullable<State["units"]>[number]; reload: () => Promise<void> }) {
   const [fsId, setFsId] = useState(unit.fsUnitId ? String(unit.fsUnitId) : "");
-  const [edit, setEdit] = useState<null | { label: string; address: string }>(null);
+  const [edit, setEdit] = useState<null | ({ label: string; address: string } & UnitDisDraft)>(null);
   const { busy, error, run } = useAction();
   if (edit)
     return (
@@ -447,7 +463,7 @@ function UnitRow({ unit, reload }: { unit: NonNullable<State["units"]>[number]; 
           onSubmit={(e) => {
             e.preventDefault();
             void run(async () => {
-              await call(`/api/ucet/jednotky/${unit.id}`, { method: "PATCH", json: { label: edit.label, address: edit.address.trim() || null } });
+              await call(`/api/ucet/jednotky/${unit.id}`, { method: "PATCH", json: { label: edit.label, address: edit.address.trim() || null, ...unitDisPatch(edit) } });
               setEdit(null);
               await reload();
             });
@@ -455,6 +471,7 @@ function UnitRow({ unit, reload }: { unit: NonNullable<State["units"]>[number]; 
         >
           <input aria-label={`Název jednotky ${unit.label}`} required maxLength={120} className="input" value={edit.label} onChange={(e) => setEdit({ ...edit, label: e.target.value })} />
           <input aria-label={`Adresa jednotky ${unit.label}`} maxLength={300} className="input" placeholder="Adresa (tiskne se na účtenku)" value={edit.address} onChange={(e) => setEdit({ ...edit, address: e.target.value })} />
+          <UnitDisFields type={unit.type} label={unit.label} value={edit} onChange={(dis) => setEdit({ ...edit, ...dis })} />
           <div className="flex gap-2 sm:col-span-2">
             <button type="submit" className="btn-secondary px-3 py-2" disabled={busy}>
               Uložit změny
@@ -485,7 +502,7 @@ function UnitRow({ unit, reload }: { unit: NonNullable<State["units"]>[number]; 
       >
         Uložit
       </button>
-      <button type="button" className="px-2 text-sm text-muted hover:text-ink" onClick={() => setEdit({ label: unit.label, address: unit.address ?? "" })}>
+      <button type="button" className="px-2 text-sm text-muted hover:text-ink" onClick={() => setEdit({ label: unit.label, address: unit.address ?? "", ...unitDisDraft(unit) })}>
         Upravit
       </button>
       <button type="button" className="px-2 text-sm text-muted hover:text-danger-600" onClick={() => void run(async () => (await call(`/api/ucet/jednotky/${unit.id}`, { method: "DELETE" }), await reload()))}>

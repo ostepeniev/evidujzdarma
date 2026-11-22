@@ -292,6 +292,22 @@ export const evidenceUnits = pgTable(
     /** IČP z živnostenského rejstříku — jen informativně, NENÍ to id_jednotky */
     icp: varchar("icp", { length: 12 }),
     address: text("address"),
+    /*
+     * S12 (22. 11. 2026): údaje pro hromadný import evidenčních jednotek do DIS+ (CSV podle GFŘ „Import evidenčních
+     * jednotek EET – popis struktury CSV souboru“, 3. 11. 2026). Všechny nepovinné – vyplní je vlastník v nastavení.
+     */
+    /** převažující druh podnikatelské činnosti – kód CZ-NACE z číselníku „Činnosti“ (jen číslice, 1–6) */
+    czNace: varchar("cz_nace", { length: 6 }),
+    /** kód adresního místa RÚIAN (jen číslice, 1–9) – preferovaný způsob zadání adresy (S, A, P) */
+    ruianCode: varchar("ruian_code", { length: 9 }),
+    /** lokalizace volným textem: M popis místa, I adresa webu, D SPZ; u S a P upřesnění adresy */
+    locationText: varchar("location_text", { length: 255 }),
+    /** druh dopravního prostředku (jen D): A N B M V T P L J */
+    vehicleType: varchar("vehicle_type", { length: 1 }),
+    /** upřesnění druhu dopravního prostředku (D a druh J) */
+    vehicleNote: varchar("vehicle_note", { length: 150 }),
+    /** v jednotce přijímá tržby v nepřímém zastoupení (vlastním jménem na účet jiného poplatníka) */
+    indirectRepresentation: boolean("indirect_representation").notNull().default(false),
     active: boolean("active").notNull().default(true),
     /** datum poslední změny – připomínka oznámení změny */
     changedAt: timestamp("changed_at", { withTimezone: true }),
