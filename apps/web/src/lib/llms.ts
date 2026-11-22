@@ -7,7 +7,7 @@ import type { Block, Guide } from "@/content/guides/types";
 import { OPERATOR, SITE, absoluteUrl, REVIEWER } from "./site";
 import { STATIC_PAGES } from "./static-pages";
 import { EXISTING_POS_SERVICE, SETUP_SERVICE } from "@/content/services";
-import { OBOR_LANDINGS, landingPath } from "@/content/obor-landings";
+import { indexableLandings, landingPath } from "@/content/obor-landings";
 import { reviewedMoneyPaths } from "./money-review";
 
 /** S2 B1: kalkulačky a ověření v llms.txt */
@@ -99,7 +99,7 @@ export function llmsTxt(): string {
     // S4: stránky pro obory – rychlá kontrola (fakta z revidovaných návodů) a pokladna pro obor
     "## EET pro obory",
     "",
-    ...OBOR_LANDINGS.map((l) => `- [${l.h1}](${absoluteUrl(landingPath(l))}): ${l.description()}`),
+    ...indexableLandings().map((l) => `- [${l.h1}](${absoluteUrl(landingPath(l))}): ${l.description()}`),
     "",
     "## Služba",
     "",

@@ -359,6 +359,21 @@ export default function AccountantsPage() {
           </ul>
         </section>
 
+        {/* S12: cluster „Doklady pro účetní bez chaosu“ a čekací listina bety Doklady k platbám */}
+        <section aria-labelledby="doklady-h" className="mt-16 flex flex-col gap-4 rounded-2xl border border-line bg-surface p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
+          <div>
+            <h2 id="doklady-h" className="text-2xl font-bold tracking-tight">
+              Doklady od klientů bez upomínání
+            </h2>
+            <p className="mt-2 max-w-2xl text-[17px] text-ink-soft">
+              Návody pro vaše klienty – co vám mají každý měsíc předat a jak párovat platby s doklady. A beta nástroje Doklady k platbám, který klientům připomene chybějící doklady dřív, než se zeptáte vy.
+            </p>
+          </div>
+          <Link href="/ucetnictvi-bez-chaosu" className="btn-secondary shrink-0">
+            Doklady bez chaosu →
+          </Link>
+        </section>
+
         {!KABINET_OPEN && (
           <div id="zpravy" className="mt-16 grid scroll-mt-24 gap-10 lg:grid-cols-2">
             <section aria-labelledby="zpravy-h">

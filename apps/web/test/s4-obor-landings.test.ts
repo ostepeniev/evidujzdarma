@@ -36,7 +36,8 @@ afterEach(() => mockLaunch("closed"));
 describe("S4 – obor landing pages", () => {
   it("gate: three pages, static params, sitemap and llms.txt", async () => {
     const page = await import("@/app/(site)/eet-pro/[obor]/page");
-    expect(page.generateStaticParams().map((p) => p.obor)).toEqual([...SLUGS]);
+    // S12 (22. 11. 2026): za první tři přibyly další obory (koncepty do revize – s12b-obor-landings.test.ts)
+    expect(page.generateStaticParams().map((p) => p.obor).slice(0, 3)).toEqual([...SLUGS]);
     expect(page.dynamicParams).toBe(false);
     const { STATIC_PAGES } = await import("@/lib/static-pages");
     for (const s of SLUGS) expect(STATIC_PAGES.map((p) => p.path)).toContain(`/eet-pro/${s}`);

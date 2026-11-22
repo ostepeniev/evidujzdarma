@@ -17,7 +17,18 @@ const S1_DRAFTS = ["sleva-na-dani-za-eet", "storno-a-vraceni-eet"] as const;
 const REVIEWED_1017 = [...DRAFTS, "eet-gastronomie", ...S1_DRAFTS] as const;
 /** Koncepty, které na revizi ještě čekají – noindex, mimo sitemap, llms.txt i MCP. 17.–25. 10. 2026 žádné; S5 (26. 10.) přidal dva. */
 /** К13 (31. 10. 2026) přidal koncept pokladna-z-eet-1-0. */
-const STILL_DRAFTS: readonly string[] = ["eet-on-nebo-off-modelove-situace", "kdo-pomuze-s-eet", "pokladna-z-eet-1-0"];
+/** S12b (22. 11. 2026) přidal tiskárnu na účtenky a pět článků clusteru „Doklady pro účetní bez chaosu“ (s12b-obor-landings.test.ts). */
+const STILL_DRAFTS: readonly string[] = [
+  "eet-on-nebo-off-modelove-situace",
+  "kdo-pomuze-s-eet",
+  "pokladna-z-eet-1-0",
+  "tiskarna-na-uctenky",
+  "co-ucetni-potrebuje-kazdy-mesic",
+  "chybejici-doklady-k-platbam",
+  "pokladni-kniha-eet-a-banka",
+  "proc-ucetni-chce-faktury",
+  "parovani-plateb-s-doklady",
+];
 const ALL_SOURCES = new Set<string>(Object.values(SOURCES).map((s) => s.url));
 const plain = (s: string) => s.replace(/\*\*/g, "").replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");
 /** Věty: konec věty je .!? a za ním velké písmeno (ne „1. 1. 2027“). */

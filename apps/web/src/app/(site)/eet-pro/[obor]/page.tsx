@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ExternalLink } from "@/components/external-link";
 import { Faq } from "@/components/faq";
 import { QuickCheck } from "@/components/obor/quick-check";
 import { PageHeader } from "@/components/page-header";
@@ -9,7 +10,7 @@ import { RichText, plainText } from "@/components/rich-text";
 import { Timeline } from "@/components/timeline";
 import { FACTS, timelineAt } from "@/content/facts";
 import { getGuide } from "@/content/guides";
-import { OBOR_LANDINGS, POS_LAUNCH_LABEL, getLanding, landingFaq, landingPath } from "@/content/obor-landings";
+import { OBOR_LANDINGS, POS_LAUNCH_LABEL, getLanding, isLandingIndexable, landingFaq, landingPath } from "@/content/obor-landings";
 import { JsonLd, faqLd } from "@/lib/jsonld";
 import { isClosed } from "@/lib/launch";
 import { canonicalMeta } from "@/lib/metadata";
@@ -17,7 +18,7 @@ import { REVIEWER, SERVICE_COPY } from "@/lib/site";
 import { SETUP_SERVICE } from "@/content/services";
 
 /**
- * S4 (23. 10. 2026): „EET pro kadeřnice / bistro / restaurace“ – trychtýř rychlá kontrola → co pro vás platí →
+ * S4 (23. 10. 2026): „EET pro kadeřnice / bistro / restaurace“ (S12: další obory, koncepty noindex do revize) – trychtýř rychlá kontrola → co pro vás platí →
  * pokladna → předregistrace. Data a pravidla pro texty: content/obor-landings.ts.
  */
 export const dynamicParams = false;
@@ -31,7 +32,13 @@ export async function generateMetadata({ params }: PageProps<"/eet-pro/[obor]">)
   const l = getLanding(obor);
   if (!l) return {};
   // bez „| EvidujZdarma“ – celý titulek (≤ 60 znaků) patří hledaným slovům, jako u /ukazka
-  return { title: { absolute: l.title }, description: l.description(), ...canonicalMeta(landingPath(l)) };
+  // S12: koncept před odbornou revizí je noindex (jako návody, Ф8 a Ф12)
+  return {
+    title: { absolute: l.title },
+    description: l.description(),
+    ...canonicalMeta(landingPath(l)),
+    robots: isLandingIndexable(l) ? undefined : { index: false, follow: true },
+  };
 }
 
 export default async function OborLandingPage({ params }: PageProps<"/eet-pro/[obor]">) {
@@ -208,16 +215,18 @@ export default async function OborLandingPage({ params }: PageProps<"/eet-pro/[o
             )}
             {l.tools.map((t) => (
               <Link key={t.href} href={t.href} className="card block p-5 no-underline hover:border-brand-500">
-                <span className="text-sm font-semibold text-brand-700">Nástroj</span>
+                <span className="text-sm font-semibold text-brand-700">{t.kind ?? "Nástroj"}</span>
                 <strong className="mt-1 block text-ink">{t.label}</strong>
                 <span className="mt-1 block text-[15px] text-ink-soft">{t.text}</span>
               </Link>
             ))}
-            <Link href={l.catalog.href} className="card block p-5 no-underline hover:border-brand-500">
-              <span className="text-sm font-semibold text-brand-700">Katalog firem</span>
-              <strong className="mt-1 block text-ink">{l.catalog.label}</strong>
-              <span className="mt-1 block text-[15px] text-ink-soft">Firmy z veřejných registrů a co pro ně EET 2.0 znamená.</span>
-            </Link>
+            {l.catalog && (
+              <Link href={l.catalog.href} className="card block p-5 no-underline hover:border-brand-500">
+                <span className="text-sm font-semibold text-brand-700">Katalog firem</span>
+                <strong className="mt-1 block text-ink">{l.catalog.label}</strong>
+                <span className="mt-1 block text-[15px] text-ink-soft">Firmy z veřejných registrů a co pro ně EET 2.0 znamená.</span>
+              </Link>
+            )}
             {/* S5-SLUŽBY */}
             <Link href="/nastaveni-na-klic" className="card block p-5 no-underline hover:border-brand-500" data-service-cta="obor">
               <span className="text-sm font-semibold text-brand-700">Služba</span>
@@ -225,7 +234,20 @@ export default async function OborLandingPage({ params }: PageProps<"/eet-pro/[o
               <span className="mt-1 block text-[15px] text-ink-soft">Postup na míru pro DIS+ a certifikát, kontrola a příprava pokladny – písemně, bez telefonování.</span>
             </Link>
           </div>
-          {guide && (
+          {guide && l.pendingReview && (
+            <p className="mt-8 text-sm text-muted">
+              Stav k {new Date(l.modified).toLocaleDateString("cs-CZ")}. Text této stránky čeká na odbornou revizi. Právní část vychází z návodu{" "}
+              <Link href={`/navody/${guide.slug}`} className="underline underline-offset-2">
+                {guide.h1 ?? guide.title}
+              </Link>{" "}
+              a z oficiálních informací na{" "}
+              <ExternalLink href="https://eet.gov.cz" className="underline underline-offset-2">
+                eet.gov.cz
+              </ExternalLink>
+              . Informativní přehled, nejde o daňové poradenství.
+            </p>
+          )}
+          {guide && !l.pendingReview && (
             <p className="mt-8 text-sm text-muted">
               Právní část vychází z návodu{" "}
               <Link href={`/navody/${guide.slug}`} className="underline underline-offset-2">

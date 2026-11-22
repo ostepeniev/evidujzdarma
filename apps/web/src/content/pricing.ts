@@ -245,6 +245,15 @@ export const PRICING_FAQ = [
     q: "Mohu Premium získat zdarma?",
     a: "Ano – když se přes váš odkaz předregistruje kolega a do 31. 3. 2027 začne s EvidujZdarma evidovat tržby, získáte oba Premium na 3 měsíce zdarma. Odkaz dostanete po potvrzení předregistrace. Podrobnosti najdete v pravidlech akce.",
   },
+  // S12 (22. 11. 2026): dotazy z vyhledávání „pokladna bez měsíčních poplatků“ a „pokladna pro více uživatelů“
+  {
+    q: "Má pokladna nějaké měsíční poplatky?",
+    a: "Tarif Zdarma žádné měsíční poplatky nemá – evidence tržeb, práce bez signálu, až 5 uživatelů a 3 evidenční jednotky zůstanou zdarma navždy. Platíte jen za doplňky, které si sami zvolíte. Poplatky za platby kartou si účtuje poskytovatel vašeho platebního terminálu, ne my.",
+  },
+  {
+    q: "Kolik uživatelů může pokladnu používat zdarma?",
+    a: "V tarifu Zdarma až 5 uživatelů, každý s vlastním PINem, a pokladnu otevřete na více zařízeních. Pro větší tým připravujeme tarif Firma bez limitu uživatelů a evidenčních jednotek, s rolemi pro vedoucí a pokladní.",
+  },
   {
     q: "Co když mi limit 3 evidenčních jednotek nestačí?",
     a: "Pak se vám vyplatí Premium bez limitu jednotek a uživatelů. Kolik jednotek opravdu potřebujete, zjistíte v našem průvodci evidenčními jednotkami.",

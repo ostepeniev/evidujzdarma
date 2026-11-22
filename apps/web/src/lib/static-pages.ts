@@ -1,4 +1,5 @@
 import { reviewedMoneyStaticPages } from "./money-review";
+import { reviewedS12LandingPages } from "@/content/obor-landings";
 
 /**
  * Statické stránky pro sitemap a llms.txt. `modified` = datum poslední změny obsahu stránky (lastmod v sitemap, R14.7) –
@@ -57,4 +58,8 @@ export const STATIC_PAGES: readonly { path: string; title: string; priority: num
   ...reviewedMoneyStaticPages(),
   // S3-OPEN: vzor pověření (§ 10) po kontrole účetní 17. 10. 2026
   { path: "/vzor-povereni", title: "Vzor pověření k evidování tržeb", priority: 0.6, changeFrequency: "monthly", modified: "2026-10-17" },
+  // S12 (22. 11. 2026): rozcestník „EET podle oboru“, pilíř „Účetnictví bez chaosu“ a další stránky „EET pro …“ (až po revizi)
+  { path: "/eet-pro", title: "EET podle oboru", priority: 0.7, changeFrequency: "weekly", modified: "2026-11-22" },
+  { path: "/ucetnictvi-bez-chaosu", title: "Doklady pro účetní bez chaosu", priority: 0.7, changeFrequency: "monthly", modified: "2026-11-22" },
+  ...reviewedS12LandingPages(),
 ];

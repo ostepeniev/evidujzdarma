@@ -31,7 +31,7 @@ export interface GuideSection {
   blocks: Block[];
 }
 
-export type GuideCategory = "zaklady" | "povinnosti" | "obory" | "prakticke" | "novinky";
+export type GuideCategory = "zaklady" | "povinnosti" | "obory" | "prakticke" | "novinky" | "doklady";
 
 export const CATEGORY_LABEL: Record<GuideCategory, string> = {
   zaklady: "Základy EET 2.0",
@@ -39,6 +39,8 @@ export const CATEGORY_LABEL: Record<GuideCategory, string> = {
   prakticke: "Prakticky: DIS+, certifikát, pokladna",
   obory: "EET podle oborů",
   novinky: "Novinky",
+  /** S12: cluster „Doklady pro účetní bez chaosu“ (/ucetnictvi-bez-chaosu) */
+  doklady: "Doklady a účetní",
 };
 
 export interface Guide {

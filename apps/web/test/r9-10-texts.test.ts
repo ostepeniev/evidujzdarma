@@ -60,7 +60,7 @@ describe("R9.12 – privacy policy and small texts", () => {
     const { default: Zasady } = await import("@/app/(site)/ochrana-osobnich-udaju/page");
     const z = pageText(Zasady as FC);
     expect(z).toContain(
-      "E-mail, nepovinně IČO a název firmy z ARES, obor, počet provozoven, co potřebujete (platební terminál, tiskárna, pomoc s DIS+), kód doporučení, zdroj návštěvy (UTM), u webinářů a Účetního kabinetu, o co máte zájem.",
+      "E-mail, nepovinně IČO a název firmy z ARES, obor, počet provozoven, co potřebujete (platební terminál, tiskárna, pomoc s DIS+), kód doporučení, zdroj návštěvy (UTM), u webinářů, Účetního kabinetu a bety Doklady k platbám, o co máte zájem.",
     );
     expect(z).toContain("Zrušíte-li předregistraci (odkazem „Odhlásit odběr“ v e-mailu)");
     expect(z).not.toContain("(odkazem „Odhlásit“ v e-mailu)");

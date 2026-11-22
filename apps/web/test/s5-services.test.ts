@@ -119,8 +119,8 @@ describe("S5 – privacy policy", () => {
     expect(t).toContain("záznam poptávky (e-mail, IČO, název firmy, počet provozoven, stav vyřízení) ukládáme");
     const { PRIVACY_VERSION, PRIVACY_DATE_ISO } = await import("@/lib/legal");
     // S10 (2. 11. 2026, GA4 a Meta Pixel) a S11 (3. 11. 2026, uložené poptávky, cookie ez_ucetni_ref) posunuly verzi dál
-    expect(PRIVACY_VERSION).toBe("2026-11-03-s11");
-    expect(PRIVACY_DATE_ISO).toBe("2026-11-03");
+    expect(PRIVACY_VERSION).toBe("2026-11-22-s12"); // S12 posunula verzi dál
+    expect(PRIVACY_DATE_ISO).toBe("2026-11-22");
   });
 });
 
