@@ -13,7 +13,7 @@ export const ACCOUNTANT_REWARD_RULES_VERSION_LABEL = "3. 11. 2026";
  * S3: zveřejněný katalog firem – informace podle čl. 14 GDPR; S4: souhlas s cookies a značky třetích stran po souhlasu;
  * S4b: Microsoft Clarity; S5: poptávka služby Nastavení EET na klíč; S10: Google Analytics 4 a Meta Pixel po souhlasu; S11: uložené poptávky služeb, kód účetní
  * kanceláře v odkazu na nastavení a funkční cookie ez_ucetni_ref; S12: účetní vidí u propojeného klienta údaje evidenčních jednotek
- * pro hromadný import do DIS+).
+ * pro hromadný import do DIS+; zájem o betu Doklady k platbám).
  * Datum = den nasazení; posune-li se, upravte ho. Při zapnutí nové značky v lib/tracking-config.ts verzi zvyšte.
  */
 export const PRIVACY_VERSION = "2026-11-22-s12";

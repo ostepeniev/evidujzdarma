@@ -11,9 +11,10 @@ import { SITE_URL, absoluteUrl } from "@/lib/site";
 import { canonicalMeta } from "@/lib/metadata";
 
 export const metadata: Metadata = {
-  title: "Ceník – pokladna EET 2.0 zdarma navždy",
+  // S12 (22. 11. 2026): titulek a popis i pro dotazy „pokladna bez měsíčních poplatků“ a „pokladna pro více uživatelů“
+  title: "Ceník – pokladna EET bez měsíčních poplatků",
   description:
-    "Pokladna pro EET 2.0 zdarma navždy: offline režim, 5 uživatelů, 3 evidenční jednotky, doklad e-mailem i CSV. Premium za 99 Kč/měsíc (připravujeme) přidá SMS účtenky a exporty",
+    "Pokladna pro EET 2.0 bez měsíčních poplatků: zdarma navždy pro 5 uživatelů a 3 evidenční jednotky, i bez signálu, s exportem CSV. Doplňky od 99 Kč/měsíc.",
   ...canonicalMeta("/cenik"),
 };
 

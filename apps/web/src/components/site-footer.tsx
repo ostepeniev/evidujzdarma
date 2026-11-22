@@ -34,6 +34,9 @@ const COLUMNS = [
       { href: "/eet-pro/kadernice", label: "EET pro kadeřnice" },
       { href: "/eet-pro/bistro", label: "EET pro bistro a kavárnu" },
       { href: "/eet-pro/restaurace", label: "EET pro restaurace" },
+      // S12: rozcestník oborů
+      { href: "/eet-pro", label: "EET podle oboru" },
+      { href: "/ucetnictvi-bez-chaosu", label: "Doklady pro účetní bez chaosu" },
       { href: "/co-se-o-eet-pise-spatne", label: "Co se o EET píše špatně" },
       { href: "/navody", label: "Všechny návody" },
     ],

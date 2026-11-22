@@ -89,6 +89,8 @@ describe("R8.3 – Czech texts (verbatim from the review)", () => {
       pokladna: "o předregistraci k pokladně EvidujZdarma",
       webinar: "o přihlášení na webinář EET 2.0 pro účetní",
       kabinet: "o zprávu o spuštění Účetního kabinetu",
+      // S12 (22. 11. 2026): čekací listina bety Doklady k platbám
+      doklady: "o zprávu o spuštění bety Doklady k platbám",
     });
     expect(INTEREST_LABEL.webinar).toBe("přihláška na webinář EET 2.0 pro účetní");
     const mail = renderEmail("interest-confirm", { interest: "kabinet", confirmToken: "t".repeat(32), unsubscribeToken: "u".repeat(32) });
@@ -117,8 +119,8 @@ describe("R8.3 – Czech texts (verbatim from the review)", () => {
   it("gate: privacy policy purpose, data and the summary sentence", async () => {
     const { default: Zasady } = await import("@/app/(site)/ochrana-osobnich-udaju/page");
     const z = pageText(Zasady);
-    expect(z).toContain("Předregistrace k pokladně, přihláška na webinář a zájem o Účetní kabinet");
-    expect(z).toContain(", u webinářů a Účetního kabinetu, o co máte zájem.");
+    expect(z).toContain("Předregistrace k pokladně, přihláška na webinář, zájem o Účetní kabinet a o betu Doklady k platbám"); // S12
+    expect(z).toContain(", u webinářů, Účetního kabinetu a bety Doklady k platbám, o co máte zájem."); // S12
     expect(z).not.toContain("u webináře jeho termín");
     // S3 (17. 10. 2026): katalog je veřejný – shrnutí popisuje skutečný stav (OSVČ bez adresy a DIČ, mimo vyhledávače)
     expect(z).toContain("Katalog firem stavíme jen z veřejných registrů; u podnikajících fyzických osob v něm neukazujeme adresu ani DIČ a jejich stránky nejsou ve vyhledávačích. Proti zpracování můžete kdykoli vznést námitku.");

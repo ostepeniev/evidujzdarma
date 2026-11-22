@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   ...canonicalMeta("/navody"),
 };
 
-const ORDER: GuideCategory[] = ["zaklady", "povinnosti", "prakticke", "obory", "novinky"];
+const ORDER: GuideCategory[] = ["zaklady", "povinnosti", "prakticke", "obory", "novinky", "doklady"];
 
 export default function GuidesIndex() {
   return (

@@ -99,7 +99,7 @@ describe("R7.4 – webinar interest is separate from the cash-register pre-regis
     // S11 (3. 11. 2026, rozhodnutí majitele): webinář nenabízíme – místo něj „Balíček pro klienty“
     expect(html).not.toMatch(/webinář/i);
     expect(html).toContain("Balíček pro klienty");
-    expect(src("app/(site)/ochrana-osobnich-udaju/page.tsx")).toContain("zdroj návštěvy (UTM), u webinářů a Účetního kabinetu, o co máte zájem.");
+    expect(src("app/(site)/ochrana-osobnich-udaju/page.tsx")).toContain("zdroj návštěvy (UTM), u webinářů, Účetního kabinetu a bety Doklady k platbám, o co máte zájem.");
   });
 
   it("migration 0028 backfills interests and cancels app-ready for webinar sign-ups", async () => {

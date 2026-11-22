@@ -73,7 +73,8 @@ function renderBody(template: EmailTemplate, p: Record<string, unknown>): Render
       // webinář a kabinet mají vlastní text – nejde o předregistraci k pokladně (R7.4, Z3)
       const interest = isInterest(p.interest) ? p.interest : "pokladna";
       if (!already && interest !== "pokladna") {
-        const what = interest === "webinar" ? "přihlášku na webinář EET 2.0 pro účetní" : "zájem o Účetní kabinet";
+        const what =
+          interest === "webinar" ? "přihlášku na webinář EET 2.0 pro účetní" : interest === "doklady" ? "zájem o betu Doklady k platbám" : "zájem o Účetní kabinet";
         return {
           subject: "Potvrďte prosím e-mail – EvidujZdarma",
           unsubscribeUrl: u.url,

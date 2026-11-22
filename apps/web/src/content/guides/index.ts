@@ -31,6 +31,13 @@ import { trzbaZaJineho } from "./trzba-za-jineho";
 import { doplnkovyProdejEet } from "./doplnkovy-prodej-eet";
 import { nezobrazujeSeAktivovatEet } from "./nezobrazuje-se-aktivovat-eet";
 import { poukazyAVoucheryEet } from "./poukazy-a-vouchery-eet";
+// S12 (22. 11. 2026)
+import { tiskarnaNaUctenky } from "./tiskarna-na-uctenky";
+import { coUcetniPotrebujeKazdyMesic } from "./co-ucetni-potrebuje-kazdy-mesic";
+import { chybejiciDokladyKPlatbam } from "./chybejici-doklady-k-platbam";
+import { pokladniKnihaEetABanka } from "./pokladni-kniha-eet-a-banka";
+import { procUcetniChceFaktury } from "./proc-ucetni-chce-faktury";
+import { parovaniPlatebSDoklady } from "./parovani-plateb-s-doklady";
 
 /**
  * Registr návodů. Nový návod: vytvořte soubor `<slug>.ts` exportující `Guide`
@@ -72,6 +79,13 @@ export const GUIDES: readonly Guide[] = [
   nezobrazujeSeAktivovatEet,
   poukazyAVoucheryEet,
   doplnkovyProdejEet,
+  // S12 (22. 11. 2026): koncepty do revize – tiskárna na účtenky a cluster „Doklady pro účetní bez chaosu“
+  tiskarnaNaUctenky,
+  coUcetniPotrebujeKazdyMesic,
+  chybejiciDokladyKPlatbam,
+  pokladniKnihaEetABanka,
+  procUcetniChceFaktury,
+  parovaniPlatebSDoklady,
 ];
 
 const BY_SLUG = new Map(GUIDES.map((g) => [g.slug, g]));
