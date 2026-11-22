@@ -10,7 +10,7 @@ import { canonicalMeta } from "@/lib/metadata";
 /**
  * S12 (22. 11. 2026): pilíř clusteru „Doklady pro účetní bez chaosu“ (nápad majitele: podnikatele účetní pořád žádá
  * o chybějící faktury; chyby a zdržení vznikají z chybějících a pozdních dokladů a z ruční práce, ne u účetních).
- * Stránka bez daňových tvrzení – indexuje se; články clusteru jsou koncepty do revize (noindex, Ф8, Ф12).
+ * Stránka bez daňových tvrzení – indexuje se; články clusteru prošly revizí Heleny Jeřábkové 22. 11. 2026 (Ф8, Ф12).
  * Čekací listina bety „Doklady k platbám“ = předregistrace se zájmem "doklady" (lib/interests.ts, R7.4).
  */
 export const metadata: Metadata = {

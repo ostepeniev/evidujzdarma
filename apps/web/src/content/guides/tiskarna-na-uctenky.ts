@@ -1,12 +1,13 @@
 import { FACTS, SOURCES } from "../facts";
 import type { Guide } from "./types";
+import { REVIEWER } from "@/lib/site";
 
 /**
  * S12 (22. 11. 2026): „tiskárna na účtenky“ (GSC, pozice ~10). Technický návod bez doporučení značek: zda je tiskárna
  * kvůli EET 2.0 potřeba (FACTS.receipt, FACTS.confirmation – revidované znění), co v prohlížeči (PWA) funguje přes
  * Web Bluetooth a co přes systémový tisk. Funkce pokladny jen podle kódu: lib/pos/escpos.ts (ESC/POS přes Bluetooth LE,
  * 32 znaků, bez diakritiky), components/pos/receipt-view.tsx a cash-panel.tsx (Tisk = tisk prohlížeče, Bluetooth).
- * Nový návod → koncept do odborné revize (Ф8, Ф12): noindex, mimo sitemap, llms.txt i MCP.
+ * Revize Heleny Jeřábkové 22. 11. 2026 → indexovatelný, v sitemap, llms.txt i MCP (Ф8, Ф12).
  */
 export const tiskarnaNaUctenky: Guide = {
   slug: "tiskarna-na-uctenky",
@@ -139,6 +140,10 @@ export const tiskarnaNaUctenky: Guide = {
   related: ["musim-vydavat-uctenku", "pokladna-v-mobilu-zdarma", "eet-bez-internetu"],
   published: "2026-11-22",
   updated: "2026-11-22",
-  changelog: [{ date: "2026-11-22", text: "Nový návod – čeká na odbornou revizi." }],
-  reviewedBy: null,
+  changelog: [
+    // Revize Heleny Jeřábkové 22. 11. 2026
+    { date: "2026-11-22", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
+    { date: "2026-11-22", text: "Nový návod – koncept před odbornou revizí." },
+  ],
+  reviewedBy: REVIEWER.name,
 };

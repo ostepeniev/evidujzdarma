@@ -1,10 +1,11 @@
 import { SOURCES } from "../facts";
 import type { Guide } from "./types";
+import { REVIEWER } from "@/lib/site";
 
 /**
  * S12 (22. 11. 2026): cluster „Doklady pro účetní bez chaosu“ (pilíř /ucetnictvi-bez-chaosu). Tón: účetní dělají svou
  * práci dobře, zdržení a opravy vznikají z chybějících a pozdních dokladů a z ruční práce. Právní odkazy jen obecně
- * (§ 11 zákona o účetnictví, § 29 zákona o DPH, § 7b zákona o daních z příjmů). Koncept do revize (Ф8, Ф12) – noindex.
+ * (§ 11 zákona o účetnictví, § 29 zákona o DPH, § 7b zákona o daních z příjmů). Revize Heleny Jeřábkové 22. 11. 2026 → indexovatelný (Ф8, Ф12).
  */
 export const coUcetniPotrebujeKazdyMesic: Guide = {
   slug: "co-ucetni-potrebuje-kazdy-mesic",
@@ -94,6 +95,10 @@ export const coUcetniPotrebujeKazdyMesic: Guide = {
   related: ["musim-vydavat-uctenku", "storno-a-vraceni-eet", "eet-2-0-kompletni-pruvodce"],
   published: "2026-11-22",
   updated: "2026-11-22",
-  changelog: [{ date: "2026-11-22", text: "Nový návod – čeká na odbornou revizi." }],
-  reviewedBy: null,
+  changelog: [
+    // Revize Heleny Jeřábkové 22. 11. 2026
+    { date: "2026-11-22", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
+    { date: "2026-11-22", text: "Nový návod – koncept před odbornou revizí." },
+  ],
+  reviewedBy: REVIEWER.name,
 };

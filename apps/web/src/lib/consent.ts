@@ -4,11 +4,13 @@ import { TRACKING, configuredTracking, type TrackingConfig } from "./tracking-co
  * S4-COOKIES (23. 10. 2026): vlastní souhlas s cookies – bez služby třetí strany. Čistá logika (bez DOM), aby šla testovat;
  * komponenty jsou v components/consent/.
  *
- * Rozhodnutí majitele 23. 10. 2026 (docs/DECISIONS.md, К10): první vrstva lišty má jen „Souhlasím“ a „Nastavení“,
- * odmítnutí je v Nastavení. ÚOOÚ a EDPB (Cookie Banner Taskforce, 1/2023) očekávají odmítnutí už na první vrstvě –
- * při kontrole nebo stížnosti přepněte FIRST_LAYER_REJECT na true: na liště se objeví textové tlačítko „Odmítnout“.
+ * Rozhodnutí majitele 23. 10. 2026 (docs/DECISIONS.md, К10): první vrstva lišty měla jen „Souhlasím“ a „Nastavení“.
+ * Změna 22. 11. 2026 (rozhodnutí majitele, К10.1): ÚOOÚ a EDPB (Cookie Banner Taskforce, 1/2023) očekávají odmítnutí už
+ * na první vrstvě, stejně snadné jako souhlas – FIRST_LAYER_REJECT je proto zapnutý: na liště jsou „Odmítnout“
+ * a „Souhlasím se vším“ stejně velké a stejně výrazné, „Nastavení“ je třetí, lehčí volba. Verze souhlasu se nemění
+ * (uložená rozhodnutí platí dál).
  */
-export const FIRST_LAYER_REJECT = false;
+export const FIRST_LAYER_REJECT = true;
 
 /**
  * Zvyšte při změně kategorií nebo značek – lišta se pak zobrazí znovu všem. S4b (Clarity) verzi nezvýšila: do 23. 10. 2026
@@ -79,9 +81,9 @@ export function makeConsent(analytics: boolean, marketing: boolean, now: Date = 
   return { v: CONSENT_VERSION, analytics: analytics && t.analytics, marketing: marketing && t.marketing, date: isoDay(now) };
 }
 
-/** „Souhlasím“ / „Povolit vše“ – všechny zapnuté kategorie. */
+/** „Souhlasím se vším“ / „Povolit vše“ – všechny zapnuté kategorie. */
 export const acceptAll = (now?: Date, cfg?: TrackingConfig) => makeConsent(true, true, now, cfg);
-/** „Odmítnout vše“ – jen nezbytné. Ukládá se taky, aby se lišta neukazovala znovu. */
+/** „Odmítnout“ / „Odmítnout vše“ – jen nezbytné. Ukládá se taky, aby se lišta neukazovala znovu. */
 export const rejectAll = (now?: Date, cfg?: TrackingConfig) => makeConsent(false, false, now, cfg);
 
 export type BannerMode = { show: false } | { show: true; preview: boolean };

@@ -1,7 +1,8 @@
 import { FACTS, SOURCES } from "../facts";
 import type { Guide } from "./types";
+import { REVIEWER } from "@/lib/site";
 
-/** S12 (22. 11. 2026): cluster „Doklady pro účetní bez chaosu“ – viz co-ucetni-potrebuje-kazdy-mesic.ts. Koncept do revize. */
+/** S12 (22. 11. 2026): cluster „Doklady pro účetní bez chaosu“ – viz co-ucetni-potrebuje-kazdy-mesic.ts. Revize Heleny Jeřábkové 22. 11. 2026 → indexovatelný. */
 export const pokladniKnihaEetABanka: Guide = {
   slug: "pokladni-kniha-eet-a-banka",
   category: "doklady",
@@ -91,6 +92,10 @@ export const pokladniKnihaEetABanka: Guide = {
   related: ["kontaktni-platba", "storno-a-vraceni-eet", "eet-bez-internetu"],
   published: "2026-11-22",
   updated: "2026-11-22",
-  changelog: [{ date: "2026-11-22", text: "Nový návod – čeká na odbornou revizi." }],
-  reviewedBy: null,
+  changelog: [
+    // Revize Heleny Jeřábkové 22. 11. 2026
+    { date: "2026-11-22", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
+    { date: "2026-11-22", text: "Nový návod – koncept před odbornou revizí." },
+  ],
+  reviewedBy: REVIEWER.name,
 };

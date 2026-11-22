@@ -7,10 +7,16 @@ import type { ConsentCategory } from "@/lib/consent";
  * vykreslením na serveru.
  *
  * Proč lišta dole a ne okno uprostřed (UX): okno uprostřed se ztmavením zakryje obsah, kvůli kterému člověk přišel,
- * a na telefonu často i tlačítko „zavřít“ – lidé pak odcházejí. Lišta dole nechá stránku číst i ovládat:
- *  - telefon (< 640 px): nízký list přes celou šířku, nejvýš ~40 % výšky, s místem pro gesto „domů“ (safe-area),
- *    tlačítka vedle sebe s výškou ≥ 44 px v dosahu palce; dočasně překryje připnuté tlačítko předregistrace (z-40);
- *  - počítač: malá karta vlevo dole (max. 420 px), nepřekryje navigaci ani formuláře uprostřed;
+ * a na telefonu často i tlačítko „zavřít“ – lidé pak odcházejí. Lišta dole nechá stránku číst i ovládat.
+ *
+ * S12 (22. 11. 2026, rozhodnutí majitele, DECISIONS К10.1): lišta je větší a výraznější, aby se návštěvník rozhodl
+ * a lištu nepřehlížel – ale pořád to není „cookie zeď“: žádné ztmavení, stránka se dál posouvá a ovládá
+ * (consent-manager.tsx pod lištu přidá místo, aby šel dočíst i konec stránky), nic není předem zaškrtnuté.
+ *  - telefon (< 640 px): panel přes celou šířku, zhruba třetina výšky (min. 33vh, nejvýš 70vh, pak se posouvá uvnitř),
+ *    nadpis 20 px, text 16 px, tlačítka ≥ 48 px v dosahu palce, místo pro gesto „domů“ (safe-area);
+ *  - počítač: široký panel dole uprostřed (max. 960 px), nadpis 24 px, text 18 px, tlačítka 56 px;
+ *  - „Odmítnout“ a „Souhlasím se vším“ mají stejnou velikost i styl (ÚOOÚ/EDPB: odmítnout musí jít stejně snadno jako
+ *    souhlasit), „Nastavení“ je třetí, lehčí volba;
  *  - pozice fixed → žádný posun obsahu (CLS 0); jemné vyjetí, při „omezit pohyb“ bez animace (globals.css .ez-rise).
  */
 
@@ -20,6 +26,13 @@ export const BANNER_TEXT =
 /** S5 (26. 10. 2026): jen analytické značky (teď Microsoft Clarity) – lišta nesmí slibovat reklamu, kterou nemáme. */
 export const BANNER_TEXT_ANALYTICS =
   "Rádi bychom měřili, které stránky vám pomáhají a co na webu zlepšit. K tomu potřebujeme váš souhlas s cookies – změnit ho můžete kdykoli v patičce webu.";
+/** S12: popisky tlačítek první vrstvy (rozhodnutí majitele 22. 11. 2026). */
+export const BANNER_ACCEPT_LABEL = "Souhlasím se vším";
+export const BANNER_REJECT_LABEL = "Odmítnout";
+export const BANNER_SETTINGS_LABEL = "Nastavení";
+
+/** Stejná třída pro „Odmítnout“ i „Souhlasím se vším“ – stejná velikost, barva i váha písma. */
+const DECISION_BTN = "btn-primary min-h-12 w-full px-3 py-3 text-base leading-tight sm:min-h-14 sm:px-6 sm:text-lg";
 
 export function CookieBannerView({
   firstLayerReject,
@@ -39,34 +52,43 @@ export function CookieBannerView({
 }) {
   return (
     <section
+      role="region"
       aria-labelledby="cookie-banner-h"
+      aria-describedby="cookie-banner-text"
       data-cookie-banner="true"
-      className="ez-rise no-print fixed inset-x-0 bottom-0 z-50 max-h-[40vh] overflow-y-auto rounded-t-2xl border-t border-line bg-white px-4 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-[0_-8px_30px_rgba(0,0,0,0.12)] sm:inset-x-auto sm:bottom-4 sm:left-4 sm:max-h-none sm:w-[420px] sm:max-w-[calc(100vw-2rem)] sm:rounded-2xl sm:border sm:p-5 sm:shadow-xl"
+      className="ez-rise no-print fixed inset-x-0 bottom-0 z-50 flex max-h-[70vh] min-h-[33vh] flex-col overflow-y-auto rounded-t-3xl border-t-4 border-brand-600 bg-white px-4 pt-5 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-[0_-12px_40px_rgba(0,0,0,0.22)] sm:inset-x-4 sm:bottom-4 sm:mx-auto sm:min-h-0 sm:max-w-[960px] sm:rounded-3xl sm:border-4 sm:px-10 sm:py-8"
     >
-      {preview && <p className="chip mb-2 bg-sun-100 text-warn-700">Náhled – nic se neukládá ani nenačítá</p>}
-      <h2 id="cookie-banner-h" className="text-base font-bold text-ink">
+      {preview && <p className="chip mb-2 self-start bg-sun-100 text-warn-700">Náhled – nic se neukládá ani nenačítá</p>}
+      <h2 id="cookie-banner-h" className="text-xl font-bold text-ink sm:text-2xl">
         {BANNER_TITLE}
       </h2>
-      <p className="mt-1 text-sm leading-relaxed text-ink-soft">
+      <p id="cookie-banner-text" className="mt-2 text-base leading-relaxed text-ink-soft sm:text-lg">
         {marketing || preview ? BANNER_TEXT : BANNER_TEXT_ANALYTICS}{" "}
         <Link href="/ochrana-osobnich-udaju#cookies" className="underline underline-offset-2">
           Více o cookies
         </Link>
       </p>
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        {/* Souhlasím je v pořadí čtení první, na obrazovce vpravo (v dosahu palce) */}
-        <button type="button" onClick={onAccept} data-cookie-action="accept" className="btn-primary order-2 min-h-11 px-3 py-2.5">
-          Souhlasím
-        </button>
-        <button type="button" onClick={onSettings} data-cookie-action="settings" className="btn-secondary order-1 min-h-11 px-3 py-2.5">
-          Nastavení
+      <div className="mt-auto pt-4 sm:pt-6">
+        {/* pořadí čtení i na obrazovce: Odmítnout, Souhlasím se vším (stejně velká a stejně výrazná), pak lehčí Nastavení */}
+        <div className={`grid gap-3 ${firstLayerReject ? "grid-cols-2" : "grid-cols-1"} sm:gap-4`}>
+          {firstLayerReject && (
+            <button type="button" onClick={onReject} data-cookie-action="reject" className={DECISION_BTN}>
+              {BANNER_REJECT_LABEL}
+            </button>
+          )}
+          <button type="button" onClick={onAccept} data-cookie-action="accept" className={DECISION_BTN}>
+            {BANNER_ACCEPT_LABEL}
+          </button>
+        </div>
+        <button
+          type="button"
+          onClick={onSettings}
+          data-cookie-action="settings"
+          className="btn-ghost mt-2 min-h-11 w-full px-3 py-2 text-base underline underline-offset-4 sm:mt-3 sm:text-lg"
+        >
+          {BANNER_SETTINGS_LABEL}
         </button>
       </div>
-      {firstLayerReject && (
-        <button type="button" onClick={onReject} data-cookie-action="reject" className="mt-1 min-h-11 w-full text-sm text-ink-soft underline underline-offset-2 hover:text-ink">
-          Odmítnout
-        </button>
-      )}
     </section>
   );
 }
@@ -172,15 +194,16 @@ export function CookieSettingsView({
             .
           </p>
         </div>
-        <div className="grid grid-cols-2 gap-2 border-t border-line px-5 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:px-6 sm:pb-6">
-          <button type="button" onClick={onAcceptAll} className="btn-primary col-span-2 min-h-11">
+        {/* S12 (22. 11. 2026): „Odmítnout vše“ stejně výrazné jako „Povolit vše“ (stejná třída), „Uložit výběr“ pod nimi */}
+        <div className="grid grid-cols-2 gap-2 border-t border-line px-5 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:gap-3 sm:px-6 sm:pb-6">
+          <button type="button" onClick={onRejectAll} data-cookie-action="reject-all" className="btn-primary min-h-12 px-3 leading-tight">
+            Odmítnout vše
+          </button>
+          <button type="button" onClick={onAcceptAll} data-cookie-action="accept-all" className="btn-primary min-h-12 px-3 leading-tight">
             Povolit vše
           </button>
-          <button type="button" onClick={onSave} className="btn-secondary min-h-11">
+          <button type="button" onClick={onSave} data-cookie-action="save" className="btn-secondary col-span-2 min-h-11">
             Uložit výběr
-          </button>
-          <button type="button" onClick={onRejectAll} className="btn-secondary min-h-11">
-            Odmítnout vše
           </button>
         </div>
       </div>

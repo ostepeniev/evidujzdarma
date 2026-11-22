@@ -7,7 +7,7 @@
 // že data neopustí EU); (5) cookies – nyní jen nezbytné (přihlášení) a cookie ankety ez_voter; v localStorage jen
 // název kanceláře v šablonách, kód doporučení se do prohlížeče neukládá (R7.10); měření návštěvnosti bez cookies (R15.3);
 // (6) identifikační údaje správce jsou v lib/site.ts (OPERATOR, ověřeno v OR 2. 10. 2026); (7) S4 (23. 10. 2026): souhlas
-// s cookies – první vrstva lišty bez „Odmítnout“ je rozhodnutí majitele (DECISIONS К10, ÚOOÚ/EDPB to vidí jako riziko);
+// s cookies – od 22. 11. 2026 má první vrstva lišty „Odmítnout“ stejně výrazné jako „Souhlasím se vším“ (DECISIONS К10.1);
 // po zapnutí značek ověřit u Meta Pixelu společné správcovství (čl. 26 GDPR, dodatek Meta pro správce) a doby cookies;
 // (8) S4b (23. 10. 2026): zapnutý Microsoft Clarity (záznamy průchodu, teplotní mapy) – ověřit roli Microsoftu (podle FAQ
 // Clarity „data controller“, smluvní strana v EU Microsoft Ireland Operations Ltd.) a podmínky Clarity (Clarity Terms of Use);

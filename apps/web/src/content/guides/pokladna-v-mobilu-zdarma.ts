@@ -85,6 +85,8 @@ export const pokladnaVMobiluZdarma: Guide = {
             ? "Pokladna EvidujZdarma bude po spuštění 2. 11. 2026 tisknout na termotiskárny ESC/POS přes Bluetooth LE (typicky v Chromu na Androidu) a účtenku umí poslat i e-mailem nebo ukázat jako QR kód."
             : "Pokladna EvidujZdarma tiskne na termotiskárny ESC/POS přes Bluetooth LE (typicky v Chromu na Androidu). Účtenku můžete poslat i e-mailem nebo ukázat jako QR kód.",
         },
+        // S12 (22. 11. 2026): oba návody prošly revizí → můžeme odkázat
+        { p: "Na co se dívat před koupí tiskárny a jak tisknout bez signálu, popisuje návod [Tiskárna na účtenky pro EET 2.0](/navody/tiskarna-na-uctenky)." },
       ],
     },
     {
@@ -171,6 +173,7 @@ export const pokladnaVMobiluZdarma: Guide = {
   published: "2026-10-07",
   updated: "2026-10-31",
   changelog: [
+    { date: "2026-11-22", text: "Doplněn odkaz na návod Tiskárna na účtenky." },
     { date: "2026-11-22", text: "Údaje o MOJE eet podle dotazů veřejnosti Finanční správy z 18. 11. 2026: až 4 zaměstnanecké účty, export dokladů v PDF, CSV tržeb v DIS+." },
     { date: "2026-10-31", text: "Doplněna část o tiskárně na účtenky: kdy ji potřebujete, připojení termotiskárny přes Bluetooth a elektronický doklad místo papíru." },
     { date: "2026-10-17", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },

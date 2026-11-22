@@ -2,7 +2,8 @@
  * S4-COOKIES (23. 10. 2026): vlastní souhlas s cookies (lib/consent.ts, components/consent/*).
  *  - bez ID značek se nic nemění: lišta se neukáže, CSP je stejná, zásady říkají „nepoužíváme“;
  *  - náhled /?cookies=preview ukáže lištu, ale nic neuloží ani nenačte;
- *  - první vrstva: jen „Souhlasím“ a „Nastavení“ (rozhodnutí majitele, DECISIONS К10), přepínač FIRST_LAYER_REJECT;
+ *  - první vrstva: „Odmítnout“ a „Souhlasím se vším“ stejně výrazné, „Nastavení“ lehčí (rozhodnutí majitele 22. 11. 2026,
+ *    DECISIONS К10.1; dřív К10 jen „Souhlasím“ a „Nastavení“), přepínač FIRST_LAYER_REJECT;
  *  - přepínače v nastavení vypnuté, před souhlasem žádný cizí skript, po souhlasu Consent Mode „granted“.
  * S4b (23. 10. 2026): v produkci zapnutý Microsoft Clarity (jen analytické) – lišta se ukazuje, CSP má domény Clarity,
  * zásady a karta „Proč je to zdarma“ to říkají; stav „bez značek“ se dál testuje se simulovanou prázdnou konfigurací.
@@ -331,32 +332,52 @@ describe("S10 – GA4 and Meta Pixel in production (2. 11. 2026)", () => {
 });
 
 describe("S4-COOKIES – the banner (first layer)", () => {
-  it("gate: owner's decision – exactly two buttons, Souhlasím and Nastavení", () => {
-    expect(FIRST_LAYER_REJECT).toBe(false);
+  it("gate: owner's decision 22. 11. 2026 – Odmítnout and Souhlasím se vším equally prominent, Nastavení lighter", () => {
+    expect(FIRST_LAYER_REJECT).toBe(true);
     const html = renderToStaticMarkup(createElement(CookieBannerView, { firstLayerReject: FIRST_LAYER_REJECT }));
     const buttons = [...html.matchAll(/<button[^>]*>([^<]*)<\/button>/g)].map((m) => m[1]!.trim());
-    expect(buttons.sort()).toEqual(["Nastavení", "Souhlasím"]);
-    expect(html).toContain('class="btn-primary');
+    // pořadí čtení: Odmítnout, Souhlasím se vším, Nastavení
+    expect(buttons).toEqual(["Odmítnout", "Souhlasím se vším", "Nastavení"]);
+    const cls = (action: string) => new RegExp(`data-cookie-action="${action}" class="([^"]*)"`).exec(html)?.[1];
+    // stejná velikost i styl odmítnutí a souhlasu (ÚOOÚ/EDPB), Nastavení není btn-primary
+    expect(cls("reject")).toBeDefined();
+    expect(cls("reject")).toBe(cls("accept"));
+    expect(cls("reject")).toMatch(/^btn-primary /);
+    expect(cls("reject")).toMatch(/sm:min-h-14/);
+    expect(cls("settings")).not.toMatch(/btn-primary/);
     expect(html).toContain('href="/ochrana-osobnich-udaju#cookies"');
-    // lišta dole bez ztmavení, nad připnutým tlačítkem (z-40), na počítači karta vlevo dole
+    // větší lišta: telefon ≈ třetina výšky, počítač široký panel; dole, bez ztmavení, nad připnutým tlačítkem (z-40)
     expect(html).toMatch(/fixed inset-x-0 bottom-0 z-50/);
-    expect(html).toMatch(/sm:left-4/);
+    expect(html).toMatch(/min-h-\[33vh\]/);
+    expect(html).toMatch(/max-h-\[70vh\]/);
+    expect(html).toMatch(/sm:max-w-\[960px\]/);
     expect(html).toMatch(/safe-area-inset-bottom/);
+    expect(html).toMatch(/role="region"/);
     expect(html).not.toMatch(/bg-ink\/40/);
     expect(html).not.toMatch(/role="dialog"/);
+    expect(html).not.toMatch(/aria-modal/);
+    // není to cookie zeď: pod stránku se přidá místo na výšku lišty, stránka se dál posouvá
+    const m = src("components/consent/consent-manager.tsx");
+    expect(m).toMatch(/body\.style\.paddingBottom = `\$\{el\.getBoundingClientRect\(\)\.height\}px`/);
+    expect(m).not.toMatch(/overflow\s*=\s*["']hidden/);
   });
 
-  it("gate: the owner's decision and its risk are recorded in DECISIONS К10", () => {
+  it("gate: the owner's decision and its change are recorded in DECISIONS К10 and К10.1", () => {
     const d = readFileSync(new URL("../../../docs/DECISIONS.md", import.meta.url), "utf8");
     const k10 = d.split("\n").find((l) => l.startsWith("- К10 "));
     expect(k10).toBeDefined();
     for (const s of ["«Souhlasím» і «Nastavení»", "FIRST_LAYER_REJECT", "ÚOOÚ", "EDPB", "ez_consent"]) expect(k10).toContain(s);
+    const k101 = d.split("\n").find((l) => l.startsWith("- К10.1 "));
+    expect(k101).toBeDefined();
+    for (const s of ["2026-11-22", "«Odmítnout»", "«Souhlasím se vším»", "FIRST_LAYER_REJECT = true", "«Odmítnout vše»", "CONSENT_VERSION"]) expect(k101).toContain(s);
   });
 
-  it("gate: FIRST_LAYER_REJECT = true adds a text „Odmítnout“ button (three in total)", () => {
-    const html = renderToStaticMarkup(createElement(CookieBannerView, { firstLayerReject: true }));
+  it("gate: with FIRST_LAYER_REJECT = false the banner falls back to two buttons (switch still works)", () => {
+    const html = renderToStaticMarkup(createElement(CookieBannerView, { firstLayerReject: false }));
     const buttons = [...html.matchAll(/<button[^>]*>([^<]*)<\/button>/g)].map((m) => m[1]!.trim());
-    expect(buttons.sort()).toEqual(["Nastavení", "Odmítnout", "Souhlasím"]);
+    expect(buttons).toEqual(["Souhlasím se vším", "Nastavení"]);
+    // komponenta: Odmítnout ukládá odmítnutí (jen nezbytné)
+    expect(src("components/consent/consent-manager.tsx")).toMatch(/onReject=\{\(\) => decide\(rejectAll\(new Date\(\), cfg\)\)\}/);
   });
 
   it("gate: ?cookies=preview shows the banner even without tags and marks it as a preview (nothing stored)", () => {
@@ -386,6 +407,10 @@ describe("S4-COOKIES – settings (second layer)", () => {
     expect(switches).toEqual(["false", "false"]);
     expect(html).toContain("Vždy zapnuté");
     for (const b of ["Povolit vše", "Uložit výběr", "Odmítnout vše"]) expect(html).toContain(`>${b}</button>`);
+    // S12: „Odmítnout vše“ stejně výrazné jako „Povolit vše“
+    const cls = (action: string) => new RegExp(`data-cookie-action="${action}" class="([^"]*)"`).exec(html)?.[1];
+    expect(cls("reject-all")).toMatch(/^btn-primary /);
+    expect(cls("reject-all")).toBe(cls("accept-all"));
   });
 
   it("gate: categories without a configured tag are hidden (preview shows all three)", () => {
@@ -420,7 +445,7 @@ describe("S4-COOKIES – stored decision and tags", () => {
     expect(rejectAll(day, FULL)).toMatchObject({ analytics: false, marketing: false });
   });
 
-  it("gate: no third-party script before consent; after „Souhlasím“ Consent Mode update is granted", () => {
+  it("gate: no third-party script before consent; after „Souhlasím se vším“ Consent Mode update is granted", () => {
     expect(allowedTags(null, FULL)).toEqual([]);
     expect(allowedTags(rejectAll(day, FULL), FULL)).toEqual([]);
     const yes = acceptAll(day, FULL);

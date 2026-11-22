@@ -6,6 +6,7 @@
  *      Revize Heleny Jeřábkové 22. 11. 2026: všech 13 schváleno → indexovatelné, v sitemap, llms.txt, katalogu, bannerech a v /eet-pro;
  *  B – návod „Tiskárna na účtenky“ (koncept) a ceník pro dotazy „bez měsíčních poplatků“ a „pro více uživatelů“;
  *  C – pilíř /ucetnictvi-bez-chaosu s čekací listinou bety Doklady k platbám (zájem "doklady") a pět článků clusteru (koncepty).
+ *  Revize Heleny Jeřábkové 22. 11. 2026: tiskárna i pět článků clusteru schváleny → indexovatelné, v sitemap, llms.txt i MCP.
  */
 import { readFileSync } from "node:fs";
 import type { ReactElement } from "react";
@@ -155,26 +156,28 @@ describe("S12b A – obor landings (reviewed 22. 11. 2026)", () => {
   });
 });
 
-describe("S12b B/C – new guides are drafts", () => {
-  it("gate: drafts – reviewedBy null, noindex, out of sitemap, llms.txt and MCP; shape; related only indexable", async () => {
+// Revize Heleny Jeřábkové 22. 11. 2026
+describe("S12b B/C – new guides (reviewed 22. 11. 2026)", () => {
+  it("gate: reviewed – reviewedBy, indexable, in sitemap, llms.txt and MCP; shape; related only indexable", async () => {
     const { SOURCES } = await import("@/content/facts");
     const { GUIDES, getGuide, isIndexable } = await import("@/content/guides");
     const { guideMetadata } = await import("@/lib/guide-page");
     const { default: sitemap } = await import("@/app/sitemap");
     const { llmsTxt, llmsFullTxt } = await import("@/lib/llms");
     const { publicGuides } = await import("@/lib/mcp/guides");
+    const { REVIEWER } = await import("@/lib/site");
     const ALL = new Set<string>(Object.values(SOURCES).map((s) => s.url));
     const urls = sitemap().map((e) => e.url);
     for (const slug of S12_GUIDES) {
       const g = getGuide(slug)!;
       expect(GUIDES, slug).toContain(g);
-      expect(g.reviewedBy, slug).toBeNull();
-      expect(isIndexable(g), slug).toBe(false);
-      expect(guideMetadata(g).robots, slug).toEqual({ index: false, follow: true });
-      expect(urls, slug).not.toContain(`https://evidujzdarma.cz/navody/${slug}`);
-      expect(llmsTxt(), slug).not.toContain(`/navody/${slug})`);
-      expect(llmsFullTxt(), slug).not.toContain(`/navody/${slug}`);
-      expect(publicGuides().map((x) => x.slug), slug).not.toContain(slug);
+      expect(g.reviewedBy, slug).toBe(REVIEWER.name);
+      expect(isIndexable(g), slug).toBe(true);
+      expect(guideMetadata(g).robots, slug).toBeUndefined();
+      expect(urls, slug).toContain(`https://evidujzdarma.cz/navody/${slug}`);
+      expect(llmsTxt(), slug).toContain(`/navody/${slug})`);
+      expect(llmsFullTxt(), slug).toContain(`/navody/${slug}`);
+      expect(publicGuides().map((x) => x.slug), slug).toContain(slug);
       expect(g.title.length, slug).toBeLessThanOrEqual(60);
       expect(g.description.length, `${slug} ${g.description.length}`).toBeGreaterThanOrEqual(140);
       expect(g.description.length, `${slug} ${g.description.length}`).toBeLessThanOrEqual(160);
@@ -183,7 +186,7 @@ describe("S12b B/C – new guides are drafts", () => {
       expect(g.faq!.length, slug).toBeGreaterThanOrEqual(3);
       for (const s of g.sources) expect(ALL.has(s.url), `${slug} ${s.url}`).toBe(true);
       for (const r of g.related) expect(isIndexable(getGuide(r)!), `${slug} → ${r}`).toBe(true);
-      expect(g.changelog?.[0], slug).toEqual({ date: "2026-11-22", text: "Nový návod – čeká na odbornou revizi." });
+      expect(g.changelog?.[0], slug).toEqual({ date: "2026-11-22", text: "Návod prošel odbornou revizí (Helena Jeřábková)." });
     }
   });
 

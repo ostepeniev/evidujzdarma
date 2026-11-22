@@ -20,11 +20,15 @@ const CHANGELOG = { date: "2026-10-07", text: "Návod prošel odbornou revizí (
 const C1_DRAFTS = new Set(["pokladna-v-mobilu-zdarma", "eet-trhy-stanky", "eet-eshop-dobirka", "eet-gastronomie", "sleva-na-dani-za-eet", "storno-a-vraceni-eet"]);
 /** S5-SLUŽBY (26. 10. 2026): nové koncepty – čekají na revizi (s5-services.test.ts) */
 /** К13 (31. 10. 2026): koncept pokladna-z-eet-1-0 – čeká na revizi (k13-services.test.ts) */
-/** S12b (22. 11. 2026): tiskárna na účtenky a cluster „Doklady pro účetní bez chaosu“ – koncepty (s12b-obor-landings.test.ts) */
-const S5_DRAFTS = new Set([
-  "eet-on-nebo-off-modelove-situace",
-  "kdo-pomuze-s-eet",
-  "pokladna-z-eet-1-0",
+const S5_DRAFTS = new Set(["eet-on-nebo-off-modelove-situace", "kdo-pomuze-s-eet", "pokladna-z-eet-1-0"]);
+// S7-VIZ (28. 10. 2026): návody z oficiálních příkladů (basis "official", Ф15) čekají na revizi zvlášť
+/** S12 (22. 11. 2026): tři nové návody (c1-draft-guides.test.ts, s12-dis-units-content.test.ts) */
+// Revize Heleny Jeřábkové 22. 11. 2026: všechny tři schváleny → revidované a indexovatelné
+/** S12b (22. 11. 2026): tiskárna na účtenky a cluster „Doklady pro účetní bez chaosu“ (s12b-obor-landings.test.ts) – revize 22. 11. 2026 */
+const S12_REVIEWED = new Set([
+  "nezobrazuje-se-aktivovat-eet",
+  "poukazy-a-vouchery-eet",
+  "doplnkovy-prodej-eet",
   "tiskarna-na-uctenky",
   "co-ucetni-potrebuje-kazdy-mesic",
   "chybejici-doklady-k-platbam",
@@ -32,10 +36,6 @@ const S5_DRAFTS = new Set([
   "proc-ucetni-chce-faktury",
   "parovani-plateb-s-doklady",
 ]);
-// S7-VIZ (28. 10. 2026): návody z oficiálních příkladů (basis "official", Ф15) čekají na revizi zvlášť
-/** S12 (22. 11. 2026): tři nové návody (c1-draft-guides.test.ts, s12-dis-units-content.test.ts) */
-// Revize Heleny Jeřábkové 22. 11. 2026: všechny tři schváleny → revidované a indexovatelné
-const S12_REVIEWED = new Set(["nezobrazuje-se-aktivovat-eet", "poukazy-a-vouchery-eet", "doplnkovy-prodej-eet"]);
 const REVIEWED = GUIDES.filter((g) => !C1_DRAFTS.has(g.slug) && !S5_DRAFTS.has(g.slug) && !S12_REVIEWED.has(g.slug) && g.basis !== "official");
 const REVIEWED_1122 = GUIDES.filter((g) => S12_REVIEWED.has(g.slug));
 const CHANGELOG_1122 = { date: "2026-11-22", text: "Návod prošel odbornou revizí (Helena Jeřábková)." };
@@ -72,7 +72,7 @@ describe("R8.10 – the guides' expert reviewer", () => {
     }
   });
 
-  it("gate: the 3 S12 guides were reviewed on 2026-11-22 – reviewedBy, changelog entry, indexable, in sitemap and llms.txt", async () => {
+  it("gate: the 9 S12 and S12b guides were reviewed on 2026-11-22 – reviewedBy, changelog entry, indexable, in sitemap and llms.txt", async () => {
     expect(REVIEWED_1122).toHaveLength(S12_REVIEWED.size);
     const { default: sitemap } = await import("@/app/sitemap");
     const entries = sitemap();

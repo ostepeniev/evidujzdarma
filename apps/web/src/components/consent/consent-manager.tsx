@@ -256,6 +256,28 @@ export function ConsentManager() {
     pageView();
   }, [pathname, pageView]);
 
+  /**
+   * S12 (22. 11. 2026): lišta je teď vysoká (≈ třetina obrazovky) – aby to nebyla „cookie zeď“, přidáme pod stránku místo
+   * o výšce lišty: stránka se dál posouvá a dá se dočíst až do patičky. Po rozhodnutí se místo hned vrátí.
+   */
+  useEffect(() => {
+    if (!banner || settings) return;
+    const el = document.querySelector<HTMLElement>("[data-cookie-banner]");
+    if (!el) return;
+    const body = document.body;
+    const before = body.style.paddingBottom;
+    const fit = () => {
+      body.style.paddingBottom = `${el.getBoundingClientRect().height}px`;
+    };
+    fit();
+    const ro = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(fit);
+    ro?.observe(el);
+    return () => {
+      ro?.disconnect();
+      body.style.paddingBottom = before;
+    };
+  }, [banner, settings]);
+
   // dialog: fokus dovnitř, Tab zůstane v okně, Esc zavře bez změny, pak fokus zpět
   useEffect(() => {
     if (!settings) return;
