@@ -3,6 +3,7 @@
  *  A – další stránky „EET pro …“ (veterináři, wellness a fitness, taxi, kosmetický salon, hospoda, realitní kancelář,
  *      svobodná povolání, farmy, horské ubytování, obchody, stánky a zmrzlina, rychlé občerstvení, e-shop s vlastními
  *      výrobky) jako koncepty do revize: noindex, mimo sitemap, llms.txt, katalog i bannery v návodech; rozcestník /eet-pro;
+ *      Revize Heleny Jeřábkové 22. 11. 2026: všech 13 schváleno → indexovatelné, v sitemap, llms.txt, katalogu, bannerech a v /eet-pro;
  *  B – návod „Tiskárna na účtenky“ (koncept) a ceník pro dotazy „bez měsíčních poplatků“ a „pro více uživatelů“;
  *  C – pilíř /ucetnictvi-bez-chaosu s čekací listinou bety Doklady k platbám (zájem "doklady") a pět článků clusteru (koncepty).
  */
@@ -50,8 +51,9 @@ async function renderLanding(slug: string): Promise<string> {
 mockLaunch("open");
 afterEach(() => mockLaunch("open"));
 
-describe("S12b A – obor landings (drafts until the review)", () => {
-  it("gate: 13 new landings, static params, all pending review → noindex, out of sitemap, llms.txt, catalog panel and guide banners", async () => {
+// Revize Heleny Jeřábkové 22. 11. 2026
+describe("S12b A – obor landings (reviewed 22. 11. 2026)", () => {
+  it("gate: 13 new landings, static params, all reviewed → indexable, in sitemap, llms.txt, catalog panel and guide banners", async () => {
     const { OBOR_LANDINGS, getLanding, isLandingIndexable, landingsForGuide, landingsForIndustry } = await import("@/content/obor-landings");
     const page = await import("@/app/(site)/eet-pro/[obor]/page");
     expect(page.generateStaticParams().map((p) => p.obor)).toEqual(["kadernice", "bistro", "restaurace", ...S12_LANDINGS]);
@@ -60,14 +62,20 @@ describe("S12b A – obor landings (drafts until the review)", () => {
     const { llmsTxt } = await import("@/lib/llms");
     for (const slug of S12_LANDINGS) {
       const l = getLanding(slug)!;
-      expect(l.pendingReview, slug).toBe(true);
-      expect(isLandingIndexable(l), slug).toBe(false);
+      expect(l.pendingReview, slug).toBeUndefined();
+      expect(isLandingIndexable(l), slug).toBe(true);
       const m = await page.generateMetadata({ params: Promise.resolve({ obor: slug }) } as never);
-      expect(m.robots, slug).toEqual({ index: false, follow: true });
-      expect(urls, slug).not.toContain(`https://evidujzdarma.cz/eet-pro/${slug}`);
-      expect(llmsTxt(), slug).not.toContain(`/eet-pro/${slug})`);
-      expect(landingsForGuide(l.guideSlug).map((x) => x.slug), slug).not.toContain(slug);
-      expect(landingsForIndustry(l.industry).map((x) => x.slug), slug).not.toContain(slug);
+      expect(m.robots, slug).toBeUndefined();
+      expect(urls, slug).toContain(`https://evidujzdarma.cz/eet-pro/${slug}`);
+      expect(llmsTxt(), slug).toContain(`/eet-pro/${slug})`);
+      expect(landingsForGuide(l.guideSlug).map((x) => x.slug), slug).toContain(slug);
+      // obor „jine“ (veterináři, reality, svobodná povolání) nemá v katalogu vlastní panel
+      if (l.industry === "jine") expect(landingsForIndustry(l.industry), slug).toEqual([]);
+      else expect(landingsForIndustry(l.industry).map((x) => x.slug), slug).toContain(slug);
+    }
+    // v sitemap právě jednou (první tři tam mají vlastní řádky)
+    for (const slug of [...S12_LANDINGS, "kadernice", "bistro", "restaurace"]) {
+      expect(urls.filter((u) => u === `https://evidujzdarma.cz/eet-pro/${slug}`), slug).toHaveLength(1);
     }
     // první tři zůstávají v indexu
     for (const s of ["kadernice", "bistro", "restaurace"]) expect(isLandingIndexable(getLanding(s)!)).toBe(true);
@@ -115,17 +123,17 @@ describe("S12b A – obor landings (drafts until the review)", () => {
     }
   });
 
-  it("gate: render – FAQPage, registration CTA, Nastavení na klíč, honest draft note with date and eet.gov.cz", async () => {
+  it("gate: render – FAQPage, registration CTA, Nastavení na klíč, reviewed note (as on kadernice/bistro/restaurace)", async () => {
     for (const slug of S12_LANDINGS) {
       const html = await renderLanding(slug);
       expect(html, slug).toContain('"@type":"FAQPage"');
       expect(html, slug).toContain('href="#kontrola"');
       expect(html, slug).toContain('href="/nastaveni-na-klic"');
       expect(html, slug).toContain("990 Kč bez DPH");
-      expect(html, slug).toContain("čeká na odbornou revizi");
-      expect(html, slug).toContain("Stav k 22. 11. 2026");
-      expect(html, slug).toContain('href="https://eet.gov.cz"');
-      expect(html, slug).not.toContain("prošel odbornou revizí");
+      expect(html, slug).toContain("prošel odbornou revizí");
+      expect(html, slug).toContain('href="/o-nas#odborna-revize"');
+      expect(html, slug).toContain("Helena Jeřábková");
+      expect(html, slug).not.toContain("čeká na odbornou revizi");
     }
     expect(await renderLanding("ubytovani-na-horach")).toContain('href="/eet-api"');
     expect(await renderLanding("eshop-vlastni-vyrobky")).toContain('href="/navody/eet-eshop-dobirka"');
@@ -134,11 +142,11 @@ describe("S12b A – obor landings (drafts until the review)", () => {
     expect(await renderLanding("taxi")).toMatch(/<option value="doprava-taxi" selected="">/);
   });
 
-  it("gate: hub /eet-pro lists only indexable landings; footer links the hub", async () => {
+  it("gate: hub /eet-pro lists all indexable landings (now incl. the 13 reviewed); footer links the hub", async () => {
     const { default: Hub, metadata } = await import("@/app/(site)/eet-pro/page");
     const html = renderToStaticMarkup(Hub() as ReactElement);
     for (const s of ["kadernice", "bistro", "restaurace"]) expect(html).toContain(`href="/eet-pro/${s}"`);
-    for (const s of S12_LANDINGS) expect(html, s).not.toContain(`href="/eet-pro/${s}"`);
+    for (const s of S12_LANDINGS) expect(html, s).toContain(`href="/eet-pro/${s}"`);
     expect((metadata.description as string).length).toBeGreaterThanOrEqual(140);
     expect((metadata.description as string).length).toBeLessThanOrEqual(160);
     expect(src("components/site-footer.tsx")).toContain('{ href: "/eet-pro", label: "EET podle oboru" }');

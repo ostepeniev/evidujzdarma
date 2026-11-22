@@ -1,11 +1,12 @@
 import { FACTS, SOURCES } from "../facts";
 import type { Guide } from "./types";
+import { REVIEWER } from "@/lib/site";
 
 /**
  * S12 (22. 11. 2026): doplňkový prodej (šampon u kadeřnice, krém v kosmetice, nápoj a kredit ve fitku). Jen obecná
  * pravidla, která už web má ze zdrojů FS: eviduje se každá kontaktní platba (kdoMusi), výjimky jen pro danou činnost
  * (FACTS.whoMust.exemptions), kredit ve fitcentru podle dotazu veřejnosti FS č. 5525, automaty odkazem na metodiku FS.
- * Vlastní daňový výklad ne. Nový návod → koncept, noindex a mimo strojové kanály do odborné revize (Ф8, Ф9).
+ * Vlastní daňový výklad ne. Revize Heleny Jeřábkové 22. 11. 2026 → indexovatelný a ve strojových kanálech (Ф8, Ф9).
  */
 export const doplnkovyProdejEet: Guide = {
   slug: "doplnkovy-prodej-eet",
@@ -121,6 +122,10 @@ export const doplnkovyProdejEet: Guide = {
   related: ["eet-kadernictvi-kosmetika", "kontaktni-platba", "eet-2-0-v-prikladech", "trzba-za-jineho"],
   published: "2026-11-22",
   updated: "2026-11-22",
-  changelog: [{ date: "2026-11-22", text: "Nový návod – čeká na odbornou revizi." }],
-  reviewedBy: null,
+  changelog: [
+    // Revize Heleny Jeřábkové 22. 11. 2026
+    { date: "2026-11-22", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
+    { date: "2026-11-22", text: "Nový návod – koncept před odbornou revizí." },
+  ],
+  reviewedBy: REVIEWER.name,
 };

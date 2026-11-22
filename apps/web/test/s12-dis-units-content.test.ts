@@ -12,6 +12,7 @@ import { FACTS, SOURCES, timelineAt } from "@/content/facts";
 import { getGuide, isIndexable, isMachineReadable } from "@/content/guides";
 import { allowedTags, cookiePrefixesToDelete, makeConsent } from "@/lib/consent";
 import { buildDisUnitsCsv, disUnitRow, parseCzAddress, type DisUnitInput } from "@/lib/dis-units-csv";
+import { REVIEWER } from "@/lib/site";
 import { UnitInput } from "@/lib/server/schemas";
 import { TRACKING } from "@/lib/tracking-config";
 
@@ -172,8 +173,9 @@ describe("S12 – /srovnani/moje-eet", () => {
   });
 });
 
-describe("S12 – new draft guides", () => {
-  it("gate: three drafts (noindex, not machine readable) with official sources", () => {
+// Revize Heleny Jeřábkové 22. 11. 2026: tři koncepty S12 schváleny → revidované, indexovatelné, ve strojových kanálech.
+describe("S12 – new guides (reviewed 22. 11. 2026)", () => {
+  it("gate: three reviewed guides (indexable, machine readable) with official sources", () => {
     for (const [slug, src] of [
       ["nezobrazuje-se-aktivovat-eet", SOURCES.fsDotazOpravneni],
       ["poukazy-a-vouchery-eet", SOURCES.fsDotazPoukazy],
@@ -181,11 +183,11 @@ describe("S12 – new draft guides", () => {
     ] as const) {
       const g = getGuide(slug)!;
       expect(g, slug).toBeTruthy();
-      expect(g.reviewedBy, slug).toBeNull();
-      expect(isIndexable(g), slug).toBe(false);
-      expect(isMachineReadable(g), slug).toBe(false);
+      expect(g.reviewedBy, slug).toBe(REVIEWER.name);
+      expect(isIndexable(g), slug).toBe(true);
+      expect(isMachineReadable(g), slug).toBe(true);
       expect(g.sources, slug).toContain(src);
-      expect(g.changelog?.[0], slug).toEqual({ date: "2026-11-22", text: "Nový návod – čeká na odbornou revizi." });
+      expect(g.changelog?.[0], slug).toEqual({ date: "2026-11-22", text: "Návod prošel odbornou revizí (Helena Jeřábková)." });
     }
     const aktivace = JSON.stringify(getGuide("nezobrazuje-se-aktivovat-eet"));
     for (const s of ["Prohlížení a odesílání všeho", "48 hodin", "/nastaveni-na-klic", "Pro účetní", "/ucetni#import-jednotek"]) expect(aktivace).toContain(s);

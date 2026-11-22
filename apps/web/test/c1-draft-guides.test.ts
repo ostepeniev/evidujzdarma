@@ -18,14 +18,12 @@ const REVIEWED_1017 = [...DRAFTS, "eet-gastronomie", ...S1_DRAFTS] as const;
 /** Koncepty, které na revizi ještě čekají – noindex, mimo sitemap, llms.txt i MCP. 17.–25. 10. 2026 žádné; S5 (26. 10.) přidal dva. */
 /** К13 (31. 10. 2026) přidal koncept pokladna-z-eet-1-0. */
 /** S12 (22. 11. 2026) přidal tři koncepty: AKTIVOVAT EET v DIS+, poukazy a doplňkový prodej. */
+/** Revize Heleny Jeřábkové 22. 11. 2026: ty tři schváleny → už nejsou koncepty (s12-dis-units-content.test.ts). */
 /** S12b (22. 11. 2026) přidal tiskárnu na účtenky a pět článků clusteru „Doklady pro účetní bez chaosu“ (s12b-obor-landings.test.ts). */
 const STILL_DRAFTS: readonly string[] = [
   "eet-on-nebo-off-modelove-situace",
   "kdo-pomuze-s-eet",
   "pokladna-z-eet-1-0",
-  "nezobrazuje-se-aktivovat-eet",
-  "poukazy-a-vouchery-eet",
-  "doplnkovy-prodej-eet",
   "tiskarna-na-uctenky",
   "co-ucetni-potrebuje-kazdy-mesic",
   "chybejici-doklady-k-platbam",
@@ -84,7 +82,7 @@ describe("C1 – three guides (drafts until 17. 10. 2026, then reviewed)", () =>
     }
   });
 
-  it("gate: only the S5 drafts (26. 10. 2026), the К13 draft (31. 10. 2026) and the S12 drafts (22. 11. 2026) wait for the review – every other guide is indexable", () => {
+  it("gate: only the S5 drafts (26. 10. 2026), the К13 draft (31. 10. 2026) and the S12b drafts (22. 11. 2026) wait for the review – every other guide is indexable", () => {
     expect(GUIDES.filter((g) => !isIndexable(g)).map((g) => g.slug)).toEqual([...STILL_DRAFTS]);
   });
 

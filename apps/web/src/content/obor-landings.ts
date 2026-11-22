@@ -342,7 +342,7 @@ const RESTAURACE: OborLanding = {
  * Stejná šablona a stejná pravidla jako výše: fakta jen z FACTS a z revidovaných návodů (koho-se-eet-tyka,
  * kontaktni-platba, eet-ubytovani, eet-trhy-stanky, eet-eshop-dobirka, eet-gastronomie, eet-kadernictvi-kosmetika,
  * evidencni-jednotka, trzba-za-jineho); co zákon ani FS zatím jednoznačně neříkají, je „ověřte“ s odkazem na eet.gov.cz.
- * Texty stránek jsou nové, proto `pendingReview` – noindex, dokud je neprojde odbornice (Ф8, Ф12).
+ * Revize Heleny Jeřábkové 22. 11. 2026: všech 13 stránek schváleno → `pendingReview` odstraněno, indexovatelné (Ф8, Ф12).
  * --------------------------------------------------------------------------------------------------------------- */
 
 const pausalQuestion = (who: string): CheckQuestion => ({
@@ -423,7 +423,6 @@ const VETERINARI: OborLanding = {
     { href: "/evidencni-jednotky", label: "Průvodce evidenčními jednotkami", text: "Ordinace, výjezdy – co oznámit v DIS+." },
     { href: "/kalkulacka-eet-off", label: "Kalkulačka EET OFF", text: "Vyplatí se vám přirážka místo evidence?" },
   ],
-  pendingReview: true,
   modified: "2026-11-22",
 };
 
@@ -499,7 +498,6 @@ const WELLNESS: OborLanding = {
     { href: "/kalkulacka-eet-off", label: "Kalkulačka EET OFF", text: "Vyplatí se vám přirážka místo evidence?" },
   ],
   catalog: { href: "/obor/wellness-a-sport/kraj/karlovarsky", label: "Masáže, wellness a fitness v Karlovarském kraji" },
-  pendingReview: true,
   modified: "2026-11-22",
 };
 
@@ -571,7 +569,6 @@ const TAXI: OborLanding = {
     { href: "/kalkulacka-eet-off", label: "Kalkulačka EET OFF", text: "Vyplatí se vám přirážka místo evidence?" },
   ],
   catalog: { href: "/obor/doprava-taxi/kraj/karlovarsky", label: "Taxi a přeprava osob v Karlovarském kraji" },
-  pendingReview: true,
   modified: "2026-11-22",
 };
 
@@ -637,7 +634,6 @@ const KOSMETIKA: OborLanding = {
     { href: "/kalkulacka-eet-off", label: "Kalkulačka EET OFF", text: "Vyplatí se vám přirážka místo evidence?" },
   ],
   catalog: { href: "/obor/kadernictvi-a-kosmetika/kraj/karlovarsky", label: "Kadeřnictví a kosmetika v Karlovarském kraji" },
-  pendingReview: true,
   modified: "2026-11-22",
 };
 
@@ -709,7 +705,6 @@ const HOSPODA: OborLanding = {
     { href: "/prechod-z-jine-pokladny", label: "Přechod z jiné pokladny", text: "Ceny pokladen a kalkulačka úspory." },
   ],
   catalog: { href: "/obor/restaurace-a-kavarny/kraj/karlovarsky", label: "Restaurace a kavárny v Karlovarském kraji" },
-  pendingReview: true,
   modified: "2026-11-22",
 };
 
@@ -774,7 +769,6 @@ const REALITY: OborLanding = {
     { href: "/musim-evidovat", label: "Kvíz: Musím evidovat?", text: "Šest otázek, jasná odpověď." },
     { href: "/navody/kontaktni-platba", label: "Kontaktní platba", text: "Co se eviduje a co ne.", kind: "Návod" },
   ],
-  pendingReview: true,
   modified: "2026-11-22",
 };
 
@@ -845,7 +839,6 @@ const SVOBODNA: OborLanding = {
     { href: "/kalkulacka-eet-off", label: "Kalkulačka EET OFF", text: "Vyplatí se vám přirážka místo evidence?" },
     { href: "/navody/kontaktni-platba", label: "Kontaktní platba", text: "Co se eviduje a co ne.", kind: "Návod" },
   ],
-  pendingReview: true,
   modified: "2026-11-22",
 };
 
@@ -917,7 +910,6 @@ const FARMY: OborLanding = {
     { href: "/evidencni-jednotky", label: "Průvodce evidenčními jednotkami", text: "Farma, stánek – co oznámit v DIS+." },
   ],
   catalog: { href: "/obor/farmari-a-vyrobci/kraj/karlovarsky", label: "Farmáři a výrobci v Karlovarském kraji" },
-  pendingReview: true,
   modified: "2026-11-22",
 };
 
@@ -987,7 +979,6 @@ const HORY: OborLanding = {
     { href: "/evidencni-jednotky", label: "Průvodce evidenčními jednotkami", text: "Penzion, chata, půjčovna – co oznámit." },
   ],
   catalog: { href: "/obor/ubytovani/kraj/karlovarsky", label: "Ubytování v Karlovarském kraji" },
-  pendingReview: true,
   modified: "2026-11-22",
 };
 
@@ -1053,7 +1044,6 @@ const OBCHODY: OborLanding = {
     { href: "/prechod-z-jine-pokladny", label: "Přechod z jiné pokladny", text: "Ceny pokladen a import zboží." },
   ],
   catalog: { href: "/obor/maloobchod/kraj/karlovarsky", label: "Obchody, stánky a trhy v Karlovarském kraji" },
-  pendingReview: true,
   modified: "2026-11-22",
 };
 
@@ -1125,7 +1115,6 @@ const STANKY: OborLanding = {
     { href: "/kalkulacka-eet-off", label: "Kalkulačka EET OFF", text: "Vyplatí se vám přirážka místo evidence?" },
   ],
   catalog: { href: "/obor/maloobchod/kraj/karlovarsky", label: "Obchody, stánky a trhy v Karlovarském kraji" },
-  pendingReview: true,
   modified: "2026-11-22",
 };
 
@@ -1191,7 +1180,6 @@ const RYCHLE: OborLanding = {
     { href: "/prechod-z-jine-pokladny", label: "Přechod z jiné pokladny", text: "Ceny pokladen a kalkulačka úspory." },
   ],
   catalog: { href: "/obor/restaurace-a-kavarny/kraj/karlovarsky", label: "Restaurace a kavárny v Karlovarském kraji" },
-  pendingReview: true,
   modified: "2026-11-22",
 };
 
@@ -1256,7 +1244,6 @@ const ESHOP: OborLanding = {
     { href: "/eet-api", label: "EET API", text: "Osobní odběr z e-shopu přímo do EET.", kind: "Služba" },
     { href: "/qr-platba", label: "QR platba", text: "QR kód pro platbu na účet během pár sekund." },
   ],
-  pendingReview: true,
   modified: "2026-11-22",
 };
 
@@ -1264,7 +1251,7 @@ export const OBOR_LANDINGS: readonly OborLanding[] = [
   KADERNICE,
   BISTRO,
   RESTAURACE,
-  // S12 (22. 11. 2026): koncepty do revize
+  // S12 (22. 11. 2026): revize Heleny Jeřábkové 22. 11. 2026 – zveřejněno
   VETERINARI,
   WELLNESS,
   TAXI,

@@ -1,11 +1,12 @@
 import { FACTS, SOURCES } from "../facts";
 import type { Guide } from "./types";
+import { REVIEWER } from "@/lib/site";
 
 /**
  * S12 (22. 11. 2026): proč se v DIS+ nezobrazuje tlačítko AKTIVOVAT EET – podle dotazu veřejnosti FS z 5. 11. 2026
  * (č. 5652, oprávnění) a dotazu č. 4086 (pověření nastavuje ten, kdo přístup přidělil). Aktivace do 48 hodin a počet
  * přihlášených podle Podnikatel.cz (18. 11. 2026, mluvčí GFŘ). Názvy obrazovek DIS+ jen ty, které uvádí FS.
- * Nový návod → koncept, noindex a mimo strojové kanály do odborné revize (Ф8, Ф9).
+ * Revize Heleny Jeřábkové 22. 11. 2026 → indexovatelný a ve strojových kanálech (Ф8, Ф9).
  */
 export const nezobrazujeSeAktivovatEet: Guide = {
   slug: "nezobrazuje-se-aktivovat-eet",
@@ -152,6 +153,10 @@ export const nezobrazujeSeAktivovatEet: Guide = {
   related: ["jak-aktivovat-dis-a-certifikat", "evidencni-jednotka", "eet-2-0-kompletni-pruvodce"],
   published: "2026-11-22",
   updated: "2026-11-22",
-  changelog: [{ date: "2026-11-22", text: "Nový návod – čeká na odbornou revizi." }],
-  reviewedBy: null,
+  changelog: [
+    // Revize Heleny Jeřábkové 22. 11. 2026
+    { date: "2026-11-22", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
+    { date: "2026-11-22", text: "Nový návod – koncept před odbornou revizí." },
+  ],
+  reviewedBy: REVIEWER.name,
 };

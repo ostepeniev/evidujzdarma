@@ -33,9 +33,12 @@ const S5_DRAFTS = new Set([
   "parovani-plateb-s-doklady",
 ]);
 // S7-VIZ (28. 10. 2026): návody z oficiálních příkladů (basis "official", Ф15) čekají na revizi zvlášť
-/** S12 (22. 11. 2026): tři nové koncepty – čekají na revizi (c1-draft-guides.test.ts, s12-dis-units-content.test.ts) */
-const S12_DRAFTS = new Set(["nezobrazuje-se-aktivovat-eet", "poukazy-a-vouchery-eet", "doplnkovy-prodej-eet"]);
-const REVIEWED = GUIDES.filter((g) => !C1_DRAFTS.has(g.slug) && !S5_DRAFTS.has(g.slug) && !S12_DRAFTS.has(g.slug) && g.basis !== "official");
+/** S12 (22. 11. 2026): tři nové návody (c1-draft-guides.test.ts, s12-dis-units-content.test.ts) */
+// Revize Heleny Jeřábkové 22. 11. 2026: všechny tři schváleny → revidované a indexovatelné
+const S12_REVIEWED = new Set(["nezobrazuje-se-aktivovat-eet", "poukazy-a-vouchery-eet", "doplnkovy-prodej-eet"]);
+const REVIEWED = GUIDES.filter((g) => !C1_DRAFTS.has(g.slug) && !S5_DRAFTS.has(g.slug) && !S12_REVIEWED.has(g.slug) && g.basis !== "official");
+const REVIEWED_1122 = GUIDES.filter((g) => S12_REVIEWED.has(g.slug));
+const CHANGELOG_1122 = { date: "2026-11-22", text: "Návod prošel odbornou revizí (Helena Jeřábková)." };
 const REVIEWED_1017 = GUIDES.filter((g) => C1_DRAFTS.has(g.slug));
 const CHANGELOG_1017 = { date: "2026-10-17", text: "Návod prošel odbornou revizí (Helena Jeřábková)." };
 
@@ -66,6 +69,22 @@ describe("R8.10 – the guides' expert reviewer", () => {
       expect(g.changelog, g.slug).toContainEqual(CHANGELOG_1017);
       expect(isIndexable(g), g.slug).toBe(true);
       expect(guideModified(g), g.slug).toBe(g.changelog![0]!.date);
+    }
+  });
+
+  it("gate: the 3 S12 guides were reviewed on 2026-11-22 – reviewedBy, changelog entry, indexable, in sitemap and llms.txt", async () => {
+    expect(REVIEWED_1122).toHaveLength(S12_REVIEWED.size);
+    const { default: sitemap } = await import("@/app/sitemap");
+    const entries = sitemap();
+    const { llmsTxt } = await import("@/lib/llms");
+    const llms = llmsTxt();
+    for (const g of REVIEWED_1122) {
+      expect(g.reviewedBy, g.slug).toBe(REVIEWER.name);
+      expect(g.changelog?.[0], g.slug).toEqual(CHANGELOG_1122);
+      expect(isIndexable(g), g.slug).toBe(true);
+      expect(guideModified(g), g.slug).toBe("2026-11-22");
+      expect(entries.find((x) => x.url === absoluteUrl(`/navody/${g.slug}`)), g.slug).toBeTruthy();
+      expect(llms, g.slug).toContain(absoluteUrl(`/navody/${g.slug}`));
     }
   });
 

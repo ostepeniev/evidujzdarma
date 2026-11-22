@@ -1,10 +1,11 @@
 import { FACTS, SOURCES } from "../facts";
 import type { Guide } from "./types";
+import { REVIEWER } from "@/lib/site";
 
 /**
  * S12 (22. 11. 2026): poukazy a vouchery podle dotazu veřejnosti FS z 22. 10. 2026 (č. 5525, včetně příkladů masáže
  * a fitcentra) a rozhodnutí Ф11 (stravenka jiné firmy = běžná platba). Slevové kupony a poukazy jiných firem FS v odpovědi
- * neřeší → „zatím není jisté“. Nový návod → koncept, noindex a mimo strojové kanály do odborné revize (Ф8, Ф9).
+ * neřeší → „zatím není jisté“. Revize Heleny Jeřábkové 22. 11. 2026 → indexovatelný a ve strojových kanálech (Ф8, Ф9).
  */
 export const poukazyAVoucheryEet: Guide = {
   slug: "poukazy-a-vouchery-eet",
@@ -133,6 +134,10 @@ export const poukazyAVoucheryEet: Guide = {
   related: ["kontaktni-platba", "eet-kadernictvi-kosmetika", "eet-2-0-v-prikladech", "eet-eshop-dobirka"],
   published: "2026-11-22",
   updated: "2026-11-22",
-  changelog: [{ date: "2026-11-22", text: "Nový návod – čeká na odbornou revizi." }],
-  reviewedBy: null,
+  changelog: [
+    // Revize Heleny Jeřábkové 22. 11. 2026
+    { date: "2026-11-22", text: "Návod prošel odbornou revizí (Helena Jeřábková)." },
+    { date: "2026-11-22", text: "Nový návod – koncept před odbornou revizí." },
+  ],
+  reviewedBy: REVIEWER.name,
 };

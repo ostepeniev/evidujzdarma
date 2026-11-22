@@ -127,7 +127,13 @@ describe("S4 – obor landing pages", () => {
     const g = renderToStaticMarkup((await GuidePage({ params: Promise.resolve({ slug: "eet-gastronomie" }) } as never)) as ReactElement);
     expect(g).toContain('href="/eet-pro/bistro"');
     expect(g).toContain('href="/eet-pro/restaurace"');
-    const other = renderToStaticMarkup((await GuidePage({ params: Promise.resolve({ slug: "eet-ubytovani" }) } as never)) as ReactElement);
+    // Revize Heleny Jeřábkové 22. 11. 2026: stránky S12 jsou zveřejněné → návody a katalog na ně odkazují také
+    const k2 = renderToStaticMarkup((await GuidePage({ params: Promise.resolve({ slug: "eet-kadernictvi-kosmetika" }) } as never)) as ReactElement);
+    expect(k2).toContain('href="/eet-pro/kosmeticky-salon"');
+    const ubyt = renderToStaticMarkup((await GuidePage({ params: Promise.resolve({ slug: "eet-ubytovani" }) } as never)) as ReactElement);
+    expect(ubyt).toContain('href="/eet-pro/ubytovani-na-horach"');
+    // návod, ze kterého žádná stránka „EET pro …“ nevychází, na ně neodkazuje
+    const other = renderToStaticMarkup((await GuidePage({ params: Promise.resolve({ slug: "eet-remeslnici" }) } as never)) as ReactElement);
     expect(other).not.toContain('href="/eet-pro/');
 
     const { EetPanel } = await import("@/components/catalog/eet-panel");
@@ -137,6 +143,7 @@ describe("S4 – obor landing pages", () => {
     const gastro = renderToStaticMarkup(createElement(EetPanel as FC<Record<string, unknown>>, { relevance: "likely", nace: ["56101"] }));
     expect(gastro).toContain('href="/eet-pro/bistro"');
     expect(gastro).toContain('href="/eet-pro/restaurace"');
+    expect(gastro).toContain('href="/eet-pro/hospoda"');
     const itFirm = renderToStaticMarkup(createElement(EetPanel as FC<Record<string, unknown>>, { relevance: "unlikely", nace: ["62010"] }));
     expect(itFirm).not.toContain("/eet-pro/");
   });
